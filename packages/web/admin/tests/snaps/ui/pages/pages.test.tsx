@@ -1,8 +1,8 @@
-import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog.ts'
-import { PageRow } from '@kobato/web-admin/ui/pages/PageRow.tsx'
-import { PagesSkeleton } from '@kobato/web-admin/ui/pages/PagesSkeleton.tsx'
-import { PagesView } from '@kobato/web-admin/ui/pages/PagesView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog'
+import { PageRow } from '@kobato/web-admin/ui/pages/PageRow'
+import { PagesSkeleton } from '@kobato/web-admin/ui/pages/PagesSkeleton'
+import { PagesView } from '@kobato/web-admin/ui/pages/PagesView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: PagesView', () => {

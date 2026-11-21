@@ -1,10 +1,10 @@
 import type { ServerType } from '@hono/node-server'
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 import type { Hono } from 'hono'
 
 import { serve } from '@hono/node-server'
-import { serverConfig } from '@kobato/server/infra/config.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { serverConfig } from '@kobato/server/infra/config'
+import { getLogger } from '@kobato/server/infra/logger'
 import { Server as NodeHttpServer } from 'node:http'
 
 const log = getLogger('lifecycle')

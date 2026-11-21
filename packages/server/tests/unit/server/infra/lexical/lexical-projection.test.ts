@@ -1,9 +1,9 @@
-import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling/headless/schema'
 import {
   computeBodyProjections,
   computeCommentContentProjection,
-} from '@kobato/server/infra/lexical/lexical-projection.ts'
-import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/infra/lexical/lexical-projection'
+import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 function parse(state: unknown): LexicalEditorState {

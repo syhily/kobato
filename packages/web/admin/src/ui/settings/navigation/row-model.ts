@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { SocialNetwork } from '@kobato/settings/socials.ts'
-import type { FooterNavItem } from '@kobato/settings/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { SocialNetwork } from '@kobato/settings/socials'
+import type { FooterNavItem } from '@kobato/settings/types'
 
-import { SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
+import { SOCIAL_NETWORKS } from '@kobato/settings/socials'
 
 export interface SideNavRow {
   clientId: string

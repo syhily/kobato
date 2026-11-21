@@ -1,4 +1,4 @@
-import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type.ts'
+import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type'
 import { describe, expect, it } from 'vitest'
 
 describe('webmentions / html content-type gate', () => {

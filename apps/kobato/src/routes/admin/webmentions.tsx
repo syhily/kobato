@@ -1,8 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { WebmentionsView, type WebmentionTab } from '@kobato/web-admin/ui/webmentions/WebmentionsView.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { WebmentionsView, type WebmentionTab } from '@kobato/web-admin/ui/webmentions/WebmentionsView'
 import { useSearchParams } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('admin')
 

@@ -2,13 +2,13 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { useWatch } from 'react-hook-form'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ const commit = vi.hoisted(() => vi.fn())
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

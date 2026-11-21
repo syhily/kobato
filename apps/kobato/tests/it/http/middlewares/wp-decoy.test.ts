@@ -1,9 +1,9 @@
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { isWordPressDecoyPath } from '@kobato/server/http/middlewares/wp-decoy.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { regularSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { isWordPressDecoyPath } from '@kobato/server/http/middlewares/wp-decoy'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { regularSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -34,7 +34,7 @@ async function seedPage(slug: string, title: string): Promise<number> {
   return pageId
 }
 
-const pageDetailRoute = await import('@/routes/public/page/detail.tsx')
+const pageDetailRoute = await import('@/routes/public/page/detail')
 
 describe('isWordPressDecoyPath', () => {
   it('matches WordPress probe patterns', () => {

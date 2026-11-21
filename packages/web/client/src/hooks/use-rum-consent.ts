@@ -1,6 +1,6 @@
-import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
+import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 
-import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
+import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 import { useCallback, useSyncExternalStore } from 'react'
 
 export interface RumConsentState {

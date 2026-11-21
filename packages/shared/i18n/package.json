@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./tests/*": "./tests/*",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@formatjs/icu-messageformat-parser": "catalog:",

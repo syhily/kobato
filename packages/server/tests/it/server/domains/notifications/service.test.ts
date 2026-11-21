@@ -1,15 +1,15 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
 import {
   createNotificationWithRecipients,
   listThreadParticipantIds,
   notificationInboxQuery,
-} from '@kobato/db/operations/notification.ts'
-import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
+} from '@kobato/db/operations/notification'
+import { notification, notificationRecipient } from '@kobato/db/schema/notification'
+import { user } from '@kobato/db/schema/user'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   getThread,
   listInbox,
@@ -21,9 +21,9 @@ import {
   sendBroadcast,
   sendDirectMessage,
   unreadCount,
-} from '@kobato/server/domains/notifications/service.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/notifications/service'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

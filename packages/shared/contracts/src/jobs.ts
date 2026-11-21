@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { isoDateTime } from '@kobato/contracts/primitives.ts'
-import { storageMigrationStatusDto } from '@kobato/contracts/storage.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { isoDateTime } from '@kobato/contracts/primitives'
+import { storageMigrationStatusDto } from '@kobato/contracts/storage'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const JOB_RUN_TRIGGERS = ['scheduled', 'manual'] as const

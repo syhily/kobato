@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import type { HeatmapCell } from '@kobato/contracts/analytics.ts'
+import type { HeatmapCell } from '@kobato/contracts/analytics'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { makeAnalyticsState } from '@kobato/web-admin/tests/utils/analytics-state.ts'
-import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
-import { Heatmap } from '@kobato/web-admin/ui/analytics/Heatmap.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { makeAnalyticsState } from '@kobato/web-admin/tests/utils/analytics-state'
+import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context'
+import { Heatmap } from '@kobato/web-admin/ui/analytics/Heatmap'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 

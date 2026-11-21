@@ -4,7 +4,7 @@ import {
   auditLogExportOutput,
   auditLogListInput,
   auditLogListOutput,
-} from '@kobato/contracts/audit.ts'
+} from '@kobato/contracts/audit'
 import { oc } from '@orpc/contract'
 
 export const adminAuditContract = {

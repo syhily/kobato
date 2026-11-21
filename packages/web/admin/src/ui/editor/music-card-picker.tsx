@@ -5,13 +5,13 @@
 // `autoOpenOnInsert` rides the registration, so menu inserts open the picker
 // exactly as they did when the spec carried it inline.
 
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
-import type { MusicPlayerCardMeta } from '@kobato/inkling/headless/cards/music-player.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { MusicPlayerCardMeta } from '@kobato/inkling/headless/cards/music-player'
 
 import { registerCardPicker, useCardChrome, type CardPickerRenderProps } from '@kobato/inkling'
-import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling/headless/node-whitelist.ts'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling/headless/node-whitelist'
 import { isMusicPlayerCardNode, type MusicPlayerCardNode } from '@kobato/inkling/host-cards'
-import { MusicPickerDialog } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx'
+import { MusicPickerDialog } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog'
 
 export function musicPickMeta(music: AdminMusicDto): MusicPlayerCardMeta {
   return {

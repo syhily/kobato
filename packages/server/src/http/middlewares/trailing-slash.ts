@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 import type { MiddlewareHandler } from 'hono'
 
 export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) => {

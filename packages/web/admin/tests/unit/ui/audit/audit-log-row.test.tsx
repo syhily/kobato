@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import type { AuditLogItemDto } from '@kobato/contracts/audit.ts'
+import type { AuditLogItemDto } from '@kobato/contracts/audit'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { AuditLogRow } from '@kobato/web-admin/ui/audit/AuditLogRow.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { AuditLogRow } from '@kobato/web-admin/ui/audit/AuditLogRow'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import { sql } from 'drizzle-orm'
 

@@ -1,5 +1,5 @@
-import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
-import { useAdminScrollTopLift } from '@kobato/web-admin/ui/shell/AdminShell.tsx'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
+import { useAdminScrollTopLift } from '@kobato/web-admin/ui/shell/AdminShell'
 import { useState } from 'react'
 
 export function useEditorShellLayout() {

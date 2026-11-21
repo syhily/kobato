@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { boxLog } from '@kobato/server/infra/logger/box-console.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { boxLog } from '@kobato/server/infra/logger/box-console'
 import { and, eq, gt } from 'drizzle-orm'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 

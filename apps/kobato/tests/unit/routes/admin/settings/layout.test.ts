@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ErrorBoundary } from '@/routes/admin/settings/layout.tsx'
+import { ErrorBoundary } from '@/routes/admin/settings/layout'
 
 describe('route: admin/settings/layout', () => {
   describe('ErrorBoundary', () => {

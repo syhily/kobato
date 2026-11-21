@@ -1,19 +1,19 @@
 // @vitest-environment happy-dom
 
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { InklingComposerProps } from '@kobato/inkling'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { THEME_COOKIE } from '@kobato/utils/theme-cookie.ts'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { THEME_COOKIE } from '@kobato/utils/theme-cookie'
 import {
   EditorSurfaceComposer,
   type EditorSurfaceComposerProps,
   useEditorSurface,
-} from '@kobato/web-client/editor/editor-surface.tsx'
+} from '@kobato/web-client/editor/editor-surface'
 import { act, render, renderHook } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

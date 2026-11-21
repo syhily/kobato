@@ -1,4 +1,4 @@
-import { SLUG_CHAR_MAP } from '@kobato/utils/slug-char-map.ts'
+import { SLUG_CHAR_MAP } from '@kobato/utils/slug-char-map'
 
 export const DERIVED_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 

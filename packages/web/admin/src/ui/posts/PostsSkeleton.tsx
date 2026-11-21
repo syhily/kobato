@@ -1,4 +1,4 @@
-import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
+import { Skeleton } from '@kobato/ui/components/skeleton'
 import { Fragment } from 'react'
 
 export function PostsSkeleton() {

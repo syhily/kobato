@@ -1,11 +1,11 @@
-import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell.tsx'
+import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 
-import { hasAtLeast } from '@kobato/auth/roles.ts'
-import { SidebarMenuItem } from '@kobato/ui/components/sidebar.tsx'
-import { Switch } from '@kobato/ui/components/switch.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useTheme } from '@kobato/ui/lib/ThemeProvider.tsx'
-import { NavMenuItem } from '@kobato/web-admin/ui/shell/NavMenuItem.tsx'
+import { hasAtLeast } from '@kobato/auth/roles'
+import { SidebarMenuItem } from '@kobato/ui/components/sidebar'
+import { Switch } from '@kobato/ui/components/switch'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useTheme } from '@kobato/ui/lib/ThemeProvider'
+import { NavMenuItem } from '@kobato/web-admin/ui/shell/NavMenuItem'
 import { MoonIcon, SettingsIcon, SunIcon } from 'lucide-react'
 
 interface NavSettingsProps {

@@ -1,6 +1,6 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { subscribeChunkReload, useReloadOnChunkError } from '@kobato/web-client/hooks/use-chunk-error-recovery.ts'
-import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { subscribeChunkReload, useReloadOnChunkError } from '@kobato/web-client/hooks/use-chunk-error-recovery'
+import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('client/lib/chunk-error — isChunkLoadError', () => {
@@ -79,7 +79,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
 
   it('notifies subscribed listeners', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
+    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery')
     const listener = vi.fn()
     const unsub = mod.subscribeChunkReload(listener)
     mod.triggerChunkReload()
@@ -89,7 +89,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
 
   it('survives a listener that throws (recovery must not be blocked)', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
+    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery')
     const good = vi.fn()
     const bad = vi.fn(() => {
       throw new Error('listener exploded')
@@ -105,7 +105,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
 
   it('only fires listeners once across repeated calls (reload-started guard)', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
+    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery')
     const listener = vi.fn()
     const unsub = mod.subscribeChunkReload(listener)
     mod.triggerChunkReload()
@@ -124,7 +124,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
       requestAnimationFrame: undefined,
       setTimeout: setTimeoutMock,
     })
-    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
+    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery')
     mod.triggerChunkReload()
     expect(setTimeoutMock).toHaveBeenCalled()
   })
@@ -141,7 +141,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
       requestAnimationFrame: raf,
       setTimeout: vi.fn(() => 0 as unknown as NodeJS.Timeout),
     })
-    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery.ts')
+    const mod = await import('@kobato/web-client/hooks/use-chunk-error-recovery')
     mod.triggerChunkReload()
     expect(raf).toHaveBeenCalled()
   })

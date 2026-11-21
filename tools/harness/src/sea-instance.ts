@@ -1,5 +1,5 @@
-import type { ExitOutcome, ExitState } from '@kobato/harness/process.ts'
-import type { TempDirs } from '@kobato/harness/temp.ts'
+import type { ExitOutcome, ExitState } from '@kobato/harness/process'
+import type { TempDirs } from '@kobato/harness/temp'
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
@@ -11,7 +11,7 @@ import {
   scrubbedParentEnv,
   sleep,
   watchChildExit,
-} from '@kobato/harness/process.ts'
+} from '@kobato/harness/process'
 import { spawn } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
 import { stat } from 'node:fs/promises'

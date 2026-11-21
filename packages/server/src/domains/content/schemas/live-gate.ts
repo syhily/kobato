@@ -1,5 +1,5 @@
-import type { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import type { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import type { page as pageMetaTable } from '@kobato/db/schema/page'
+import type { post as postMetaTable } from '@kobato/db/schema/post'
 
 import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 

@@ -1,10 +1,10 @@
-import type { ClearCacheTarget } from '@kobato/cache/types.ts'
-import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatTimestamp } from '@kobato/web-admin/ui/settings/cache/cache-formatters.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatTimestamp } from '@kobato/web-admin/ui/settings/cache/cache-formatters'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 
 interface CacheStatusLineProps {
   status: ClearStatus

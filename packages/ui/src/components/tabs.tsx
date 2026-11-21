@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Tabs as BaseTabs } from '@base-ui/react/tabs'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 function Tabs({
   className,

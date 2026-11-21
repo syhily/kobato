@@ -3,7 +3,7 @@ import {
   METRIC_TYPES,
   analyticsQuerySchema,
   deviceEnvBeaconSchema,
-} from '@kobato/contracts/analytics.ts'
+} from '@kobato/contracts/analytics'
 import { describe, expect, it } from 'vitest'
 
 describe('analyticsQuerySchema dimension filters', () => {

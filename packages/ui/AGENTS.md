@@ -1,6 +1,6 @@
 # UI module conventions
 
-`@kobato/ui` is Kobato's design-system module: design tokens, base styles, shadcn/Base UI primitives, static icons, theme and i18n providers, and generic presentation hooks. Production sources depend only on `@kobato/settings`, `@kobato/i18n`, `@kobato/utils` — never on web packages or `@kobato/server`. UI never imports another package's tests.
+`@kobato/ui` is Kobato's design-system module: design tokens, base styles, shadcn/Base UI primitives, static icons, theme and i18n providers, and generic presentation hooks. Production sources depend only on `@kobato/settings`, `@kobato/i18n`, `@kobato/utils` — never on web packages or `@kobato/server`. Only production sources are barred from importing another package's tests; test setup may use canonical fixtures through the sanctioned `tests/utils/` seam.
 
 - `styles/` owns generic token, typeset, and dark-variant partials plus `ui.css` (`packages/ui/src/styles/AGENTS.md`).
 - `components/` contains reusable primitives, not product screens or domain orchestration. A component file never defines or exports a hook — a context/hook pair lives in `lib/`.

@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry.ts'
-import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@kobato/cache/types.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry'
+import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@kobato/cache/types'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']

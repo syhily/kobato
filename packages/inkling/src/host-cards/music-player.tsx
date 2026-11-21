@@ -5,17 +5,17 @@ import {
   MUSIC_PLAYER_CARD_PROPERTIES,
   type MusicPlayerCardMeta,
   renderMusicPlayerCard,
-} from '@kobato/inkling-internal/headless/cards/music-player.ts'
-import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
+} from '@kobato/inkling-internal/headless/cards/music-player'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
 import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 import { useCardPicker } from '@kobato/inkling-internal/hooks/useCardPicker'
-import { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches.ts'
+import { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches'
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
 import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
-import { isSafeUrl } from '@kobato/sanitize/sanitize-url.ts'
-import { MusicPlayerCard } from '@kobato/ui/components/music-player/music-player.tsx'
-import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import { isSafeUrl } from '@kobato/sanitize/sanitize-url'
+import { MusicPlayerCard } from '@kobato/ui/components/music-player/music-player'
+import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider'
 import { Music2Icon } from 'lucide-react'
 
 export const BaseMusicPlayerNode = class extends generateDecoratorNode({

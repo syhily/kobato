@@ -5,7 +5,7 @@ import {
   SESSION_SORT_OPTIONS,
   parseSessionSort,
   serializeSessionSort,
-} from '@kobato/web-admin/ui/sessions/sort.ts'
+} from '@kobato/web-admin/ui/sessions/sort'
 import { describe, expect, it } from 'vitest'
 
 describe('parseSessionSort', () => {

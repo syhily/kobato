@@ -2,7 +2,7 @@
 // (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
 import 'zod/compile'
 import '@testing-library/jest-dom/vitest'
-import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning.ts'
+import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-warning'
 // Evaluate @date-fns/tz against the REAL Date constructor, before any test
 // module calls `vi.useFakeTimers()`. `TZDateMini extends Date` binds whatever
 // the global is at module-evaluation time; a test file that fakes timers and
@@ -14,7 +14,7 @@ import { silenceLocalStorageWarning } from '@kobato/test/silence-local-storage-w
 // binding for every unit test file.
 import '@date-fns/tz'
 import { cleanup } from '@testing-library/react'
-import '@kobato/test/env.ts'
+import '@kobato/test/env'
 import { afterEach, vi } from 'vitest'
 
 vi.mock('sonner', () => ({

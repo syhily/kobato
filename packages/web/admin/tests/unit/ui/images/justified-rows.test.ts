@@ -1,6 +1,6 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
+import type { AdminImageDto } from '@kobato/contracts/images'
 
-import { buildJustifiedRows } from '@kobato/web-admin/ui/images/JustifiedImageGrid.tsx'
+import { buildJustifiedRows } from '@kobato/web-admin/ui/images/JustifiedImageGrid'
 import { describe, expect, it } from 'vitest'
 
 function makeImage(width: number, height: number): AdminImageDto {

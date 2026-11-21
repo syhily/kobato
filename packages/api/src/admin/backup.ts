@@ -7,8 +7,8 @@ import {
   adminBackupRestoreInput,
   adminBackupRestoreOutputDto,
   adminBackupStatusOutputDto,
-} from '@kobato/contracts/backup.ts'
-import { successDto } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/backup'
+import { successDto } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminBackupContract = {

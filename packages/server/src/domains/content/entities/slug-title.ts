@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityType } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityType } from '@kobato/db/target'
 
-import { page } from '@kobato/db/schema/page.ts'
-import { post } from '@kobato/db/schema/post.ts'
+import { page } from '@kobato/db/schema/page'
+import { post } from '@kobato/db/schema/post'
 import { eq, inArray } from 'drizzle-orm'
 
 export interface EntitySlugTitle {

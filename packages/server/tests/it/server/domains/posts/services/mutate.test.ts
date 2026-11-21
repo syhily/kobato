@@ -1,28 +1,25 @@
-import { slugRegistry } from '@kobato/db/schema/config.ts'
-import { content as contentTable, postSearchIndex } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { slugRegistry } from '@kobato/db/schema/config'
+import { content as contentTable, postSearchIndex } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createPost, deletePost, restorePost, unpublishPost, updatePostMeta } =
-  await import('@kobato/server/domains/posts/services/mutate.ts')
-const indexPostMock = vi.spyOn(await import('@kobato/server/domains/posts/services/search-index.ts'), 'indexPost')
+  await import('@kobato/server/domains/posts/services/mutate')
+const indexPostMock = vi.spyOn(await import('@kobato/server/domains/posts/services/search-index'), 'indexPost')
 const indexPostFromRevisionMock = vi.spyOn(
-  await import('@kobato/server/domains/posts/services/search-index.ts'),
+  await import('@kobato/server/domains/posts/services/search-index'),
   'indexPostFromRevision',
 )
 const removePostIndexMock = vi.spyOn(
-  await import('@kobato/server/domains/posts/services/search-index.ts'),
+  await import('@kobato/server/domains/posts/services/search-index'),
   'removePostIndex',
 )
-const invalidateContentMock = vi.spyOn(
-  await import('@kobato/server/domains/content/invalidate.ts'),
-  'invalidateContent',
-)
+const invalidateContentMock = vi.spyOn(await import('@kobato/server/domains/content/invalidate'), 'invalidateContent')
 
 afterAll(() => {
   vi.restoreAllMocks()

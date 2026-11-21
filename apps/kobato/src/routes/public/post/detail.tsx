@@ -1,12 +1,12 @@
-import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/seo/meta.ts'
-import { detailHeaders } from '@kobato/server/http/route-cache-headers.ts'
-import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller.ts'
-import { PostDetailBody } from '@kobato/web-public/ui/post/PostDetailBody.tsx'
-import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/seo/meta'
+import { detailHeaders } from '@kobato/server/http/route-cache-headers'
+import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller'
+import { PostDetailBody } from '@kobato/web-public/ui/post/PostDetailBody'
+import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList'
 import { Suspense, useMemo } from 'react'
 import { Await, data } from 'react-router'
 
-import type { RouteHandle } from '@/root.tsx'
+import type { RouteHandle } from '@/root'
 
 import type { Route } from './+types/detail'
 

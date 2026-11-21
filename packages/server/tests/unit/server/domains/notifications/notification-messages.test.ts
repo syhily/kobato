@@ -1,9 +1,9 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
-import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US'
+import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n'
 import { describe, expect, it } from 'vitest'
 
 const RELEASED_NOTIFICATION_KEYS = [

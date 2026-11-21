@@ -1,4 +1,4 @@
-import { honeypotField } from '@kobato/contracts/primitives.ts'
+import { honeypotField } from '@kobato/contracts/primitives'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

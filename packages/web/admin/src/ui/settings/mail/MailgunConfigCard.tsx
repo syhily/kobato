@@ -1,16 +1,16 @@
-import type { MailLoaderShape } from '@kobato/settings/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
-import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
 import {
   SettingsSecretInput,
   secretFieldPatch,
   secretFieldStrings,
-} from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+} from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 
 export function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
   const { t } = useI18n()

@@ -8,7 +8,7 @@ import {
   OPEN_IMAGE_LIBRARY_COMMAND,
 } from '@kobato/inkling'
 import { KobatoImageNode } from '@kobato/inkling/host-cards'
-import { registerKobatoImageInsertCommands } from '@kobato/web-admin/ui/editor/image-insert-override.ts'
+import { registerKobatoImageInsertCommands } from '@kobato/web-admin/ui/editor/image-insert-override'
 import { JSDOM } from 'jsdom'
 import { COMMAND_PRIORITY_CRITICAL } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'

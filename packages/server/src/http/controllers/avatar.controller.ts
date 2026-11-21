@@ -1,7 +1,7 @@
-import { avatarContract } from '@kobato/api/avatar.ts'
-import { avatarImageUrl } from '@kobato/assets/avatar.ts'
-import { resolveAvatarForEmail } from '@kobato/server/domains/comments/services/avatar.ts'
-import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { avatarContract } from '@kobato/api/avatar'
+import { avatarImageUrl } from '@kobato/assets/avatar'
+import { resolveAvatarForEmail } from '@kobato/server/domains/comments/services/avatar'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 
 const impl = implementPublic(avatarContract).use(resourceRateLimit)
 

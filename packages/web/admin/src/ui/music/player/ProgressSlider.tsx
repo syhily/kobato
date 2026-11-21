@@ -1,4 +1,4 @@
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { useCallback, useRef, useState } from 'react'
 
 export interface ProgressSliderProps {

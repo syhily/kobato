@@ -1,7 +1,7 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('author')
 

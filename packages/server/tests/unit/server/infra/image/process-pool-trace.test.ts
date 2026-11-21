@@ -1,19 +1,18 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 import type { Worker } from 'node:worker_threads'
 
-import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
+import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { METRIC } from '@kobato/server/infra/trace/metrics'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { WorkerPool, __setWorkerFactory, __resetWorkerFactory } =
-  await import('@kobato/server/infra/image/process-pool.ts')
+const { WorkerPool, __setWorkerFactory, __resetWorkerFactory } = await import('@kobato/server/infra/image/process-pool')
 
 class FakeWorker extends EventEmitter {
   posted: Array<{ id: number; type: string; input: unknown }> = []

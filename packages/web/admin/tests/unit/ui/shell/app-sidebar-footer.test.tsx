@@ -1,18 +1,18 @@
 // @vitest-environment happy-dom
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-public/ui/shared/auth/use-logout.ts', () => ({
+vi.mock('@kobato/web-public/ui/shared/auth/use-logout', () => ({
   useLogout: () => vi.fn(),
 }))
 
 mockTanstackQuery()
 
-const { AppSidebarFooter } = await import('@kobato/web-admin/ui/shell/AppSidebarFooter.tsx')
+const { AppSidebarFooter } = await import('@kobato/web-admin/ui/shell/AppSidebarFooter')
 
 function footer(unreadCount = 0) {
   return (

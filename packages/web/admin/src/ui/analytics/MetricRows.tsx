@@ -1,9 +1,9 @@
-import type { MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
+import type { MetricRow, MetricType } from '@kobato/contracts/analytics'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatNumber } from '@kobato/utils/format.ts'
-import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatNumber } from '@kobato/utils/format'
+import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName'
 
 export interface MetricRowsProps {
   rows: MetricRow[]

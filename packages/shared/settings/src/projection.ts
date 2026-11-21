@@ -1,6 +1,6 @@
-import type { BackupSettings, CommentsSettings, MailSettings } from '@kobato/settings/types.ts'
+import type { BackupSettings, CommentsSettings, MailSettings } from '@kobato/settings/types'
 
-import { AVATAR_SOURCES } from '@kobato/assets/avatar.ts'
+import { AVATAR_SOURCES } from '@kobato/assets/avatar'
 import { z } from 'zod'
 
 export type BrandingSlotStatus = z.infer<typeof brandingSlotStatusSchema>

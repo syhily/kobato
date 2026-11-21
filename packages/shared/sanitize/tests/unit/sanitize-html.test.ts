@@ -1,6 +1,6 @@
-import type { SafeHtmlStrategy } from '@kobato/sanitize/config.ts'
+import type { SafeHtmlStrategy } from '@kobato/sanitize/config'
 
-import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html.ts'
+import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html'
 import { describe, expect, it } from 'vitest'
 
 const strategies: SafeHtmlStrategy[] = [

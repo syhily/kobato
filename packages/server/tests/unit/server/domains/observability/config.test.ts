@@ -1,11 +1,11 @@
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
 import {
   basicAuthorizationHeader,
   observabilityConnectionFingerprint,
   observabilityRuntimeFingerprint,
   toTraceRuntimeSettings,
-} from '@kobato/server/domains/observability/config.ts'
+} from '@kobato/server/domains/observability/config'
 import { describe, expect, it } from 'vitest'
 
 const BASE: ObservabilitySettingsSlice = {

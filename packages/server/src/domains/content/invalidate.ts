@@ -1,4 +1,4 @@
-import { bumpCounter, clear } from '@kobato/server/infra/cache/registry.ts'
+import { bumpCounter, clear } from '@kobato/server/infra/cache/registry'
 
 export type ContentInvalidationEvent =
   | { entity: 'post' }

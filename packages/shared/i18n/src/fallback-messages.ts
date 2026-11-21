@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export const FALLBACK_MESSAGE_IDS = [
   'common.action.reload',

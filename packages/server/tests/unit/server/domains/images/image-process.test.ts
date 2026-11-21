@@ -1,5 +1,5 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { processImageBuffer } from '@kobato/server/infra/image/process.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { processImageBuffer } from '@kobato/server/infra/image/process'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 

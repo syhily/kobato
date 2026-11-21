@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { ASSET_ROUTES, resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
-import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
-import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
+import { ASSET_ROUTES, resolveSiteAsset } from '@kobato/server/domains/assets/services/routes'
+import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag'
+import { brandingVersionSuffix } from '@kobato/settings/presentation'
 import { Hono } from 'hono'
 
 export const assetsRouter = new Hono<Env>()
@@ -18,7 +18,7 @@ for (const path of Object.keys(ASSET_ROUTES)) {
     }
     const inm = c.req.header('if-none-match')
     const quoted = `"${resolved.etag}"`
-    if (inm && (inm === quoted || inm === resolved.etag || inm === '*')) {
+    if (etagHeaderMatches(inm, quoted)) {
       c.header('ETag', quoted)
       c.header('Cache-Control', ASSET_CACHE_CONTROL)
       return c.body(null, 304)

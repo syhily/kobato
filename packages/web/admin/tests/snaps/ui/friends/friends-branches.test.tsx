@@ -1,8 +1,8 @@
-import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -26,11 +26,11 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
+vi.mock('@kobato/ui/lib/use-debounced-search', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog', () => import('@kobato/web-admin/tests/utils/dialog'))
 
 const debouncedSearch = vi.hoisted(() => ({
   value: '',

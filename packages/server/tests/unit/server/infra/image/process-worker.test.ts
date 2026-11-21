@@ -75,7 +75,7 @@ const sharpMock = vi.hoisted(() => {
 
 vi.mock('sharp', () => ({ default: sharpMock.fn }))
 
-vi.mock('@kobato/utils/thumbhash.ts', () => ({
+vi.mock('@kobato/utils/thumbhash', () => ({
   rgbaToThumbHash: () => new Uint8Array([0, 1, 2, 3]),
 }))
 
@@ -83,7 +83,7 @@ import {
   processImageInWorker,
   WorkerDomainError,
   type ProcessImageInput,
-} from '@kobato/server/infra/image/process-worker.ts'
+} from '@kobato/server/infra/image/process-worker'
 
 async function run(input: Partial<ProcessImageInput> = {}) {
   return processImageInWorker({

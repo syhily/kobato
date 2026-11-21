@@ -1,24 +1,20 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend.ts'
+import type { Database } from '@kobato/db/database'
+import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import {
-  resetRestoreMachine,
-  tryBeginRestore,
-  wireRestoreMachine,
-} from '@kobato/server/domains/backup/restore-machine.ts'
-import { createBackup } from '@kobato/server/domains/backup/services/backup.ts'
-import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { resetRestoreMachine, tryBeginRestore, wireRestoreMachine } from '@kobato/server/domains/backup/restore-machine'
+import { createBackup } from '@kobato/server/domains/backup/services/backup'
+import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call, ORPCError } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -28,8 +24,8 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 
 // Restore flows run against real archives created through the create
 // endpoint; the two spies keep argument/short-circuit observability.
-const backupModule = await import('@kobato/server/domains/backup/services/backup.ts')
-const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
+const backupModule = await import('@kobato/server/domains/backup/services/backup')
+const restoreModule = await import('@kobato/server/domains/backup/services/restore')
 const getBackupStream = vi.spyOn(backupModule, 'getBackupStream')
 const stageBackup = vi.spyOn(restoreModule, 'stageBackup')
 

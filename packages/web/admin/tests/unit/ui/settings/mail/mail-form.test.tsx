@@ -1,13 +1,13 @@
-import type { MailLoaderShape } from '@kobato/settings/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
-const settingsContextMod = await import('@kobato/web-client/settings/blog-settings-context.tsx')
+const settingsContextMod = await import('@kobato/web-client/settings/blog-settings-context')
 vi.spyOn(settingsContextMod, 'useSiteIdentity').mockImplementation((() => ({
   author: { email: 'admin@example.com' },
 })) as never)
@@ -16,7 +16,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { MailForm } = await import('@kobato/web-admin/ui/settings/mail/MailForm.tsx')
+const { MailForm } = await import('@kobato/web-admin/ui/settings/mail/MailForm')
 
 const baseMail: MailLoaderShape = {
   mail: {

@@ -1,4 +1,4 @@
-import { isoDateTime } from '@kobato/contracts/primitives.ts'
+import { isoDateTime } from '@kobato/contracts/primitives'
 import { z } from 'zod'
 
 export const fontSlot = z.enum(['global', 'post', 'code'])

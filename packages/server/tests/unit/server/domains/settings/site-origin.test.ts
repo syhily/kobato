@@ -1,5 +1,5 @@
-import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 describe('server/domains/settings/site-origin — resolveSiteOrigin', () => {

@@ -1,5 +1,5 @@
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { UaClientHints } from '@kobato/server/domains/analytics/ua-parse.ts'
+import type { EntityTarget } from '@kobato/db/target'
+import type { UaClientHints } from '@kobato/server/domains/analytics/ua-parse'
 
 export interface RawAccessEvent {
   eventId: string

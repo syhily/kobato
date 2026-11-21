@@ -4,10 +4,10 @@ import type {
   MailTransportConfig,
   SendOptions,
   SendResult,
-} from '@kobato/server/infra/email/types.ts'
+} from '@kobato/server/infra/email/types'
 
-import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { emailTranslator } from '@kobato/server/infra/email/translator'
+import { getLogger } from '@kobato/server/infra/logger'
 import nodemailer, { type Transporter } from 'nodemailer'
 
 const log = getLogger('email')

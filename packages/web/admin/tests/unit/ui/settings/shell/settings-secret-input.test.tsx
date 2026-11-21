@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   SettingsSecretInput,
   secretFieldPatch,
   secretFieldStrings,
-} from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput.tsx'
+} from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

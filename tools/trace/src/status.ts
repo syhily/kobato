@@ -1,4 +1,4 @@
-import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline.ts'
+import { RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline'
 import {
   containerExists,
   containerRunning,
@@ -11,7 +11,7 @@ import {
   readState,
   stateFilePath,
   waitForOpenObserve,
-} from '@kobato/trace/lib.ts'
+} from '@kobato/trace/lib'
 
 async function main(): Promise<void> {
   const state = await readState()

@@ -1,8 +1,8 @@
-import type { DraftSummary } from '@kobato/contracts/posts.ts'
+import type { DraftSummary } from '@kobato/contracts/posts'
 import type { ReactNode } from 'react'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ArrowRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

@@ -1,7 +1,7 @@
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Separator } from '@kobato/ui/components/separator.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { cva, type VariantProps } from '@kobato/ui/lib/cva.ts'
+import { Label } from '@kobato/ui/components/label'
+import { Separator } from '@kobato/ui/components/separator'
+import { cn } from '@kobato/ui/lib/cn'
+import { cva, type VariantProps } from '@kobato/ui/lib/cva'
 import { type ComponentProps, useMemo } from 'react'
 
 function FieldSet({ className, ...props }: ComponentProps<'fieldset'>) {

@@ -1,7 +1,7 @@
-import type { NavigationSettings, SocialItem } from '@kobato/settings/types.ts'
+import type { NavigationSettings, SocialItem } from '@kobato/settings/types'
 
-import { FooterNavCard } from '@kobato/web-admin/ui/settings/navigation/FooterNavCard.tsx'
-import { SideNavCard } from '@kobato/web-admin/ui/settings/navigation/SideNavCard.tsx'
+import { FooterNavCard } from '@kobato/web-admin/ui/settings/navigation/FooterNavCard'
+import { SideNavCard } from '@kobato/web-admin/ui/settings/navigation/SideNavCard'
 
 interface NavigationEditorProps {
   navigation: NavigationSettings

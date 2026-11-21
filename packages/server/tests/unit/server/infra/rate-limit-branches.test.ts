@@ -22,7 +22,7 @@ import {
   trySignInByEmailRateLimit,
   __rateLimitKeysForTests,
   __resetRateLimitsForTests,
-} from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/infra/rate-limit'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()

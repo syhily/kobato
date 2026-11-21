@@ -4,7 +4,7 @@ import {
   adminRenderMathOutputDto,
   adminRenderReindexOutputDto,
   adminRenderReprojectOutputDto,
-} from '@kobato/contracts/renders.ts'
+} from '@kobato/contracts/renders'
 import { oc } from '@orpc/contract'
 
 export const adminRendersContract = {

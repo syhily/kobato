@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
-import type { AssetsSettings, StorageDriver } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { StorageBackend } from '@kobato/server/infra/storage/backend'
+import type { AssetsSettings, StorageDriver } from '@kobato/settings/types'
 
 import {
   isStorageMigrationInFlightPhase,
@@ -11,26 +11,26 @@ import {
   type StorageMigrationPhase,
   type StorageMigrationStatus,
   type StorageMigrationVerification,
-} from '@kobato/contracts/storage.ts'
-import { backup as backupTable } from '@kobato/db/schema/backup.ts'
-import { font as fontTable } from '@kobato/db/schema/font.ts'
-import { image, music } from '@kobato/db/schema/media.ts'
-import { storageMigration } from '@kobato/db/schema/storage-migration.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { decryptIfNeeded, encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
-import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+} from '@kobato/contracts/storage'
+import { backup as backupTable } from '@kobato/db/schema/backup'
+import { font as fontTable } from '@kobato/db/schema/font'
+import { image, music } from '@kobato/db/schema/media'
+import { storageMigration } from '@kobato/db/schema/storage-migration'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { decryptIfNeeded, encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 import {
   createS3BackendFromConfig,
   validateS3Config,
   type S3ValidationResult,
-} from '@kobato/server/infra/storage/backends/s3.ts'
-import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storage/key-policy.ts'
-import { backendFor } from '@kobato/server/infra/storage/registry.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/storage/backends/s3'
+import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storage/key-policy'
+import { backendFor } from '@kobato/server/infra/storage/registry'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { eq } from 'drizzle-orm'
 
 const log = getLogger('storage.migration.task')

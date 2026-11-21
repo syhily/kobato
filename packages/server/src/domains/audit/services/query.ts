@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clampDateToRetention, parseDate } from '@kobato/server/domains/audit/projection.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { auditLog } from '@kobato/db/schema/config'
+import { user } from '@kobato/db/schema/user'
+import { clampDateToRetention, parseDate } from '@kobato/server/domains/audit/projection'
+import { idFromString } from '@kobato/utils/id'
 import { and, count, desc, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
 
 export interface AuditLogFilterInput {

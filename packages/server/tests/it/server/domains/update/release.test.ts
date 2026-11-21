@@ -1,6 +1,6 @@
-import { get } from '@kobato/server/infra/cache/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
+import { get } from '@kobato/server/infra/cache/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { installFetch, jsonResponse } from '@kobato/test/fetch'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
@@ -23,7 +23,7 @@ async function waitForCached(): Promise<void> {
   })
 }
 
-const { fetchLatestRelease } = await import('@kobato/server/domains/update/release.ts')
+const { fetchLatestRelease } = await import('@kobato/server/domains/update/release')
 
 describe('update/release — fetchLatestRelease cache', () => {
   const mockFetch = installFetch()

@@ -1,4 +1,4 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 
 import { renderToStaticMarkup } from 'react-dom/server'

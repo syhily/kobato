@@ -1,17 +1,17 @@
 import type { RouteObject } from 'react-router'
 
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
-import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-import PublicLayoutRoute, { ErrorBoundary } from '@/routes/public/layout.tsx'
+import PublicLayoutRoute, { ErrorBoundary } from '@/routes/public/layout'
 
 const testQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },

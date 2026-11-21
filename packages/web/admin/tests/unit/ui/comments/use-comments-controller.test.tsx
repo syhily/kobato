@@ -1,10 +1,10 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { makeAdminComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {
   type CommentFilterFieldKey,
   buildCommentFilterFields,
@@ -13,7 +13,7 @@ import {
   parseTextFilter,
   textFilterLabel as textFilterLabelBase,
   type TextFilterValue,
-} from '@kobato/web-admin/ui/comments/filter-fields.ts'
+} from '@kobato/web-admin/ui/comments/filter-fields'
 import {
   approveCommentInPages,
   clearDeleteRequestInPages,
@@ -22,10 +22,10 @@ import {
   useCommentsController,
   type AdminCommentsData,
   type AdminCommentsPage,
-} from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
-import { type SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/web-admin/ui/comments/use-comments-controller'
+import { type SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 

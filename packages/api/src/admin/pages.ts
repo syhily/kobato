@@ -1,5 +1,5 @@
-import { revisionContract } from '@kobato/api/admin/revision.ts'
-import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base.ts'
+import { revisionContract } from '@kobato/api/admin/revision'
+import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base'
 import {
   adminPageDetailDto,
   adminPageIdInput,
@@ -9,8 +9,8 @@ import {
   listPagesOutputDto,
   listPagesSchema,
   upsertPageMetaSchema,
-} from '@kobato/contracts/pages.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/pages'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminPagesContract = {

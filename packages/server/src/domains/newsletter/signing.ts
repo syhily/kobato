@@ -1,4 +1,4 @@
-import { serverConfig } from '@kobato/server/infra/config.ts'
+import { serverConfig } from '@kobato/server/infra/config'
 import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto'
 
 const HKDF_SALT = 'kobato-newsletter-unsubscribe-salt'

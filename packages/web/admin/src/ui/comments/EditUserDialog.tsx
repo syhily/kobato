@@ -1,8 +1,8 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { AdminUserUpdateInput } from '@kobato/contracts/users.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminUserUpdateInput } from '@kobato/contracts/users'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { Checkbox } from '@kobato/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idStr } from '@kobato/utils/id.ts'
-import { buildUserUpdatePayload } from '@kobato/web-admin/ui/users/user-update-payload.ts'
-import { orpc } from '@kobato/web-client/api/client.ts'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { idStr } from '@kobato/utils/id'
+import { buildUserUpdatePayload } from '@kobato/web-admin/ui/users/user-update-payload'
+import { orpc } from '@kobato/web-client/api/client'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

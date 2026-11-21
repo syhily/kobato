@@ -1,11 +1,11 @@
 import { TZDate } from '@date-fns/tz'
-import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
+import { getLogger } from '@kobato/server/infra/logger'
+import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { addDays, addMonths, isAfter } from 'date-fns'
 
 export function computeNextRun(

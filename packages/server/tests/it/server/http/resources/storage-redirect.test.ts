@@ -1,15 +1,15 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { __setStorageDirForTests } from '@kobato/server/infra/data-paths.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { __setStorageDirForTests } from '@kobato/server/infra/data-paths'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage.ts')
+const { localStorageRouter } = await import('@kobato/server/http/resources/local-storage')
 
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {

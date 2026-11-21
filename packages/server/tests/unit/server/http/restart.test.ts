@@ -6,7 +6,7 @@ import {
   setHttpServer,
   setRestartApp,
   setServerPhase,
-} from '@kobato/server/infra/lifecycle.ts'
+} from '@kobato/server/infra/lifecycle'
 import { Server as NodeHttpServer } from 'node:http'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

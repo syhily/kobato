@@ -1,5 +1,5 @@
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api'
-import { isInMemoryPath } from '@kobato/db/database.ts'
+import { isInMemoryPath } from '@kobato/db/database'
 import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'

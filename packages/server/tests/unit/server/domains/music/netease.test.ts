@@ -1,6 +1,6 @@
-import type { ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
+import type { ProviderTrack } from '@kobato/server/domains/music/providers/types'
 
-import { encryptId, neteaseProvider } from '@kobato/server/domains/music/providers/netease.ts'
+import { encryptId, neteaseProvider } from '@kobato/server/domains/music/providers/netease'
 import { describe, expect, it, vi } from 'vitest'
 
 function mockFetch(response: unknown) {

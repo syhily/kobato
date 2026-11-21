@@ -20,7 +20,7 @@ import {
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
-} from '@kobato/contracts/comments.ts'
+} from '@kobato/contracts/comments'
 import { oc } from '@orpc/contract'
 
 export const commentsPublicContract = {

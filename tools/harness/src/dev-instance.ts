@@ -1,7 +1,7 @@
-import type { ExitState } from '@kobato/harness/process.ts'
+import type { ExitState } from '@kobato/harness/process'
 import type { ChildProcess } from 'node:child_process'
 
-import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from '@kobato/harness/process.ts'
+import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from '@kobato/harness/process'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'

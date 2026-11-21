@@ -1,4 +1,4 @@
-import { CONFIG_TABLE } from '@kobato/server/infra/config.ts'
+import { CONFIG_TABLE } from '@kobato/server/infra/config'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

@@ -1,6 +1,6 @@
-import { render } from '@kobato/server/infra/email/render.tsx'
-import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription.tsx'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { render } from '@kobato/server/infra/email/render'
+import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
 

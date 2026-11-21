@@ -1,8 +1,8 @@
-import type { DuckDBLogger } from '@kobato/db/duckdb/database.ts'
+import type { DuckDBLogger } from '@kobato/db/duckdb/database'
 
 import { DuckDBInstance } from '@duckdb/node-api'
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
+import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

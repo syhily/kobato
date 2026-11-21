@@ -1,15 +1,15 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SiteIdentitySettings } from '@kobato/settings/types'
 
-import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
-import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
-import { publishLocaleChange } from '@kobato/web-client/lib/locale-sync.ts'
-import { LocaleSyncProvider } from '@kobato/web-public/ui/lib/LocaleSyncProvider.tsx'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm'
+import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
+import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel'
+import { publishLocaleChange } from '@kobato/web-client/lib/locale-sync'
+import { LocaleSyncProvider } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,7 +17,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 const commit = vi.hoisted(() => vi.fn())
 const reload = vi.fn()
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

@@ -1,9 +1,9 @@
-import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/contracts/analytics.ts'
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { METRIC_TYPE_LABEL_IDS, metricValueLabelId } from '@kobato/web-admin/ui/analytics/metric-labels.ts'
+import { METRIC_TYPES, type Filters, type MetricType } from '@kobato/contracts/analytics'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { METRIC_TYPE_LABEL_IDS, metricValueLabelId } from '@kobato/web-admin/ui/analytics/metric-labels'
 import { XIcon } from 'lucide-react'
 
 export interface FiltersBarProps {

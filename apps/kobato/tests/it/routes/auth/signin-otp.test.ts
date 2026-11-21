@@ -1,20 +1,20 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { Mock } from 'vitest'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { user, verification } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { createCaptureMailFixture, parseMail } from '@kobato/server/tests/utils/capture-mail.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeSession } from '@kobato/server/tests/utils/session.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { makeRouteContext } from '@tests/utils/context.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { user, verification } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { createCaptureMailFixture, parseMail } from '@kobato/server/tests/utils/capture-mail'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { makeRouteContext } from '@tests/utils/context'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -43,7 +43,7 @@ const OTP_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { action } = await import('@/routes/auth/signin.tsx')
+const { action } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

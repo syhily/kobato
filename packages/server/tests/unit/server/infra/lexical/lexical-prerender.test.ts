@@ -7,7 +7,7 @@ vi.mock('katex', () => ({
   },
 }))
 vi.mock('katex/contrib/mhchem', () => ({}))
-vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/shiki', () => ({
   SHIKI_THEMES: { light: 'github-light', dark: 'github-dark' },
   SHIKI_SUPPORTED_LANGUAGES: new Set(['typescript', 'text']),
   createShikiHighlighter: () =>
@@ -18,9 +18,9 @@ vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
   shikiTransformers: () => [],
 }))
 
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 
 function parse(state: unknown) {
   return lexicalEditorStateSchema.parse(state)

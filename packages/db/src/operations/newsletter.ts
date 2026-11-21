@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { NewNewsletterSubscriber, NewsletterSubscriberRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { NewNewsletterSubscriber, NewsletterSubscriberRow } from '@kobato/db/types'
 
-import { newsletterSubscriber } from '@kobato/db/schema/newsletter.ts'
+import { newsletterSubscriber } from '@kobato/db/schema/newsletter'
 import { eq } from 'drizzle-orm'
 
 export async function findSubscriberByEmail(db: Database, email: string): Promise<NewsletterSubscriberRow | null> {

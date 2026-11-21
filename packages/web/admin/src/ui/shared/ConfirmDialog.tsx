@@ -7,9 +7,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@kobato/ui/components/alert-dialog.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/ui/components/alert-dialog'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 

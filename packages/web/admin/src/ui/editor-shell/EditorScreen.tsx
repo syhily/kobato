@@ -1,25 +1,25 @@
-import type { SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts'
-import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
+import type { SaveBodyInput, SaveBodyOutput } from '@kobato/contracts/revision'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft'
+import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft'
 import type {
   EntityLike,
   RevisionLike,
   UseEditorShellStateOutput,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
-import type { MetaSidebarSlotProps } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel.tsx'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
+import type { MetaSidebarSlotProps } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel'
 import type { NavigateFunction } from 'react-router'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { CreateModeBanner } from '@kobato/web-admin/ui/editor-meta/CreateModeBanner.tsx'
-import { TitleSlugStrip } from '@kobato/web-admin/ui/editor-meta/TitleSlugStrip.tsx'
-import { ActionBanner } from '@kobato/web-admin/ui/editor-shell/ActionBanner.tsx'
-import { DraftConflictDialog } from '@kobato/web-admin/ui/editor-shell/DraftConflictDialog.tsx'
-import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel.tsx'
-import { EditorToolbar } from '@kobato/web-admin/ui/editor-shell/EditorToolbar.tsx'
-import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
-import { PageBodyEditor } from '@kobato/web-admin/ui/editor/PageBodyEditor.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { CreateModeBanner } from '@kobato/web-admin/ui/editor-meta/CreateModeBanner'
+import { TitleSlugStrip } from '@kobato/web-admin/ui/editor-meta/TitleSlugStrip'
+import { ActionBanner } from '@kobato/web-admin/ui/editor-shell/ActionBanner'
+import { DraftConflictDialog } from '@kobato/web-admin/ui/editor-shell/DraftConflictDialog'
+import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel'
+import { EditorToolbar } from '@kobato/web-admin/ui/editor-shell/EditorToolbar'
+import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state'
+import { PageBodyEditor } from '@kobato/web-admin/ui/editor/PageBodyEditor'
 import { useMemo } from 'react'
 
 export interface EditorScreenEntity extends EntityLike {

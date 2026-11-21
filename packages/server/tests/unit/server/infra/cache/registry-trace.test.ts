@@ -1,4 +1,4 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
@@ -17,14 +17,14 @@ const fileStoreMock = vi.hoisted(() => ({
   trashBucketSync: vi.fn<(bucket: string) => void>(),
 }))
 
-vi.mock('@kobato/server/infra/cache/file-store.ts', () => fileStoreMock)
+vi.mock('@kobato/server/infra/cache/file-store', () => fileStoreMock)
 
-import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
-import { get, through } from '@kobato/server/infra/cache/registry.ts'
-import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test/in-memory-metric-reader.ts'
+import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
+import { get, through } from '@kobato/server/infra/cache/registry'
+import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade'
+import { METRIC } from '@kobato/server/infra/trace/metrics'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test/in-memory-metric-reader'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

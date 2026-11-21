@@ -1,8 +1,8 @@
-import { adminTagsContract } from '@kobato/api/admin/tags.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server/domains/taxonomies/tags/service.ts'
-import { implementAdmin, implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { adminTagsContract } from '@kobato/api/admin/tags'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server/domains/taxonomies/tags/service'
+import { implementAdmin, implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const authorImpl = implementAuthor(adminTagsContract)
 const adminImpl = implementAdmin(adminTagsContract)

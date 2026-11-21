@@ -56,7 +56,7 @@ const sharpMock = vi.hoisted(() => {
 
 vi.mock('sharp', () => ({ default: sharpMock.fn }))
 
-vi.mock('@kobato/utils/thumbhash.ts', () => ({
+vi.mock('@kobato/utils/thumbhash', () => ({
   rgbaToThumbHash: () => new Uint8Array([0, 1, 2, 3]),
 }))
 
@@ -70,7 +70,7 @@ vi.mock('node:worker_threads', () => ({
 
 async function importWorker() {
   vi.resetModules()
-  await import('@kobato/server/infra/image/process-worker.ts')
+  await import('@kobato/server/infra/image/process-worker')
 }
 
 beforeEach(() => {

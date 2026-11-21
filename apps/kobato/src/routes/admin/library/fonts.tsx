@@ -1,7 +1,7 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { FontsView } from '@kobato/web-admin/ui/fonts/FontsView.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { FontsView } from '@kobato/web-admin/ui/fonts/FontsView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('admin')
 

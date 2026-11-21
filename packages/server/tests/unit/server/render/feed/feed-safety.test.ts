@@ -1,7 +1,7 @@
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
-import { escapeCdataPayload, sanitizeFeedHtml } from '@kobato/server/render/feed/generator.tsx'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
+import { escapeCdataPayload, sanitizeFeedHtml } from '@kobato/server/render/feed/generator'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 describe('feed-safety', () => {

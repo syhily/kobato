@@ -1,7 +1,7 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AdminImageDto } from '@kobato/contracts/images'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatBytes, formatDateTime } from '@kobato/utils/format.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatBytes, formatDateTime } from '@kobato/utils/format'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 

@@ -1,4 +1,4 @@
-import type { PublishState } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { PublishState } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
 import { useEffect } from 'react'
 

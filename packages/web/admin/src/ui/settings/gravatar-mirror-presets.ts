@@ -1,7 +1,7 @@
-import type { GravatarMirrorUrl } from '@kobato/assets/gravatar.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { GravatarMirrorUrl } from '@kobato/assets/gravatar'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar.ts'
+import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar'
 
 const MIRROR_LABEL_KEYS = {
   'https://www.gravatar.com/avatar': 'admin.settings.comments.avatar.mirrorPreset.gravatarOfficial',

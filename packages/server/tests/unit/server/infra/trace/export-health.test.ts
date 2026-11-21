@@ -5,7 +5,7 @@ import {
   lastExportFailure,
   observeExporter,
   recordExportOutcome,
-} from '@kobato/server/infra/trace/export-health.ts'
+} from '@kobato/server/infra/trace/export-health'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 afterEach(() => {

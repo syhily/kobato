@@ -1,12 +1,12 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { AdminCommentsData, StatusCounts } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminCommentsData, StatusCounts } from '@kobato/web-admin/ui/comments/use-comments-controller'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
 import {
   approveCommentInPages,
   removeCommentFromPages,
   updateCommentBodyInPages,
-} from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+} from '@kobato/web-admin/ui/comments/use-comments-controller'
 import { describe, expect, it } from 'vitest'
 
 const mockBody = makeCommentBody('hello')

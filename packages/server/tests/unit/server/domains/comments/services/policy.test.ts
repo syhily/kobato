@@ -7,7 +7,7 @@ import {
   decideContentGate,
   decideEmailGate,
   decideOwnEdit,
-} from '@kobato/server/domains/comments/services/policy.ts'
+} from '@kobato/server/domains/comments/services/policy'
 import { describe, expect, it } from 'vitest'
 
 describe('decideOwnEdit — 30-minute grace window', () => {

@@ -1,6 +1,6 @@
-import { Input } from '@kobato/ui/components/input.tsx'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { Input } from '@kobato/ui/components/input'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SettingsRow', () => {

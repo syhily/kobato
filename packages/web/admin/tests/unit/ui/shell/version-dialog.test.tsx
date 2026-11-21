@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update.ts'
+import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update'
 
-import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
-import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { installFetch, jsonResponse } from '@kobato/test/fetch'
+import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -12,7 +12,7 @@ const mockFetch = installFetch()
 
 // testDefine pins a -dev version; the update flow only runs on release
 // builds, so this file simulates one.
-vi.mock('@kobato/distribution/app.ts', () => ({
+vi.mock('@kobato/distribution/app', () => ({
   APP_NAME: 'kobato',
   APP_VERSION: '6.4.0',
   APP_DESCRIPTION: 'a test blog',
@@ -21,9 +21,9 @@ vi.mock('@kobato/distribution/app.ts', () => ({
   APP_REPOSITORY: 'https://github.com/syhily/kobato',
 }))
 
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
 
-const { VersionDialog } = await import('@kobato/web-admin/ui/shell/VersionDialog.tsx')
+const { VersionDialog } = await import('@kobato/web-admin/ui/shell/VersionDialog')
 
 const noop = () => undefined
 

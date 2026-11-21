@@ -5,7 +5,10 @@
   "type": "module",
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json",
-    "./src/*": "./src/*"
+    "./src/*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "dependencies": {
     "@kobato/distribution": "workspace:*",

@@ -1,11 +1,10 @@
-import type { AuditLogRow } from '@kobato/db/schema/config.ts'
+import type { AuditLogRow } from '@kobato/db/schema/config'
 
 import { describe, expect, it } from 'vitest'
 
-const { parseDate, clampDateToRetention, toAuditLogItemDto } =
-  await import('@kobato/server/domains/audit/projection.ts')
-const { buildAuditLogWhere } = await import('@kobato/server/domains/audit/services/query.ts')
-const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller.ts')
+const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@kobato/server/domains/audit/projection')
+const { buildAuditLogWhere } = await import('@kobato/server/domains/audit/services/query')
+const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller')
 
 describe('audit/controller helpers', () => {
   describe('parseDate', () => {

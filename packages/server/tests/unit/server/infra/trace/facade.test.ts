@@ -14,7 +14,7 @@ import {
   type Span,
   type SpanOptions,
   type TraceDelegate,
-} from '@kobato/server/infra/trace/facade.ts'
+} from '@kobato/server/infra/trace/facade'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface SpanState {

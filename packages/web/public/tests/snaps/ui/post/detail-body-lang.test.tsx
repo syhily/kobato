@@ -1,8 +1,8 @@
-import type { DetailPageComments } from '@kobato/contracts/comments.ts'
+import type { DetailPageComments } from '@kobato/contracts/comments'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { DetailBodyChrome } from '@kobato/web-public/ui/post/DetailBodyChrome.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { DetailBodyChrome } from '@kobato/web-public/ui/post/DetailBodyChrome'
 import { describe, expect, it } from 'vitest'
 
 const siteIdentity = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!

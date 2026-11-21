@@ -1,15 +1,12 @@
-import { adminUsersSessionsContract } from '@kobato/api/admin/users.ts'
-import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { listAllSessions } from '@kobato/server/domains/auth/services/sessions.ts'
-import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@kobato/server/domains/auth/session-guard.ts'
-import {
-  bulkApproveCommentsByUser,
-  bulkDeleteCommentsByUser,
-} from '@kobato/server/domains/comments/services/moderate.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { adminUsersSessionsContract } from '@kobato/api/admin/users'
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { listAllSessions } from '@kobato/server/domains/auth/services/sessions'
+import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@kobato/server/domains/auth/session-guard'
+import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@kobato/server/domains/comments/services/moderate'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminUsersSessionsContract)
 

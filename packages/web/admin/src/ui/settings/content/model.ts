@@ -1,5 +1,5 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { ContentSettings } from '@kobato/settings/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { ContentSettings } from '@kobato/settings/types'
 
 export interface ContentFormProps {
   content: ContentSettings

@@ -1,11 +1,11 @@
 import type { SQL } from 'drizzle-orm'
 
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post'
 import {
   liveContentWhere,
   promotedContentWhere,
   type LiveContentOptions,
-} from '@kobato/server/domains/content/schemas/live-gate.ts'
+} from '@kobato/server/domains/content/schemas/live-gate'
 
 export function livePostWhere(options?: LiveContentOptions): SQL {
   return liveContentWhere(

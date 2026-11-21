@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm'
 
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { liveContentWhere, type LiveContentOptions } from '@kobato/server/domains/content/schemas/live-gate.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { liveContentWhere, type LiveContentOptions } from '@kobato/server/domains/content/schemas/live-gate'
 
 export function livePageWhere(options?: LiveContentOptions): SQL {
   return liveContentWhere(

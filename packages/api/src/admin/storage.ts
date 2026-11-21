@@ -2,7 +2,7 @@ import {
   adminStorageStartMigrationInput,
   adminStorageStatsOutputDto,
   storageMigrationStatusDto,
-} from '@kobato/contracts/storage.ts'
+} from '@kobato/contracts/storage'
 import { oc } from '@orpc/contract'
 
 export const adminStorageContract = {

@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./*.css": "./src/*.css",
+    "./tests/*": "./tests/*",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@dnd-kit/core": "catalog:",
@@ -50,7 +55,6 @@
     "react-day-picker": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
-    "react-intl": "catalog:",
     "react-router": "catalog:",
     "sonner": "catalog:",
     "vitest": "catalog:",

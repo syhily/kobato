@@ -1,11 +1,11 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
-import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events.ts'
-import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration.ts'
-import { openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/db/tests/utils/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
+import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events'
+import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration'
+import { openAnalyticsDatabase } from '@kobato/db/duckdb/database'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/db/tests/utils/analytics-db'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

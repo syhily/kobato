@@ -2,8 +2,8 @@
 
 import type { ReactElement, ReactNode } from 'react'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { act, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -15,8 +15,7 @@ function render(ui: ReactElement) {
   })
 }
 
-const { LazyNotificationsDrawer } =
-  await import('@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer.tsx')
+const { LazyNotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer')
 
 beforeEach(() => {
   control.query.data = { count: 0 }
@@ -38,7 +37,7 @@ describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
   })
 
   it('mounts the drawer on first open and keeps it mounted after close', async () => {
-    await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
+    await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer')
 
     const { rerender } = render(
       <LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />,

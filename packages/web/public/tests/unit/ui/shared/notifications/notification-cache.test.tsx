@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications.ts'
+import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications'
 import type { ReactElement, ReactNode } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -48,9 +48,9 @@ vi.mock('@tanstack/react-query', async () => {
   }
 })
 
-const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
-const { patchNotificationReadState } = await import('@kobato/web-public/ui/shared/notifications/use-notifications.ts')
+const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer')
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
+const { patchNotificationReadState } = await import('@kobato/web-public/ui/shared/notifications/use-notifications')
 
 function render(ui: ReactElement) {
   return rtlRender(ui, {

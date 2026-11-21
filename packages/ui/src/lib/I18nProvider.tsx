@@ -1,8 +1,8 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ReactNode } from 'react'
 
-import { getLogger } from '@kobato/ui/lib/logger.ts'
+import { getLogger } from '@kobato/ui/lib/logger'
 import { createContext, useCallback, useContext } from 'react'
 import { IntlContext, IntlProvider } from 'react-intl'
 

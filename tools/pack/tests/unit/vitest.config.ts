@@ -1,5 +1,5 @@
-import { vitestTestBase } from '@kobato/test/vitest.base.ts'
-import { testDefine } from '@kobato/test/vitest.define.ts'
+import { vitestTestBase } from '@kobato/test/vitest.base'
+import { testDefine } from '@kobato/test/vitest.define'
 import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
 

@@ -1,4 +1,4 @@
-import { parseCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
+import { parseCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token'
 import {
   authedProc,
   commentTokenCookie,
@@ -8,15 +8,15 @@ import {
   passkeyGuard,
   publicProc,
   resourceRateLimit,
-} from '@kobato/server/http/orpc-base.ts'
-import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
-import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+} from '@kobato/server/http/orpc-base'
+import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors'
+import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { oc } from '@orpc/contract'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'

@@ -1,5 +1,5 @@
-import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { requestContext } from '@kobato/server/http/request-context'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const renderToPipeableStreamMock = vi.hoisted(() =>
@@ -17,7 +17,7 @@ vi.mock('@react-router/node', () => ({
   createReadableStreamFromReadable: vi.fn((stream: unknown) => stream),
 }))
 
-const { default: handleRequest } = await import('@/entry.server.tsx')
+const { default: handleRequest } = await import('@/entry.server')
 
 function routerContext(rootLoaderData?: unknown): unknown {
   return {

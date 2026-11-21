@@ -1,5 +1,5 @@
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
-import { InputTemplateSchema } from '@kobato/server/domains/fonts/vendor/gen/api_pb.ts'
+import { InputTemplateSchema } from '@kobato/server/domains/fonts/vendor/gen/api_pb'
 import { describe, expect, it } from 'vitest'
 
 describe('InputTemplate encoder (bufbuild)', () => {

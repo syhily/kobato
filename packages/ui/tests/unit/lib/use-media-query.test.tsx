@@ -1,4 +1,4 @@
-import { useMediaQuery } from '@kobato/ui/lib/use-media-query.ts'
+import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

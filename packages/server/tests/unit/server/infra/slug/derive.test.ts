@@ -1,5 +1,5 @@
-import { deriveSlug } from '@kobato/server/infra/slug/derive.ts'
-import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug.ts'
+import { deriveSlug } from '@kobato/server/infra/slug/derive'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug'
 import { describe, expect, it } from 'vitest'
 
 describe('deriveSlug', () => {

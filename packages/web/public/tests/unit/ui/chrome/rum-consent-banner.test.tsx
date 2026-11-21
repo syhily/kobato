@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { RumConsentBanner } from '@kobato/web-public/ui/chrome/RumConsentBanner.tsx'
+import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { RumConsentBanner } from '@kobato/web-public/ui/chrome/RumConsentBanner'
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

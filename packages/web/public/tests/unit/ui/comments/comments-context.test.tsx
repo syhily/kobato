@@ -3,7 +3,7 @@ import {
   useCommentsIdentity,
   useCommentsReplySlot,
   useCommentsTree,
-} from '@kobato/web-public/ui/comments/comments-context.ts'
+} from '@kobato/web-public/ui/comments/comments-context'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 

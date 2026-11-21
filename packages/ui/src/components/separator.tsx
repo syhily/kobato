@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Separator as BaseSeparator } from '@base-ui/react/separator'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 type SeparatorProps = ComponentProps<typeof BaseSeparator>
 

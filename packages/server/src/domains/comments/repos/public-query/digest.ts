@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityType } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityType } from '@kobato/db/target'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { targetSlugTitleSubquery, type PendingCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { user } from '@kobato/db/schema/user'
+import { targetSlugTitleSubquery, type PendingCommentRow } from '@kobato/server/domains/comments/repos/shared'
+import { idFromString } from '@kobato/utils/id'
 import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm'
 
 export async function pendingComments(db: Database, limit: number): Promise<PendingCommentRow[]> {

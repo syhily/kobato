@@ -1,5 +1,5 @@
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ExternalLinkIcon, XIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

@@ -1,8 +1,8 @@
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import ArchivesRoute from '@/routes/public/archives.tsx'
+import ArchivesRoute from '@/routes/public/archives'
 
 describe('snapshot: routes/public/archives', () => {
   it('renders the archives route with resolved posts', () => {

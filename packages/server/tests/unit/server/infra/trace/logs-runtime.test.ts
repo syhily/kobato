@@ -2,21 +2,21 @@ import type {
   ServerTraceRuntimeConfig,
   TraceConfigResolution,
   TraceLogsRuntimeConfig,
-} from '@kobato/server/infra/trace/config.ts'
+} from '@kobato/server/infra/trace/config'
 import type { LogRecordExporter, ReadableLogRecord } from '@opentelemetry/sdk-logs'
 
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { __resetLogSinkForTests, pushLogLine } from '@kobato/server/infra/logger/sink.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { __resetLogSinkForTests, pushLogLine } from '@kobato/server/infra/logger/sink'
 import {
   __resetTraceFacadeForTests,
   activeTraceIds,
   uninstallTraceDelegate,
   withSpanAsync,
-} from '@kobato/server/infra/trace/facade.ts'
-import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime.ts'
-import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
-import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/facade'
+import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader'
 import { SeverityNumber } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs'

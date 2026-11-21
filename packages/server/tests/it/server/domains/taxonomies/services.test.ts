@@ -1,7 +1,7 @@
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -60,7 +60,7 @@ async function seedPublishedPost(
 
 describe('taxonomies/shared — blocked-delete descriptor', () => {
   it('lists up to 5 titles with an ellipsis and the machine entity kind', async () => {
-    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     let error: unknown
     try {
       await deleteAdminTaxonomy(1, 'tag', {
@@ -81,7 +81,7 @@ describe('taxonomies/shared — blocked-delete descriptor', () => {
   })
 
   it('keeps the preview list unterminated when five or fewer titles reference it', async () => {
-    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     let error: unknown
     try {
       await deleteAdminTaxonomy(1, 'category', {
@@ -100,7 +100,7 @@ describe('taxonomies/shared — blocked-delete descriptor', () => {
 
 describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
   it('throws CONFLICT when name already exists', async () => {
-    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const dupName = async () => ({ id: 1, name: 'X' }) as never
     const noSlug = async () => null
     await expect(ensureUniqueOnCreateTaxonomy(dupName, noSlug, 'X', 'x', 'tag')).rejects.toMatchObject({
@@ -108,7 +108,7 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
     })
   })
   it('throws CONFLICT when slug already exists', async () => {
-    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const noName = async () => null
     const dupSlug = async () => ({ id: 1, name: 'X' }) as never
     await expect(ensureUniqueOnCreateTaxonomy(noName, dupSlug, 'X', 'x', 'tag')).rejects.toMatchObject({
@@ -116,7 +116,7 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
     })
   })
   it('passes when both name and slug are free', async () => {
-    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { ensureUniqueOnCreateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const none = async () => null
     await expect(ensureUniqueOnCreateTaxonomy(none, none, 'X', 'x', 'tag')).resolves.toBeUndefined()
   })
@@ -124,7 +124,7 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
 
 describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
   it('throws CONFLICT when the new name is taken by another row', async () => {
-    const { ensureUniqueOnUpdateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { ensureUniqueOnUpdateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const dupName = async () => ({ id: 2, name: 'X' }) as never
     const none = async () => null
     await expect(ensureUniqueOnUpdateTaxonomy(dupName, none, 1, 'X', 'Old', 'x', 'x', 'tag')).rejects.toMatchObject({
@@ -132,7 +132,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
     })
   })
   it('skips the check when name and slug are unchanged', async () => {
-    const { ensureUniqueOnUpdateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { ensureUniqueOnUpdateTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const dup = async () => ({ id: 2 }) as never
     await expect(
       ensureUniqueOnUpdateTaxonomy(dup, dup, 1, 'Same', 'Same', 'same', 'same', 'tag'),
@@ -142,7 +142,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
 
 describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('returns false when the row does not exist', async () => {
-    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     const r = await deleteAdminTaxonomy(9999, 'tag', {
       findById: async () => null,
       deleteRow: async () => false,
@@ -151,7 +151,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
     expect(r).toBe(false)
   })
   it('throws CONFLICT when posts still reference the taxonomy', async () => {
-    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     await expect(
       deleteAdminTaxonomy(1, 'tag', {
         findById: async () => ({ id: 1, name: 'X' }),
@@ -161,7 +161,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
     ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
   it('deletes when no posts reference it', async () => {
-    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared.ts')
+    const { deleteAdminTaxonomy } = await import('@kobato/server/domains/taxonomies/shared')
     let deleted = false
     const r = await deleteAdminTaxonomy(1, 'tag', {
       findById: async () => ({ id: 1, name: 'X' }),
@@ -178,14 +178,14 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
 
 describe('taxonomies/tags/service — listTagsForAdmin', () => {
   it('returns an empty result when there are no tags', async () => {
-    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service')
     const r = await listTagsForAdmin(db, {})
     expect(r.tags).toEqual([])
     expect(r.total).toBe(0)
   })
   it('returns tags with postCount', async () => {
     await seedTag({ name: 'React', slug: 'react' })
-    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service')
     const r = await listTagsForAdmin(db, {})
     expect(r.tags).toHaveLength(1)
     expect(r.tags[0]?.name).toBe('React')
@@ -194,7 +194,7 @@ describe('taxonomies/tags/service — listTagsForAdmin', () => {
   it('filters by q against name', async () => {
     await seedTag({ name: 'React', slug: 'react' })
     await seedTag({ name: 'Vue', slug: 'vue' })
-    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listTagsForAdmin } = await import('@kobato/server/domains/taxonomies/tags/service')
     const r = await listTagsForAdmin(db, { q: 'React' })
     expect(r.total).toBe(1)
   })
@@ -202,14 +202,14 @@ describe('taxonomies/tags/service — listTagsForAdmin', () => {
 
 describe('taxonomies/tags/service — upsertAdminTag (create)', () => {
   it('creates a new tag', async () => {
-    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     const dto = await upsertAdminTag(db, { name: 'NewTag' })
     expect(dto.name).toBe('NewTag')
     expect(dto.slug).toBe('newtag')
   })
   it('rejects a duplicate name', async () => {
     await seedTag({ name: 'Dup', slug: 'dup' })
-    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     await expect(upsertAdminTag(db, { name: 'Dup' })).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 })
@@ -217,19 +217,19 @@ describe('taxonomies/tags/service — upsertAdminTag (create)', () => {
 describe('taxonomies/tags/service — upsertAdminTag (update)', () => {
   it('updates an existing tag', async () => {
     const id = await seedTag({ name: 'Old', slug: 'old' })
-    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     const dto = await upsertAdminTag(db, { id, name: 'New' })
     expect(dto.name).toBe('New')
   })
   it('rejects update from a non-admin viewer', async () => {
     const id = await seedTag({ name: 'X', slug: 'x' })
-    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     await expect(upsertAdminTag(db, { id, name: 'Y' }, { id: '1', role: 'author' })).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
   })
   it('throws NOT_FOUND when id does not exist', async () => {
-    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     await expect(upsertAdminTag(db, { id: 9999, name: 'X' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
@@ -239,14 +239,14 @@ describe('taxonomies/tags/service — upsertAdminTag (update)', () => {
 describe('taxonomies/tags/service — deleteAdminTag', () => {
   it('deletes an unreferenced tag', async () => {
     const id = await seedTag({ name: 'Del', slug: 'del' })
-    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     expect(await deleteAdminTag(db, id)).toBe(true)
   })
   it('refuses to delete when posts reference the tag', async () => {
     const id = await seedTag({ name: 'Ref', slug: 'ref' })
     const pid = await seedPublishedPost()
     await db.insert(postTag).values({ postId: pid, tagId: id })
-    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     await expect(deleteAdminTag(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
   it('blocks on hidden + scheduled references and names them', async () => {
@@ -260,7 +260,7 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
       { postId: hiddenPid, tagId: id },
       { postId: scheduledPid, tagId: id },
     ])
-    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     const error = await deleteAdminTag(db, id).catch((e: unknown) => e)
     expect(error).toMatchObject({ code: 'CONFLICT' })
     expect((error as Error).message).toContain('Hidden Post')
@@ -270,14 +270,14 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
 
 describe('taxonomies/tags/service — listAllTags', () => {
   it('returns an empty list when no tags exist', async () => {
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     expect(await listAllTags(db)).toEqual([])
   })
   it('returns tags with post counts', async () => {
     const t1 = await seedTag({ name: 'React', slug: 'react' })
     const pid = await seedPublishedPost()
     await db.insert(postTag).values({ postId: pid, tagId: t1 })
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
     expect(tags[0]?.name).toBe('React')
     expect(tags[0]?.counts).toBe(1)
@@ -286,14 +286,14 @@ describe('taxonomies/tags/service — listAllTags', () => {
 
 describe('taxonomies/tags/service — getTagsByNames', () => {
   it('returns an empty array for empty input', async () => {
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     expect(await getTagsByNames(db, [])).toEqual([])
   })
   it('returns tags filtered by names with counts', async () => {
     const t1 = await seedTag({ name: 'React', slug: 'react' })
     const pid = await seedPublishedPost()
     await db.insert(postTag).values({ postId: pid, tagId: t1 })
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['React', 'Unknown'])
     expect(tags).toHaveLength(1)
     expect(tags[0]?.name).toBe('React')
@@ -301,28 +301,28 @@ describe('taxonomies/tags/service — getTagsByNames', () => {
   })
   it('returns [] when none of the names match', async () => {
     await seedTag({ name: 'A', slug: 'a' })
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     expect(await getTagsByNames(db, ['Unknown'])).toEqual([])
   })
 })
 
 describe('taxonomies/categories/services/mutate — upsertAdminCategory (create)', () => {
   it('creates a new category', async () => {
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     const dto = await upsertAdminCategory(db, { name: 'Tech', cover: '/c.png', description: '' })
     expect(dto.name).toBe('Tech')
     expect(dto.slug).toBe('tech')
   })
   it('rejects a duplicate name', async () => {
     await seedCategory({ name: 'Dup', slug: 'dup' })
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(upsertAdminCategory(db, { name: 'Dup', cover: '', description: '' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
   it('rejects a duplicate slug', async () => {
     await seedCategory({ name: 'Other', slug: 'taken' })
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(
       upsertAdminCategory(db, { name: 'New', slug: 'taken', cover: '', description: '' }),
     ).rejects.toMatchObject({
@@ -334,12 +334,12 @@ describe('taxonomies/categories/services/mutate — upsertAdminCategory (create)
 describe('taxonomies/categories/services/mutate — upsertAdminCategory (update)', () => {
   it('updates an existing category', async () => {
     const id = await seedCategory({ name: 'Old', slug: 'old' })
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     const dto = await upsertAdminCategory(db, { id, name: 'New', cover: '/c.png', description: '' })
     expect(dto.name).toBe('New')
   })
   it('throws NOT_FOUND when id does not exist', async () => {
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(upsertAdminCategory(db, { id: 9999, name: 'X', cover: '', description: '' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
@@ -347,7 +347,7 @@ describe('taxonomies/categories/services/mutate — upsertAdminCategory (update)
   it('rejects a name collision with another row', async () => {
     const id = await seedCategory({ name: 'A', slug: 'a' })
     await seedCategory({ name: 'B', slug: 'b' })
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(upsertAdminCategory(db, { id, name: 'B', cover: '', description: '' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -358,21 +358,21 @@ describe('taxonomies/categories/services/mutate — reorderAdminCategories', () 
   it('reorders categories by orderedIds', async () => {
     const a = await seedCategory({ name: 'A', slug: 'a', sortOrder: 0 })
     const b = await seedCategory({ name: 'B', slug: 'b', sortOrder: 1 })
-    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     const rows = await reorderAdminCategories(db, [String(b), String(a)])
     expect(rows[0]?.name).toBe('B')
     expect(rows[1]?.name).toBe('A')
   })
   it('rejects duplicate ids', async () => {
     const a = await seedCategory({ name: 'A', slug: 'aa' })
-    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(reorderAdminCategories(db, [String(a), String(a)])).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
   })
   it('rejects when the live list differs from the requested ids', async () => {
     const a = await seedCategory({ name: 'A', slug: 'aaa' })
-    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { reorderAdminCategories } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(reorderAdminCategories(db, [String(a), '9999'])).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -382,27 +382,27 @@ describe('taxonomies/categories/services/mutate — reorderAdminCategories', () 
 describe('taxonomies/categories/services/mutate — deleteAdminCategory', () => {
   it('deletes an unreferenced category', async () => {
     const id = await seedCategory({ name: 'Del', slug: 'del' })
-    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     expect(await deleteAdminCategory(db, id)).toBe(true)
   })
   it('refuses to delete when posts reference it', async () => {
     const id = await seedCategory({ name: 'Tech', slug: 'tech2' })
     await seedPublishedPost(id)
-    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await expect(deleteAdminCategory(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
   it('blocks on hidden + scheduled references and names them in the 409 body', async () => {
     const id = await seedCategory({ name: 'Tech', slug: 'tech3' })
     await seedPublishedPost(id, { title: 'Hidden Post', visible: false })
     await seedPublishedPost(id, { title: 'Scheduled Post', publishedAt: new Date('2099-01-01') })
-    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     const error = await deleteAdminCategory(db, id).catch((e: unknown) => e)
     expect(error).toMatchObject({ code: 'CONFLICT' })
     expect((error as Error).message).toContain('Hidden Post')
     expect((error as Error).message).toContain('Scheduled Post')
   })
   it('returns false when the category does not exist', async () => {
-    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { deleteAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     expect(await deleteAdminCategory(db, 9999)).toBe(false)
   })
 })
@@ -412,10 +412,10 @@ describe('taxonomies/categories — rename cascades to posts with zero post writ
     const id = await seedCategory({ name: 'Old', slug: 'rename-me' })
     const pid = await seedPublishedPost(id, { title: 'Rename Probe' })
     const before = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await upsertAdminCategory(db, { id, name: 'New', cover: '', description: '' })
-    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
-    const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate.ts')
+    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query')
+    const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const metas = await listPublicPosts(db, { categoryId: id })
     const posts = await hydratePostList(db, metas)
     expect(posts[0]?.category).toBe('New')

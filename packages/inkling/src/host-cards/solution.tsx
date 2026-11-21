@@ -20,14 +20,14 @@ import {
   SOLUTION_CARD_CLASSES,
   SOLUTION_CARD_PROPERTIES,
   SOLUTION_NESTED_EDITOR,
-} from '@kobato/inkling-internal/headless/cards/solution.ts'
-import { SOLUTION_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
-import { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches.ts'
+} from '@kobato/inkling-internal/headless/cards/solution'
+import { SOLUTION_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
+import { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches'
 import { BASIC_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
 import { generateDecoratorNode } from '@kobato/inkling-internal/nodes/base/generate-decorator-node'
 import { defineCard } from '@kobato/inkling-internal/nodes/cards/host-cards'
 import EDITOR_BASE_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ListTreeIcon } from 'lucide-react'
 
 const solutionNestedEditors = [

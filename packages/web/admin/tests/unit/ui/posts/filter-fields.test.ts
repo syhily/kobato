@@ -1,4 +1,4 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   buildPostFilterFields as buildPostFilterFieldsBase,
   deriveStatusFields,
@@ -6,12 +6,12 @@ import {
   postFiltersFromSearch as postFiltersFromSearchBase,
   postFiltersToSearch,
   syncPostFiltersFromUrl as syncPostFiltersFromUrlBase,
-} from '@kobato/web-admin/ui/posts/filter-fields.ts'
+} from '@kobato/web-admin/ui/posts/filter-fields'
 import {
   filterPillsReducer,
   type ActiveFilter,
   type FilterPillsAction,
-} from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import { describe, expect, it, vi } from 'vitest'
 
 const buildPostFilterFields = (sources: Parameters<typeof buildPostFilterFieldsBase>[0]) =>

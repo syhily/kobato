@@ -1,4 +1,4 @@
-import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
+import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'
 import { describe, expect, it } from 'vitest'
 
 describe('webmentionBackoffMs', () => {

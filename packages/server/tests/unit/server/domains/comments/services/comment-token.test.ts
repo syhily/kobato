@@ -2,7 +2,7 @@ import {
   parseCommentTokensCookie,
   serializeCommentTokensCookie,
   type CommentTokenCookie,
-} from '@kobato/server/domains/comments/services/comment-token.ts'
+} from '@kobato/server/domains/comments/services/comment-token'
 import { describe, expect, it } from 'vitest'
 
 describe('domains/comments/services — comment token cookie utilities', () => {

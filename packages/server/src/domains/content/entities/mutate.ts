@@ -1,26 +1,26 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
   MetaRowBase,
   UpsertMetaInputBase,
-} from '@kobato/server/domains/content/entities/descriptor.ts'
+} from '@kobato/server/domains/content/entities/descriptor'
 
 import {
   deleteSlugRegistryByEntity,
   insertSlugRegistry,
   updateSlugRegistryByEntity,
-} from '@kobato/db/operations/slug-registry.ts'
-import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish.ts'
-import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
-import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict.ts'
-import { reclaimSlugOnRestore } from '@kobato/server/domains/content/slug-reclaim.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation.ts'
-import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/db/operations/slug-registry'
+import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish'
+import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields'
+import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict'
+import { reclaimSlugOnRestore } from '@kobato/server/domains/content/slug-reclaim'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
   create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>

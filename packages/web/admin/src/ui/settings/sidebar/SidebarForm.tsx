@@ -1,7 +1,7 @@
-import type { SidebarSettings } from '@kobato/settings/types.ts'
+import type { SidebarSettings } from '@kobato/settings/types'
 
-import { DailyQuoteCard } from '@kobato/web-admin/ui/settings/sidebar/DailyQuoteCard.tsx'
-import { SidebarWidgetsCard } from '@kobato/web-admin/ui/settings/sidebar/SidebarWidgetsCard.tsx'
+import { DailyQuoteCard } from '@kobato/web-admin/ui/settings/sidebar/DailyQuoteCard'
+import { SidebarWidgetsCard } from '@kobato/web-admin/ui/settings/sidebar/SidebarWidgetsCard'
 
 export function SidebarForm({ sidebar }: { sidebar: SidebarSettings }) {
   return (

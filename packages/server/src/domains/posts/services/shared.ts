@@ -1,9 +1,9 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
-import type { PostMetaRow } from '@kobato/db/types.ts'
-import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts'
+import type { PostMetaRow } from '@kobato/db/types'
+import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor'
 
-import { canEditPost, type ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { canEditPost, type ViewerIdentity } from '@kobato/server/domains/auth/rbac'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 
 export interface AdminPostsListResult {
   posts: AdminPostDto[]

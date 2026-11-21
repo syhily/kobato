@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { MusicRow, NewMusic } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { MusicRow, NewMusic } from '@kobato/db/types'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list.ts'
-import { music } from '@kobato/db/schema/media.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list'
+import { music } from '@kobato/db/schema/media'
 import { and, asc, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 
 export interface AdminMusicListFilters {

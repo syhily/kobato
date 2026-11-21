@@ -1,11 +1,11 @@
-import type { Post } from '@kobato/catalog/model.ts'
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
-import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
+import type { Post } from '@kobato/catalog/model'
+import type { AdminPostDto } from '@kobato/contracts/posts'
+import type { ContentRow, PostMetaRow } from '@kobato/db/types'
 
-import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection.ts'
-import { readRevisionProjection } from '@kobato/server/domains/content/projection-read.ts'
-import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared.ts'
-import { readStringArray } from '@kobato/server/infra/coerce.ts'
+import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection'
+import { readRevisionProjection } from '@kobato/server/domains/content/projection-read'
+import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared'
+import { readStringArray } from '@kobato/server/infra/coerce'
 
 export function toCmsPost(
   meta: PostMetaRow,

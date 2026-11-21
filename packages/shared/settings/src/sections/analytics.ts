@@ -1,4 +1,4 @@
-import { coerceBoolean } from '@kobato/settings/sections/shared.ts'
+import { coerceBoolean } from '@kobato/settings/sections/shared'
 import { z } from 'zod'
 
 export const analyticsSchema = z.object({

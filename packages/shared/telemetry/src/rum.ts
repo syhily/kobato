@@ -1,4 +1,4 @@
-import { rumClientIdentitySchema } from '@kobato/settings/sections/observability.ts'
+import { rumClientIdentitySchema } from '@kobato/settings/sections/observability'
 import { z } from 'zod'
 
 export const frontendRumBootstrapSchema = z

@@ -1,12 +1,12 @@
-import type { JobRunDto, JobSummaryDto, JobsListDto } from '@kobato/contracts/jobs.ts'
-import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
+import type { JobRunDto, JobSummaryDto, JobsListDto } from '@kobato/contracts/jobs'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage'
 
-import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { RunHistoryRow, RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet.tsx'
-import { TaskCard } from '@kobato/web-admin/ui/jobs/TaskCard.tsx'
-import { TasksView } from '@kobato/web-admin/ui/jobs/TasksView.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { RunHistoryRow, RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet'
+import { TaskCard } from '@kobato/web-admin/ui/jobs/TaskCard'
+import { TasksView } from '@kobato/web-admin/ui/jobs/TasksView'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

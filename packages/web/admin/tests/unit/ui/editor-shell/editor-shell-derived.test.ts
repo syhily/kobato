@@ -1,11 +1,7 @@
-import type {
-  EditorShellDetail,
-  EntityLike,
-  RevisionLike,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { EditorShellDetail, EntityLike, RevisionLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema.ts'
-import { localInputValueToIso, parseLocalDateTimeInput } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema'
+import { localInputValueToIso, parseLocalDateTimeInput } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
@@ -13,7 +9,7 @@ import {
   deriveSidebarPublishStatus,
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived'
 import { describe, expect, it } from 'vitest'
 
 function revision(overrides: Partial<RevisionLike> = {}): RevisionLike {

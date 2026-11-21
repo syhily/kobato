@@ -1,9 +1,9 @@
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const service = await import('@kobato/server/domains/posts/services/mutate.ts')
+const service = await import('@kobato/server/domains/posts/services/mutate')
 
 const db = getTestDb()
 

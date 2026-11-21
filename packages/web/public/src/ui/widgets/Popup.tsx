@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 
-import { EagerAnimatePresence, EagerMotionButton, EagerMotionDiv } from '@kobato/ui/components/lazy-motion.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { transitions } from '@kobato/web-client/lib/motion.ts'
+import { EagerAnimatePresence, EagerMotionButton, EagerMotionDiv } from '@kobato/ui/components/lazy-motion'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { transitions } from '@kobato/web-client/lib/motion'
 import { XIcon } from 'lucide-react'
 import { use, useEffect, useRef, useState } from 'react'
 import { browser, createPortal } from 'react-dom'

@@ -1,10 +1,10 @@
-import { queryCounters } from '@kobato/db/duckdb/queries/counters.ts'
+import { queryCounters } from '@kobato/db/duckdb/queries/counters'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/db/tests/utils/analytics-db.ts'
+} from '@kobato/db/tests/utils/analytics-db'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const handle = await createTestAnalyticsDb()

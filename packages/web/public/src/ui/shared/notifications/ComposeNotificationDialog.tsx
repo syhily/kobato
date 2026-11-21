@@ -1,6 +1,6 @@
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users'
 
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -8,18 +8,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Switch } from '@kobato/ui/components/switch.tsx'
-import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
-import { useInvalidateNotifications } from '@kobato/web-public/ui/shared/notifications/use-notifications.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { Switch } from '@kobato/ui/components/switch'
+import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { useInvalidateNotifications } from '@kobato/web-public/ui/shared/notifications/use-notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckIcon, Loader2Icon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'

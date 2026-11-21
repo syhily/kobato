@@ -1,5 +1,5 @@
-import type { AdminMetaBaseDto } from '@kobato/contracts/content-admin-base.ts'
-import type { MetaRowBase } from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { AdminMetaBaseDto } from '@kobato/contracts/content-admin-base'
+import type { MetaRowBase } from '@kobato/server/domains/content/entities/descriptor'
 
 export type AdminMetaDto = AdminMetaBaseDto
 

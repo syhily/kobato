@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Switch as BaseSwitch } from '@base-ui/react/switch'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 function Switch({ className, ...props }: ComponentProps<typeof BaseSwitch.Root>) {
   return (

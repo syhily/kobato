@@ -1,8 +1,8 @@
-import type { Span } from '@kobato/server/infra/trace/facade.ts'
+import type { Span } from '@kobato/server/infra/trace/facade'
 import type { MiddlewareFunction } from 'react-router'
 
-import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
-import { recordRoutePattern } from '@kobato/server/infra/trace/route-registry.ts'
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade'
+import { recordRoutePattern } from '@kobato/server/infra/trace/route-registry'
 
 const REACT_ROUTER_ROUTE = 'react_router'
 

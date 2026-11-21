@@ -7,7 +7,7 @@ const createHighlighterMock = vi.fn(() =>
   }),
 )
 
-vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/shiki', () => ({
   SHIKI_THEMES: { light: 'solarized-light', dark: 'solarized-dark' },
   createShikiHighlighter: createHighlighterMock,
 }))
@@ -20,7 +20,7 @@ describe('highlightAuditLogDetails', () => {
   })
 
   it('returns null for null details', async () => {
-    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight.ts')
+    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight')
     expect(await highlightAuditLogDetails(null)).toBeNull()
     expect(createHighlighterMock).not.toHaveBeenCalled()
   })
@@ -28,7 +28,7 @@ describe('highlightAuditLogDetails', () => {
   it('highlights JSON details with Shiki', async () => {
     codeToHtmlMock.mockReturnValue('<pre>html</pre>')
 
-    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight.ts')
+    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight')
     const result = await highlightAuditLogDetails({ user: 'alice', action: 'login' })
 
     expect(result).toBe('<pre>html</pre>')
@@ -44,7 +44,7 @@ describe('highlightAuditLogDetails', () => {
   it('returns null when Shiki throws', async () => {
     createHighlighterMock.mockRejectedValue(new Error('shiki failed'))
 
-    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight.ts')
+    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight')
     const result = await highlightAuditLogDetails({ user: 'alice' })
 
     expect(result).toBeNull()
@@ -53,7 +53,7 @@ describe('highlightAuditLogDetails', () => {
   it('shares the highlighter promise across calls', async () => {
     codeToHtmlMock.mockReturnValue('<pre>x</pre>')
 
-    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight.ts')
+    const { highlightAuditLogDetails } = await import('@kobato/server/domains/audit/highlight')
     await highlightAuditLogDetails({ a: 1 })
     await highlightAuditLogDetails({ b: 2 })
 

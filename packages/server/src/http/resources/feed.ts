@@ -1,11 +1,11 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 import type { Context } from 'hono'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
-import { through } from '@kobato/server/infra/cache/registry.ts'
-import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
-import { generateFeeds } from '@kobato/server/render/feed/generator.tsx'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit'
+import { through } from '@kobato/server/infra/cache/registry'
+import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag'
+import { generateFeeds } from '@kobato/server/render/feed/generator'
 import { Hono } from 'hono'
 
 const CONTENT_TYPES = {

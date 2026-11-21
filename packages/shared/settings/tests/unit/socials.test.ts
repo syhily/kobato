@@ -1,7 +1,7 @@
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
-import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/settings/socials.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
+import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@kobato/settings/socials'
 import { describe, expect, it } from 'vitest'
 
 describe('settings/socials — SOCIAL_NETWORKS', () => {

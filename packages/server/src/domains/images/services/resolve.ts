@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ImageRow } from '@kobato/db/types.ts'
-import type { StorageDriver } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { ImageRow } from '@kobato/db/types'
+import type { StorageDriver } from '@kobato/settings/types'
 
-import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
-import { findImagesByStoragePaths } from '@kobato/db/operations/image.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
+import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { findImagesByStoragePaths } from '@kobato/db/operations/image'
+import { getLogger } from '@kobato/server/infra/logger'
+import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url'
 
 const log = getLogger('images.render-enhance')
 

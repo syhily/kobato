@@ -1,5 +1,5 @@
-import { expect, test } from '@tests/browser/support/fixtures.ts'
-import { openSettings } from '@tests/browser/support/journey.ts'
+import { expect, test } from '@tests/browser/support/fixtures'
+import { openSettings } from '@tests/browser/support/journey'
 
 const HINT_TRIGGER_LABEL = '了解更多'
 const OBSERVABILITY_NAV_LABEL = '可观测性'

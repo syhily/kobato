@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Select as BaseSelect } from '@base-ui/react/select'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {

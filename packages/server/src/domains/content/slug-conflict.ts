@@ -1,8 +1,8 @@
-import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision'
 
-import { isUniqueConstraintError } from '@kobato/db/errors.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { isUniqueConstraintError } from '@kobato/db/errors'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export function rethrowSlugConflict(err: unknown, entityType: ContentType, slug: string): never {
   // SQLite errors name the offending column, not the index.

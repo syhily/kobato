@@ -1,22 +1,22 @@
-import type { Page, Post } from '@kobato/catalog/model.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Page, Post } from '@kobato/catalog/model'
+import type { Database } from '@kobato/db/database'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { findCategoriesByNames } from '@kobato/db/operations/category.ts'
-import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html.ts'
-import { ogImagePathForSlug } from '@kobato/seo/og-image.ts'
-import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html.ts'
-import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed.ts'
+import { findCategoriesByNames } from '@kobato/db/operations/category'
+import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html'
+import { ogImagePathForSlug } from '@kobato/seo/og-image'
+import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html'
+import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed'
 import {
   listAllCategories,
   resolveCategoryBySlugOrName,
-} from '@kobato/server/domains/taxonomies/categories/services/query.ts'
-import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
-import { joinUrl } from '@kobato/utils/urls.ts'
+} from '@kobato/server/domains/taxonomies/categories/services/query'
+import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
+import { brandingVersionSuffix } from '@kobato/settings/presentation'
+import { joinUrl } from '@kobato/utils/urls'
 import { Feed } from 'feed'
 
 export interface FeedOptions {

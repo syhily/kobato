@@ -1,7 +1,7 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import FriendsRoute from '@/routes/admin/taxonomy/friends.tsx'
+import FriendsRoute from '@/routes/admin/taxonomy/friends'
 
 describe('snapshot: routes/admin/taxonomy/friends', () => {
   it('renders the friends route', () => {

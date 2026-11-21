@@ -2,8 +2,8 @@ import {
   cleanupPreRestoreFiles,
   recoverPreRestoreFiles,
   rollbackPreRestoreFiles,
-} from '@kobato/server/domains/backup/services/restore.ts'
-import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
+} from '@kobato/server/domains/backup/services/restore'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths'
 import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

@@ -1,5 +1,5 @@
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { LikeShare } from '@kobato/web-public/ui/LikeActions.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { LikeShare } from '@kobato/web-public/ui/LikeActions'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: LikeShare', () => {

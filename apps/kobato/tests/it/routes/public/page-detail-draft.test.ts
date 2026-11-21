@@ -1,11 +1,11 @@
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { adminSession, regularSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { adminSession, regularSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -78,7 +78,7 @@ async function seedUnpublishedPage(slug: string, title: string): Promise<number>
   return pageId
 }
 
-const pageRoute = await import('@/routes/public/page/detail.tsx')
+const pageRoute = await import('@/routes/public/page/detail')
 
 type LoaderResult = {
   page: { title: string }

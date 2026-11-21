@@ -5,7 +5,7 @@ import {
   adminUpdateStatusInput,
   updateCheckResultDto,
   updateJobStatusDto,
-} from '@kobato/contracts/update.ts'
+} from '@kobato/contracts/update'
 import { oc } from '@orpc/contract'
 
 export const adminUpdateContract = {

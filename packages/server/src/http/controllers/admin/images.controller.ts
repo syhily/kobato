@@ -1,16 +1,16 @@
-import { adminImagesContract } from '@kobato/api/admin/images.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { userSession } from '@kobato/server/domains/auth/primitives.ts'
+import { adminImagesContract } from '@kobato/api/admin/images'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { userSession } from '@kobato/server/domains/auth/primitives'
 import {
   deleteImage,
   recalculateImageThumbhash,
   updateImageNote,
-} from '@kobato/server/domains/images/services/admin-mutate.ts'
-import { listImagesForAdmin } from '@kobato/server/domains/images/services/admin-read.ts'
-import { checkImageUpload, uploadImage } from '@kobato/server/domains/images/services/upload.ts'
-import { implementAuthor, localizedOrpcError, localizedOrpcErrorDescriptor } from '@kobato/server/http/orpc-base.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/images/services/admin-mutate'
+import { listImagesForAdmin } from '@kobato/server/domains/images/services/admin-read'
+import { checkImageUpload, uploadImage } from '@kobato/server/domains/images/services/upload'
+import { implementAuthor, localizedOrpcError, localizedOrpcErrorDescriptor } from '@kobato/server/http/orpc-base'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthor(adminImagesContract)
 

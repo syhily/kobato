@@ -1,4 +1,4 @@
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 export interface CommentAndUser {
   id: number

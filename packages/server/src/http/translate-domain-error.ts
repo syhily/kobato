@@ -1,8 +1,8 @@
-import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { ApiErrorData, ErrorIssueWire, ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ServerTranslator } from '@kobato/server/infra/i18n'
 
-import { descriptorMessage, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
+import { descriptorMessage, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure, DomainError, domainStatus, type DomainErrorIssue } from '@kobato/server/infra/http/errors'
 
 export interface TranslatedDomainError {
   status: number

@@ -1,6 +1,6 @@
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'

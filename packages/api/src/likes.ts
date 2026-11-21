@@ -5,7 +5,7 @@ import {
   likeIncreaseOutput,
   likeValidateInput,
   likeValidateOutput,
-} from '@kobato/contracts/likes.ts'
+} from '@kobato/contracts/likes'
 import { oc } from '@orpc/contract'
 
 export const likesContract = {

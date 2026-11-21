@@ -4,12 +4,11 @@ import type {
   PublicWebmentionWire,
   WebmentionOutboxStatusCounts,
   WebmentionStatusCounts,
-} from '@kobato/contracts/webmentions.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionStatus } from '@kobato/db/operations/webmention.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
+} from '@kobato/contracts/webmentions'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionOutboxStatus, WebmentionStatus } from '@kobato/db/schema/webmention'
+import type { EntityTarget } from '@kobato/db/target'
 
-import { countWebmentionOutboxByStatus, listWebmentionOutboxForAdmin } from '@kobato/db/operations/webmention-outbox.ts'
 import {
   countWebmentions,
   countWebmentionsByStatus,
@@ -17,18 +16,19 @@ import {
   listApprovedWebmentionsForTarget,
   listWebmentionsByStatus,
   setWebmentionStatus,
-} from '@kobato/db/operations/webmention.ts'
-import { page } from '@kobato/db/schema/page.ts'
-import { post } from '@kobato/db/schema/post.ts'
+} from '@kobato/db/operations/webmention'
+import { countWebmentionOutboxByStatus, listWebmentionOutboxForAdmin } from '@kobato/db/operations/webmention-outbox'
+import { page } from '@kobato/db/schema/page'
+import { post } from '@kobato/db/schema/post'
 import {
   asAdminWebmentionOutboxListWire,
   asAdminWebmentionsWire,
   asPublicWebmentionsWire,
-} from '@kobato/server/domains/webmentions/projection.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/webmentions/projection'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { idFromString } from '@kobato/utils/id'
 import { eq } from 'drizzle-orm'
 
 export interface AdminWebmentionList {
@@ -47,7 +47,7 @@ export interface AdminWebmentionOutboxList {
 
 export async function listAdminWebmentions(
   db: Database,
-  input: { offset: number; limit: number; status?: 'all' | 'pending' | 'approved' | 'rejected' | 'hidden' },
+  input: { offset: number; limit: number; status?: 'all' | WebmentionStatus },
 ): Promise<AdminWebmentionList> {
   const status = input.status === undefined || input.status === 'all' ? undefined : input.status
   const [rows, total, statusCounts] = await Promise.all([
@@ -65,7 +65,7 @@ export async function listAdminWebmentions(
 
 export async function listAdminWebmentionOutbox(
   db: Database,
-  input: { offset: number; limit: number; status?: 'all' | 'pending' | 'sent' | 'no-endpoint' | 'failed' },
+  input: { offset: number; limit: number; status?: 'all' | WebmentionOutboxStatus },
 ): Promise<AdminWebmentionOutboxList> {
   const status = input.status === undefined || input.status === 'all' ? undefined : input.status
   const [rows, statusCounts] = await Promise.all([

@@ -1,7 +1,7 @@
-import { renderInRouterWithOutlet } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouterWithOutlet } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import CommentsRoute from '@/routes/admin/comments.tsx'
+import CommentsRoute from '@/routes/admin/comments'
 
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 

@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionOutboxRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionOutboxRow } from '@kobato/db/types'
 
-import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
+import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import { and, asc, count, desc, eq, inArray, isNull, lt, lte, or } from 'drizzle-orm'
 
 export type WebmentionOutboxStatus = WebmentionOutboxRow['status']

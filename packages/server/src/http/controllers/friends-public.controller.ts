@@ -1,6 +1,6 @@
-import { friendsContract } from '@kobato/api/friends.ts'
-import { applyFriend } from '@kobato/server/domains/friends/service.ts'
-import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { friendsContract } from '@kobato/api/friends'
+import { applyFriend } from '@kobato/server/domains/friends/service'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 
 const impl = implementPublic(friendsContract).use(resourceRateLimit)
 

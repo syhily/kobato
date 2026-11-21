@@ -1,4 +1,4 @@
-import { LOG_BODY_MAX_LENGTH, LOG_LINE_MAX_BYTES, projectLogLine } from '@kobato/server/infra/trace/log-record.ts'
+import { LOG_BODY_MAX_LENGTH, LOG_LINE_MAX_BYTES, projectLogLine } from '@kobato/server/infra/trace/log-record'
 import { describe, expect, it } from 'vitest'
 
 const NOW = Date.UTC(2026, 0, 2, 3, 4, 5)

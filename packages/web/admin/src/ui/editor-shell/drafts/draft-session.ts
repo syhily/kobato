@@ -8,7 +8,7 @@ import {
   setDraft,
   type DraftRecord,
   type DraftType,
-} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts'
+} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export function draftEditKey(keyPrefix: string, entityId: string, clientRevisionToken: string): string {

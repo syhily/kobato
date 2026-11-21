@@ -1,4 +1,4 @@
-import { USER_ROLES } from '@kobato/db/schema/shared.ts'
+import { USER_ROLES } from '@kobato/db/schema/shared'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 

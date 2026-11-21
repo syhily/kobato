@@ -1,12 +1,12 @@
-import type { NewWebmention } from '@kobato/db/types.ts'
+import type { NewWebmention } from '@kobato/db/types'
 
 import {
   setWebmentionStatus,
   upsertWebmention,
   upsertWebmentionVerificationFailure,
-} from '@kobato/db/operations/webmention.ts'
-import { webmention } from '@kobato/db/schema/webmention.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/db/operations/webmention'
+import { webmention } from '@kobato/db/schema/webmention'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

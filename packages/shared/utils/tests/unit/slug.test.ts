@@ -1,4 +1,4 @@
-import { Slugger } from '@kobato/utils/slug.ts'
+import { Slugger } from '@kobato/utils/slug'
 import { describe, expect, it } from 'vitest'
 
 describe('Slugger', () => {

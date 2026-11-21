@@ -1,21 +1,21 @@
-import type { StorageBackend } from '@kobato/server/infra/storage/backend.ts'
+import type { StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { music } from '@kobato/db/schema/media.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+import { music } from '@kobato/db/schema/media'
+import { user } from '@kobato/db/schema/user'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })
 let s3Put: Mock<StorageBackend['put']>
 
-const publicUrlSpy = await import('@kobato/server/infra/storage/public-url.ts')
+const publicUrlSpy = await import('@kobato/server/infra/storage/public-url')
 vi.spyOn(publicUrlSpy, 'resolveAssetUrl').mockImplementation((p: string) => `https://assets.example.com/${p}`)
 const safeResolveAssetUrl = vi
   .spyOn(publicUrlSpy, 'safeResolveAssetUrl')
@@ -28,19 +28,19 @@ const processImageBufferMock = vi.fn(async ({ buffer }: { buffer: Buffer }) => (
   byteSize: buffer.byteLength,
   thumbhash: 'thumb',
 }))
-vi.spyOn(await import('@kobato/server/infra/image/process.ts'), 'processImageBuffer').mockImplementation(
+vi.spyOn(await import('@kobato/server/infra/image/process'), 'processImageBuffer').mockImplementation(
   processImageBufferMock as never,
 )
 
-const read = await import('@kobato/server/domains/music/services/read.ts')
-const musicOps = await import('@kobato/db/operations/music.ts')
-const searchService = await import('@kobato/server/domains/music/services/search.ts')
-const addMod = await import('@kobato/server/domains/music/services/write/add.ts')
-const metadataMod = await import('@kobato/server/domains/music/services/write/metadata.ts')
-const deleteMod = await import('@kobato/server/domains/music/services/write/delete.ts')
-const registry = await import('@kobato/server/domains/music/providers/registry.ts')
-const neteaseProvider = await import('@kobato/server/domains/music/providers/netease.ts')
-const tencentProvider = await import('@kobato/server/domains/music/providers/tencent.ts')
+const read = await import('@kobato/server/domains/music/services/read')
+const musicOps = await import('@kobato/db/operations/music')
+const searchService = await import('@kobato/server/domains/music/services/search')
+const addMod = await import('@kobato/server/domains/music/services/write/add')
+const metadataMod = await import('@kobato/server/domains/music/services/write/metadata')
+const deleteMod = await import('@kobato/server/domains/music/services/write/delete')
+const registry = await import('@kobato/server/domains/music/providers/registry')
+const neteaseProvider = await import('@kobato/server/domains/music/providers/netease')
+const tencentProvider = await import('@kobato/server/domains/music/providers/tencent')
 
 const db = getTestDb()
 

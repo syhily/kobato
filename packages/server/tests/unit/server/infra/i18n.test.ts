@@ -1,6 +1,6 @@
-import type { MessageId } from '@kobato/server/infra/i18n.ts'
+import type { MessageId } from '@kobato/server/infra/i18n'
 
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { createElement, Fragment } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

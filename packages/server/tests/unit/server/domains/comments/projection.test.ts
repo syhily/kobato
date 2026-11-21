@@ -1,11 +1,7 @@
-import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types.ts'
+import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'
 
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
-import {
-  asAdminCommentsWire,
-  asCommentItemsWire,
-  asCommentItemWire,
-} from '@kobato/server/domains/comments/projection.ts'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
+import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import { describe, expect, it } from 'vitest'
 
 function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {

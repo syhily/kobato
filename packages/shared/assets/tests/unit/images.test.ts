@@ -1,4 +1,4 @@
-import { getImageSrcset, getImageUrl, isTransformableRemoteImage, siteOwnedStorageSrc } from '@kobato/assets/images.ts'
+import { getImageSrcset, getImageUrl, isTransformableRemoteImage, siteOwnedStorageSrc } from '@kobato/assets/images'
 import { describe, expect, it } from 'vitest'
 
 describe('assets/images — getImageUrl', () => {

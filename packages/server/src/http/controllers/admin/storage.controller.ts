@@ -1,16 +1,16 @@
-import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage'
 
-import { adminStorageContract } from '@kobato/api/admin/storage.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { adminStorageContract } from '@kobato/api/admin/storage'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   cancelStorageMigration,
   getStorageMigrationStatus,
   resumeStorageMigration,
   startStorageMigration,
-} from '@kobato/server/domains/storage/s3-migration.ts'
-import { getLocalStorageMigrationStats, type MigrationStats } from '@kobato/server/domains/storage/stats.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { isS3Primary } from '@kobato/server/infra/storage/registry.ts'
+} from '@kobato/server/domains/storage/s3-migration'
+import { getLocalStorageMigrationStats, type MigrationStats } from '@kobato/server/domains/storage/stats'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { isS3Primary } from '@kobato/server/infra/storage/registry'
 
 const impl = implementAdmin(adminStorageContract)
 

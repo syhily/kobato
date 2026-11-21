@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 interface SettingGroupContentProps {
   children: ReactNode

@@ -1,20 +1,20 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { InklingLabelsInput } from '@kobato/inkling'
-import type { CommentBodyEditorProps } from '@kobato/web-public/ui/comments/CommentBodyEditor.tsx'
+import type { CommentBodyEditorProps } from '@kobato/web-public/ui/comments/CommentBodyEditor'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels.ts'
-import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web-client/lib/viewport-zoom-lock.ts'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels'
+import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web-client/lib/viewport-zoom-lock'
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
 const CommentBodyEditor = lazy(() =>
-  import('@kobato/web-public/ui/comments/CommentBodyEditor.tsx').then((module) => ({
+  import('@kobato/web-public/ui/comments/CommentBodyEditor').then((module) => ({
     default: module.CommentBodyEditor,
   })),
 )
 
-const warmEditorChunk = () => void import('@kobato/web-public/ui/comments/CommentBodyEditor.tsx')
+const warmEditorChunk = () => void import('@kobato/web-public/ui/comments/CommentBodyEditor')
 
 export function warmCommentEditorChunks(locale: AppLocale): void {
   warmEditorChunk()

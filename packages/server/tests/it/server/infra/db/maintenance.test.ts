@@ -1,9 +1,9 @@
-import type { DatabaseHandle } from '@kobato/db/database.ts'
+import type { DatabaseHandle } from '@kobato/db/database'
 
-import { jobRun } from '@kobato/db/schema/job-run.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { jobRun } from '@kobato/db/schema/job-run'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { runDbMaintenance } from '@kobato/server/infra/db/maintenance'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {

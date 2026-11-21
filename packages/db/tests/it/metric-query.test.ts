@@ -1,6 +1,6 @@
-import { ensureMetric, incrementMetricPvBatch } from '@kobato/db/operations/metric.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
-import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
+import { ensureMetric, incrementMetricPvBatch } from '@kobato/db/operations/metric'
+import { metric } from '@kobato/db/schema/metric'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

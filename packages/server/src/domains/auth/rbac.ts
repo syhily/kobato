@@ -1,7 +1,7 @@
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles.ts'
-import { ActionFailure, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { ActionFailure, ErrorMessages } from '@kobato/server/infra/http/errors'
 
 export interface ViewerIdentity {
   id: string

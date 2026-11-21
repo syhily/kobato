@@ -1,6 +1,6 @@
-import type { LoginMethod } from '@kobato/contracts/users.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { User } from '@kobato/db/types.ts'
+import type { LoginMethod } from '@kobato/contracts/users'
+import type { Database } from '@kobato/db/database'
+import type { User } from '@kobato/db/types'
 
 import {
   countAdmins,
@@ -10,22 +10,22 @@ import {
   setUserMuted,
   softDeleteUserById,
   updateUserRole,
-} from '@kobato/db/operations/user.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
-import { issueResetToken, issueSetupToken } from '@kobato/server/domains/auth/verification-tokens.ts'
+} from '@kobato/db/operations/user'
+import { user } from '@kobato/db/schema/user'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
+import { issueResetToken, issueSetupToken } from '@kobato/server/domains/auth/verification-tokens'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,
   countAdminUsers,
   findAdminUserById,
   listAdminUsers,
-} from '@kobato/server/domains/users/repos/admin-query.ts'
-import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@kobato/server/infra/email/sender.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { tryPasswordResetByTargetRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/users/repos/admin-query'
+import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@kobato/server/infra/email/sender'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { tryPasswordResetByTargetRateLimit } from '@kobato/server/infra/rate-limit'
 import { count } from 'drizzle-orm'
 
 const log = getLogger('users.admin')

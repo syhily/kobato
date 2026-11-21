@@ -1,4 +1,4 @@
-import { parseUaFields } from '@kobato/server/domains/analytics/ua-parse.ts'
+import { parseUaFields } from '@kobato/server/domains/analytics/ua-parse'
 import { describe, expect, it } from 'vitest'
 
 const DESKTOP_CHROME =

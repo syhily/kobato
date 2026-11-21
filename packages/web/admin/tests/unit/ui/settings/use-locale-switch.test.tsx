@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import type { SettingsChangeVerdict } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
+import type { SettingsChangeVerdict } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict'
 
-import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { SETTINGS_SKIP_COMMIT } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
-import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch.ts'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { SETTINGS_SKIP_COMMIT } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict'
+import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch'
 import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

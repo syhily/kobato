@@ -1,14 +1,14 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { comment } from '@kobato/db/schema/comment'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The transports are covered elsewhere; these spies pass through to the
 // real senders (mail is disabled in the test bundle, so they stay quiet).
-const emailModule = await import('@kobato/server/domains/comments/services/email.ts')
+const emailModule = await import('@kobato/server/domains/comments/services/email')
 vi.spyOn(emailModule, 'sendApprovedComment')
 vi.spyOn(emailModule, 'sendNewComment')
 vi.spyOn(emailModule, 'sendNewReply')
@@ -17,10 +17,10 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { canonicalizeCommentBody } = await import('@kobato/server/domains/comments/services/canonicalize.ts')
+const { canonicalizeCommentBody } = await import('@kobato/server/domains/comments/services/canonicalize')
 const emails = emailModule
 const sendNewCommentCalls = () => vi.mocked(emailModule.sendNewComment).mock.calls
-const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
 
 const db = getTestDb()
 

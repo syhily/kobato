@@ -1,10 +1,10 @@
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import {
   TRADITIONAL_YI_TERM_MAP,
   auspiciousLabel,
   calendarCopyFor,
   lunarLabel,
-} from '@kobato/server/render/calendar/locale.ts'
+} from '@kobato/server/render/calendar/locale'
 import { Solar } from 'lunar-typescript'
 import { describe, expect, it } from 'vitest'
 

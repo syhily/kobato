@@ -1,12 +1,12 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { extractZodIssues } from '@kobato/server/domains/content/services/lexical/zod-issues.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { extractZodIssues } from '@kobato/server/domains/content/services/lexical/zod-issues'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender'
 
 export async function canonicalizeLexicalEditorState(input: unknown): Promise<LexicalEditorState> {
   try {

@@ -2,14 +2,14 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { FontsSettings } from '@kobato/settings/types.ts'
-import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
+import type { FontsSettings } from '@kobato/settings/types'
+import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload'
 
 import { MemoryRouter } from 'react-router'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -20,7 +20,7 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload.ts')
+const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload')
 vi.spyOn(useFileUploadMod, 'useFileUpload').mockImplementation(((options: UseFileUploadOptions) => {
   hookMock.calls.push(options)
   return { upload: hookMock.upload, pending: hookMock.pending }
@@ -30,7 +30,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
+import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm'
 
 const fonts: FontsSettings = {
   og: { family: 'OPPOSans' },

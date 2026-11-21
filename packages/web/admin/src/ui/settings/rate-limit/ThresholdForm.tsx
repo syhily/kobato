@@ -1,22 +1,22 @@
-import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
+import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types'
 
-import { rateLimitBucketSchema } from '@kobato/settings/rate-limit-bucket.ts'
-import { rateLimitBounds, rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@kobato/ui/components/table.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { rateLimitBucketSchema } from '@kobato/settings/rate-limit-bucket'
+import { rateLimitBounds, rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@kobato/ui/components/table'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   ADVANCED_GROUPS,
   ALL_KEYS,
   BUCKET_META,
   COMMON_KEYS,
   type BucketKey,
-} from '@kobato/web-admin/ui/settings/rate-limit/constants.ts'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+} from '@kobato/web-admin/ui/settings/rate-limit/constants'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { ChevronDownIcon, InfoIcon, RotateCcwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useWatch, type UseFormReturn } from 'react-hook-form'

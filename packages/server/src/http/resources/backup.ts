@@ -1,24 +1,24 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
-import { findFirstAdminUser, hasAdmin } from '@kobato/db/operations/user.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { CSRF_HEADER, validateCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
-import { isSetupTokenActive } from '@kobato/server/domains/auth/setup-token.ts'
+import { findFirstAdminUser, hasAdmin } from '@kobato/db/operations/user'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { CSRF_HEADER, validateCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { isSetupTokenActive } from '@kobato/server/domains/auth/setup-token'
 import {
   claimEncryptedUploadForDecrypt,
   endDecryptClaim,
   parkEncryptedUpload,
   releaseEncryptedUpload,
-} from '@kobato/server/domains/backup/pending-uploads.ts'
-import { consumeRestoreJobReport, withRestoreClaim } from '@kobato/server/domains/backup/restore-machine.ts'
+} from '@kobato/server/domains/backup/pending-uploads'
+import { consumeRestoreJobReport, withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
 import {
   beginStagingProgress,
   endStagingProgress,
   peekRestoreProgress,
   reportStagingProgress,
-} from '@kobato/server/domains/backup/restore-progress.ts'
-import { getBackupStream, isValidBackupKey } from '@kobato/server/domains/backup/services/backup.ts'
+} from '@kobato/server/domains/backup/restore-progress'
+import { getBackupStream, isValidBackupKey } from '@kobato/server/domains/backup/services/backup'
 import {
   type StagedBackup,
   assertStagedBackupContainsAdmin,
@@ -27,16 +27,16 @@ import {
   MAX_BACKUP_FILE_SIZE,
   restoreFromStagedBackup,
   stageBackup,
-} from '@kobato/server/domains/backup/services/restore.ts'
-import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { errorJsonResponse, failureJsonResponse } from '@kobato/server/http/errors.ts'
-import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
-import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
-import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
-import { nodeStreamToWeb } from '@kobato/server/http/resources/serve-local-file.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/domains/backup/services/restore'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { errorJsonResponse, failureJsonResponse } from '@kobato/server/http/errors'
+import { csrfGuard } from '@kobato/server/http/middlewares/csrf'
+import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac'
+import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit'
+import { nodeStreamToWeb } from '@kobato/server/http/resources/serve-local-file'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { createMiddleware } from 'hono/factory'

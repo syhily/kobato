@@ -1,11 +1,11 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   DEFAULT_TEXT_OPERATOR,
   isTextFilterOperator,
   parseTextFilter,
   TEXT_FILTER_OPERATORS,
   textFilterLabel as textFilterLabelBase,
-} from '@kobato/web-admin/ui/comments/filter-fields.ts'
+} from '@kobato/web-admin/ui/comments/filter-fields'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   isSingleDateFilterOperator,
@@ -13,7 +13,7 @@ import {
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
   singleDateFilterLabel as singleDateFilterLabelBase,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { describe, expect, it } from 'vitest'
 
 const textFilterLabel = (value: Parameters<typeof textFilterLabelBase>[0]) => textFilterLabelBase(value, tZhCN)

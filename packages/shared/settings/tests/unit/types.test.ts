@@ -1,4 +1,4 @@
-import type { SettingsSectionPatch } from '@kobato/settings/types.ts'
+import type { SettingsSectionPatch } from '@kobato/settings/types'
 
 import { describe, expect, it } from 'vitest'
 

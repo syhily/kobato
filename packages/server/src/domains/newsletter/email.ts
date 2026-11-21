@@ -1,10 +1,10 @@
-import type { SendResult } from '@kobato/server/infra/email/types.ts'
+import type { SendResult } from '@kobato/server/infra/email/types'
 
-import { render } from '@kobato/server/infra/email/render.tsx'
-import { sendEmail } from '@kobato/server/infra/email/sender.ts'
-import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription.tsx'
-import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { render } from '@kobato/server/infra/email/render'
+import { sendEmail } from '@kobato/server/infra/email/sender'
+import ConfirmSubscription from '@kobato/server/infra/email/templates/ConfirmSubscription'
+import { emailTranslator } from '@kobato/server/infra/email/translator'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { createElement } from 'react'
 
 export async function sendConfirmSubscription(

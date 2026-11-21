@@ -1,8 +1,8 @@
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import MusicDetailRoute from '@/routes/admin/library/music/detail.tsx'
+import MusicDetailRoute from '@/routes/admin/library/music/detail'
 
 describe('snapshot: routes/admin/library/music/detail', () => {
   it('renders the music detail route', () => {

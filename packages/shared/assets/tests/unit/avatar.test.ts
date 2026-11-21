@@ -1,4 +1,4 @@
-import { AVATAR_SOURCES, avatarImageUrl, DEFAULT_AVATAR_SIZE } from '@kobato/assets/avatar.ts'
+import { AVATAR_SOURCES, avatarImageUrl, DEFAULT_AVATAR_SIZE } from '@kobato/assets/avatar'
 import { describe, expect, it } from 'vitest'
 
 describe('utils/avatar', () => {

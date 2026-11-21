@@ -9,7 +9,7 @@ import {
   parseConfigFileJson,
   parseRestorableConfigJson,
   resolveConfigFilePath,
-} from '@kobato/server/infra/config.ts'
+} from '@kobato/server/infra/config'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'

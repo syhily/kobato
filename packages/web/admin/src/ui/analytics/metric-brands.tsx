@@ -1,6 +1,6 @@
-import type { LucideIcon } from '@kobato/ui/icons/types.ts'
+import type { LucideIcon } from '@kobato/ui/icons/types'
 
-import { createIcon } from '@kobato/ui/icons/create-icon.tsx'
+import { createIcon } from '@kobato/ui/icons/create-icon'
 
 export const SiAcer: LucideIcon = createIcon('siacer', '0 0 24 24', [
   [

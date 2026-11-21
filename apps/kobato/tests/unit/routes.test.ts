@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import routes from '@/routes.ts'
+import routes from '@/routes'
 
 interface RouteEntry {
   path?: string

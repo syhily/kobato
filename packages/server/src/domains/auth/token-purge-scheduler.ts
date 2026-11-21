@@ -1,7 +1,7 @@
-import { purgeExpired } from '@kobato/server/domains/auth/verification-tokens.ts'
-import { jobDb, registerJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-utils.ts'
+import { purgeExpired } from '@kobato/server/domains/auth/verification-tokens'
+import { jobDb, registerJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
+import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-utils'
 
 const log = getLogger('auth.token-purge')
 

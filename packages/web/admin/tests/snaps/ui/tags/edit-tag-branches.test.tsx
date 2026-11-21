@@ -1,9 +1,9 @@
-import type { AdminTagDto } from '@kobato/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags'
 
-import { makeAdminTag } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminTag } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +11,7 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog', () => import('@kobato/web-admin/tests/utils/dialog'))
 
 describe('snapshot: EditTagDialog branches', () => {
   beforeEach(() => {

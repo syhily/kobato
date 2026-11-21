@@ -1,4 +1,4 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 
 import {
   apiErrorData,
@@ -6,9 +6,9 @@ import {
   translateApiError,
   translateDomainError,
   type ApiErrorInput,
-} from '@kobato/server/http/translate-domain-error.ts'
-import { ActionFailure, DomainError, ErrorMessages, type DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+} from '@kobato/server/http/translate-domain-error'
+import { ActionFailure, DomainError, ErrorMessages, type DomainErrorIssue } from '@kobato/server/infra/http/errors'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { describe, expect, it } from 'vitest'
 
 describe('server/http/translate-domain-error — translateDomainError', () => {

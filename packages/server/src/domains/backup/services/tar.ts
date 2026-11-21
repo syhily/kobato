@@ -1,5 +1,5 @@
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { createReadStream } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { Readable } from 'node:stream'

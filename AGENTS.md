@@ -27,10 +27,10 @@ Runtime facts:
 
 ## Import conventions
 
-All imports are absolute; the single workspace path table is `@kobato/toolchain/tsconfig.base.json` (root and demo tsconfigs only extend it — no package-level `paths`).
+All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single workspace path table is `@kobato/toolchain/tsconfig.base.json` (consumer tsconfigs only extend it — no package-level `paths`). Workspace export wildcards carry `.ts`/`.tsx` fallback targets so the same specifiers also resolve under native Node.
 
 - App source: `@/...`; app test helpers: `@tests/...` (app tests only).
-- Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; test trees stay in their own package except the canonical shared fixtures — cross-package `@kobato/<owner>/tests/utils/<name>.ts` imports (settings blog-settings, i18n translator, contracts content, inkling lexical, web-client render) are the sanctioned seam, pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
+- Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; test trees stay in their own package except the canonical shared fixtures — cross-package `@kobato/<owner>/tests/utils/<name>` imports (settings blog-settings, i18n translator, contracts content, inkling lexical, web-client render) are the sanctioned seam, pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling`, `/headless*`, `/host-cards`, or `/styles/*`; the demo uses `@kobato/inkling-demo/...`.
 
 No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, import-scanner test fixtures, and the root Vitest config's inline-project definition imports. Other build-time configs import through package specifiers. `apps/kobato/tests/arch/package-dag.test.ts` enforces the table, alias confinement, and the no-relative rule.

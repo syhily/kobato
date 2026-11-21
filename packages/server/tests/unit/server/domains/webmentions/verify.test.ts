@@ -4,8 +4,8 @@ import {
   normalizeForMatch,
   requireSourceKey,
   sourceLinksToTarget,
-} from '@kobato/server/domains/webmentions/verify.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/domains/webmentions/verify'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 describe('webmentions/verify normalizeForMatch', () => {

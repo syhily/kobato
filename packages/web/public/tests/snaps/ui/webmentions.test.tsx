@@ -1,7 +1,7 @@
-import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
+import type { PublicWebmentionWire } from '@kobato/contracts/webmentions'
 
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList'
 import { describe, expect, it } from 'vitest'
 
 function makeMention(overrides: Partial<PublicWebmentionWire> = {}): PublicWebmentionWire {

@@ -1,4 +1,4 @@
-import { category } from '@kobato/db/schema/taxonomy.ts'
+import { category } from '@kobato/db/schema/taxonomy'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const post = sqliteTable(

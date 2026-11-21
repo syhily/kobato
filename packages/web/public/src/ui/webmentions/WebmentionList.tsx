@@ -1,9 +1,9 @@
-import type { PublicWebmentionWire } from '@kobato/contracts/webmentions.ts'
+import type { PublicWebmentionWire } from '@kobato/contracts/webmentions'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { tryParseUrl } from '@kobato/utils/safe-url.ts'
-import { formatLocalDate } from '@kobato/utils/site-date.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { tryParseUrl } from '@kobato/utils/safe-url'
+import { formatLocalDate } from '@kobato/utils/site-date'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 
 function authorLabel(mention: PublicWebmentionWire): string {
   if (mention.authorName !== null && mention.authorName !== '') {

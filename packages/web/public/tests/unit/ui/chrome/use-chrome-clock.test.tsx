@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useChromeClock } from '@kobato/web-public/ui/chrome/use-chrome-clock.ts'
+import { useChromeClock } from '@kobato/web-public/ui/chrome/use-chrome-clock'
 import { act, render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

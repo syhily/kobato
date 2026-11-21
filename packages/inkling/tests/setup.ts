@@ -1,5 +1,5 @@
-import '@kobato/test/setup/unit.ts'
-import { installWebStreamGlobals } from '@kobato/test/web-streams.ts'
+import '@kobato/test/setup/unit'
+import { installWebStreamGlobals } from '@kobato/test/web-streams'
 
 installWebStreamGlobals()
 

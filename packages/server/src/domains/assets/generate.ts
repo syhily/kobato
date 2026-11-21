@@ -1,4 +1,4 @@
-import { encodeIco } from '@kobato/server/domains/assets/ico.ts'
+import { encodeIco } from '@kobato/server/domains/assets/ico'
 import sharp from 'sharp'
 
 export interface FaviconPack {

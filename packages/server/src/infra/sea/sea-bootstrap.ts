@@ -2,8 +2,8 @@
 // so natives extraction + `KOBATO_NATIVES_DIR` land before sharp /
 // @napi-rs/canvas run their module-scope platform detection.
 
-import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives.ts'
-import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
+import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives'
+import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch'
 
 installSeaVfsRuntimePatches()
 bootstrapSeaRuntime()

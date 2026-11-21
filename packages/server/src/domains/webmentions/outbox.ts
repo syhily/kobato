@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionOutboxRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionOutboxRow } from '@kobato/db/types'
 
 import {
   markWebmentionOutboxRetry,
@@ -7,17 +7,13 @@ import {
   markWebmentionOutboxTerminal,
   pickDueWebmentionOutbox,
   setWebmentionOutboxEndpoint,
-} from '@kobato/db/operations/webmention-outbox.ts'
-import {
-  discoverEndpoint,
-  formatFetchFailure,
-  type DiscoveryResult,
-} from '@kobato/server/domains/webmentions/discover.ts'
-import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
-import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+} from '@kobato/db/operations/webmention-outbox'
+import { discoverEndpoint, formatFetchFailure, type DiscoveryResult } from '@kobato/server/domains/webmentions/discover'
+import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
+import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'
+import { getLogger } from '@kobato/server/infra/logger'
+import { safeFetch } from '@kobato/server/infra/safe-fetch'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 const log = getLogger('webmentions.outbox')
 

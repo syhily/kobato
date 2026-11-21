@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { cva, type VariantProps } from '@kobato/ui/lib/cva.ts'
+import { cn } from '@kobato/ui/lib/cn'
+import { cva, type VariantProps } from '@kobato/ui/lib/cva'
 
 function Empty({ className, ...props }: ComponentProps<'div'>) {
   return (

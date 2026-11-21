@@ -1,4 +1,4 @@
-import { buildUserUpdatePayload, type UserEditFields } from '@kobato/web-admin/ui/users/user-update-payload.ts'
+import { buildUserUpdatePayload, type UserEditFields } from '@kobato/web-admin/ui/users/user-update-payload'
 import { describe, expect, it } from 'vitest'
 
 function makeFields(overrides: Partial<UserEditFields> = {}): UserEditFields {

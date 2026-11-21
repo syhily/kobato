@@ -1,4 +1,4 @@
-import { canonicalPostPath } from '@kobato/server/domains/content/urls.ts'
+import { canonicalPostPath } from '@kobato/server/domains/content/urls'
 import { describe, expect, it } from 'vitest'
 
 describe('contract: post alias redirects', () => {

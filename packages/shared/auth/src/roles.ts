@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const
 

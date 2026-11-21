@@ -1,4 +1,4 @@
-import { notificationsContract } from '@kobato/api/notifications.ts'
+import { notificationsContract } from '@kobato/api/notifications'
 import {
   getThread,
   listInbox,
@@ -6,8 +6,8 @@ import {
   markUnread,
   replyToThread,
   unreadCount,
-} from '@kobato/server/domains/notifications/service.ts'
-import { implementAuthed, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+} from '@kobato/server/domains/notifications/service'
+import { implementAuthed, notificationReplyRateLimit, resourceRateLimit } from '@kobato/server/http/orpc-base'
 
 const impl = implementAuthed(notificationsContract)
 

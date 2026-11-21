@@ -16,8 +16,8 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
-} from '@kobato/distribution/sea-assets.ts'
-import { fail, run } from '@kobato/pack/sea/exec.ts'
+} from '@kobato/distribution/sea-assets'
+import { fail, run } from '@kobato/pack/sea/exec'
 import {
   observabilitySourceAssetsDir,
   repoRoot,
@@ -27,7 +27,7 @@ import {
   seaSmokeWorkerBundlePath,
   seaStagedNativesDir,
   seaWorkerBundlePath,
-} from '@kobato/pack/sea/paths.ts'
+} from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'

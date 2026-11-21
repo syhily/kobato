@@ -1,7 +1,7 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import ImagesRoute from '@/routes/admin/library/images.tsx'
+import ImagesRoute from '@/routes/admin/library/images'
 
 describe('snapshot: routes/admin/library/images', () => {
   it('renders the images route', () => {

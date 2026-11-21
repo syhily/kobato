@@ -1,5 +1,5 @@
-import { RUM_EVENT_LIMITS } from '@kobato/web-client/lib/rum/rum-budget.ts'
-import { createRumEventPolicy, projectRumEvent } from '@kobato/web-client/lib/rum/rum-sanitizer.ts'
+import { RUM_EVENT_LIMITS } from '@kobato/web-client/lib/rum/rum-budget'
+import { createRumEventPolicy, projectRumEvent } from '@kobato/web-client/lib/rum/rum-sanitizer'
 import {
   makeErrorEvent,
   makeLongTaskEvent,
@@ -9,7 +9,7 @@ import {
   RUM_TEST_SESSION_ID,
   RUM_TEST_SPAN_ID,
   RUM_TEST_TRACE_ID,
-} from '@kobato/web-client/tests/utils/rum-events.ts'
+} from '@kobato/web-client/tests/utils/rum-events'
 import { describe, expect, it } from 'vitest'
 
 type ProjectedEvent = Record<string, any>

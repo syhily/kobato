@@ -1,11 +1,11 @@
-import { font } from '@kobato/db/schema/font.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { font } from '@kobato/db/schema/font'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const findFontsByIds = vi.spyOn(await import('@kobato/server/domains/fonts/services/read.ts'), 'findFontsByIds')
+const findFontsByIds = vi.spyOn(await import('@kobato/server/domains/fonts/services/read'), 'findFontsByIds')
 
-const { resolveFontsForRender } = await import('@kobato/server/domains/fonts/services/render.ts')
+const { resolveFontsForRender } = await import('@kobato/server/domains/fonts/services/render')
 
 const db = getTestDb()
 

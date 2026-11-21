@@ -1,8 +1,8 @@
-import type { ClientPostWithMetadata } from '@kobato/catalog/model.ts'
+import type { ClientPostWithMetadata } from '@kobato/catalog/model'
 
-import { makePost } from '@kobato/contracts/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { ArchivesBody } from '@kobato/web-public/ui/post/ArchivesBody.tsx'
+import { makePost } from '@kobato/contracts/tests/utils/catalog'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { ArchivesBody } from '@kobato/web-public/ui/post/ArchivesBody'
 import { describe, expect, it } from 'vitest'
 
 function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata {

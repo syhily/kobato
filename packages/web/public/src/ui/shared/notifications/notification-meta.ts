@@ -1,10 +1,10 @@
-import type { NotificationDto } from '@kobato/contracts/notifications.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { NotificationDto } from '@kobato/contracts/notifications'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { LucideIcon } from 'lucide-react'
 
-import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications.ts'
-import { formatRelativeTime } from '@kobato/utils/format.ts'
+import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications'
+import { formatRelativeTime } from '@kobato/utils/format'
 import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 
 export interface NotificationMeta {

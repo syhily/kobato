@@ -1,7 +1,7 @@
-import { rootMatchesWithI18n } from '@kobato/i18n/tests/utils/i18n.ts'
+import { rootMatchesWithI18n } from '@kobato/i18n/tests/utils/i18n'
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/admin/taxonomy/categories.tsx'
+import { meta } from '@/routes/admin/taxonomy/categories'
 
 describe('route: admin/taxonomy/categories', () => {
   describe('meta', () => {

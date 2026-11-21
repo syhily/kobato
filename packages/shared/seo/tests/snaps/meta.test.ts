@@ -1,4 +1,4 @@
-import { routeMeta } from '@kobato/seo/meta.ts'
+import { routeMeta } from '@kobato/seo/meta'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SEO meta head', () => {

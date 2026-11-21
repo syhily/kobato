@@ -1,19 +1,19 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { comment } from '@kobato/db/schema/comment'
+import { auditLog } from '@kobato/db/schema/config'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import {
   cancelOwnCommentDeletion,
   editOwnComment,
   requestOwnCommentDeletion,
   resolveCommentDeleteRequest,
-} from '@kobato/server/domains/comments/services/moderate.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+} from '@kobato/server/domains/comments/services/moderate'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

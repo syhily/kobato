@@ -1,10 +1,10 @@
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
+import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { Database } from '@kobato/db/database'
+import type { PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared'
 
-import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate.ts'
-import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate'
+import { pageDescriptor } from '@kobato/server/domains/pages/descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 const mutations = makeEntityMutations(pageDescriptor)
 

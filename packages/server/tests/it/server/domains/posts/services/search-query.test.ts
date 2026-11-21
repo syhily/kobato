@@ -1,23 +1,23 @@
-import { postSearchIndex } from '@kobato/db/schema/content.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { likeCacheKeyParts } from '@kobato/server/domains/posts/services/search-query.ts'
-import { countEntryFiles, resolveCacheRoot } from '@kobato/server/infra/cache/file-store.ts'
-import { get } from '@kobato/server/infra/cache/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { postSearchIndex } from '@kobato/db/schema/content'
+import { post } from '@kobato/db/schema/post'
+import { likeCacheKeyParts } from '@kobato/server/domains/posts/services/search-query'
+import { countEntryFiles, resolveCacheRoot } from '@kobato/server/infra/cache/file-store'
+import { get } from '@kobato/server/infra/cache/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
-const { searchPosts } = await import('@kobato/server/domains/posts/services/search-query.ts')
-const { bumpCounter, getCounter, __resetCacheCountersForTests } = await import('@kobato/server/infra/cache/registry.ts')
-const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobato/server/infra/logger.ts')
-const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query.ts')
-const { searchPostOptions } = await import('@kobato/server/domains/posts/services/search-query.ts')
-const { liveContentWhere } = await import('@kobato/server/domains/content/schemas/live-gate.ts')
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { searchPosts } = await import('@kobato/server/domains/posts/services/search-query')
+const { bumpCounter, getCounter, __resetCacheCountersForTests } = await import('@kobato/server/infra/cache/registry')
+const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobato/server/infra/logger')
+const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query')
+const { searchPostOptions } = await import('@kobato/server/domains/posts/services/search-query')
+const { liveContentWhere } = await import('@kobato/server/domains/content/schemas/live-gate')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 function liveWhere() {
   return liveContentWhere({

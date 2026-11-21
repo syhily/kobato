@@ -1,4 +1,4 @@
-import { classifyWebmentionType } from '@kobato/server/domains/webmentions/classify.ts'
+import { classifyWebmentionType } from '@kobato/server/domains/webmentions/classify'
 import { describe, expect, it } from 'vitest'
 
 const SOURCE = 'https://sender.example/blog/mentioning-post'

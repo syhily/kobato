@@ -1,7 +1,7 @@
-import type { Friend } from '@kobato/catalog/model.ts'
+import type { Friend } from '@kobato/catalog/model'
 
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { Friends } from '@kobato/web-public/ui/friends/Friends.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { Friends } from '@kobato/web-public/ui/friends/Friends'
 import { describe, expect, it } from 'vitest'
 
 const friends: Friend[] = [

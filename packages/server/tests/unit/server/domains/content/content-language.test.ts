@@ -1,12 +1,12 @@
-import { upsertPageMetaSchema } from '@kobato/contracts/pages.ts'
-import { upsertPostMetaSchema } from '@kobato/contracts/posts.ts'
+import { upsertPageMetaSchema } from '@kobato/contracts/pages'
+import { upsertPostMetaSchema } from '@kobato/contracts/posts'
 import {
   CONTENT_LANGUAGE_MAX_LENGTH,
   canonicalContentLanguage,
   isContentLanguageInput,
-} from '@kobato/i18n/content-language.ts'
-import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/i18n/content-language'
+import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 describe('shared/i18n/content-language — canonicalization', () => {

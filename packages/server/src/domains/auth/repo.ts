@@ -1,10 +1,10 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { SessionRow } from '@kobato/db/types.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { Database } from '@kobato/db/database'
+import type { SessionRow } from '@kobato/db/types'
 
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { resolveSessionMaxAge } from '@kobato/server/domains/auth/session-storage.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { resolveSessionMaxAge } from '@kobato/server/domains/auth/session-storage'
+import { getLogger } from '@kobato/server/infra/logger'
 import { and, eq, gt, isNotNull, ne } from 'drizzle-orm'
 
 const log = getLogger('auth.sessions')

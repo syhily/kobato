@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { SafeFetchOptions, SafeFetchResult } from '@kobato/server/infra/safe-fetch.ts'
-import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { SafeFetchOptions, SafeFetchResult } from '@kobato/server/infra/safe-fetch'
+import type { FrontendRumRelay } from '@kobato/server/infra/trace/config'
 
-import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
+import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,15 +19,15 @@ const upstream = {
 // The relay HTTP hop is the unit boundary here; the guarded fetch is
 // captured at the function level.
 const safeFetch = vi
-  .spyOn(await import('@kobato/server/infra/safe-fetch.ts'), 'safeFetch')
+  .spyOn(await import('@kobato/server/infra/safe-fetch'), 'safeFetch')
   .mockImplementation(async (url: string, options?: SafeFetchOptions) => {
     upstream.calls.push({ url, options: options! })
     return upstream.result
   })
-const recordRumRelayOutcome = vi.spyOn(await import('@kobato/server/infra/trace/metrics.ts'), 'recordRumRelayOutcome')
+const recordRumRelayOutcome = vi.spyOn(await import('@kobato/server/infra/trace/metrics'), 'recordRumRelayOutcome')
 
-import { rumIntakeRouter } from '@kobato/server/http/resources/rum-intake.ts'
-import { __resetRateLimitsForTests as resetRumLimits } from '@kobato/server/infra/rate-limit.ts'
+import { rumIntakeRouter } from '@kobato/server/http/resources/rum-intake'
+import { __resetRateLimitsForTests as resetRumLimits } from '@kobato/server/infra/rate-limit'
 
 const RELAY: FrontendRumRelay = {
   endpoint: 'http://10.0.0.5:5080',

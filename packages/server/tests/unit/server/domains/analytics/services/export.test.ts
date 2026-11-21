@@ -1,4 +1,4 @@
-import { csvCell } from '@kobato/server/domains/analytics/services/export.ts'
+import { csvCell } from '@kobato/server/domains/analytics/services/export'
 import { describe, expect, it } from 'vitest'
 
 describe('csvCell', () => {

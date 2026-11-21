@@ -1,9 +1,9 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { DomainErrorCode } from '@kobato/server/infra/http/errors.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { DomainErrorCode } from '@kobato/server/infra/http/errors'
 
-import { O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { O2ClientError } from '@kobato/server/domains/observability/o2-client'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export interface O2Failure {
   code: DomainErrorCode

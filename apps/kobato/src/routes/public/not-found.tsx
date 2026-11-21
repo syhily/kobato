@@ -1,4 +1,4 @@
-import { notFound } from '@kobato/server/infra/http/status.ts'
+import { notFound } from '@kobato/server/infra/http/status'
 
 import type { Route } from './+types/not-found'
 

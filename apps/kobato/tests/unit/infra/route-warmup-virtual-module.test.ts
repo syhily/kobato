@@ -1,4 +1,4 @@
-import { routeWarmupPlugin } from '@kobato/toolchain/src/vite/route-warmup.ts'
+import { routeWarmupPlugin } from '@kobato/toolchain/src/vite/route-warmup'
 import { describe, expect, it } from 'vitest'
 
 const VIRTUAL = 'virtual:route-warmup-script'

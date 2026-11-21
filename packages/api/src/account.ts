@@ -1,4 +1,4 @@
-import { successDto } from '@kobato/contracts/primitives.ts'
+import { successDto } from '@kobato/contracts/primitives'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -13,7 +13,7 @@ import {
   accountUpdatePasswordInput,
   accountUpdateProfileInput,
   accountUpdateProfileOutputSchema,
-} from '@kobato/contracts/users.ts'
+} from '@kobato/contracts/users'
 import { oc } from '@orpc/contract'
 
 export const accountContract = {

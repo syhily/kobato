@@ -1,6 +1,6 @@
-import type { DateFilterValue, SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
-import type { TextFilterOperatorOption, TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+import type { DateFilterValue, SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
+import type { TextFilterOperatorOption, TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import type { UseQueryOptions } from '@tanstack/react-query'
 import type { ComponentType, ReactNode, SVGProps } from 'react'
 

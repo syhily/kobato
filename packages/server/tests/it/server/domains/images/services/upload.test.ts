@@ -1,18 +1,18 @@
-import { image } from '@kobato/db/schema/media.ts'
-import { buildObjectKey } from '@kobato/server/domains/images/key.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+import { image } from '@kobato/db/schema/media'
+import { buildObjectKey } from '@kobato/server/domains/images/key'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { eq } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const processImageBufferMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@kobato/server/infra/image/process.ts', () => ({ processImageBuffer: processImageBufferMock }))
+vi.mock('@kobato/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
 
-vi.mock('@kobato/db/operations/image.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/db/operations/image.ts')>()
+vi.mock('@kobato/db/operations/image', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/db/operations/image')>()
   return {
     ...actual,
     insertImage: vi.fn(actual.insertImage),
@@ -30,8 +30,8 @@ const passthroughRandomBytes = randomBytesMock.getMockImplementation()!
 
 const mem = makeMemoryBackend()
 
-const { checkImageUpload, uploadImage } = await import('@kobato/server/domains/images/services/upload.ts')
-const { upsertImageByStoragePath, insertImage } = await import('@kobato/db/operations/image.ts')
+const { checkImageUpload, uploadImage } = await import('@kobato/server/domains/images/services/upload')
+const { upsertImageByStoragePath, insertImage } = await import('@kobato/db/operations/image')
 const upsertImageByStoragePathMock = vi.mocked(upsertImageByStoragePath)
 const insertImageMock = vi.mocked(insertImage)
 

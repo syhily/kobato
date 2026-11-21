@@ -1,4 +1,4 @@
-import { buildDeviceEnvBeacon, collectDynamicEnv, collectStaticEnv } from '@kobato/web-client/lib/device-env.ts'
+import { buildDeviceEnvBeacon, collectDynamicEnv, collectStaticEnv } from '@kobato/web-client/lib/device-env'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 type MediaMap = Record<string, boolean>

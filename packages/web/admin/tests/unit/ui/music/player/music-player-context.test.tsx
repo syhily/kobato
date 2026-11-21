@@ -1,12 +1,12 @@
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
 
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {
   MusicPlayerProvider,
   useMusicPlayerActions,
   useMusicPlayerState,
   useMusicPlayerTime,
-} from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
+} from '@kobato/web-admin/ui/music/player/music-player-context'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const track: AdminMusicDto = {

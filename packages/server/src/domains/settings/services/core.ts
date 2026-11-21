@@ -1,33 +1,33 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { Setting } from '@kobato/db/types.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SectionMeta } from '@kobato/settings/sections/registry.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { Setting } from '@kobato/db/types'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SectionMeta } from '@kobato/settings/sections/registry'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { isValidPasskeyDomain } from '@kobato/auth/network.ts'
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { isValidPasskeyDomain } from '@kobato/auth/network'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
 import {
   SECTION_REGISTRY,
   sectionWriteSchema,
   validateSectionDefaults,
-} from '@kobato/server/domains/settings/sections/registry.ts'
-import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
-import { applySectionPatch, encryptSecretsInRow } from '@kobato/server/domains/settings/services/secrets-write.ts'
-import { sectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
+} from '@kobato/server/domains/settings/sections/registry'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch'
+import { applySectionPatch, encryptSecretsInRow } from '@kobato/server/domains/settings/services/secrets-write'
+import { sectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes'
 import {
   assertSectionPatchKeys,
   INVALID_SETTINGS_DESCRIPTOR,
   isRecord,
-} from '@kobato/server/domains/settings/services/section-patch.ts'
-import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { validateS3Config } from '@kobato/server/infra/storage/backends/s3.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { securitySection } from '@kobato/settings/sections/security.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/domains/settings/services/section-patch'
+import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { validateS3Config } from '@kobato/server/infra/storage/backends/s3'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { securitySection } from '@kobato/settings/sections/security'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('settings.service')
 

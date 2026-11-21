@@ -1,4 +1,4 @@
-import { likeCacheKeyParts } from '@kobato/server/domains/posts/services/search-query.ts'
+import { likeCacheKeyParts } from '@kobato/server/domains/posts/services/search-query'
 import { describe, expect, it } from 'vitest'
 
 describe('posts/search-query — cache key parts', () => {

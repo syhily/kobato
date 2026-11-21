@@ -1,9 +1,9 @@
-import type { SecuritySettings } from '@kobato/settings/types.ts'
+import type { SecuritySettings } from '@kobato/settings/types'
 
-import { CorsPolicyCard } from '@kobato/web-admin/ui/settings/security/CorsPolicyCard.tsx'
-import { CsrfExemptPathsCard } from '@kobato/web-admin/ui/settings/security/CsrfExemptPathsCard.tsx'
-import { CsrfToggleCard } from '@kobato/web-admin/ui/settings/security/CsrfToggleCard.tsx'
-import { PasskeyToggleCard } from '@kobato/web-admin/ui/settings/security/PasskeyToggleCard.tsx'
+import { CorsPolicyCard } from '@kobato/web-admin/ui/settings/security/CorsPolicyCard'
+import { CsrfExemptPathsCard } from '@kobato/web-admin/ui/settings/security/CsrfExemptPathsCard'
+import { CsrfToggleCard } from '@kobato/web-admin/ui/settings/security/CsrfToggleCard'
+import { PasskeyToggleCard } from '@kobato/web-admin/ui/settings/security/PasskeyToggleCard'
 
 export function SecurityForm({ security }: { security: SecuritySettings }) {
   return (

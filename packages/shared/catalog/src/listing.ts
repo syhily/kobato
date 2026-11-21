@@ -1,4 +1,4 @@
-import type { ListingPostCardWithMetadata } from '@kobato/catalog/model.ts'
+import type { ListingPostCardWithMetadata } from '@kobato/catalog/model'
 import type { MetaDescriptor } from 'react-router'
 
 export interface ListingPageLoaderData<TExtra = undefined> {

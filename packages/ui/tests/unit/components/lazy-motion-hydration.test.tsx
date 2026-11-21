@@ -1,4 +1,4 @@
-import { LazyMotionConfig } from '@kobato/ui/components/lazy-motion.tsx'
+import { LazyMotionConfig } from '@kobato/ui/components/lazy-motion'
 // @vitest-environment happy-dom
 import { Writable } from 'node:stream'
 import { hydrateRoot } from 'react-dom/client'

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useThumbhashHydration } from '@kobato/web-public/ui/post/use-thumbhash-hydration.ts'
+import { useThumbhashHydration } from '@kobato/web-public/ui/post/use-thumbhash-hydration'
 import { renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'

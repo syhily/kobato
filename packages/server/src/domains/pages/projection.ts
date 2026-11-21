@@ -1,9 +1,9 @@
-import type { Page } from '@kobato/catalog/model.ts'
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
-import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
+import type { Page } from '@kobato/catalog/model'
+import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { ContentRow, PageMetaRow } from '@kobato/db/types'
 
-import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection.ts'
-import { readRevisionProjection } from '@kobato/server/domains/content/projection-read.ts'
+import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection'
+import { readRevisionProjection } from '@kobato/server/domains/content/projection-read'
 
 export function toCmsPage(
   meta: PageMetaRow,

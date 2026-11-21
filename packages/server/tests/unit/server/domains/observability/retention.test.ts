@@ -1,11 +1,11 @@
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
 import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMock = vi.hoisted(() => ({
@@ -16,18 +16,18 @@ const clientMock = vi.hoisted(() => ({
 
 // The O2 client is the observability backend's network boundary.
 const createO2Client = vi
-  .spyOn(await import('@kobato/server/domains/observability/o2-client.ts'), 'createO2Client')
+  .spyOn(await import('@kobato/server/domains/observability/o2-client'), 'createO2Client')
   .mockImplementation((...args: unknown[]) => clientMock.createO2Client(...(args as [])))
 afterAll(() => {
   createO2Client.mockRestore()
 })
 
-import { O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+import { O2ClientError } from '@kobato/server/domains/observability/o2-client'
 import {
   __resetObservabilityRetentionForTests,
   isKobatoOwnedStream,
   syncObservabilityRetention,
-} from '@kobato/server/domains/observability/retention.ts'
+} from '@kobato/server/domains/observability/retention'
 
 const SITE: ObservabilitySettingsSlice = {
   enabled: true,

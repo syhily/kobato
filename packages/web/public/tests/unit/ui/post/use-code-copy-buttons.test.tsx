@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useCodeCopyButtons } from '@kobato/web-public/ui/post/use-code-copy-buttons.ts'
+import { useCodeCopyButtons } from '@kobato/web-public/ui/post/use-code-copy-buttons'
 import { act, renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'

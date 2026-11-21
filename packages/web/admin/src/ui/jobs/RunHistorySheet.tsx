@@ -1,9 +1,9 @@
-import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/contracts/jobs.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/contracts/jobs'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty'
 import {
   Sheet,
   SheetContent,
@@ -11,13 +11,13 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@kobato/ui/components/sheet.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatDuration } from '@kobato/utils/format.ts'
-import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/jobs/meta.ts'
-import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
-import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/ui/components/sheet'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatDuration } from '@kobato/utils/format'
+import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/jobs/meta'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { Fragment, useState } from 'react'
 
 const PAGE_SIZE = 20

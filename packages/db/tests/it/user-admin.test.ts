@@ -1,6 +1,6 @@
-import { hasAdmin, findFirstAdminUser } from '@kobato/db/operations/user.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
+import { hasAdmin, findFirstAdminUser } from '@kobato/db/operations/user'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

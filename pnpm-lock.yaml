@@ -685,6 +685,9 @@ importers:
       '@kobato/web-public':
         specifier: workspace:*
         version: link:../../packages/web/public
+      '@lexical/headless':
+        specifier: 'catalog:'
+        version: 0.53.0(typescript@7.0.2)
       '@lexical/link':
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -739,6 +742,9 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
+      vite-node:
+        specifier: 'catalog:'
+        version: 6.0.0(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vite-plugin-svgr:
         specifier: 'catalog:'
         version: 5.2.0(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -889,9 +895,6 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       react-router:
         specifier: 'catalog:'
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1372,9 +1375,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1387,9 +1387,6 @@ importers:
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1435,9 +1432,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1519,9 +1513,6 @@ importers:
       '@kobato/utils':
         specifier: workspace:*
         version: link:../utils
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1762,9 +1753,6 @@ importers:
       react-hook-form:
         specifier: 'catalog:'
         version: 7.92.0(@types/react@19.3.0)(react@19.3.1)
-      react-intl:
-        specifier: 'catalog:'
-        version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       react-router:
         specifier: 'catalog:'
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)

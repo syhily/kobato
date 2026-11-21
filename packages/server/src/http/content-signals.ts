@@ -1,4 +1,4 @@
-import type { ContentRedirectSignal, ContentSignal } from '@kobato/contracts/content.ts'
+import type { ContentRedirectSignal, ContentSignal } from '@kobato/contracts/content'
 
 import { ORPCError } from '@orpc/server'
 

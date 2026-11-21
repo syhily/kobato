@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
-import { liveContentWhere, type LiveContentColumns } from '@kobato/server/domains/content/schemas/live-gate.ts'
-import { jobDb, nudgeRegisteredJob, registerJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate'
+import { liveContentWhere, type LiveContentColumns } from '@kobato/server/domains/content/schemas/live-gate'
+import { jobDb, nudgeRegisteredJob, registerJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
 import { and, asc, gt } from 'drizzle-orm'
 
 const log = getLogger('content.scheduled-publish')

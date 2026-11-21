@@ -1,4 +1,4 @@
-import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest.ts'
+import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -85,18 +85,18 @@ function buildClientManifest(): string {
 describe('render/warmup/manifest — getWarmupManifest', () => {
   it('returns null in dev environment', async () => {
     vi.stubEnv('DEV', true as never)
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toBeNull()
   })
 
   it('returns null when the manifest file does not exist', async () => {
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toBeNull()
   })
 
   it('returns null when the JSON shape is invalid', async () => {
     writeWarmupManifest(JSON.stringify({ version: 'not-a-number' }))
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toBeNull()
   })
 
@@ -110,7 +110,7 @@ describe('render/warmup/manifest — getWarmupManifest', () => {
       tier2_auth: ['/login'],
     }
     writeWarmupManifest(JSON.stringify(manifest))
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toEqual(manifest)
   })
 
@@ -118,7 +118,7 @@ describe('render/warmup/manifest — getWarmupManifest', () => {
     writeWarmupManifest(
       JSON.stringify({ version: 1, tier1: [], tier2_public: [], tier2_admin: [], tier2_editor: [], tier2_auth: [] }),
     )
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     const first = getWarmupManifest()
     const second = getWarmupManifest()
     expect(second).toBe(first)
@@ -126,7 +126,7 @@ describe('render/warmup/manifest — getWarmupManifest', () => {
 
   it('returns null when JSON.parse throws', async () => {
     writeWarmupManifest('not-json')
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toBeNull()
   })
 
@@ -141,7 +141,7 @@ describe('render/warmup/manifest — getWarmupManifest', () => {
         tier2_auth: [],
       }),
     )
-    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getWarmupManifest } = await import('@kobato/server/render/warmup/manifest')
     expect(getWarmupManifest()).toBeNull()
   })
 })
@@ -152,12 +152,12 @@ describe('render/warmup/manifest — getCriticalChunksForPathname', () => {
       JSON.stringify({ version: 1, tier1: [], tier2_public: [], tier2_admin: [], tier2_editor: [], tier2_auth: [] }),
     )
     writeFileSync(join(assetsDir, 'manifest-abc.js'), buildClientManifest())
-    return import('@kobato/server/render/warmup/manifest.ts')
+    return import('@kobato/server/render/warmup/manifest')
   }
 
   it('returns null in dev environment', async () => {
     vi.stubEnv('DEV', true as never)
-    const { getCriticalChunksForPathname } = await import('@kobato/server/render/warmup/manifest.ts')
+    const { getCriticalChunksForPathname } = await import('@kobato/server/render/warmup/manifest')
     expect(getCriticalChunksForPathname('/')).toBeNull()
   })
 

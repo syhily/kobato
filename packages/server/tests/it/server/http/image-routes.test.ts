@@ -1,11 +1,11 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import sharp from 'sharp'
@@ -13,7 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The calendar renderer has its own real-canvas coverage; the route test pins
 // the year/time/theme/locale routing through a fast spy.
-const serveCalendarSpy = vi.spyOn(await import('@kobato/server/http/resources/calendar.ts'), 'serveCalendar')
+const serveCalendarSpy = vi.spyOn(await import('@kobato/server/http/resources/calendar'), 'serveCalendar')
 serveCalendarSpy.mockImplementation(
   async (params: { year?: string; time?: string }, options: { theme: string; locale: string }) => {
     return new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), {
@@ -25,7 +25,7 @@ serveCalendarSpy.mockImplementation(
 
 const db = getTestDb()
 
-const { imagesRouter } = await import('@kobato/server/http/resources/images.ts')
+const { imagesRouter } = await import('@kobato/server/http/resources/images')
 
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {

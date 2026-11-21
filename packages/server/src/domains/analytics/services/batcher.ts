@@ -1,11 +1,11 @@
-import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
-import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
+import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 
 import { type DuckDBConnection } from '@duckdb/node-api'
-import { appendAccessEvents } from '@kobato/db/duckdb/access-events.ts'
-import { appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env.ts'
-import { ANALYTICS_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths.ts'
-import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
+import { appendAccessEvents } from '@kobato/db/duckdb/access-events'
+import { appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
+import { ANALYTICS_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
+import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
 import {
   deserializeDeadLetterJsonLine,
   type FlushResult,
@@ -13,9 +13,9 @@ import {
   replayDeadLetter as replayFromInfra,
   serializeDeadLetterJsonLines,
   writeDeadLetter,
-} from '@kobato/server/infra/db/insert-batcher.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/db/insert-batcher'
+import { getLogger } from '@kobato/server/infra/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { randomUUID } from 'node:crypto'
 
 const BATCHER_NAME = 'AccessLogBatcher'

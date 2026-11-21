@@ -1,22 +1,22 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionUpsertOutcome } from '@kobato/db/operations/webmention.ts'
-import type { WebmentionRow } from '@kobato/db/types.ts'
-import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionUpsertOutcome } from '@kobato/db/operations/webmention'
+import type { WebmentionRow } from '@kobato/db/types'
+import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema'
 
-import { upsertWebmention } from '@kobato/db/operations/webmention.ts'
-import { classifyWebmentionType, type WebmentionType } from '@kobato/server/domains/webmentions/classify.ts'
-import { sendNewWebmention } from '@kobato/server/domains/webmentions/email.ts'
-import { fetchSourceHtml } from '@kobato/server/domains/webmentions/fetch.ts'
-import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target.ts'
+import { upsertWebmention } from '@kobato/db/operations/webmention'
+import { classifyWebmentionType, type WebmentionType } from '@kobato/server/domains/webmentions/classify'
+import { sendNewWebmention } from '@kobato/server/domains/webmentions/email'
+import { fetchSourceHtml } from '@kobato/server/domains/webmentions/fetch'
+import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target'
 import {
   extractSourceMetadata,
   requireSourceKey,
   sourceLinksToTarget,
   type SourceMetadata,
-} from '@kobato/server/domains/webmentions/verify.ts'
-import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/domains/webmentions/verify'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('webmentions.receive')
 

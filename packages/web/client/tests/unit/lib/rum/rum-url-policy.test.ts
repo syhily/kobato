@@ -1,4 +1,4 @@
-import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
+import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy'
 import { describe, expect, it } from 'vitest'
 
 describe('RUM resource URL policy', () => {

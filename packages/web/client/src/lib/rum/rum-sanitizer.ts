@@ -1,10 +1,10 @@
-import type { RumBudgetStore } from '@kobato/web-client/lib/rum/rum-budget.ts'
-import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route.ts'
+import type { RumBudgetStore } from '@kobato/web-client/lib/rum/rum-budget'
+import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route'
 import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserve/browser-rum-slim'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { createRumSessionBudget } from '@kobato/web-client/lib/rum/rum-budget.ts'
-import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { createRumSessionBudget } from '@kobato/web-client/lib/rum/rum-budget'
+import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy'
 
 type JsonRecord = Record<string, unknown>
 type Projected = JsonRecord

@@ -1,5 +1,5 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { RateLimitSettings } from '@kobato/settings/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { RateLimitSettings } from '@kobato/settings/types'
 
 export type BucketKey = keyof RateLimitSettings
 

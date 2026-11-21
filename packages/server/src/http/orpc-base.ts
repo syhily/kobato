@@ -1,34 +1,34 @@
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { AnyContractRouter } from '@orpc/contract'
 import type { z } from 'zod'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles.ts'
-import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import {
   parseCommentTokensCookie,
   serializeCommentTokensCookie,
-} from '@kobato/server/domains/comments/services/comment-token.ts'
+} from '@kobato/server/domains/comments/services/comment-token'
 import {
   apiErrorData,
   summarizeApiError,
   translateApiError,
   translateDomainError,
-} from '@kobato/server/http/translate-domain-error.ts'
-import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+} from '@kobato/server/http/translate-domain-error'
+import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import {
   tryCommentPostRateLimit,
   tryNotificationReplyRateLimit,
   tryResourceRateLimit,
-} from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/infra/rate-limit'
 import { implementerInternal, ORPCError, os } from '@orpc/server'
 
 export interface HandlerContext {

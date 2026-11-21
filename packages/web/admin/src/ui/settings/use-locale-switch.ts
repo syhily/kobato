@@ -1,6 +1,6 @@
-import type { SettingsChangeVerdict } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
+import type { SettingsChangeVerdict } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict'
 
-import { SETTINGS_SKIP_COMMIT } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
+import { SETTINGS_SKIP_COMMIT } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict'
 import { useCallback, useRef, useState } from 'react'
 
 interface UseLocaleSwitchOptions<Locale extends string> {

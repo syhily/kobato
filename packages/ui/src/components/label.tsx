@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 function Label({ className, htmlFor, ...props }: ComponentProps<'label'>) {
   return (

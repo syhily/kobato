@@ -7,9 +7,9 @@ import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { parseLocalDateTimeInput } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
+import { parseLocalDateTimeInput } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 
 export function derivePublishState(
   latest: RevisionLike | null,

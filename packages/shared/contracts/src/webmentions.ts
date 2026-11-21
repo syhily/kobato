@@ -1,5 +1,5 @@
-import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { idString, isoDateTime } from '@kobato/contracts/primitives'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const

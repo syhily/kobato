@@ -1,7 +1,7 @@
-import type { SecretMasks, SettingsBundle } from '@kobato/settings/types.ts'
+import type { SecretMasks, SettingsBundle } from '@kobato/settings/types'
 
-import { createSsrCaller } from '@kobato/server/http/ssr-caller.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ORPCError } from '@orpc/server'
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 

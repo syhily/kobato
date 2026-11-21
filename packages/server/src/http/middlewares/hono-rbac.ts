@@ -1,7 +1,7 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles.ts'
-import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
+import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { localizedHttpException } from '@kobato/server/http/localized-http-exception'
 import { createMiddleware } from 'hono/factory'
 
 export const requireRoleMw = (role: Role) =>

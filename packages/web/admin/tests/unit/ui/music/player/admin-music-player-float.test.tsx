@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
 
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const track: AdminMusicDto = {
@@ -50,7 +50,7 @@ const player = vi.hoisted(() => ({
   },
 }))
 
-const musicplayercontext = await import('@kobato/web-admin/ui/music/player/music-player-context.tsx')
+const musicplayercontext = await import('@kobato/web-admin/ui/music/player/music-player-context')
 vi.spyOn(musicplayercontext, 'useMusicPlayerState').mockImplementation(() => player.state)
 vi.spyOn(musicplayercontext, 'useMusicPlayerTime').mockImplementation(() => player.time)
 vi.spyOn(musicplayercontext, 'useMusicPlayerActions').mockImplementation(() => player.actions)
@@ -60,7 +60,7 @@ afterAll(() => {
 })
 
 async function renderFloat(initialPath = '/admin/dashboard') {
-  const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat.tsx')
+  const { AdminMusicPlayerFloat } = await import('@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat')
   return stableHtml(renderInRouter(<AdminMusicPlayerFloat />, initialPath))
 }
 

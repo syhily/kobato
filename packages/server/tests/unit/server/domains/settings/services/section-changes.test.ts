@@ -2,7 +2,7 @@ import {
   __clearSectionChangeHandlersForTests,
   registerSectionChangeHandler,
   sectionChangeHandler,
-} from '@kobato/server/domains/settings/services/section-changes.ts'
+} from '@kobato/server/domains/settings/services/section-changes'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('server/domains/settings/services/section-changes', () => {

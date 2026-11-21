@@ -1,4 +1,4 @@
-import type { StorageDriver } from '@kobato/settings/types.ts'
+import type { StorageDriver } from '@kobato/settings/types'
 
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'

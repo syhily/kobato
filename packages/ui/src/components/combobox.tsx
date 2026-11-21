@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
 
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {

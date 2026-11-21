@@ -1,5 +1,5 @@
-import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/sanitize/config.ts'
-import { sanitizeHtmlEngine } from '@kobato/sanitize/engine.node.ts'
+import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/sanitize/config'
+import { sanitizeHtmlEngine } from '@kobato/sanitize/engine.node'
 
 export function sanitizeHtmlString(html: string, strategy: SafeHtmlStrategy): string {
   return sanitizeHtmlEngine(html, strategyToConfig(strategy))

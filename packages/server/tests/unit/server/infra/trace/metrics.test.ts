@@ -1,16 +1,16 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { SpanExporter } from '@opentelemetry/sdk-trace'
 
-import { __resetTraceFacadeForTests, counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade.ts'
+import { __resetTraceFacadeForTests, counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade'
 import {
   addHttpServerActive,
   METRIC,
   recordCacheLookup,
   recordRumRelayOutcome,
   recordSsrPhase,
-} from '@kobato/server/infra/trace/metrics.ts'
-import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/metrics'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader, dataPointsOf, metricByName, pointValue } from '@kobato/test/in-memory-metric-reader'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

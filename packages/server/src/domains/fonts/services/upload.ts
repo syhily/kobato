@@ -1,13 +1,13 @@
-import type { AdminFontDto } from '@kobato/contracts/fonts.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { FontRow } from '@kobato/db/schema/font.ts'
+import type { AdminFontDto } from '@kobato/contracts/fonts'
+import type { Database } from '@kobato/db/database'
+import type { FontRow } from '@kobato/db/schema/font'
 
-import { font } from '@kobato/db/schema/font.ts'
-import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read.ts'
-import { sliceFont } from '@kobato/server/domains/fonts/slice.ts'
-import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { font } from '@kobato/db/schema/font'
+import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
+import { sliceFont } from '@kobato/server/domains/fonts/slice'
+import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { createHash } from 'node:crypto'
 
 export const FONT_MAX_BYTES = 60 * 1024 * 1024

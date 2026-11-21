@@ -1,7 +1,7 @@
-import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql } from 'kysely'
 
 function emptyToNull(value: unknown): string | null {

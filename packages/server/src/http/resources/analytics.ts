@@ -1,17 +1,17 @@
-import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { deviceEnvBeaconSchema } from '@kobato/contracts/analytics.ts'
-import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime.ts'
-import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { pushDeviceEnvBeacon } from '@kobato/server/domains/analytics/services/env-beacon.ts'
+import { deviceEnvBeaconSchema } from '@kobato/contracts/analytics'
+import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime'
+import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle'
+import { pushDeviceEnvBeacon } from '@kobato/server/domains/analytics/services/env-beacon'
 import {
   acquireRealtimeConnection,
   realtimeConnectionKey,
-} from '@kobato/server/domains/analytics/services/realtime-connections.ts'
-import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { tryDeviceEnvBeaconRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/analytics/services/realtime-connections'
+import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac'
+import { getLogger } from '@kobato/server/infra/logger'
+import { tryDeviceEnvBeaconRateLimit } from '@kobato/server/infra/rate-limit'
 import { Hono, type Context } from 'hono'
 
 const POLL_INTERVAL_MS = 2_000

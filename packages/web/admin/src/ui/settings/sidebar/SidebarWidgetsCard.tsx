@@ -1,13 +1,13 @@
-import type { SidebarSettings, SidebarWidget } from '@kobato/settings/types.ts'
+import type { SidebarSettings, SidebarWidget } from '@kobato/settings/types'
 
 import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
-import { SortableWidgetRow } from '@kobato/web-admin/ui/settings/sidebar/SortableWidgetRow.tsx'
-import { resolveSortableMove, useSortableSensors, VERTICAL_AXIS_ONLY } from '@kobato/web-admin/ui/shared/sortable.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
+import { SortableWidgetRow } from '@kobato/web-admin/ui/settings/sidebar/SortableWidgetRow'
+import { resolveSortableMove, useSortableSensors, VERTICAL_AXIS_ONLY } from '@kobato/web-admin/ui/shared/sortable'
 import { useFieldArray } from 'react-hook-form'
 
 export function SidebarWidgetsCard({ sidebar }: { sidebar: SidebarSettings }) {

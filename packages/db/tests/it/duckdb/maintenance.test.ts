@@ -1,13 +1,13 @@
-import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database'
 
-import { runAccessLogRetention } from '@kobato/db/duckdb/maintenance.ts'
+import { runAccessLogRetention } from '@kobato/db/duckdb/maintenance'
 import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
   seedDeviceEnvClientRows,
   seedDeviceEnvServerRows,
-} from '@kobato/db/tests/utils/analytics-db.ts'
+} from '@kobato/db/tests/utils/analytics-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 interface CapturedLog {

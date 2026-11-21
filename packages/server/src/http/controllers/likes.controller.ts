@@ -1,15 +1,15 @@
-import { likesContract } from '@kobato/api/likes.ts'
+import { likesContract } from '@kobato/api/likes'
 import {
   decreaseLikes,
   increaseLikes,
   queryLikes,
   validateLikeToken,
-} from '@kobato/server/domains/comments/services/likes.ts'
-import { resolveMetricTarget, safeResolveMetricTarget } from '@kobato/server/domains/comments/services/shared.ts'
-import { implementPublic, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { tryLikeIncreaseRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/comments/services/likes'
+import { resolveMetricTarget, safeResolveMetricTarget } from '@kobato/server/domains/comments/services/shared'
+import { implementPublic, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { tryLikeIncreaseRateLimit } from '@kobato/server/infra/rate-limit'
 
 const impl = implementPublic(likesContract)
 

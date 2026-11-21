@@ -1,22 +1,22 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
-import { user as userTable, verification } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { passkeyCredential } from '@kobato/db/schema/passkey'
+import { user as userTable, verification } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { installFetch, jsonResponse } from '@kobato/test/fetch'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const { RPCHandler } = await import('@orpc/server/fetch')
-const { adminUsersAdminRouter } = await import('@kobato/server/http/controllers/admin/users-admin.controller.ts')
-const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit.ts')
+const { adminUsersAdminRouter } = await import('@kobato/server/http/controllers/admin/users-admin.controller')
+const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit')
 const handler = new RPCHandler(adminUsersAdminRouter)
 
 const db = getTestDb()

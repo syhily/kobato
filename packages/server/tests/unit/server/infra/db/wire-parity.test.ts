@@ -5,7 +5,7 @@ import type {
   RealtimeEvent as WireRealtimeEvent,
   ViewsDto,
   ViewsPoint as WireViewsPoint,
-} from '@kobato/contracts/analytics.ts'
+} from '@kobato/contracts/analytics'
 import type {
   CountersSummary,
   HeatmapCell,
@@ -13,41 +13,38 @@ import type {
   RealtimeEvent,
   ViewsPoint,
   ViewsSeries,
-} from '@kobato/db/duckdb/queries/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+} from '@kobato/db/duckdb/queries/types'
+import type { Assert, Equals } from '@kobato/utils/type-equals'
 
-import { METRIC_TYPES as WIRE_METRIC_TYPES } from '@kobato/contracts/analytics.ts'
+import { METRIC_TYPES as WIRE_METRIC_TYPES } from '@kobato/contracts/analytics'
 import {
   JOB_RUN_STATUSES as WIRE_JOB_RUN_STATUSES,
   JOB_RUN_TRIGGERS as WIRE_JOB_RUN_TRIGGERS,
-} from '@kobato/contracts/jobs.ts'
-import { NOTIFICATION_KINDS as WIRE_NOTIFICATION_KINDS } from '@kobato/contracts/notifications.ts'
+} from '@kobato/contracts/jobs'
+import { NOTIFICATION_KINDS as WIRE_NOTIFICATION_KINDS } from '@kobato/contracts/notifications'
 import {
   STORAGE_MIGRATION_PERSISTED_PHASES as WIRE_PERSISTED_PHASES,
   storageMigrationDirectionDto,
   storageMigrationPhaseDto,
-} from '@kobato/contracts/storage.ts'
-import { LOGIN_METHODS as WIRE_LOGIN_METHODS } from '@kobato/contracts/users.ts'
+} from '@kobato/contracts/storage'
+import { LOGIN_METHODS as WIRE_LOGIN_METHODS } from '@kobato/contracts/users'
 import {
   WEBMENTION_OUTBOX_STATUSES as WIRE_OUTBOX_STATUSES,
   WEBMENTION_STATUSES as WIRE_STATUSES,
   WEBMENTION_TYPES as WIRE_TYPES,
   WEBMENTION_VERIFY_STATUSES as WIRE_VERIFY_STATUSES,
-} from '@kobato/contracts/webmentions.ts'
-import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types.ts'
-import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/schema/job-run.ts'
-import { NOTIFICATION_KINDS } from '@kobato/db/schema/notification.ts'
-import {
-  STORAGE_MIGRATION_DIRECTIONS,
-  STORAGE_MIGRATION_PERSISTED_PHASES,
-} from '@kobato/db/schema/storage-migration.ts'
-import { LOGIN_METHODS } from '@kobato/db/schema/user.ts'
+} from '@kobato/contracts/webmentions'
+import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types'
+import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/schema/job-run'
+import { NOTIFICATION_KINDS } from '@kobato/db/schema/notification'
+import { STORAGE_MIGRATION_DIRECTIONS, STORAGE_MIGRATION_PERSISTED_PHASES } from '@kobato/db/schema/storage-migration'
+import { LOGIN_METHODS } from '@kobato/db/schema/user'
 import {
   WEBMENTION_OUTBOX_STATUSES,
   WEBMENTION_STATUSES,
   WEBMENTION_TYPES,
   WEBMENTION_VERIFY_STATUSES,
-} from '@kobato/db/schema/webmention.ts'
+} from '@kobato/db/schema/webmention'
 import { describe, expect, it } from 'vitest'
 
 describe('db ↔ contracts wire parity', () => {

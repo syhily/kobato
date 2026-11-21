@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -6,17 +6,17 @@ const fileStoreMock = vi.hoisted(() => ({
   sweepBucket: vi.fn<(bucket: string, now?: number) => Promise<void>>(),
 }))
 
-vi.mock('@kobato/server/infra/cache/file-store.ts', () => fileStoreMock)
+vi.mock('@kobato/server/infra/cache/file-store', () => fileStoreMock)
 
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 
 const where = vi.fn().mockResolvedValue(undefined)
 const db = { delete: vi.fn(() => ({ where })) }
 
-const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
-const { sweepExpiredKvEntries } = await import('@kobato/server/infra/cache/kv-maintenance.ts')
-const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
-const { CACHE_DECLARATIONS } = await import('@kobato/cache/registry.ts')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry')
+const { sweepExpiredKvEntries } = await import('@kobato/server/infra/cache/kv-maintenance')
+const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
+const { CACHE_DECLARATIONS } = await import('@kobato/cache/registry')
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 

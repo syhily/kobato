@@ -1,5 +1,5 @@
-import { post } from '@kobato/db/schema/post.ts'
-import { tag } from '@kobato/db/schema/taxonomy.ts'
+import { post } from '@kobato/db/schema/post'
+import { tag } from '@kobato/db/schema/taxonomy'
 import { index, integer, primaryKey, sqliteTable } from 'drizzle-orm/sqlite-core'
 
 export const postTag = sqliteTable(

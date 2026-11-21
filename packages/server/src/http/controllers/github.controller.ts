@@ -1,8 +1,8 @@
-import { githubContract } from '@kobato/api/github.ts'
-import { fetchGithubAvatarDataUrl } from '@kobato/server/domains/comments/services/avatar.ts'
-import { fetchLatestRelease } from '@kobato/server/domains/update/release.ts'
-import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { githubContract } from '@kobato/api/github'
+import { fetchGithubAvatarDataUrl } from '@kobato/server/domains/comments/services/avatar'
+import { fetchLatestRelease } from '@kobato/server/domains/update/release'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { ORPCError } from '@orpc/server'
 
 const impl = implementPublic(githubContract)

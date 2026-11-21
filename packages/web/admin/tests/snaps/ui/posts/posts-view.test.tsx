@@ -1,9 +1,9 @@
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { ImageField } from '@kobato/web-admin/ui/editor-meta/ImageField.tsx'
-import { PublishStatusRow } from '@kobato/web-admin/ui/editor-meta/PublishStatusRow.tsx'
-import { PostsSkeleton } from '@kobato/web-admin/ui/posts/PostsSkeleton.tsx'
-import { PostsView } from '@kobato/web-admin/ui/posts/PostsView.tsx'
-import { renderToHtml, stableHtml, renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { ImageField } from '@kobato/web-admin/ui/editor-meta/ImageField'
+import { PublishStatusRow } from '@kobato/web-admin/ui/editor-meta/PublishStatusRow'
+import { PostsSkeleton } from '@kobato/web-admin/ui/posts/PostsSkeleton'
+import { PostsView } from '@kobato/web-admin/ui/posts/PostsView'
+import { renderToHtml, stableHtml, renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

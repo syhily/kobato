@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface PageMetaDraft {
   slug: string

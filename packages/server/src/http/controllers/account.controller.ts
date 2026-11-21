@@ -1,36 +1,36 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
-import { accountContract } from '@kobato/api/account.ts'
-import { findSafeUserById } from '@kobato/db/operations/user.ts'
-import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import { accountContract } from '@kobato/api/account'
+import { findSafeUserById } from '@kobato/db/operations/user'
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import {
   deleteCredential,
   generateRegistrationOptions,
   listCredentials,
   setLoginMethod,
   verifyRegistrationResponse,
-} from '@kobato/server/domains/auth/passkey/service.ts'
-import { listSessionsByUser } from '@kobato/server/domains/auth/services/sessions.ts'
-import { isMailLoginReady } from '@kobato/server/domains/auth/services/shared.ts'
-import { revokeOwnSessionWithGuard } from '@kobato/server/domains/auth/session-guard.ts'
+} from '@kobato/server/domains/auth/passkey/service'
+import { listSessionsByUser } from '@kobato/server/domains/auth/services/sessions'
+import { isMailLoginReady } from '@kobato/server/domains/auth/services/shared'
+import { revokeOwnSessionWithGuard } from '@kobato/server/domains/auth/session-guard'
 import {
   getAccountProfile,
   updateAccountPassword,
   updateAccountProfile,
-} from '@kobato/server/domains/users/services/account.ts'
-import { implementAuthed, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+} from '@kobato/server/domains/users/services/account'
+import { implementAuthed, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import {
   tryPasskeyDeleteRateLimit,
   tryPasskeyRegisterBeginRateLimit,
   tryPasskeyRegisterFinishRateLimit,
   tryPasskeySetForceRateLimit,
   tryRateLimit,
-} from '@kobato/server/infra/rate-limit.ts'
-import { idFromString } from '@kobato/utils/id.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+} from '@kobato/server/infra/rate-limit'
+import { idFromString } from '@kobato/utils/id'
+import { isRecord } from '@kobato/utils/type-guards'
 
 const impl = implementAuthed(accountContract)
 

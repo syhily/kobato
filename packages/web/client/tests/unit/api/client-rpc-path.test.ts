@@ -1,4 +1,4 @@
-import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
+import { sanitizeResourceUrl } from '@kobato/web-client/lib/rum/rum-url-policy'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const captured: string[] = []
@@ -19,7 +19,7 @@ describe('project oRPC client HTTP path', () => {
     vi.resetModules()
     vi.stubGlobal('fetch', captureFetch)
 
-    const { orpc } = await import('@kobato/web-client/api/client.ts')
+    const { orpc } = await import('@kobato/web-client/api/client')
     const client = orpc as unknown as {
       content: {
         home: (input: unknown) => Promise<unknown>

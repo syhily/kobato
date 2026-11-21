@@ -1,5 +1,5 @@
-import { rumStatusRouter } from '@kobato/server/http/resources/rum-status.ts'
-import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
+import { rumStatusRouter } from '@kobato/server/http/resources/rum-status'
+import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

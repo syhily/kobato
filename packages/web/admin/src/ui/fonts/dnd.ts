@@ -1,4 +1,4 @@
-import type { FontSlot } from '@kobato/contracts/fonts.ts'
+import type { FontSlot } from '@kobato/contracts/fonts'
 
 export type LibraryDragData = { type: 'library'; fontId: string }
 export type SlotItemDragData = { type: 'slotItem'; slot: FontSlot; fontId: string }

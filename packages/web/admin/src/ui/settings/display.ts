@@ -1,5 +1,5 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { SettingsSection } from '@kobato/settings/sections'
 
 export type SettingsNavGroup = 'site' | 'content' | 'service' | 'system'
 

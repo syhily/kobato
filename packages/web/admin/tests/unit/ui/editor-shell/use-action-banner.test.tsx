@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useActionBanner } from '@kobato/web-admin/ui/editor-shell/use-action-banner.ts'
+import { useActionBanner } from '@kobato/web-admin/ui/editor-shell/use-action-banner'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

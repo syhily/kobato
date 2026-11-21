@@ -1,6 +1,6 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { createMiddleware } from 'hono/factory'
 
 const VALID_PROTOCOLS = new Set(['http', 'https'])

@@ -1,7 +1,7 @@
-import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player.ts'
-import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import { toProjectionState } from '@kobato/server/infra/lexical/projection-state.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player'
+import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling/headless/schema'
+import { toProjectionState } from '@kobato/server/infra/lexical/projection-state'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 function parse(state: unknown): LexicalEditorState {

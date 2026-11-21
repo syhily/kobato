@@ -1,4 +1,4 @@
-import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql } from 'kysely'
 import { describe, expect, it } from 'vitest'
 

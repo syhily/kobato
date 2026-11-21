@@ -1,7 +1,7 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { requestContext } from '@kobato/server/http/request-context'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -13,33 +13,33 @@ vi.mock('@orpc/server/fetch', () => ({
   },
 }))
 
-vi.mock('@kobato/server/http/api-router.ts', () => ({
+vi.mock('@kobato/server/http/api-router', () => ({
   apiRouter: { mock: true },
 }))
 
-vi.mock('@kobato/server/http/middlewares/csrf.ts', () => ({
+vi.mock('@kobato/server/http/middlewares/csrf', () => ({
   csrfGuard: vi.fn(async (_c: any, next: () => Promise<void>) => next()),
 }))
 
-vi.mock('@kobato/server/http/middlewares/dynamic-body-limit.ts', () => ({
+vi.mock('@kobato/server/http/middlewares/dynamic-body-limit', () => ({
   dynamicBodyLimit: vi.fn(() => async (_c: any, next: () => Promise<void>) => next()),
 }))
 
-vi.mock('@kobato/server/domains/settings/services/hydrate.ts', () => ({
+vi.mock('@kobato/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(async () => ({})),
 }))
 
-vi.mock('@kobato/server/bootstrap/db-lifecycle.ts', () => ({
+vi.mock('@kobato/server/bootstrap/db-lifecycle', () => ({
   getDb: vi.fn(() => ({})),
 }))
 
-const { configureMiddleware, buildLoadContext } = await import('@kobato/server/http/middleware-pipeline.ts')
-const { createApiApp } = await import('@kobato/server/http/app.ts')
-const { trustProxy } = await import('@kobato/server/http/middlewares/trust-proxy.ts')
-const { trailingSlashNormaliser } = await import('@kobato/server/http/middlewares/trailing-slash.ts')
-const { honoWpDecoyMiddleware } = await import('@kobato/server/http/middlewares/wp-decoy.ts')
-const { requestContextMiddleware } = await import('@kobato/server/http/middlewares/request-context.ts')
-const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
+const { configureMiddleware, buildLoadContext } = await import('@kobato/server/http/middleware-pipeline')
+const { createApiApp } = await import('@kobato/server/http/app')
+const { trustProxy } = await import('@kobato/server/http/middlewares/trust-proxy')
+const { trailingSlashNormaliser } = await import('@kobato/server/http/middlewares/trailing-slash')
+const { honoWpDecoyMiddleware } = await import('@kobato/server/http/middlewares/wp-decoy')
+const { requestContextMiddleware } = await import('@kobato/server/http/middlewares/request-context')
+const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate')
 
 describe('glue contract / middleware pipeline order', () => {
   it('registers the 13 perimeter middlewares in their contract order', () => {
@@ -131,7 +131,7 @@ describe('glue contract / request-context projections', () => {
 
 describe('glue contract / entry.server export surface', () => {
   it('keeps the default export, streamTimeout, and handleError', async () => {
-    const entry = await import('@/entry.server.tsx')
+    const entry = await import('@/entry.server')
 
     expect(typeof entry.default).toBe('function')
     expect(entry.streamTimeout).toBe(5_000)

@@ -1,6 +1,6 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

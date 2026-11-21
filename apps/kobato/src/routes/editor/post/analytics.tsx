@@ -1,13 +1,13 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
-import { createSsrCaller, isOrpcNotFound } from '@kobato/server/http/ssr-caller.ts'
-import { notFound } from '@kobato/server/infra/http/status.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idFromString } from '@kobato/utils/id.ts'
-import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web-admin/ui/analytics/PostAnalyticsView.tsx'
-import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import { requireRole } from '@kobato/server/domains/auth/rbac'
+import { createSsrCaller, isOrpcNotFound } from '@kobato/server/http/ssr-caller'
+import { notFound } from '@kobato/server/infra/http/status'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { idFromString } from '@kobato/utils/id'
+import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web-admin/ui/analytics/PostAnalyticsView'
+import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { Link } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/analytics'
 

@@ -1,7 +1,7 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@kobato/server/infra/scheduler-utils.ts'
+import { getLogger } from '@kobato/server/infra/logger'
+import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@kobato/server/infra/scheduler-utils'
 
 const log = getLogger('job-registry')
 

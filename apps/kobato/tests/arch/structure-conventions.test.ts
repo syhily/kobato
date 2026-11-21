@@ -237,7 +237,7 @@ describe('structure conventions', () => {
     })
     expect(
       orphans,
-      'a public `@kobato/api/<domain>.ts` module needs a matching `@kobato/contracts/<domain>.ts` (same noun)',
+      'a public `@kobato/api/<domain>` module needs a matching `@kobato/contracts/<domain>` (same noun)',
     ).toEqual([])
   })
 })

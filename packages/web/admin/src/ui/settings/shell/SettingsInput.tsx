@@ -1,7 +1,7 @@
 import type { ComponentProps, FocusEventHandler } from 'react'
 
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
+import { Input } from '@kobato/ui/components/input'
+import { Textarea } from '@kobato/ui/components/textarea'
 
 type InputProps = ComponentProps<typeof Input>
 

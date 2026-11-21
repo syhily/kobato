@@ -1,12 +1,12 @@
 import type { SerializedEditorState } from '@kobato/inkling/headless'
 
-import { collectLexicalHeadings } from '@kobato/inkling-internal/headless/collect.ts'
+import { collectLexicalHeadings } from '@kobato/inkling-internal/headless/collect'
 import {
   createHeadingIdTracker as createHeadingSlugTracker,
   lexicalStateToHtml,
   slugify as slugifyHeadingText,
 } from '@kobato/inkling/headless'
-import { lexicalBodyWith, lexicalHeading } from '@kobato/inkling/tests/utils/lexical.ts'
+import { lexicalBodyWith, lexicalHeading } from '@kobato/inkling/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 const HEADING_TEXTS = [

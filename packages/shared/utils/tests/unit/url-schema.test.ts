@@ -1,4 +1,4 @@
-import { httpUrlOrEmptyStringSchema, optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
+import { httpUrlOrEmptyStringSchema, optionalHttpUrlSchema } from '@kobato/utils/url-schema'
 import { describe, expect, it } from 'vitest'
 
 describe('client: URL schemas', () => {

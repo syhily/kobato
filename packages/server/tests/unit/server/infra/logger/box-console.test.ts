@@ -1,4 +1,4 @@
-import { boxLog } from '@kobato/server/infra/logger/box-console.ts'
+import { boxLog } from '@kobato/server/infra/logger/box-console'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('infra/logger/box-console — boxLog', () => {

@@ -1,8 +1,8 @@
-import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
-import { AdminPagination } from '@kobato/web-admin/ui/shared/list/AdminPagination.tsx'
-import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
+import { AdminPagination } from '@kobato/web-admin/ui/shared/list/AdminPagination'
+import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('snapshot: AdminListPage', () => {

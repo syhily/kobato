@@ -1,7 +1,7 @@
-import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
-import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules.ts'
-import { vitestTestBase } from '@kobato/test/vitest.base.ts'
-import { testDefine } from '@kobato/test/vitest.define.ts'
+import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files'
+import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules'
+import { vitestTestBase } from '@kobato/test/vitest.base'
+import { testDefine } from '@kobato/test/vitest.define'
 import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 

@@ -1,7 +1,7 @@
-import type { UpsertPostMetaInput } from '@kobato/contracts/posts.ts'
-import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import type { UpsertPostMetaInput } from '@kobato/contracts/posts'
+import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 
-import { isContentLanguageInput } from '@kobato/i18n/content-language.ts'
+import { isContentLanguageInput } from '@kobato/i18n/content-language'
 
 export function buildPostUpsertPayload({
   meta,

@@ -1,7 +1,7 @@
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema.ts'
-import { commentBodyPlainText } from '@kobato/web-public/ui/comments/comment-body-helpers.ts'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
+import { commentBodyPlainText } from '@kobato/web-public/ui/comments/comment-body-helpers'
 import { describe, expect, it } from 'vitest'
 
 function text(textValue: string) {

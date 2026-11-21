@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel'
+import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import {
   type InfiniteData,
   type QueryKey,

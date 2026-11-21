@@ -1,15 +1,15 @@
-import { adminWebmentionsContract } from '@kobato/api/admin/webmentions.ts'
-import { countWebmentions } from '@kobato/db/operations/webmention.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { asAdminWebmentionWire } from '@kobato/server/domains/webmentions/projection.ts'
-import { reverifyWebmention } from '@kobato/server/domains/webmentions/reverify.ts'
+import { adminWebmentionsContract } from '@kobato/api/admin/webmentions'
+import { countWebmentions } from '@kobato/db/operations/webmention'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { asAdminWebmentionWire } from '@kobato/server/domains/webmentions/projection'
+import { reverifyWebmention } from '@kobato/server/domains/webmentions/reverify'
 import {
   approveWebmention,
   listAdminWebmentionOutbox,
   listAdminWebmentions,
   rejectWebmention,
-} from '@kobato/server/domains/webmentions/service.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
+} from '@kobato/server/domains/webmentions/service'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
 
 const impl = implementAdmin(adminWebmentionsContract)
 

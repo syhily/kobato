@@ -1,4 +1,4 @@
-import { SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
+import { SOCIAL_NETWORKS } from '@kobato/settings/socials'
 import { z } from 'zod'
 
 export const navigationSchema = z.object({

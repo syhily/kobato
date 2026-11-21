@@ -2,11 +2,11 @@ import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
-} from '@kobato/server/infra/observability.ts'
+} from '@kobato/server/infra/observability'
 import {
   observabilityValidationMessages,
   observabilityWriteSchema as baseObservabilityWriteSchema,
-} from '@kobato/settings/sections/observability.ts'
+} from '@kobato/settings/sections/observability'
 
 export const observabilityWriteSchema = baseObservabilityWriteSchema.superRefine((value, ctx) => {
   const site = value.observability

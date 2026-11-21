@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { isHttpUrl } from '@kobato/utils/safe-url'
 import { z } from 'zod'
 
 export const HTTP_URL_MESSAGE = 'common.error.httpUrlRequired' satisfies UiMessageId

@@ -1,9 +1,9 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { isSea } from '@kobato/server/infra/sea/sea.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { isSea } from '@kobato/server/infra/sea/sea'
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 

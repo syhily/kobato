@@ -4,7 +4,7 @@ import {
   removeDraft,
   removeDraftsByPrefix,
   setDraft,
-} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts'
+} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store'
 import 'fake-indexeddb/auto'
 import { openDB } from 'idb'
 import { beforeEach, describe, expect, it } from 'vitest'

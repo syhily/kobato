@@ -1,4 +1,4 @@
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 
 export function NotificationBadge({ count, className }: { count: number; className?: string }) {
   if (count <= 0) {

@@ -1,22 +1,22 @@
-import { adminCommentsContract } from '@kobato/api/admin/comments.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
+import { adminCommentsContract } from '@kobato/api/admin/comments'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
   countAdminPendingDashboard,
   loadAdminPendingDashboard,
   loadAllComments,
   searchAuthorOptions,
   searchPageOptions,
-} from '@kobato/server/domains/comments/services/admin-query.ts'
-import { probeAvatarMirrors as probeAvatarMirrorUrls } from '@kobato/server/domains/comments/services/avatar.ts'
+} from '@kobato/server/domains/comments/services/admin-query'
+import { probeAvatarMirrors as probeAvatarMirrorUrls } from '@kobato/server/domains/comments/services/avatar'
 import {
   approveComment,
   deleteCommentById,
   resolveCommentDeleteRequest,
   updateComment,
-} from '@kobato/server/domains/comments/services/moderate.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/comments/services/moderate'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminCommentsContract)
 

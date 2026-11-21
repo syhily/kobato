@@ -1,11 +1,11 @@
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { findAdminMusicRowById, findMusicById, updateMusic } from '@kobato/db/operations/music.ts'
-import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
+import { findAdminMusicRowById, findMusicById, updateMusic } from '@kobato/db/operations/music'
+import { toAdminMusicDto } from '@kobato/server/domains/music/projection'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 
 export interface UpdateMusicMetadataInputs {
   id: number

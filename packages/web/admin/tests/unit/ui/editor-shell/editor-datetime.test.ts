@@ -3,7 +3,7 @@ import {
   futureLocalInputValueOrEmpty,
   localInputValueToIso,
   parseLocalDateTimeInput,
-} from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import { describe, expect, it } from 'vitest'
 
 const LOCAL_VALUE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/

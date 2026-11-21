@@ -1,12 +1,12 @@
-import type { JobSummaryDto, QueueTaskStatsDto } from '@kobato/contracts/jobs.ts'
-import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
+import type { JobSummaryDto, QueueTaskStatsDto } from '@kobato/contracts/jobs'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage'
 
-import { isStorageMigrationInFlightPhase } from '@kobato/contracts/storage.ts'
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatBytes, formatDuration } from '@kobato/utils/format.ts'
+import { isStorageMigrationInFlightPhase } from '@kobato/contracts/storage'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@kobato/ui/components/card'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatBytes, formatDuration } from '@kobato/utils/format'
 import {
   MIGRATION_PHASE_META,
   RUN_STATUS_META,
@@ -14,10 +14,10 @@ import {
   TASK_CAPABILITIES,
   useFormatAdminDate,
   type TaskStatus,
-} from '@kobato/web-admin/ui/jobs/meta.ts'
-import { RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/web-admin/ui/jobs/meta'
+import { RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon } from 'lucide-react'
 import { Link } from 'react-router'

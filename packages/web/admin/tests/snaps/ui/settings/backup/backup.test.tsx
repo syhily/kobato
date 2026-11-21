@@ -1,13 +1,13 @@
-import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
-import type { BackupLoaderShape } from '@kobato/settings/projection.ts'
+import type { CacheBucketStats } from '@kobato/contracts/cache'
+import type { BackupLoaderShape } from '@kobato/settings/projection'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { BackupFileList } from '@kobato/web-admin/ui/settings/backup/BackupFileList.tsx'
-import { BackupScheduleForm } from '@kobato/web-admin/ui/settings/backup/BackupScheduleForm.tsx'
-import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView.tsx'
-import { BucketCard } from '@kobato/web-admin/ui/settings/cache/BucketCard.tsx'
-import { idleClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { BackupFileList } from '@kobato/web-admin/ui/settings/backup/BackupFileList'
+import { BackupScheduleForm } from '@kobato/web-admin/ui/settings/backup/BackupScheduleForm'
+import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView'
+import { BucketCard } from '@kobato/web-admin/ui/settings/cache/BucketCard'
+import { idleClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

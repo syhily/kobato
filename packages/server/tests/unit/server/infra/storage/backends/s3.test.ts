@@ -1,6 +1,6 @@
-import type { AssetsSettings, BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AssetsSettings, BlogSettingsBundle } from '@kobato/settings/types'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -55,20 +55,20 @@ vi.mock('@aws-sdk/client-s3', () => {
   }
 })
 
-let snapshotSlot: (typeof import('@kobato/settings/snapshot.ts'))['BLOG_SETTINGS_SNAPSHOT_SLOT'] | null = null
+let snapshotSlot: (typeof import('@kobato/settings/snapshot'))['BLOG_SETTINGS_SNAPSHOT_SLOT'] | null = null
 
 async function importBackend() {
   vi.resetModules()
-  const snapshot = await import('@kobato/settings/snapshot.ts')
+  const snapshot = await import('@kobato/settings/snapshot')
   snapshotSlot = snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT
   snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
   snapshot.BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(Promise.resolve(TEST_BLOG_SETTINGS_BUNDLE))
-  const mod = await import('@kobato/server/infra/storage/backends/s3.ts')
+  const mod = await import('@kobato/server/infra/storage/backends/s3')
   return mod.s3Backend
 }
 
 async function importNotFoundError() {
-  const mod = await import('@kobato/server/infra/storage/backend.ts')
+  const mod = await import('@kobato/server/infra/storage/backend')
   return mod.StorageObjectNotFound
 }
 
@@ -468,7 +468,7 @@ describe('storage/backends/s3 — deletePrefix', () => {
 describe('storage/backends/s3 — validateS3Config', () => {
   async function importValidator() {
     vi.resetModules()
-    const mod = await import('@kobato/server/infra/storage/backends/s3.ts')
+    const mod = await import('@kobato/server/infra/storage/backends/s3')
     return mod.validateS3Config
   }
 

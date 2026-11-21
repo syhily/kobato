@@ -1,12 +1,12 @@
-import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
+import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/distribution/sea-assets'
 import {
   isDrizzleSnapshotArtifact,
   packAssetBytes,
   SEA_COMPRESSION_MIN_BYTES,
   shouldPackAsset,
   sortManifestFiles,
-} from '@kobato/pack/sea/assets.ts'
-import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea/sea.ts'
+} from '@kobato/pack/sea/assets'
+import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@kobato/server/infra/sea/sea'
 import { createHash } from 'node:crypto'
 import { zstdDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'

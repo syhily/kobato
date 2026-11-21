@@ -1,8 +1,8 @@
-import { createCaptureMailFixture, parseMail } from '@kobato/server/tests/utils/capture-mail.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { createCaptureMailFixture, parseMail } from '@kobato/server/tests/utils/capture-mail'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, describe, expect, it } from 'vitest'
 
-const { sendConfirmSubscription } = await import('@kobato/server/domains/newsletter/email.ts')
+const { sendConfirmSubscription } = await import('@kobato/server/domains/newsletter/email')
 
 const CONFIRM_LINK = 'https://example.com/newsletter/confirm?token=abc123'
 

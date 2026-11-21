@@ -4,7 +4,7 @@ import {
   getImageSrcset,
   getImageUrl,
   isSafeImageSegment,
-} from '@kobato/assets/images.ts'
+} from '@kobato/assets/images'
 import { describe, expect, it } from 'vitest'
 
 describe('assets/images — classifyImageKind', () => {

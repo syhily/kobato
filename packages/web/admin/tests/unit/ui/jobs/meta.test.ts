@@ -1,4 +1,4 @@
-import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import {
   GROUP_META,
   JOB_RUN_ERROR_LABEL_IDS,
@@ -7,7 +7,7 @@ import {
   STATUS_META,
   TASK_CAPABILITIES,
   jobRunErrorLabelId,
-} from '@kobato/web-admin/ui/jobs/meta.ts'
+} from '@kobato/web-admin/ui/jobs/meta'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')

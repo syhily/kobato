@@ -4,33 +4,33 @@ const createBackup = vi.fn().mockResolvedValue({ path: '/backup' })
 const cleanupOldBackups = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
 
-vi.mock('@kobato/server/domains/backup/services/backup.ts', () => ({
+vi.mock('@kobato/server/domains/backup/services/backup', () => ({
   createBackup: (...args: unknown[]) => createBackup(...args),
   cleanupOldBackups: (...args: unknown[]) => cleanupOldBackups(...args),
   wireBackupSnapshots: vi.fn(),
   wireBackupEncryption: vi.fn(),
 }))
 
-vi.mock('@kobato/server/infra/lifecycle.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/lifecycle.ts')>()),
+vi.mock('@kobato/server/infra/lifecycle', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@kobato/server/infra/lifecycle')>()),
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-vi.mock('@kobato/server/infra/scheduler-utils.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/infra/scheduler-utils.ts')>()
+vi.mock('@kobato/server/infra/scheduler-utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/infra/scheduler-utils')>()
   return {
     ...actual,
     computeNextRun: vi.fn((_settings, _tz, now) => new Date(now.getTime() + 3_600_000)),
   }
 })
 
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 
-const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
-const { rescheduleBackup } = await import('@kobato/server/domains/backup/scheduler.ts')
-const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry')
+const { rescheduleBackup } = await import('@kobato/server/domains/backup/scheduler')
+const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
 
-const { getTestDb } = await import('@kobato/server/tests/utils/integration-db.ts')
+const { getTestDb } = await import('@kobato/server/tests/utils/integration-db')
 const testDb = getTestDb()
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: testDb }) as never })
 
@@ -87,8 +87,8 @@ describe('backup scheduler', () => {
   })
 
   it('skips quietly when another backup already holds the single-flight slot', async () => {
-    const { DomainError } = await import('@kobato/server/infra/http/errors.ts')
-    const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobato/server/infra/logger.ts')
+    const { DomainError } = await import('@kobato/server/infra/http/errors')
+    const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobato/server/infra/logger')
     createBackup.mockRejectedValueOnce(new DomainError('CONFLICT'))
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: true, days: 7 } }),
@@ -105,7 +105,7 @@ describe('backup scheduler', () => {
   })
 
   it('handles a next-run in the past by scheduling in one minute', async () => {
-    const { computeNextRun } = await import('@kobato/server/infra/scheduler-utils.ts')
+    const { computeNextRun } = await import('@kobato/server/infra/scheduler-utils')
     ;(computeNextRun as ReturnType<typeof vi.fn>).mockReturnValueOnce(new Date(Date.now() - 1000))
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } }),

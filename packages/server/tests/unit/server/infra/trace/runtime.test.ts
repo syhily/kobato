@@ -1,7 +1,7 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 
-import { __getLifecycleContainer } from '@kobato/server/infra/lifecycle.ts'
-import { __resetExportHealthForTests, lastExportFailure } from '@kobato/server/infra/trace/export-health.ts'
+import { __getLifecycleContainer } from '@kobato/server/infra/lifecycle'
+import { __resetExportHealthForTests, lastExportFailure } from '@kobato/server/infra/trace/export-health'
 import {
   __resetTraceFacadeForTests,
   activeTraceIds,
@@ -10,9 +10,9 @@ import {
   startSpan,
   uninstallTraceDelegate,
   withSpanAsync,
-} from '@kobato/server/infra/trace/facade.ts'
-import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/facade'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader'
 import { SpanStatusCode } from '@opentelemetry/api'
 import { ExportResultCode } from '@opentelemetry/core'
 import { InMemorySpanExporter, type ReadableSpan, type SpanExporter } from '@opentelemetry/sdk-trace'

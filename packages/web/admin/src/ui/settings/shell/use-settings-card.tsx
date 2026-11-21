@@ -1,13 +1,13 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SettingsSectionPatch } from '@kobato/settings/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SettingsSectionPatch } from '@kobato/settings/types'
 import type { z } from 'zod'
 
-import { zodIssueParams } from '@kobato/contracts/api-error.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { getLogger } from '@kobato/ui/lib/logger.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation.ts'
+import { zodIssueParams } from '@kobato/contracts/api-error'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { getLogger } from '@kobato/ui/lib/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
+import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   type DefaultValues,

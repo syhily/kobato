@@ -4,7 +4,7 @@ const transportSendMock = vi.fn<(payload: unknown, opts: unknown) => Promise<unk
 const SmtpCtorMock = vi.fn()
 const MailgunCtorMock = vi.fn()
 
-vi.mock('@kobato/server/infra/email/transports/smtp.ts', () => ({
+vi.mock('@kobato/server/infra/email/transports/smtp', () => ({
   SmtpTransport: class {
     constructor(config: unknown) {
       SmtpCtorMock(config)
@@ -13,7 +13,7 @@ vi.mock('@kobato/server/infra/email/transports/smtp.ts', () => ({
   },
 }))
 
-vi.mock('@kobato/server/infra/email/transports/mailgun.ts', () => ({
+vi.mock('@kobato/server/infra/email/transports/mailgun', () => ({
   MailgunTransport: class {
     constructor(config: unknown) {
       MailgunCtorMock(config)
@@ -22,22 +22,22 @@ vi.mock('@kobato/server/infra/email/transports/mailgun.ts', () => ({
   },
 }))
 
-vi.mock('@kobato/server/infra/email/render.tsx', () => ({
+vi.mock('@kobato/server/infra/email/render', () => ({
   render: (input: string) => `<html>${input}</html>`,
 }))
 
-vi.mock('@kobato/server/infra/email/templates/AuthorInvite.tsx', (actual) => ({
+vi.mock('@kobato/server/infra/email/templates/AuthorInvite', (actual) => ({
   default: (props: unknown) => `invite:${JSON.stringify(props)}`,
   __esmodule: true,
   ...(actual as object),
 }))
-vi.mock('@kobato/server/infra/email/templates/PasswordReset.tsx', () => ({
+vi.mock('@kobato/server/infra/email/templates/PasswordReset', () => ({
   default: (props: unknown) => `reset:${JSON.stringify(props)}`,
 }))
-vi.mock('@kobato/server/infra/email/templates/SignInOtp.tsx', () => ({
+vi.mock('@kobato/server/infra/email/templates/SignInOtp', () => ({
   default: (props: unknown) => `otp:${JSON.stringify(props)}`,
 }))
-vi.mock('@kobato/server/infra/email/templates/SignInLink.tsx', () => ({
+vi.mock('@kobato/server/infra/email/templates/SignInLink', () => ({
   default: (props: unknown) => `link:${JSON.stringify(props)}`,
 }))
 
@@ -50,8 +50,8 @@ import {
   sendSignInLink,
   sendSignInOtp,
   sendTestMail,
-} from '@kobato/server/infra/email/sender.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/infra/email/sender'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 
 beforeEach(() => {
   transportSendMock.mockReset()

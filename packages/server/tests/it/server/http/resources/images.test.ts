@@ -1,13 +1,13 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable } from '@kobato/db/schema/taxonomy.ts'
-import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postTable } from '@kobato/db/schema/post'
+import { category as categoryTable } from '@kobato/db/schema/taxonomy'
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -15,17 +15,17 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 // The calendar renderer has its own real-canvas coverage; this suite pins
 // route + cache semantics with a fast spy.
 const renderCalendar = vi
-  .spyOn(await import('@kobato/server/render/calendar/render.ts'), 'renderCalendar')
+  .spyOn(await import('@kobato/server/render/calendar/render'), 'renderCalendar')
   .mockResolvedValue(Buffer.from('cal') as never)
 // Avatar resolution is a DB+network pipeline covered elsewhere; the route
 // mapping of its outcomes is what this suite pins.
 const serveAvatar = vi
-  .spyOn(await import('@kobato/server/domains/comments/services/avatar.ts'), 'serveAvatar')
+  .spyOn(await import('@kobato/server/domains/comments/services/avatar'), 'serveAvatar')
   .mockResolvedValue({ kind: 'redirect' } as never)
 
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { imagesRouter } from '@kobato/server/http/resources/images.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { imagesRouter } from '@kobato/server/http/resources/images'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import sharp from 'sharp'
 
 const db = getTestDb()

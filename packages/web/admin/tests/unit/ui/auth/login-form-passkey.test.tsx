@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   cancelCeremony: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
@@ -24,14 +24,14 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { LoginForm } = await import('@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx')
+const { LoginForm } = await import('@kobato/web-admin/ui/auth/AdminCredentialsForm')
 
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: mocks.startAuthentication,
   WebAuthnAbortService: { cancelCeremony: mocks.cancelCeremony },
 }))
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 
 function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
   const routes = [

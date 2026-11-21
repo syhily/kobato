@@ -1,12 +1,12 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { UiMessages } from '@kobato/i18n/messages/ui/en-US'
 import type { ReactElement, ReactNode } from 'react'
 
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
-import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
 import { render, renderHook, type RenderHookOptions, type RenderHookResult } from '@testing-library/react'
 
 const CATALOGS = {

@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/seo/meta.ts'
+import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/seo/meta'
 
 export function titleMeta(titleKey: UiMessageId) {
   return ({ matches }: { matches: readonly unknown[] }) =>

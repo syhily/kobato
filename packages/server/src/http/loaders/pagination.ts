@@ -1,5 +1,5 @@
-import { pagePath } from '@kobato/server/domains/content/urls.ts'
-import { notFound } from '@kobato/server/infra/http/status.ts'
+import { pagePath } from '@kobato/server/domains/content/urls'
+import { notFound } from '@kobato/server/infra/http/status'
 import { redirect } from 'react-router'
 
 export function parsePageNum(raw: string | undefined): number {

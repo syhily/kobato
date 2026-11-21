@@ -1,4 +1,4 @@
-import { joinUrl } from '@kobato/utils/urls.ts'
+import { joinUrl } from '@kobato/utils/urls'
 import { describe, expect, it } from 'vitest'
 
 describe('client: url utilities', () => {

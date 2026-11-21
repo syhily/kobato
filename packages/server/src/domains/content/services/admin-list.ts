@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityType } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityType } from '@kobato/db/target'
 
-import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/operations/like.ts'
-import { ensureMetricsBatch } from '@kobato/db/operations/metric.ts'
+import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/operations/like'
+import { ensureMetricsBatch } from '@kobato/db/operations/metric'
 
 export interface AdminListEngagement {
   commentCount: number

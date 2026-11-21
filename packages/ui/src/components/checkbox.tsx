@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { CheckIcon } from 'lucide-react'
 
 function Checkbox({ className, ...props }: ComponentProps<typeof BaseCheckbox.Root>) {

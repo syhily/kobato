@@ -1,29 +1,29 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
-import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf.ts'
-import { signUpAdminSchema } from '@kobato/server/domains/auth/schema.ts'
-import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup.ts'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
+import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
+import { signUpAdminSchema } from '@kobato/server/domains/auth/schema'
+import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup'
 import {
   authFlowError,
   authFlowMessage,
   authFlowValidationError,
   type AuthFlowError,
-} from '@kobato/server/domains/auth/services/shared.ts'
-import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@kobato/server/domains/auth/setup-token.ts'
-import { ensureNoAdminOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
-import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { tryKeyedRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm.tsx'
-import { SetupLocaleSelect } from '@kobato/web-admin/ui/auth/SetupLocaleSelect.tsx'
-import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm.tsx'
-import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo.tsx'
+} from '@kobato/server/domains/auth/services/shared'
+import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@kobato/server/domains/auth/setup-token'
+import { ensureNoAdminOrRedirect } from '@kobato/server/domains/settings/install-gate'
+import { getRequestContext } from '@kobato/server/http/request-context'
+import { tryKeyedRateLimit } from '@kobato/server/infra/rate-limit'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm'
+import { SetupLocaleSelect } from '@kobato/web-admin/ui/auth/SetupLocaleSelect'
+import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm'
+import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/index'
 

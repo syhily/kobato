@@ -1,4 +1,4 @@
-import { isBot } from '@kobato/server/infra/http/is-bot.ts'
+import { isBot } from '@kobato/server/infra/http/is-bot'
 import { describe, expect, it } from 'vitest'
 
 const BOT_USER_AGENTS = [

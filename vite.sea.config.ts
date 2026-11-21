@@ -30,8 +30,8 @@
 // stubbed with a placeholder path) for inlined literals. Node builtins are external
 // automatically for SSR builds — no externals config is needed.
 
-import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data.ts'
-import { redirectNativeRequiresPlugin } from '@kobato/pack/sea/redirect-native-requires.ts'
+import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data'
+import { redirectNativeRequiresPlugin } from '@kobato/pack/sea/redirect-native-requires'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'

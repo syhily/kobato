@@ -1,4 +1,4 @@
-import { kobatoInklingLabelsEnUS } from '@kobato/i18n/inkling-labels/en-US.ts'
+import { kobatoInklingLabelsEnUS } from '@kobato/i18n/inkling-labels/en-US'
 import { DEFAULT_LABELS } from '@kobato/inkling'
 import { describe, expect, it } from 'vitest'
 

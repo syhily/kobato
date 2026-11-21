@@ -1,4 +1,4 @@
-import { commentBadgeTextColor, withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
+import { commentBadgeTextColor, withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { describe, expect, it } from 'vitest'
 
 describe('services/comments/badge', () => {

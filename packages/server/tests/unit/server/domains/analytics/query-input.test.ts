@@ -1,4 +1,4 @@
-import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
+import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input'
 import { describe, expect, it } from 'vitest'
 
 describe('analytics/query-input — parseAnalyticsSearch', () => {

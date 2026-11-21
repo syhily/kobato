@@ -1,5 +1,5 @@
-import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths.ts'
-import { minimalMmdbBytes } from '@kobato/server/tests/utils/minimal-mmdb.ts'
+import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths'
+import { minimalMmdbBytes } from '@kobato/server/tests/utils/minimal-mmdb'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -42,20 +42,20 @@ describe('analytics/geoip-update', () => {
   describe('fetchLatestGeoipVersion', () => {
     it('parses the version from the jsDelivr package.json', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(versionResponse('1.0.86')))
-      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update')
       await expect(fetchLatestGeoipVersion()).resolves.toBe('1.0.86')
       expect(vi.mocked(fetch).mock.calls[0]![0]).toBe('https://cdn.jsdelivr.net/npm/geolite2-city/package.json')
     })
 
     it('throws a DomainError when the registry answers an error status', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 502 })))
-      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update')
       await expect(fetchLatestGeoipVersion()).rejects.toMatchObject({ name: 'DomainError', code: 'INTERNAL' })
     })
 
     it('reports a timeout distinctly from a connection failure', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(timeoutError()))
-      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { fetchLatestGeoipVersion } = await import('@kobato/server/domains/analytics/geoip/update')
       await expect(fetchLatestGeoipVersion()).rejects.toMatchObject({
         name: 'DomainError',
         descriptor: { messageKey: 'analytics.error.geoipVersionTimeout' },
@@ -68,7 +68,7 @@ describe('analytics/geoip-update', () => {
       writeFileSync(MAXMIND_DB_PATH, MMDB)
       meta({ version: '1.0.86', source: 'remote' })
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(versionResponse('1.0.86')))
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       const result = await runRemoteGeoipUpdate()
       expect(result).toEqual({ status: 'up-to-date', version: '1.0.86', previousVersion: '1.0.86' })
@@ -82,7 +82,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       const result = await runRemoteGeoipUpdate()
       expect(result).toEqual({ status: 'updated', version: '1.0.87', previousVersion: '1.0.86' })
@@ -101,7 +101,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       const result = await runRemoteGeoipUpdate()
       expect(result.status).toBe('updated')
@@ -117,7 +117,7 @@ describe('analytics/geoip-update', () => {
           .mockResolvedValueOnce(versionResponse('1.0.87'))
           .mockResolvedValueOnce(downloadResponse(Buffer.from('this is not an mmdb'))),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({ name: 'DomainError', code: 'INTERNAL' })
       expect(existsSync(MAXMIND_DB_PATH)).toBe(false)
@@ -130,7 +130,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockRejectedValueOnce(timeoutError()),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
         name: 'DomainError',
@@ -158,7 +158,7 @@ describe('analytics/geoip-update', () => {
             ),
           ),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
         name: 'DomainError',
@@ -177,7 +177,7 @@ describe('analytics/geoip-update', () => {
           .mockResolvedValueOnce(versionResponse('1.0.87'))
           .mockResolvedValueOnce(downloadResponse(Buffer.alloc(101 * 1024 * 1024))),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await expect(runRemoteGeoipUpdate()).rejects.toMatchObject({
         descriptor: { messageKey: 'analytics.error.geoipTooLarge' },
@@ -195,7 +195,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       const result = await runRemoteGeoipUpdate()
       expect(result.status).toBe('updated')
@@ -208,7 +208,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runRemoteGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       const [a, b] = await Promise.all([runRemoteGeoipUpdate(), runRemoteGeoipUpdate()])
       expect(a).toBe(b)
@@ -224,7 +224,7 @@ describe('analytics/geoip-update', () => {
       meta({ version: null, source: 'upload' })
       const fetchMock = vi.fn()
       vi.stubGlobal('fetch', fetchMock)
-      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await runScheduledGeoipUpdate()
       expect(fetchMock).not.toHaveBeenCalled()
@@ -236,7 +236,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await runScheduledGeoipUpdate()
       expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)
@@ -247,7 +247,7 @@ describe('analytics/geoip-update', () => {
         'fetch',
         vi.fn().mockResolvedValueOnce(versionResponse('1.0.87')).mockResolvedValueOnce(downloadResponse()),
       )
-      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update.ts')
+      const { runScheduledGeoipUpdate } = await import('@kobato/server/domains/analytics/geoip/update')
 
       await runScheduledGeoipUpdate()
       expect(readFileSync(MAXMIND_DB_PATH).equals(MMDB)).toBe(true)

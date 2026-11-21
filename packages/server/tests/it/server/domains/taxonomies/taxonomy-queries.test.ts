@@ -1,8 +1,8 @@
-import { image } from '@kobato/db/schema/media.ts'
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { category, tag } from '@kobato/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { image } from '@kobato/db/schema/media'
+import { post } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category, tag } from '@kobato/db/schema/taxonomy'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
@@ -21,7 +21,7 @@ describe('listAllCategories', () => {
       sortOrder: 0,
     })
 
-    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const cats = await listAllCategories(db)
 
     expect(cats).toHaveLength(1)
@@ -49,7 +49,7 @@ describe('listAllCategories', () => {
       })
       .returning()
 
-    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const cats = await listAllCategories(db)
 
     expect(cats[0].coverThumbhash).toBe('cover-hash')
@@ -57,7 +57,7 @@ describe('listAllCategories', () => {
   })
 
   it('empty result → empty array', async () => {
-    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const cats = await listAllCategories(db)
     expect(cats).toEqual([])
   })
@@ -79,7 +79,7 @@ describe('listAllCategories', () => {
       { slug: 'norev-c', title: 'NoRev', categoryId: gatedCat.id },
     ])
 
-    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const cats = await listAllCategories(db)
     expect(cats.find((c) => c.name === 'GatedCat')?.counts).toBe(1)
   })
@@ -92,7 +92,7 @@ describe('getCategoryLinks', () => {
       { name: 'Life', slug: 'life', cover: '', description: '', sortOrder: 0 },
     ])
 
-    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['Tech', 'Life'])
 
     expect(links.Tech).toBe('/cats/tech')
@@ -100,7 +100,7 @@ describe('getCategoryLinks', () => {
   })
 
   it('filters out null/empty names', async () => {
-    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['', null as unknown as string, undefined as unknown as string])
     expect(Object.keys(links)).toHaveLength(0)
   })
@@ -108,7 +108,7 @@ describe('getCategoryLinks', () => {
   it('deduplicates names', async () => {
     await db.insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
 
-    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['Tech', 'Tech', 'Tech'])
 
     expect(Object.keys(links)).toHaveLength(1)
@@ -123,7 +123,7 @@ describe('listAllTags', () => {
   it('returns tags with permalink /tags/slug', async () => {
     await db.insert(tag).values({ name: 'React', slug: 'react' })
 
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
 
     expect(tags).toHaveLength(1)
@@ -133,7 +133,7 @@ describe('listAllTags', () => {
   it('tags with zero posts have counts = 0', async () => {
     await db.insert(tag).values({ name: 'Rust', slug: 'rust' })
 
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
 
     expect(tags[0].counts).toBe(0)
@@ -161,7 +161,7 @@ describe('listAllTags', () => {
       { postId: noRevPost.id, tagId: tagRow.id },
     ])
 
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
     expect(tags.find((t) => t.name === 'Gated')?.counts).toBe(1)
   })
@@ -174,7 +174,7 @@ describe('getTagsByNames', () => {
       { name: 'React', slug: 'react' },
     ])
 
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['Vue', 'React'])
 
     expect(tags[0].name).toBe('Vue')
@@ -182,13 +182,13 @@ describe('getTagsByNames', () => {
   })
 
   it('filters out unknown names', async () => {
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['Unknown'])
     expect(tags).toEqual([])
   })
 
   it('empty input → empty array', async () => {
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, [])
     expect(tags).toEqual([])
   })
@@ -196,7 +196,7 @@ describe('getTagsByNames', () => {
   it('deduplicates input names', async () => {
     await db.insert(tag).values({ name: 'React', slug: 'react' })
 
-    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['React', 'React', 'React'])
 
     expect(tags).toHaveLength(1)
@@ -215,7 +215,7 @@ describe('countPostsByTaxonomy — names narrowing', () => {
       { postId: p2.id, tagId: vue.id },
     ])
 
-    const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy.ts')
+    const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy')
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: ['React'] })
 
     expect(counts.get('React')).toBe(1)
@@ -223,7 +223,7 @@ describe('countPostsByTaxonomy — names narrowing', () => {
   })
 
   it('returns an empty map for an empty names list without querying', async () => {
-    const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy.ts')
+    const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy')
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: [] })
     expect(counts.size).toBe(0)
   })
@@ -231,7 +231,7 @@ describe('countPostsByTaxonomy — names narrowing', () => {
 
 describe('listAllFriends', () => {
   it('is exported from friends service', async () => {
-    const { listAllFriends } = await import('@kobato/server/domains/friends/service.ts')
+    const { listAllFriends } = await import('@kobato/server/domains/friends/service')
     expect(typeof listAllFriends).toBe('function')
   })
 })

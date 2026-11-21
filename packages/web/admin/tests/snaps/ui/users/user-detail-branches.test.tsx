@@ -1,12 +1,12 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { AdminUserDto } from '@kobato/contracts/users'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
-import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`

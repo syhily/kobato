@@ -1,11 +1,11 @@
-import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller.ts')
-const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit.ts')
+const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller')
+const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit')
 
 const db = getTestDb()
 

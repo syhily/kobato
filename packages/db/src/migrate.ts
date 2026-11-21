@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { createRequire } from 'node:module'

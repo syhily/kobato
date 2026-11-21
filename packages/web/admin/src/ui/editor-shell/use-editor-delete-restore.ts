@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { NavigateFunction } from 'react-router'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'

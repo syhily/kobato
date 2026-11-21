@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import type { NotificationDto } from '@kobato/contracts/notifications.ts'
+import type { NotificationDto } from '@kobato/contracts/notifications'
 import type { ComponentProps, ReactElement, ReactNode } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -31,8 +31,8 @@ vi.mock('react-router', async () => {
 
 const control = mockTanstackQuery()
 
-const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
-const { isForkReply } = await import('@kobato/web-public/ui/shared/notifications/NotificationDetailPane.tsx')
+const { NotificationsDrawer } = await import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer')
+const { isForkReply } = await import('@kobato/web-public/ui/shared/notifications/NotificationDetailPane')
 
 function render(ui: ReactElement) {
   return rtlRender(ui, {

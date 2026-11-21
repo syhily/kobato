@@ -1,5 +1,5 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
 export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 

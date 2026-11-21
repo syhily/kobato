@@ -1,9 +1,9 @@
 import type { Readable } from 'node:stream'
 
-import { isPathInside, storageDir } from '@kobato/server/infra/data-paths.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { isPathInside, storageDir } from '@kobato/server/infra/data-paths'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 import {
   MAX_OBJECT_BUFFER_SIZE,
   type PutObjectInput,
@@ -11,7 +11,7 @@ import {
   type StorageBackend,
   StorageObjectNotFound,
   type StoredObjectMeta,
-} from '@kobato/server/infra/storage/backend.ts'
+} from '@kobato/server/infra/storage/backend'
 import { randomBytes } from 'node:crypto'
 import { createReadStream, createWriteStream } from 'node:fs'
 import { access, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'

@@ -2,18 +2,18 @@ import {
   findNextWebmentionOutboxDueAt,
   pickDueWebmentionOutbox,
   upsertWebmentionOutbox,
-} from '@kobato/db/operations/webmention-outbox.ts'
-import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
+} from '@kobato/db/operations/webmention-outbox'
+import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import {
   OUTBOX_MAX_ATTEMPTS,
   processWebmentionOutboxRow,
   runWebmentionOutboxBatch,
   type OutboxHooks,
-} from '@kobato/server/domains/webmentions/outbox.ts'
-import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { installFetch } from '@kobato/test/fetch.ts'
+} from '@kobato/server/domains/webmentions/outbox'
+import { webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { installFetch } from '@kobato/test/fetch'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

@@ -1,26 +1,26 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { Database } from '@kobato/db/database'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
 import {
   __resetObservabilityRuntimeForTests,
   getObservabilityRuntimeStatus,
   syncObservabilityRuntime,
-} from '@kobato/server/domains/observability/runtime-manager.ts'
-import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/observability/runtime-manager'
+import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The OTel runtime is a process-level boundary; observe without starting it.
 const runtimeMock = {
   startTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'startTraceRuntime')
     .mockImplementation(async () => ({ shutdown: async () => {} }) as never),
   stopTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'stopTraceRuntime')
     .mockImplementation(async () => {}),
 }
 

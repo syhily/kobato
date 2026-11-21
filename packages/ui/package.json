@@ -5,14 +5,24 @@
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
-    "./components/*": "./src/components/*",
-    "./icons/*": "./src/icons/*",
-    "./lib/*": "./src/lib/*",
+    "./components/*": [
+      "./src/components/*.ts",
+      "./src/components/*.tsx"
+    ],
+    "./icons/*": [
+      "./src/icons/*.ts",
+      "./src/icons/*.tsx"
+    ],
+    "./lib/*": [
+      "./src/lib/*.ts",
+      "./src/lib/*.tsx"
+    ],
     "./styles/base-defaults.css": "./src/styles/base-defaults.css",
     "./styles/dark-variant.css": "./src/styles/dark-variant.css",
     "./styles/tailwind.css": "./src/styles/tailwind.css",
     "./styles/typeset.css": "./src/styles/typeset.css",
-    "./styles/ui.css": "./src/styles/ui.css"
+    "./styles/ui.css": "./src/styles/ui.css",
+    "./tests/*": "./tests/*"
   },
   "devDependencies": {
     "@base-ui/react": "catalog:",

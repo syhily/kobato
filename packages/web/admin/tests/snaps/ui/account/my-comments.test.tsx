@@ -1,9 +1,9 @@
-import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView.tsx'
-import { MyEditCommentDialog } from '@kobato/web-admin/ui/account/MyEditCommentDialog.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'
+import { MyEditCommentDialog } from '@kobato/web-admin/ui/account/MyEditCommentDialog'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx', () => ({
+vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 

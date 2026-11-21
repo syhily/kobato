@@ -1,5 +1,5 @@
-import { DEFAULT_BINARY, DEFAULT_SVG } from '@kobato/server/assets/defaults.ts'
-import { generateFaviconPack } from '@kobato/server/domains/assets/generate.ts'
+import { DEFAULT_BINARY, DEFAULT_SVG } from '@kobato/server/assets/defaults'
+import { generateFaviconPack } from '@kobato/server/domains/assets/generate'
 import { describe, expect, it } from 'vitest'
 
 describe('generateFaviconPack', () => {

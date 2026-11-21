@@ -7,7 +7,7 @@
 // No-op / pass-through outside SEA mode. Import budget: node builtins +
 // `@kobato/distribution/sea-assets` (this module is bundled into the process worker).
 
-import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
+import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets'
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { join } from 'node:path'

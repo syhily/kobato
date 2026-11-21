@@ -1,4 +1,4 @@
-import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/contracts/images.ts'
+import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/contracts/images'
 import { oc } from '@orpc/contract'
 
 export const imagesContract = {

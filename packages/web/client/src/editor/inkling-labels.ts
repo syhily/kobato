@@ -1,6 +1,6 @@
-import type { ContentBootstrapI18n } from '@kobato/contracts/content.ts'
-import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { ContentBootstrapI18n } from '@kobato/contracts/content'
+import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { InklingHostMenuLabelKey, InklingLabels, InklingLabelsInput } from '@kobato/inkling'
 
 import { useRouteLoaderData } from 'react-router'
@@ -17,10 +17,10 @@ export function useKobatoInklingLabels(): InklingLabelsInput | undefined {
 }
 
 const LABEL_TABLE_LOADERS = {
-  'en-US': () => import('@kobato/i18n/inkling-labels/en-US.ts').then((table) => table.kobatoInklingLabelsEnUS),
-  'zh-CN': () => import('@kobato/i18n/inkling-labels/zh-CN.ts').then((table) => table.kobatoInklingLabelsZhCN),
-  'zh-HK': () => import('@kobato/i18n/inkling-labels/zh-HK.ts').then((table) => table.kobatoInklingLabelsZhHK),
-  'zh-TW': () => import('@kobato/i18n/inkling-labels/zh-TW.ts').then((table) => table.kobatoInklingLabelsZhTW),
+  'en-US': () => import('@kobato/i18n/inkling-labels/en-US').then((table) => table.kobatoInklingLabelsEnUS),
+  'zh-CN': () => import('@kobato/i18n/inkling-labels/zh-CN').then((table) => table.kobatoInklingLabelsZhCN),
+  'zh-HK': () => import('@kobato/i18n/inkling-labels/zh-HK').then((table) => table.kobatoInklingLabelsZhHK),
+  'zh-TW': () => import('@kobato/i18n/inkling-labels/zh-TW').then((table) => table.kobatoInklingLabelsZhTW),
 } as const satisfies Record<AppLocale, () => Promise<InklingLabelsInput>>
 
 export function loadInklingLabels(locale: AppLocale): Promise<InklingLabelsInput> {

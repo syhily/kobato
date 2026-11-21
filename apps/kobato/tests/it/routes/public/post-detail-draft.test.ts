@@ -1,11 +1,11 @@
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { adminSession, authorSession, regularSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { adminSession, authorSession, regularSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -83,7 +83,7 @@ async function seedNeverPublishedPost(slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-const postRoute = await import('@/routes/public/post/detail.tsx')
+const postRoute = await import('@/routes/public/post/detail')
 
 type LoaderResult = {
   post: { title: string }

@@ -1,4 +1,4 @@
-import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
+import { readRumConsent, subscribeRumConsent, writeRumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

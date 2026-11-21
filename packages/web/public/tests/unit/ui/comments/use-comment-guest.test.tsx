@@ -1,9 +1,9 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {
   readProfile,
   useCommentGuest,
   type CommentGuestProfile,
-} from '@kobato/web-public/ui/comments/use-comment-guest.ts'
+} from '@kobato/web-public/ui/comments/use-comment-guest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const STORAGE_KEY = 'comment-guest-profile'

@@ -1,4 +1,4 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
 
 export type SectionChangeHandler = () => void | Promise<void>
 

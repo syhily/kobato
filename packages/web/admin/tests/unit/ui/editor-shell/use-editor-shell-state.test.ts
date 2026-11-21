@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import { describe, expect, it, vi } from 'vitest'
 
 const mutate = vi.fn()
@@ -14,15 +14,15 @@ vi.mock('@tanstack/react-query', () => ({
   })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave', () => ({
   useAutosave: vi.fn(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: null, clearDraft: vi.fn() })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft', () => ({
   useCreateDraft: vi.fn(() => ({
     sessionId: 'sess-1',
     loadedDraft: null,
@@ -31,10 +31,10 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
   })),
 }))
 
-import type { EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
-import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state'
 
 interface Meta {
   title: string

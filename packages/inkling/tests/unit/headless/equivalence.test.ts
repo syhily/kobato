@@ -1,15 +1,15 @@
 import {
   areLexicalEditorStatesEquivalent,
   lexicalEditorStateFingerprint,
-} from '@kobato/inkling-internal/headless/equivalence.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling-internal/headless/schema.ts'
+} from '@kobato/inkling-internal/headless/equivalence'
+import { lexicalEditorStateSchema } from '@kobato/inkling-internal/headless/schema'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalImage,
   lexicalMusicPlayer,
   lexicalParagraph,
-} from '@kobato/inkling/tests/utils/lexical.ts'
+} from '@kobato/inkling/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 function parse(state: unknown) {

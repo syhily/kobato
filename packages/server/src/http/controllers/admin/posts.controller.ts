@@ -1,32 +1,32 @@
-import { adminPostsContract } from '@kobato/api/admin/posts.ts'
-import { findTagNamesByPostId } from '@kobato/db/operations/post-tag.ts'
-import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview.ts'
-import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { toAdminPostDto } from '@kobato/server/domains/posts/projection.ts'
+import { adminPostsContract } from '@kobato/api/admin/posts'
+import { findTagNamesByPostId } from '@kobato/db/operations/post-tag'
+import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle'
+import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview'
+import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { toAdminPostDto } from '@kobato/server/domains/posts/projection'
 import {
   countPostMetas,
   getPostDetailForAdmin,
   listPostMetas,
   listPostsForAdmin,
   listRevisionsForAdmin as listPostRevisionsForAdmin,
-} from '@kobato/server/domains/posts/services/admin-query.ts'
-import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
+} from '@kobato/server/domains/posts/services/admin-query'
+import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
 import {
   createPost,
   deletePost,
   restorePost,
   unpublishPost,
   updatePostMeta,
-} from '@kobato/server/domains/posts/services/mutate.ts'
-import { assertOwnPostOr404 } from '@kobato/server/domains/posts/services/shared.ts'
-import { findPostMetaById } from '@kobato/server/domains/posts/services/single.ts'
-import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared.ts'
-import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/posts/services/mutate'
+import { assertOwnPostOr404 } from '@kobato/server/domains/posts/services/shared'
+import { findPostMetaById } from '@kobato/server/domains/posts/services/single'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared'
+import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { idFromString } from '@kobato/utils/id'
 
 const RECENT_DRAFTS_LIMIT = 5
 const RECENT_PUBLISHED_LIMIT = 5

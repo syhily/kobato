@@ -1,5 +1,5 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { type ComponentProps, type ReactNode, createContext, use } from 'react'
 
 export type TooltipPlacement = 'top' | 'left'

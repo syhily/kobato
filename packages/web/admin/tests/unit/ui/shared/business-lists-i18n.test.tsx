@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
-import type { MetingSearchHit } from '@kobato/contracts/music.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends'
+import type { MetingSearchHit } from '@kobato/contracts/music'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow.tsx'
-import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
-import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow'
+import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

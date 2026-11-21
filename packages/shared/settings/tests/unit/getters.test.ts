@@ -4,9 +4,9 @@ import {
   isWebmentionReceiveEnabled,
   requireBlogSettingsBundle,
   requireBlogSettingsSection,
-} from '@kobato/settings/getters.ts'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/getters'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, describe, expect, it } from 'vitest'
 
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

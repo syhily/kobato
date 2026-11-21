@@ -1,29 +1,29 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { ObservabilityProvisionOutcome } from '@kobato/contracts/observability.ts'
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
-import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { ObservabilityProvisionOutcome } from '@kobato/contracts/observability'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
+import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base'
 
-import { adminObservabilityContract } from '@kobato/api/admin/observability.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { currentObservabilityAssetFingerprint } from '@kobato/server/domains/observability/assets.ts'
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
+import { adminObservabilityContract } from '@kobato/api/admin/observability'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { currentObservabilityAssetFingerprint } from '@kobato/server/domains/observability/assets'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
 import {
   assertObservabilityProvisionable,
   getLastProbedVersion,
   isObservabilityConnectionVerified,
   testObservabilityConnection,
-} from '@kobato/server/domains/observability/connection.ts'
-import { createO2Client } from '@kobato/server/domains/observability/o2-client.ts'
-import { runObservabilityProvisioning } from '@kobato/server/domains/observability/provision.ts'
+} from '@kobato/server/domains/observability/connection'
+import { createO2Client } from '@kobato/server/domains/observability/o2-client'
+import { runObservabilityProvisioning } from '@kobato/server/domains/observability/provision'
 import {
   getObservabilityRuntimeStatus,
   syncObservabilityRuntime,
-} from '@kobato/server/domains/observability/runtime-manager.ts'
-import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { safeBigInt } from '@kobato/server/infra/coerce.ts'
-import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/domains/observability/runtime-manager'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { safeBigInt } from '@kobato/server/infra/coerce'
+import { carriesErrorMessageDescriptor, descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 function readSavedSite(context: AuthedHandlerContext): ObservabilitySettingsSlice | null {
   return context.settings?.observability?.observability ?? null

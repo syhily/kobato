@@ -3,14 +3,14 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 const db = {}
 
 const purgeExpired = vi
-  .spyOn(await import('@kobato/server/domains/auth/verification-tokens.ts'), 'purgeExpired')
+  .spyOn(await import('@kobato/server/domains/auth/verification-tokens'), 'purgeExpired')
   .mockResolvedValue(0 as never)
 
 const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')
 
-const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
-const { nextDailyMaintenanceDelayMs, stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
-await import('@kobato/server/domains/auth/token-purge-scheduler.ts')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry')
+const { nextDailyMaintenanceDelayMs, stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
+await import('@kobato/server/domains/auth/token-purge-scheduler')
 
 let currentDb = db
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })

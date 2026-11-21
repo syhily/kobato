@@ -1,12 +1,12 @@
-import { image as imageTable } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { image as imageTable } from '@kobato/db/schema/media'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { __resetRateLimitsForTests, tryResourceRateLimit } = await import('@kobato/server/infra/rate-limit.ts')
-const { imageRouter } = await import('@kobato/server/http/controllers/image.controller.ts')
+const { __resetRateLimitsForTests, tryResourceRateLimit } = await import('@kobato/server/infra/rate-limit')
+const { imageRouter } = await import('@kobato/server/http/controllers/image.controller')
 
 const db = getTestDb()
 

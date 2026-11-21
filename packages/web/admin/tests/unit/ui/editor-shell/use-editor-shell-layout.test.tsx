@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import { useEditorShellLayout } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-layout.ts'
+import { useEditorShellLayout } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-layout'
 import { renderHook } from '@testing-library/react'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mod_AdminShell = await import('@kobato/web-admin/ui/shell/AdminShell.tsx')
+const mod_AdminShell = await import('@kobato/web-admin/ui/shell/AdminShell')
 vi.spyOn(mod_AdminShell, 'useAdminScrollTopLift').mockImplementation(vi.fn() as never)
 
 afterAll(() => {

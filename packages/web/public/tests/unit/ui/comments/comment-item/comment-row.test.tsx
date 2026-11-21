@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 
-import { makeComment } from '@kobato/contracts/tests/utils/catalog.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { flashCommentTarget, getCommentFlashSnapshot } from '@kobato/web-client/lib/comment-flash.ts'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
-import { CommentRow } from '@kobato/web-public/ui/comments/comment-item/CommentRow.tsx'
+import { makeComment } from '@kobato/contracts/tests/utils/catalog'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { flashCommentTarget, getCommentFlashSnapshot } from '@kobato/web-client/lib/comment-flash'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf'
+import { CommentRow } from '@kobato/web-public/ui/comments/comment-item/CommentRow'
 import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

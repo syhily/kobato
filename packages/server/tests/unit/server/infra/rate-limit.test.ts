@@ -1,4 +1,4 @@
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import {
   tryRateLimit,
   tryInviteRateLimit,
@@ -27,9 +27,9 @@ import {
   rateLimitIpKey,
   __resetRateLimitsForTests,
   type RateLimitResult,
-} from '@kobato/server/infra/rate-limit.ts'
-import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/infra/rate-limit'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sampleBucket = { windowSeconds: 60, maxAttempts: 3 }

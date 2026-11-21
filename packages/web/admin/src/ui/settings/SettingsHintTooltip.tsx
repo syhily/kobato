@@ -1,5 +1,5 @@
-import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Tooltip } from '@kobato/ui/components/tooltip'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CircleHelpIcon } from 'lucide-react'
 
 export function SettingsHintTooltip({ content }: { content: string }) {

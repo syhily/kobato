@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import {
   DEFAULT_MAX_BUFFER_SIZE,
@@ -6,9 +6,9 @@ import {
   type FlushResult,
   replayDeadLetter,
   writeDeadLetter,
-} from '@kobato/server/infra/db/insert-batcher.ts'
-import { __getLifecycleContainer } from '@kobato/server/infra/lifecycle.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests, getLogger } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/infra/db/insert-batcher'
+import { __getLifecycleContainer } from '@kobato/server/infra/lifecycle'
+import { __clearLogCaptureForTests, __logCaptureForTests, getLogger } from '@kobato/server/infra/logger'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

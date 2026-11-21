@@ -3,7 +3,7 @@ import {
   RUM_EVENT_LIMITS,
   type RumBudgetSnapshot,
   type RumBudgetStore,
-} from '@kobato/web-client/lib/rum/rum-budget.ts'
+} from '@kobato/web-client/lib/rum/rum-budget'
 import { describe, expect, it, vi } from 'vitest'
 
 const SESSION = '018f2b6c-7d4e-7a3b-9c1d-2e3f4a5b6c7d'

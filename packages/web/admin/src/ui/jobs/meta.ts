@@ -1,10 +1,10 @@
-import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/contracts/jobs.ts'
-import type { StorageMigrationStatus } from '@kobato/contracts/storage.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { BadgeProps } from '@kobato/ui/components/badge.tsx'
+import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/contracts/jobs'
+import type { StorageMigrationStatus } from '@kobato/contracts/storage'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { BadgeProps } from '@kobato/ui/components/badge'
 
-import { formatLocalDate } from '@kobato/utils/site-date.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { formatLocalDate } from '@kobato/utils/site-date'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 
 export type TaskKey = JobSummaryDto['taskKey']
 

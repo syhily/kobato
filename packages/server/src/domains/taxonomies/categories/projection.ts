@@ -1,5 +1,5 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
-import type { CategoryRow } from '@kobato/db/types.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { CategoryRow } from '@kobato/db/types'
 
 export function toAdminCategoryDto(row: CategoryRow, postCount: number): AdminCategoryDto {
   return {

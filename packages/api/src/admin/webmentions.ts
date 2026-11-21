@@ -1,4 +1,4 @@
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+import { voidOutput } from '@kobato/contracts/primitives'
 import {
   adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
@@ -7,7 +7,7 @@ import {
   adminWebmentionOutboxListSchema,
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
-} from '@kobato/contracts/webmentions.ts'
+} from '@kobato/contracts/webmentions'
 import { oc } from '@orpc/contract'
 
 export const adminWebmentionsContract = {

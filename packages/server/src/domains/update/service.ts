@@ -1,11 +1,11 @@
-import type { UpdateCheckResult } from '@kobato/contracts/update.ts'
+import type { UpdateCheckResult } from '@kobato/contracts/update'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { startUpdateJob } from '@kobato/server/domains/update/job.ts'
-import { fetchLatestRelease } from '@kobato/server/domains/update/release.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { startUpdateJob } from '@kobato/server/domains/update/job'
+import { fetchLatestRelease } from '@kobato/server/domains/update/release'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate'
 
 function parseTriple(version: string): [number, number, number] {
   const core = version.replace(/^v/, '').split('-', 2)[0] ?? ''

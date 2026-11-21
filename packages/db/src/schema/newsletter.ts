@@ -1,4 +1,4 @@
-import { NEWSLETTER_SUBSCRIBER_STATUSES } from '@kobato/db/schema/shared.ts'
+import { NEWSLETTER_SUBSCRIBER_STATUSES } from '@kobato/db/schema/shared'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 

@@ -1,16 +1,16 @@
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex'
 import {
   SHIKI_SUPPORTED_LANGUAGES,
   SHIKI_THEMES,
   createShikiHighlighter,
   shikiTransformers,
-} from '@kobato/server/infra/lexical/shiki.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { createPromiseMemo } from '@kobato/utils/memo.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/lexical/shiki'
+import { getLogger } from '@kobato/server/infra/logger'
+import { createPromiseMemo } from '@kobato/utils/memo'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import katex from 'katex'
 
 const log = getLogger('lexical.prerender')

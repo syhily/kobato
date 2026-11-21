@@ -1,9 +1,9 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   commentAvatarClass,
   commentContentClass,
   editableHint,
-} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
+} from '@kobato/web-public/ui/comments/comment-item/presentation'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('editableHint — pending/non-pending branch coverage', () => {

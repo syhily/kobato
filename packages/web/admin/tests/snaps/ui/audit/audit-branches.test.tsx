@@ -1,11 +1,11 @@
-import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit.ts'
-import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/contracts/audit'
+import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()
@@ -35,8 +35,8 @@ mocks.mutation = {
   isPending: false,
 }
 
-const { buildAuditFilterFields } = await import('@kobato/web-admin/ui/audit/filter-fields.tsx')
-const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+const { buildAuditFilterFields } = await import('@kobato/web-admin/ui/audit/filter-fields')
+const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 vi.spyOn(filterPillsMod, 'useFilterPills').mockImplementation((() => ({
   filters: mocks.filters,
   hasFilters: mocks.filters.length > 0,

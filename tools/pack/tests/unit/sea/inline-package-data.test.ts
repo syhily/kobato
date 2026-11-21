@@ -1,4 +1,4 @@
-import { INLINE_DATA_CASES, expectedInlineLiteral, inlinePackageData } from '@kobato/pack/sea/inline-package-data.ts'
+import { INLINE_DATA_CASES, expectedInlineLiteral, inlinePackageData } from '@kobato/pack/sea/inline-package-data'
 import { readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'

@@ -1,7 +1,7 @@
-import type { BlogSettingsSnapshot } from '@kobato/settings/snapshot.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsSnapshot } from '@kobato/settings/snapshot'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot'
 
 export function getBlogSettingsBundleSync(): BlogSettingsBundle | null {
   return BLOG_SETTINGS_SNAPSHOT_SLOT.read()

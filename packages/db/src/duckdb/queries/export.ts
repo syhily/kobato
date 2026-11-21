@@ -1,9 +1,9 @@
-import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { visitAggregates } from '@kobato/db/duckdb/queries/aggregates.ts'
-import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { visitAggregates } from '@kobato/db/duckdb/queries/aggregates'
+import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql } from 'kysely'
 
 export interface AnalyticsExportRow {

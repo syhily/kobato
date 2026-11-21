@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 

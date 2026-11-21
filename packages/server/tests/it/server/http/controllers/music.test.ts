@@ -1,11 +1,11 @@
-import { music } from '@kobato/db/schema/media.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { music } from '@kobato/db/schema/media'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { musicRouter } = await import('@kobato/server/http/controllers/music.controller.ts')
+const { musicRouter } = await import('@kobato/server/http/controllers/music.controller')
 
 const db = getTestDb()
 

@@ -1,10 +1,10 @@
-import type { AdminMusicDto, MetingSearchHit } from '@kobato/contracts/music.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-export const SOURCE_OPTIONS: { value: string; labelId: UiMessageId }[] = [
+export const SOURCE_OPTIONS = [
   { value: 'netease', labelId: 'admin.musics.source.netease' },
   { value: 'tencent', labelId: 'admin.musics.source.tencent' },
-]
+] as const satisfies readonly { value: MetingSource; labelId: UiMessageId }[]
 
 export function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {
   return {

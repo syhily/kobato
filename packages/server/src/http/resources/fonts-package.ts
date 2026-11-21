@@ -1,8 +1,8 @@
-import { uploadFont, FONT_MAX_BYTES } from '@kobato/server/domains/fonts/services/upload.ts'
-import { errorJsonResponse } from '@kobato/server/http/errors.ts'
-import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route.ts'
-import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
-import { formatBytes } from '@kobato/utils/format.ts'
+import { uploadFont, FONT_MAX_BYTES } from '@kobato/server/domains/fonts/services/upload'
+import { errorJsonResponse } from '@kobato/server/http/errors'
+import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route'
+import { resolveAppLocalization } from '@kobato/settings/app-localization'
+import { formatBytes } from '@kobato/utils/format'
 
 /**
  * Font *package* upload as a native Hono route: 60 MiB sources exceed the

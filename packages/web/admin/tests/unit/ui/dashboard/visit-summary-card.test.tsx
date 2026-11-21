@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import type { ViewsDto } from '@kobato/contracts/analytics.ts'
+import type { ViewsDto } from '@kobato/contracts/analytics'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'

@@ -1,17 +1,17 @@
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
+import type { AdminPageDto } from '@kobato/contracts/pages'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
-import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
+import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta'
 
-import { BasicInfoCard } from '@kobato/web-admin/ui/editor-meta/BasicInfoCard.tsx'
-import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField.tsx'
-import { CoverOgCard } from '@kobato/web-admin/ui/editor-meta/CoverOgCard.tsx'
-import { ToggleOptionsCard } from '@kobato/web-admin/ui/editor-meta/ToggleOptionsCard.tsx'
-import { futureLocalInputValueOrEmpty } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
-import { PAGE_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/pages/page-meta.ts'
+import { BasicInfoCard } from '@kobato/web-admin/ui/editor-meta/BasicInfoCard'
+import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField'
+import { CoverOgCard } from '@kobato/web-admin/ui/editor-meta/CoverOgCard'
+import { ToggleOptionsCard } from '@kobato/web-admin/ui/editor-meta/ToggleOptionsCard'
+import { futureLocalInputValueOrEmpty } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
+import { PAGE_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/pages/page-meta'
 import { type ReactNode } from 'react'
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {

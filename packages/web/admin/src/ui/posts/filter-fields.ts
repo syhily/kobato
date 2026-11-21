@@ -1,10 +1,10 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
-import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
-import type { FilterFieldSpec, FilterQueryPatch } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
+import type { FilterFieldSpec, FilterQueryPatch } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { deriveStatusQueryFields } from '@kobato/web-admin/ui/shared/filter-bar/status-fields.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { deriveStatusQueryFields } from '@kobato/web-admin/ui/shared/filter-bar/status-fields'
 import { FolderIcon, ListChecksIcon, TagsIcon, UserIcon } from 'lucide-react'
 
 export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'

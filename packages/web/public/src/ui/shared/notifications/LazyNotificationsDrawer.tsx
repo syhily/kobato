@@ -8,13 +8,13 @@ interface LazyNotificationsDrawerProps {
 }
 
 const NotificationsDrawer = lazy(() =>
-  import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx').then((module) => ({
+  import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer').then((module) => ({
     default: module.NotificationsDrawer,
   })),
 )
 
 export const warmNotificationsDrawerChunk = () =>
-  void import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer.tsx')
+  void import('@kobato/web-public/ui/shared/notifications/NotificationsDrawer')
 
 export function LazyNotificationsDrawer({ open, ...rest }: LazyNotificationsDrawerProps) {
   const [everOpened, setEverOpened] = useState(open)

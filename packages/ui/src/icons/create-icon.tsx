@@ -1,6 +1,6 @@
-import type { IconNode, LucideIcon } from '@kobato/ui/icons/types.ts'
+import type { IconNode, LucideIcon } from '@kobato/ui/icons/types'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { createElement } from 'react'
 
 export function createIcon(iconName: string, viewBox: string, iconNode: IconNode): LucideIcon {

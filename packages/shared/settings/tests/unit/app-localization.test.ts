@@ -1,15 +1,15 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
+import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import {
   PRE_INSTALL_TIME_ZONE,
   captureAppSnapshot,
   createLazyAppSnapshot,
   resolveAppLocalization,
-} from '@kobato/settings/app-localization.ts'
-import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/app-localization'
+import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 const withIdentity = (locale: AppLocale, timeZone: string, timeFormat: string | null = null): BlogSettingsBundle => ({

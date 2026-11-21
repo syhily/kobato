@@ -1,9 +1,9 @@
-import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header.tsx'
+import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header'
 
-import { avatarImageUrl } from '@kobato/assets/avatar.ts'
-import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { avatarImageUrl } from '@kobato/assets/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
+import { Button } from '@kobato/ui/components/button'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Suspense, lazy, useState } from 'react'
 
 // The dropdown chrome (Base UI menu, logout, notification entries) rides a lazy chunk so
@@ -12,10 +12,10 @@ import { Suspense, lazy, useState } from 'react'
 // the menu already open. Trigger-subtree parity with UserMenu is pinned by
 // tests/unit/ui/public/chrome/lazy-user-menu.test.tsx.
 const UserMenu = lazy(() =>
-  import('@kobato/web-public/ui/chrome/UserMenu.tsx').then((module) => ({ default: module.UserMenu })),
+  import('@kobato/web-public/ui/chrome/UserMenu').then((module) => ({ default: module.UserMenu })),
 )
 
-export const warmUserMenuChunk = () => void import('@kobato/web-public/ui/chrome/UserMenu.tsx')
+export const warmUserMenuChunk = () => void import('@kobato/web-public/ui/chrome/UserMenu')
 
 interface LazyUserMenuProps {
   currentUser: HeaderCurrentUser

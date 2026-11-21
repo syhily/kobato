@@ -1,4 +1,4 @@
-import { rumRouteContextFromMatches } from '@kobato/web-client/lib/rum/rum-route.ts'
+import { rumRouteContextFromMatches } from '@kobato/web-client/lib/rum/rum-route'
 import { describe, expect, it } from 'vitest'
 
 describe('rumRouteContextFromMatches', () => {

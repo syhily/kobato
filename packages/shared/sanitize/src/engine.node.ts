@@ -1,7 +1,7 @@
-import type { SanitizeStrategyConfig } from '@kobato/sanitize/config.ts'
+import type { SanitizeStrategyConfig } from '@kobato/sanitize/config'
 import type { WindowLike } from 'dompurify'
 
-import { createPurifySanitizer } from '@kobato/sanitize/purify-core.ts'
+import { createPurifySanitizer } from '@kobato/sanitize/purify-core'
 import createDOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
 

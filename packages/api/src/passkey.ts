@@ -1,4 +1,4 @@
-import { passkeyAuthBeginInputSchema, passkeyOptionsOutputSchema } from '@kobato/contracts/users.ts'
+import { passkeyAuthBeginInputSchema, passkeyOptionsOutputSchema } from '@kobato/contracts/users'
 import { oc } from '@orpc/contract'
 
 export const passkeyContract = {

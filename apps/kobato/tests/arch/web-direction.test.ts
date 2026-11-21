@@ -7,11 +7,11 @@ const CLIENT_ROOT = 'packages/web/client/src'
 const PUBLIC_ROOT = 'packages/web/public/src'
 const ADMIN_ROOTS = ['packages/web/admin/src/ui', 'packages/web/admin/src/styles']
 const ADMIN_PUBLIC_IMPORTS = [
-  '@kobato/web-public/ui/chrome/use-chrome-clock.ts',
-  '@kobato/web-public/ui/comments/CommentContentHtml.tsx',
-  '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx',
-  '@kobato/web-public/ui/comments/comment-body-helpers.ts',
-  '@kobato/web-public/ui/widgets/Image.tsx',
+  '@kobato/web-public/ui/chrome/use-chrome-clock',
+  '@kobato/web-public/ui/comments/CommentContentHtml',
+  '@kobato/web-public/ui/comments/LazyCommentBodyEditor',
+  '@kobato/web-public/ui/comments/comment-body-helpers',
+  '@kobato/web-public/ui/widgets/Image',
 ] as const
 
 function walk(root: string, out: string[]): void {

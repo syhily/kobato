@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { tag } from '@kobato/db/schema/taxonomy.ts'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { tag } from '@kobato/db/schema/taxonomy'
 import { eq, inArray } from 'drizzle-orm'
 
 export function setPostTags(db: Database, postId: number, tagIds: number[]): void {

@@ -1,14 +1,14 @@
-import type { DetailPostShell, DraftMarker, Post } from '@kobato/catalog/model.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { DetailPostShell, DraftMarker, Post } from '@kobato/catalog/model'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { toClientPost, toDetailPostShell } from '@kobato/catalog/projection.ts'
-import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle.ts'
-import { canonicalPostPath } from '@kobato/server/domains/content/urls.ts'
-import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
-import { findPostBySlug } from '@kobato/server/domains/posts/services/single.ts'
-import { redirectPermanent } from '@kobato/server/infra/http/redirects.ts'
-import { notFound } from '@kobato/server/infra/http/status.ts'
+import { toClientPost, toDetailPostShell } from '@kobato/catalog/projection'
+import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle'
+import { canonicalPostPath } from '@kobato/server/domains/content/urls'
+import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
+import { findPostBySlug } from '@kobato/server/domains/posts/services/single'
+import { redirectPermanent } from '@kobato/server/infra/http/redirects'
+import { notFound } from '@kobato/server/infra/http/status'
 
 export interface PostPreviewResult {
   sourcePost: Post

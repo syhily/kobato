@@ -1,11 +1,11 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SectionMeta } from '@kobato/settings/sections/registry.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SectionMeta } from '@kobato/settings/sections/registry'
 
-import { observabilityWriteSchema } from '@kobato/server/domains/settings/sections/observability.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
-import { SECTION_REGISTRY as SHARED_SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { observabilityWriteSchema } from '@kobato/server/domains/settings/sections/observability'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { SETTINGS_SECTIONS } from '@kobato/settings/sections'
+import { SECTION_REGISTRY as SHARED_SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const SECTION_REGISTRY = SHARED_SECTION_REGISTRY
 

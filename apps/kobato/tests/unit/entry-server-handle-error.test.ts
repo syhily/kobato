@@ -1,8 +1,8 @@
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { UNSAFE_ErrorResponseImpl } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { handleError } from '@/entry.server.tsx'
+import { handleError } from '@/entry.server'
 
 describe('entry.server.tsx / handleError', () => {
   beforeEach(() => {

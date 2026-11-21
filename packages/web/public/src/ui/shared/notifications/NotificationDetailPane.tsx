@@ -1,4 +1,4 @@
-import type { NotificationDto } from '@kobato/contracts/notifications.ts'
+import type { NotificationDto } from '@kobato/contracts/notifications'
 
 import {
   AlertDialog,
@@ -9,23 +9,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@kobato/ui/components/alert-dialog.tsx'
-import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
-import {
-  formatNotificationTime,
-  notificationMeta,
-} from '@kobato/web-public/ui/shared/notifications/notification-meta.ts'
+} from '@kobato/ui/components/alert-dialog'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { formatNotificationTime, notificationMeta } from '@kobato/web-public/ui/shared/notifications/notification-meta'
 import {
   useInvalidateNotifications,
   usePatchNotificationReadState,
-} from '@kobato/web-public/ui/shared/notifications/use-notifications.ts'
-import { useNow } from '@kobato/web-public/ui/shared/notifications/use-now.ts'
+} from '@kobato/web-public/ui/shared/notifications/use-notifications'
+import { useNow } from '@kobato/web-public/ui/shared/notifications/use-now'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

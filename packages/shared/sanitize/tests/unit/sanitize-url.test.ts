@@ -1,4 +1,4 @@
-import { isSafeUrl, sanitizeUrl } from '@kobato/sanitize/sanitize-url.ts'
+import { isSafeUrl, sanitizeUrl } from '@kobato/sanitize/sanitize-url'
 import { describe, expect, it } from 'vitest'
 
 describe('shared: sanitize-url', () => {

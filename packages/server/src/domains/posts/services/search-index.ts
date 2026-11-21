@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { ContentRow } from '@kobato/db/types'
 
-import { postSearchIndex } from '@kobato/db/schema/content.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection.ts'
+import { postSearchIndex } from '@kobato/db/schema/content'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection'
 import { eq } from 'drizzle-orm'
 
 export async function indexPost(

@@ -1,18 +1,18 @@
 // @vitest-environment happy-dom
 
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { SettingsSection } from '@kobato/settings/sections'
 
-import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
-import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { SECTION_DISPLAY } from '@kobato/web-admin/ui/settings/display.ts'
-import { SettingsNav } from '@kobato/web-admin/ui/settings/shell/SettingsNav.tsx'
-import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/SettingsSearchInput.tsx'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
+import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { SECTION_DISPLAY } from '@kobato/web-admin/ui/settings/display'
+import { SettingsNav } from '@kobato/web-admin/ui/settings/shell/SettingsNav'
+import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/SettingsSearchInput'
 import {
   SettingsSearchProvider,
   useSettingsSearch,
   useSettingsSearchFilter,
-} from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-search'
 import { screen } from '@testing-library/react'
 import { useEffect } from 'react'
 import { describe, expect, it } from 'vitest'

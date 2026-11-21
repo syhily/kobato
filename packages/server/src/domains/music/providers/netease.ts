@@ -1,12 +1,8 @@
-import type {
-  MusicProvider,
-  ProviderSearchResult,
-  ProviderTrack,
-} from '@kobato/server/domains/music/providers/types.ts'
+import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@kobato/server/domains/music/providers/types'
 
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 

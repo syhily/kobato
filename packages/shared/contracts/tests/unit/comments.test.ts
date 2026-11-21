@@ -1,10 +1,13 @@
 import {
+  ADMIN_COMMENT_STATUSES,
+  COMMENT_TEXT_MATCHES,
+  adminCommentsLoadAllInput,
   commentEditInputSchema,
   commentListInputSchema,
   commentReplySchema,
   commentRidSchema,
-} from '@kobato/contracts/comments.ts'
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
+} from '@kobato/contracts/comments'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
 import { describe, expect, it } from 'vitest'
 
 const HELLO_BODY = makeCommentBody('Thoughtful comment.')
@@ -97,5 +100,28 @@ describe('commentListInputSchema', () => {
 
   it('rejects a missing page_key', async () => {
     await expect(commentListInputSchema.parseAsync({ offset: 0 })).rejects.toBeTruthy()
+  })
+})
+
+describe('adminCommentsLoadAllInput status/match vocabulary', () => {
+  it('exposes the admin status and text-match constants in wire order', () => {
+    expect([...ADMIN_COMMENT_STATUSES]).toEqual(['all', 'pending', 'approved', 'deleteRequested'])
+    expect([...COMMENT_TEXT_MATCHES]).toEqual(['contains', 'does-not-contain'])
+  })
+
+  it('accepts every admin status and rejects unknown ones', async () => {
+    for (const status of ADMIN_COMMENT_STATUSES) {
+      const data = await adminCommentsLoadAllInput.parseAsync({ offset: 0, limit: 20, status })
+      expect(data.status).toBe(status)
+    }
+    await expect(adminCommentsLoadAllInput.parseAsync({ offset: 0, limit: 20, status: 'banned' })).rejects.toBeTruthy()
+  })
+
+  it('accepts every text match and rejects unknown ones', async () => {
+    for (const match of COMMENT_TEXT_MATCHES) {
+      const data = await adminCommentsLoadAllInput.parseAsync({ offset: 0, limit: 20, match })
+      expect(data.match).toBe(match)
+    }
+    await expect(adminCommentsLoadAllInput.parseAsync({ offset: 0, limit: 20, match: 'equals' })).rejects.toBeTruthy()
   })
 })

@@ -1,9 +1,9 @@
-import { category } from '@kobato/db/schema/taxonomy.ts'
+import { category } from '@kobato/db/schema/taxonomy'
 import {
   findCategoryBySlug,
   resolveCategoryBySlugOrName,
-} from '@kobato/server/domains/taxonomies/categories/services/query.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/taxonomies/categories/services/query'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

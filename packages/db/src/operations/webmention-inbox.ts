@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionInboxRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionInboxRow } from '@kobato/db/types'
 
-import { escapeLikePattern } from '@kobato/db/like-escape.ts'
-import { webmentionInbox } from '@kobato/db/schema/webmention.ts'
+import { escapeLikePattern } from '@kobato/db/like-escape'
+import { webmentionInbox } from '@kobato/db/schema/webmention'
 import { asc, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm'
 
 export async function upsertWebmentionInbox(

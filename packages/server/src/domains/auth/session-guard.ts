@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { findSafeUserById } from '@kobato/db/operations/user.ts'
-import { findSessionMeta, revokeSessionById } from '@kobato/server/domains/auth/repo.ts'
-import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { findSafeUserById } from '@kobato/db/operations/user'
+import { findSessionMeta, revokeSessionById } from '@kobato/server/domains/auth/repo'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export interface SessionRevocation {
   targetUserId: number | null

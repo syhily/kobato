@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useCommentGuest, type CommentGuestProfile } from '@kobato/web-public/ui/comments/use-comment-guest.ts'
+import { useCommentGuest, type CommentGuestProfile } from '@kobato/web-public/ui/comments/use-comment-guest'
 import { act, renderHook } from '@testing-library/react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'

@@ -3,7 +3,7 @@ import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
   clearCacheResultDto,
-} from '@kobato/contracts/cache.ts'
+} from '@kobato/contracts/cache'
 import { oc } from '@orpc/contract'
 
 export const adminCacheContract = {

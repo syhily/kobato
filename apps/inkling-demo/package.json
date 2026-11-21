@@ -3,12 +3,20 @@
   "version": "8.0.3-dev",
   "private": true,
   "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "scripts": {
+    "generate:content": "vite-node --config vite.config.ts generate-content.ts",
+    "type": "tsc -p tsconfig.json"
+  },
   "devDependencies": {
     "@kobato/inkling": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/web-public": "workspace:*",
+    "@lexical/headless": "catalog:",
     "@lexical/link": "catalog:",
     "@lexical/list": "catalog:",
     "@lexical/react": "catalog:",
@@ -27,6 +35,7 @@
     "react-router": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
+    "vite-node": "catalog:",
     "vite-plugin-svgr": "catalog:",
     "vitest": "catalog:",
     "yjs": "catalog:"

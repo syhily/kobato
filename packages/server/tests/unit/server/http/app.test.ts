@@ -1,6 +1,6 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -16,19 +16,19 @@ vi.mock('@orpc/server/fetch', () => ({
   RPCHandler: RPCHandlerMock,
 }))
 
-vi.mock('@kobato/server/http/api-router.ts', () => ({
+vi.mock('@kobato/server/http/api-router', () => ({
   apiRouter: { mock: true },
 }))
 
-vi.mock('@kobato/server/domains/settings/services/hydrate.ts', () => ({
+vi.mock('@kobato/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(async () => null),
 }))
 
-vi.mock('@kobato/server/http/middlewares/csrf.ts', () => ({
+vi.mock('@kobato/server/http/middlewares/csrf', () => ({
   csrfGuard: vi.fn(async (_c: any, next: () => Promise<void>) => next()),
 }))
 
-vi.mock('@kobato/server/http/middlewares/dynamic-body-limit.ts', () => ({
+vi.mock('@kobato/server/http/middlewares/dynamic-body-limit', () => ({
   dynamicBodyLimit: vi.fn(({ onError }: { onError?: (c: any) => Response }) => {
     return async (c: any, next: () => Promise<void>) => {
       const contentLength = Number(c.req.raw.headers.get('content-length') || '0')
@@ -51,7 +51,7 @@ describe('createApiApp', () => {
   })
 
   async function makeApp() {
-    const { createApiApp } = await import('@kobato/server/http/app.ts')
+    const { createApiApp } = await import('@kobato/server/http/app')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set('requestContext', {

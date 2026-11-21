@@ -1,4 +1,4 @@
-import type { BundleKey } from '@kobato/settings/sections.ts'
+import type { BundleKey } from '@kobato/settings/sections'
 import type {
   AssetsSettings,
   BlogSettingsBundle,
@@ -8,9 +8,9 @@ import type {
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
-} from '@kobato/settings/types.ts'
+} from '@kobato/settings/types'
 
-import { BUNDLE_KEYS } from '@kobato/settings/sections.ts'
+import { BUNDLE_KEYS } from '@kobato/settings/sections'
 import { createContext, type Context, type ReactNode, use } from 'react'
 
 function makeCtx<T>(displayName: string): Context<T | undefined> {

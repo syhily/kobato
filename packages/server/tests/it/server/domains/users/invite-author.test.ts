@@ -1,15 +1,15 @@
-import { user, verification } from '@kobato/db/schema/user.ts'
-import { SmtpCapture } from '@kobato/harness/smtp.ts'
-import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { user, verification } from '@kobato/db/schema/user'
+import { SmtpCapture } from '@kobato/harness/smtp'
+import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 // Real end-to-end: the actual sender, templates, and nodemailer SMTP transport
 // against an in-process capture server; the failure leg dials a port with no
 // listener and the token-store fault drops the verification table for real.
-const { inviteAuthorWithRollback } = await import('@kobato/server/domains/users/services/admin.ts')
+const { inviteAuthorWithRollback } = await import('@kobato/server/domains/users/services/admin')
 
 const db = getTestDb()
 const capture = new SmtpCapture()

@@ -1,6 +1,6 @@
-import type { SettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
+import type { SettingsBundle, SecretMasks } from '@kobato/settings/types'
 
-import { type SettingsSection, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+import { type SettingsSection, SETTINGS_SECTIONS } from '@kobato/settings/sections'
 import { z } from 'zod'
 
 export const adminSettingsBootstrapOutputSchema = z.object({

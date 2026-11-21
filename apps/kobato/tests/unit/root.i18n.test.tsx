@@ -1,26 +1,26 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react'
 
-import { fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
-import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/site-date.ts'
-import { prerenderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { fallbackMessages } from '@kobato/i18n/fallback-messages'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatLocalDate } from '@kobato/utils/site-date'
+import { prerenderToHtml } from '@kobato/web-client/tests/utils/render'
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ErrorBoundary, Layout, shouldRevalidate } from '@/root.tsx'
+import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
-vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
 // Meta/Links/Scripts/ScrollRestoration need the framework build manifest a
 // memory router lacks — stub them, keep the rest real.

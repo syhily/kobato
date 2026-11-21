@@ -1,7 +1,7 @@
-import { COMMENT_NODE_TYPES } from '@kobato/inkling-internal/headless/node-whitelist.ts'
-import { buildLexicalEditorStateSchema } from '@kobato/inkling-internal/headless/schema.ts'
-import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling-internal/headless/walk.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { COMMENT_NODE_TYPES } from '@kobato/inkling-internal/headless/node-whitelist'
+import { buildLexicalEditorStateSchema } from '@kobato/inkling-internal/headless/schema'
+import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling-internal/headless/walk'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const COMMENT_LIST_MAX_DEPTH = 4

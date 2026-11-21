@@ -1,7 +1,7 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { webmentionLinkHeader } from '@kobato/server/domains/webmentions/link-header.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { webmentionLinkHeader } from '@kobato/server/domains/webmentions/link-header'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 function bundleWith(overrides: { receiveEnabled?: boolean; website?: string }): BlogSettingsBundle {

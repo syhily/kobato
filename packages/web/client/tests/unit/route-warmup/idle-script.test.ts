@@ -1,4 +1,4 @@
-import { startRouteWarmup } from '@kobato/web-client/route-warmup/idle-script.ts'
+import { startRouteWarmup } from '@kobato/web-client/route-warmup/idle-script'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface StubLink {

@@ -5,7 +5,7 @@ import {
   contentTypeForKey,
   defaultCacheControlForKey,
   visibilityForKey,
-} from '@kobato/server/infra/storage/key-policy.ts'
+} from '@kobato/server/infra/storage/key-policy'
 import { describe, expect, it } from 'vitest'
 
 describe('storage/key-policy — contentTypeForKey', () => {

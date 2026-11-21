@@ -1,16 +1,16 @@
-import type { CacheBucketId } from '@kobato/cache/types.ts'
-import type { MetricAttributes } from '@kobato/server/infra/trace/facade.ts'
+import type { CacheBucketId } from '@kobato/cache/types'
+import type { MetricAttributes } from '@kobato/server/infra/trace/facade'
 import type {
   DbEngine,
   DbOutcome,
   ImageOperation,
   ImageSizeBucket,
   RumRelayOutcome,
-} from '@kobato/server/infra/trace/sanitize.ts'
+} from '@kobato/server/infra/trace/sanitize'
 
-import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade.ts'
-import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize.ts'
-import { TRACE_METRIC_NAMES } from '@kobato/telemetry/metrics.ts'
+import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade'
+import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize'
+import { TRACE_METRIC_NAMES } from '@kobato/telemetry/metrics'
 
 export const METRIC = TRACE_METRIC_NAMES
 

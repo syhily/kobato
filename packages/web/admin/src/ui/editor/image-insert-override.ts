@@ -1,6 +1,6 @@
 import type { LexicalEditor } from '@kobato/inkling'
 
-import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
+import { parseAssetUrlPath, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
 import {
   COMMAND_PRIORITY_HIGH,
   INSERT_CARD_COMMAND,

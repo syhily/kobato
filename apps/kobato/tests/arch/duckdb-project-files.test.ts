@@ -1,5 +1,5 @@
-import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files.ts'
-import duckdbConfig from '@tests/vitest.duckdb.config.ts'
+import { DUCKDB_TEST_FILES } from '@kobato/test/duckdb-files'
+import duckdbConfig from '@tests/vitest.duckdb.config'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -39,7 +39,7 @@ function walk(dir: string): string[] {
 }
 
 function fullyMocksDuckdbModule(source: string): boolean {
-  return source.includes(`vi.mock('@kobato/db/duckdb/database.ts'`) && !source.includes('importOriginal')
+  return source.includes(`vi.mock('@kobato/db/duckdb/database'`) && !source.includes('importOriginal')
 }
 
 describe('duckdb project membership', () => {

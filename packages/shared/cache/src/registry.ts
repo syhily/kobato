@@ -1,4 +1,4 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export interface CacheDeclaration {
   /** Stable discriminator — also the cache directory name. */

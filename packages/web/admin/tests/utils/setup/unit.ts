@@ -1,19 +1,14 @@
-import '@kobato/test/setup/unit.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { installWebStreamGlobals } from '@kobato/test/web-streams.ts'
+import '@kobato/test/setup/unit'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { installWebStreamGlobals } from '@kobato/test/web-streams'
 import { afterEach, vi } from 'vitest'
 
 installWebStreamGlobals()
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation', async () => {
+  const { settingsMutationMock } = await import('@kobato/web-admin/tests/utils/settings-mutation-mock')
+  return { useSettingsMutation: settingsMutationMock }
+})
 
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 

@@ -1,20 +1,20 @@
-import type { BrandingObjectRef } from '@kobato/settings/types.ts'
+import type { BrandingObjectRef } from '@kobato/settings/types'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mem = makeMemoryBackend()
 
 const generateFaviconPackMock = vi.hoisted(() => vi.fn())
-vi.mock('@kobato/server/domains/assets/generate.ts', () => ({
+vi.mock('@kobato/server/domains/assets/generate', () => ({
   generateFaviconPack: generateFaviconPackMock,
 }))
 
-const { uploadBrandingAsset, clearBrandingAsset } = await import('@kobato/server/domains/assets/management.ts')
+const { uploadBrandingAsset, clearBrandingAsset } = await import('@kobato/server/domains/assets/management')
 
 const db = getTestDb()
 

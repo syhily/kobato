@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { content } from '@kobato/db/schema/content.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { content } from '@kobato/db/schema/content'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
+import { getLogger } from '@kobato/server/infra/logger'
 import { count, eq } from 'drizzle-orm'
 
 const log = getLogger('content.reproject-body-html')

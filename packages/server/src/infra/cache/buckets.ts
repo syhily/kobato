@@ -1,21 +1,16 @@
-import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/cache/types.ts'
-import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/contracts/cache.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/cache/types'
+import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/contracts/cache'
+import type { Database } from '@kobato/db/database'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
-import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/cache/types.ts'
-import { session } from '@kobato/db/schema/session.ts'
-import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store.ts'
-import {
-  bumpCounter,
-  evictBucketMemory,
-  isCounterBucket,
-  resolveCacheSlot,
-} from '@kobato/server/infra/cache/registry.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { rateLimitEntryCount } from '@kobato/server/infra/rate-limit.ts'
-import { resolveAppLocalization } from '@kobato/settings/app-localization.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
+import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/cache/types'
+import { session } from '@kobato/db/schema/session'
+import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store'
+import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from '@kobato/server/infra/cache/registry'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { rateLimitEntryCount } from '@kobato/server/infra/rate-limit'
+import { resolveAppLocalization } from '@kobato/settings/app-localization'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { count, gt } from 'drizzle-orm'
 
 function cacheTranslator() {

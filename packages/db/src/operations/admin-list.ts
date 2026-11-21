@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 import type { SelectedFields, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core'
 
-import { user } from '@kobato/db/schema/user.ts'
+import { user } from '@kobato/db/schema/user'
 import { and, eq, type SQL } from 'drizzle-orm'
 
 export function assembleWhere(conditions: SQL[]): SQL | undefined {

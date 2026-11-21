@@ -1,19 +1,19 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
 
-import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
-import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions.tsx'
-import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
-import { LikeButton, LikeShare } from '@kobato/web-public/ui/LikeActions.tsx'
+import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf'
+import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions'
+import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
+import { LikeButton, LikeShare } from '@kobato/web-public/ui/LikeActions'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }
 
-vi.mock('@kobato/web-public/ui/comments/use-comment-guest.ts', () => ({
+vi.mock('@kobato/web-public/ui/comments/use-comment-guest', () => ({
   useCommentGuest: () => ({
     profile: null,
     saveProfile: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('@kobato/web-public/ui/comments/use-comment-guest.ts', () => ({
   }),
 }))
 
-vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx', () => ({
+vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),

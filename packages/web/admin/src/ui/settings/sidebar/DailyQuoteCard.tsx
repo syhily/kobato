@@ -1,20 +1,20 @@
-import type { SidebarSettings } from '@kobato/settings/types.ts'
+import type { SidebarSettings } from '@kobato/settings/types'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
-import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
+import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import {
   type DailyQuoteState,
   isQuoteRow,
   MAX_CUSTOM_QUOTES,
   MIN_CUSTOM_QUOTES,
   SOURCE_OPTIONS,
-} from '@kobato/web-admin/ui/settings/sidebar/model.ts'
+} from '@kobato/web-admin/ui/settings/sidebar/model'
 import { UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Controller, useWatch } from 'react-hook-form'

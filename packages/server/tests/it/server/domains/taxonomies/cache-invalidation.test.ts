@@ -1,8 +1,8 @@
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
-import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical'
+import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -17,7 +17,7 @@ function feedRowCount(): Promise<number> {
 
 describe('taxonomy cache invalidation', () => {
   it('shows a renamed tag immediately after upsertAdminTag (no TTL wait)', async () => {
-    const { upsertAdminTag, listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { upsertAdminTag, listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const created = await upsertAdminTag(db, { name: 'OldName' })
 
     const primed = await listAllTags(db)
@@ -31,8 +31,8 @@ describe('taxonomy cache invalidation', () => {
   })
 
   it('clears the whole feed bucket when a category is renamed', async () => {
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
-    const { set } = await import('@kobato/server/infra/cache/registry.ts')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
+    const { set } = await import('@kobato/server/infra/cache/registry')
     const created = await upsertAdminCategory(db, { name: 'FeedCat', cover: '', description: '' })
 
     const settingsRevision = getBlogSettingsSnapshotSync().revision
@@ -50,15 +50,15 @@ describe('taxonomy cache invalidation', () => {
   })
 
   it('increments a tag count immediately when a post carrying the tag is published', async () => {
-    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service.ts')
+    const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
 
     const primed = await listAllTags(db)
     expect(primed.find((t) => t.name === 'CacheTag')).toBeUndefined()
 
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Cache Post', tags: ['CacheTag'] }, null)
-    const { saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { saveBody } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const r = await saveBody(
       db,
       postLifecycleAdapter,

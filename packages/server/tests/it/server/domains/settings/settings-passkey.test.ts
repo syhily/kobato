@@ -1,6 +1,6 @@
-import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -10,8 +10,8 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-const { updateBlogSettingsSection } = await import('@kobato/server/domains/settings/services/core.ts')
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { updateBlogSettingsSection } = await import('@kobato/server/domains/settings/services/core')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
 
 describe('services/settings — passkey domain validation', () => {
   it('rejects passkey enable when website is not set', async () => {

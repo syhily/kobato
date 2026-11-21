@@ -1,8 +1,8 @@
-import type { BackupLoaderShape } from '@kobato/settings/projection.ts'
+import type { BackupLoaderShape } from '@kobato/settings/projection'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

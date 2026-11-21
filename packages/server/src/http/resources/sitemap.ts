@@ -1,9 +1,9 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
-import { through } from '@kobato/server/infra/cache/registry.ts'
-import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag.ts'
-import { buildSitemapXml } from '@kobato/server/render/seo/sitemap.ts'
+import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit'
+import { through } from '@kobato/server/infra/cache/registry'
+import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag'
+import { buildSitemapXml } from '@kobato/server/render/seo/sitemap'
 import { Hono } from 'hono'
 
 export const SITEMAP_CACHE_CONTROL = 'public, no-cache'

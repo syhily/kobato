@@ -1,12 +1,12 @@
-import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
 import {
   getPublicBaseUrl,
   parseAssetUrl,
   resolveAssetUrl,
   safeResolveAssetUrl,
-} from '@kobato/server/infra/storage/public-url.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/infra/storage/public-url'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const SITE = 'https://site.example.com'

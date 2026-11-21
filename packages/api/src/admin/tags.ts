@@ -1,11 +1,11 @@
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+import { voidOutput } from '@kobato/contracts/primitives'
 import {
   adminTagsListInput,
   adminTagsListOutputDto,
   adminTagIdInput,
   adminTagUpsertInput,
   adminTagUpsertOutputDto,
-} from '@kobato/contracts/tags.ts'
+} from '@kobato/contracts/tags'
 import { oc } from '@orpc/contract'
 
 export const adminTagsContract = {

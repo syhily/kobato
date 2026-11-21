@@ -1,5 +1,5 @@
-import { apiContract } from '@kobato/api/contract.ts'
-import { apiRouter } from '@kobato/server/http/api-router.ts'
+import { apiContract } from '@kobato/api/contract'
+import { apiRouter } from '@kobato/server/http/api-router'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 

@@ -1,8 +1,8 @@
-import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch.ts'
+import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch'
 
-import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type.ts'
-import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type'
+import { safeFetch } from '@kobato/server/infra/safe-fetch'
+import { isHttpUrl } from '@kobato/utils/safe-url'
 
 // W3C §4.1 discovery: the Link response header wins over the HTML
 // `<link>`/`<a rel="webmention">` fallback; regex-based, best-effort by

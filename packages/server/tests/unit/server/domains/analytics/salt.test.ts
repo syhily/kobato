@@ -1,4 +1,4 @@
-import { getDailySalt } from '@kobato/server/domains/analytics/salt.ts'
+import { getDailySalt } from '@kobato/server/domains/analytics/salt'
 import { describe, expect, it } from 'vitest'
 
 describe('server/domains/analytics/salt — getDailySalt', () => {

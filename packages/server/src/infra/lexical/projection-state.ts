@@ -17,11 +17,11 @@
 //    `music-player` becomes a text paragraph with its save-time meta snapshot
 //    (or the placeholder), `solution` / `two-column` are dropped.
 
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
-import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player.ts'
-import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player'
+import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface ProjectionStateOptions {
   /** Strip the server-prerendered artifact slots (feed variant). */

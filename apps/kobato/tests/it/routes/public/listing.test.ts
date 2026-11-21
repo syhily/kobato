@@ -1,12 +1,12 @@
-import type { PublicListingLoaderData } from '@kobato/catalog/listing.ts'
+import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { adminSession, regularSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { adminSession, regularSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -71,9 +71,9 @@ async function seedCatalog(): Promise<void> {
   await linkTag(hiddenId, tagId)
 }
 
-const categoryRoute = await import('@/routes/public/category/list.tsx')
-const tagRoute = await import('@/routes/public/tag/list.tsx')
-const searchRoute = await import('@/routes/public/search/list.tsx')
+const categoryRoute = await import('@/routes/public/category/list')
+const tagRoute = await import('@/routes/public/tag/list')
+const searchRoute = await import('@/routes/public/search/list')
 
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init

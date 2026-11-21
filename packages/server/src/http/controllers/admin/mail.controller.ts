@@ -1,7 +1,7 @@
-import { adminMailContract } from '@kobato/api/admin/mail.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { sendTestMail } from '@kobato/server/infra/email/sender.ts'
+import { adminMailContract } from '@kobato/api/admin/mail'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { sendTestMail } from '@kobato/server/infra/email/sender'
 import { ORPCError } from '@orpc/server'
 
 const impl = implementAdmin(adminMailContract)

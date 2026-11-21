@@ -1,6 +1,6 @@
-import type { AvatarSource } from '@kobato/assets/avatar.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { CommentsLoaderShape } from '@kobato/settings/projection.ts'
+import type { AvatarSource } from '@kobato/assets/avatar'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { CommentsLoaderShape } from '@kobato/settings/projection'
 
 export interface CommentsFormProps {
   comments: CommentsLoaderShape

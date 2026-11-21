@@ -1,8 +1,8 @@
-import { QuickActions } from '@kobato/web-admin/ui/dashboard/QuickActions.tsx'
-import { RecentDraftsCard } from '@kobato/web-admin/ui/dashboard/RecentDraftsCard.tsx'
-import { RecentPublishedCard } from '@kobato/web-admin/ui/dashboard/RecentPublishedCard.tsx'
-import { StatsGrid } from '@kobato/web-admin/ui/dashboard/StatsGrid.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { QuickActions } from '@kobato/web-admin/ui/dashboard/QuickActions'
+import { RecentDraftsCard } from '@kobato/web-admin/ui/dashboard/RecentDraftsCard'
+import { RecentPublishedCard } from '@kobato/web-admin/ui/dashboard/RecentPublishedCard'
+import { StatsGrid } from '@kobato/web-admin/ui/dashboard/StatsGrid'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: QuickActions', () => {

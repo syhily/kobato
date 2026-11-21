@@ -1,22 +1,22 @@
 import type { GetObjectCommandOutput, ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 import type {
   PutObjectInput,
   PutStreamInput,
   StorageBackend,
   StoredObjectMeta,
   StreamWithMeta,
-} from '@kobato/server/infra/storage/backend.ts'
-import type { AssetsSettings } from '@kobato/settings/types.ts'
+} from '@kobato/server/infra/storage/backend'
+import type { AssetsSettings } from '@kobato/settings/types'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
-import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '@kobato/server/infra/storage/backend'
+import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createHash } from 'node:crypto'
 import { Readable, Transform } from 'node:stream'
 

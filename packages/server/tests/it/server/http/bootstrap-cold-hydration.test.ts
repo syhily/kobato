@@ -1,24 +1,24 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { isPublicMessageKey } from '@kobato/i18n/catalog-scope.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { makeSession } from '@kobato/server/tests/utils/session.ts'
-import { PRE_INSTALL_TIME_ZONE, resolveAppLocalization } from '@kobato/settings/app-localization.ts'
-import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { isPublicMessageKey } from '@kobato/i18n/catalog-scope'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { PRE_INSTALL_TIME_ZONE, resolveAppLocalization } from '@kobato/settings/app-localization'
+import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters'
+import { TEST_BLOG_SETTINGS_BUNDLE, resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 const CSRF = 'cold-boot-csrf-token'
 
-const { onErrorHandler } = await import('@kobato/server/http/errors.ts')
-const { createApiApp } = await import('@kobato/server/http/app.ts')
+const { onErrorHandler } = await import('@kobato/server/http/errors')
+const { createApiApp } = await import('@kobato/server/http/app')
 const { buildInstallSectionRows, seedInstallSections } =
-  await import('@kobato/server/domains/settings/services/install-flow.ts')
+  await import('@kobato/server/domains/settings/services/install-flow')
 
 function seedInstalledSite(overrides: { locale: 'zh-TW'; timeZone: string; maxRequestBodySize?: number }): void {
   const built = buildInstallSectionRows({

@@ -1,11 +1,11 @@
-import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
-import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeSession } from '@kobato/server/tests/utils/session.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { makeLoaderArgs } from '@tests/utils/context.ts'
+import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate'
+import { __setWarmupAssetsDirForTests } from '@kobato/server/render/warmup/manifest'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { makeLoaderArgs } from '@tests/utils/context'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -18,7 +18,7 @@ const session = makeSession({ csrfToken: 'test-csrf-token' })
 const emptyAssetsDir = mkdtempSync(join(tmpdir(), 'kobato-root-loader-'))
 __setWarmupAssetsDirForTests(emptyAssetsDir)
 
-const { loader } = await import('@/root.tsx')
+const { loader } = await import('@/root')
 
 describe('root loader', () => {
   beforeEach(async () => {

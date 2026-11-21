@@ -1,7 +1,7 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import NotFoundRoute from '@/routes/public/not-found.tsx'
+import NotFoundRoute from '@/routes/public/not-found'
 
 describe('snapshot: routes/public/not-found', () => {
   it('renders nothing for the default export', () => {

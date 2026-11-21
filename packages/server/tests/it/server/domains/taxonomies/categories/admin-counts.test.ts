@@ -1,6 +1,6 @@
-import { post } from '@kobato/db/schema/post.ts'
-import { category } from '@kobato/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { post } from '@kobato/db/schema/post'
+import { category } from '@kobato/db/schema/taxonomy'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -111,7 +111,7 @@ describe('listCategoriesForAdmin', () => {
       },
     ])
 
-    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const result = await listCategoriesForAdmin(db, {})
 
     expect(result.total).toBe(2)
@@ -124,7 +124,7 @@ describe('listCategoriesForAdmin', () => {
   it('returns zero counts when no posts match', async () => {
     await db.insert(category).values([{ name: 'Empty', slug: 'empty', cover: '', description: '', sortOrder: 0 }])
 
-    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
+    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const result = await listCategoriesForAdmin(db, {})
 
     expect(result.total).toBe(1)
@@ -162,8 +162,8 @@ describe('listCategoriesForAdmin', () => {
       },
     ])
 
-    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query.ts')
-    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate.ts')
+    const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
+    const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
 
     const list = await listCategoriesForAdmin(db, {})
     expect(list.categories.find((c) => c.name === 'Tech')?.postCount).toBe(1)

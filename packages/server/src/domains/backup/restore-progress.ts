@@ -1,6 +1,6 @@
-import type { RestoreProgressDto } from '@kobato/contracts/backup.ts'
+import type { RestoreProgressDto } from '@kobato/contracts/backup'
 
-import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
+import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine'
 
 interface StagingProgress {
   stage: 'decrypting' | 'extracting'

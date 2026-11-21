@@ -1,4 +1,4 @@
-import { CACHE_PROFILES, cacheHeaders } from '@kobato/server/infra/http/headers.ts'
+import { CACHE_PROFILES, cacheHeaders } from '@kobato/server/infra/http/headers'
 import { describe, expect, it } from 'vitest'
 
 describe('server/infra/http/headers — CACHE_PROFILES', () => {

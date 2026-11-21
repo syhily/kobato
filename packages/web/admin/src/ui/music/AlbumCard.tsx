@@ -1,10 +1,10 @@
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { Equalizer } from '@kobato/web-admin/ui/music/Equalizer.tsx'
-import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
-import { Image } from '@kobato/web-public/ui/widgets/Image.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { Equalizer } from '@kobato/web-admin/ui/music/Equalizer'
+import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
+import { Image } from '@kobato/web-public/ui/widgets/Image'
 import { Play, Pause } from 'lucide-react'
 
 export interface AlbumCardProps {

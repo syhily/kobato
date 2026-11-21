@@ -1,8 +1,8 @@
-import type { FilterPillBarProps } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { FilterPillBarProps } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { FilterAddButton } from '@kobato/web-admin/ui/shared/filter-bar/add-button.tsx'
-import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { FilterAddButton } from '@kobato/web-admin/ui/shared/filter-bar/add-button'
+import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill'
 import { XIcon } from 'lucide-react'
 
 export function FilterPillBar<K extends string>({

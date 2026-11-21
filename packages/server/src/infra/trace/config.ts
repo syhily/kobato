@@ -1,13 +1,13 @@
-import type { RumClientIdentity } from '@kobato/settings/sections/observability.ts'
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
+import type { RumClientIdentity } from '@kobato/settings/sections/observability'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
 
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getLogger } from '@kobato/server/infra/logger'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
-} from '@kobato/server/infra/observability.ts'
-import { verifiedFrontendBootstrap, verifiedFrontendRelay } from '@kobato/server/infra/trace/frontend-gate.ts'
+} from '@kobato/server/infra/observability'
+import { verifiedFrontendBootstrap, verifiedFrontendRelay } from '@kobato/server/infra/trace/frontend-gate'
 
 const log = getLogger('trace')
 

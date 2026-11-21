@@ -1,24 +1,24 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
-import { serializeCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token.ts'
-import { approveCommentById } from '@kobato/server/domains/comments/services/moderate.ts'
-import { issueCommentToken } from '@kobato/server/domains/comments/services/token-store.ts'
-import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { comment } from '@kobato/db/schema/comment'
+import { metric } from '@kobato/db/schema/metric'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
+import { serializeCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token'
+import { approveCommentById } from '@kobato/server/domains/comments/services/moderate'
+import { issueCommentToken } from '@kobato/server/domains/comments/services/token-store'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The transports are covered elsewhere; these spies pass through to the
 // real senders (mail is disabled in the test bundle, so they stay quiet).
-const emailModule = await import('@kobato/server/domains/comments/services/email.ts')
+const emailModule = await import('@kobato/server/domains/comments/services/email')
 vi.spyOn(emailModule, 'sendApprovedComment')
 vi.spyOn(emailModule, 'sendNewComment')
 vi.spyOn(emailModule, 'sendNewReply')
@@ -27,13 +27,13 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const publicQuery = await import('@kobato/server/domains/comments/services/public-query.ts')
+const publicQuery = await import('@kobato/server/domains/comments/services/public-query')
 const loadCommentsSpy = vi.spyOn(publicQuery, 'loadComments')
-const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller.ts')
-const { commentsPublicRouter } = await import('@kobato/server/http/controllers/comments-public.controller.ts')
+const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller')
+const { commentsPublicRouter } = await import('@kobato/server/http/controllers/comments-public.controller')
 const commentsRouter = commentsPublicRouter
-const { commentsTokenRouter } = await import('@kobato/server/http/controllers/comments-token.controller.ts')
-const { likesRouter } = await import('@kobato/server/http/controllers/likes.controller.ts')
+const { commentsTokenRouter } = await import('@kobato/server/http/controllers/comments-token.controller')
+const { likesRouter } = await import('@kobato/server/http/controllers/likes.controller')
 
 const db = getTestDb()
 

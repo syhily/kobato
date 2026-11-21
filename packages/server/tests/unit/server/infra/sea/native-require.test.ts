@@ -3,8 +3,8 @@ import {
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
-} from '@kobato/distribution/sea-assets.ts'
-import { nativeRequire } from '@kobato/server/infra/sea/native-require.ts'
+} from '@kobato/distribution/sea-assets'
+import { nativeRequire } from '@kobato/server/infra/sea/native-require'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -15,7 +15,7 @@ const seaMock = vi.hoisted(() => ({
   getEmbeddedAsset: vi.fn<(key: string) => Buffer | null>(() => null),
 }))
 
-vi.mock('@kobato/server/infra/sea/sea.ts', () => ({
+vi.mock('@kobato/server/infra/sea/sea', () => ({
   requireExternal: seaMock.requireExternal,
   getEmbeddedAsset: seaMock.getEmbeddedAsset,
 }))

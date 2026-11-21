@@ -1,7 +1,7 @@
-import { reorderCategories } from '@kobato/db/operations/category.ts'
-import { category } from '@kobato/db/schema/taxonomy.ts'
-import { reorderAdminCategories } from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { reorderCategories } from '@kobato/db/operations/category'
+import { category } from '@kobato/db/schema/taxonomy'
+import { reorderAdminCategories } from '@kobato/server/domains/taxonomies/categories/services/mutate'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { asc } from 'drizzle-orm'
 import { describe, expect, it, beforeEach } from 'vitest'
 

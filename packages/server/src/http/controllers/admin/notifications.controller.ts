@@ -1,7 +1,7 @@
-import { adminNotificationsContract } from '@kobato/api/admin/notifications.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
+import { adminNotificationsContract } from '@kobato/api/admin/notifications'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
 
 const impl = implementAdmin(adminNotificationsContract)
 

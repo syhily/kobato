@@ -1,4 +1,4 @@
-import type { TocItem } from '@kobato/inkling/headless/toc.ts'
+import type { TocItem } from '@kobato/inkling/headless/toc'
 
 import { memo } from 'react'
 

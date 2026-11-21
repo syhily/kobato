@@ -1,4 +1,4 @@
-import { repoRoot } from '@kobato/pack/sea/paths.ts'
+import { repoRoot } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 
 export function fail(message: string): never {

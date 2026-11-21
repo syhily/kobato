@@ -1,5 +1,5 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { SearchBar, SearchIconButton } from '@kobato/web-public/ui/Search.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { SearchBar, SearchIconButton } from '@kobato/web-public/ui/Search'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: Search branches', () => {

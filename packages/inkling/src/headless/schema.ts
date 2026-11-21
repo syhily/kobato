@@ -1,8 +1,8 @@
 import type { SerializedEditorState } from 'lexical'
 
-import { normalizeLexicalDialect } from '@kobato/inkling-internal/headless/dialect.ts'
-import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
-import { isSafeUrl } from '@kobato/sanitize/sanitize-url.ts'
+import { normalizeLexicalDialect } from '@kobato/inkling-internal/headless/dialect'
+import { FULL_EDITOR_NODE_TYPES, ROOT_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
+import { isSafeUrl } from '@kobato/sanitize/sanitize-url'
 import { z } from 'zod'
 
 export type LexicalNodeJson = {

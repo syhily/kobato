@@ -1,5 +1,5 @@
-import { Button } from '@kobato/ui/components/button.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 
 interface RumConsentBannerProps {
   onAccept: () => void

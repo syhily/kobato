@@ -1,17 +1,17 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mathMock = vi.hoisted(() => vi.fn())
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(() => ({ admin: { renders: { math: mathMock } } }) as never)
 
 afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { makeRenderMath, resolveMathError } = await import('@kobato/web-admin/ui/editor/render-math.ts')
+const { makeRenderMath, resolveMathError } = await import('@kobato/web-admin/ui/editor/render-math')
 
 const RENDER_FAILED: ErrorMessageDescriptor = {
   messageKey: 'admin.editor.math.renderFailed',

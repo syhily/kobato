@@ -1,4 +1,4 @@
-import { useIosNoZoomOnFocus } from '@kobato/web-client/hooks/use-ios-no-zoom.ts'
+import { useIosNoZoomOnFocus } from '@kobato/web-client/hooks/use-ios-no-zoom'
 // @vitest-environment happy-dom
 import { render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

@@ -1,4 +1,4 @@
-import { sampleSize, shuffle } from '@kobato/utils/sampling.ts'
+import { sampleSize, shuffle } from '@kobato/utils/sampling'
 import { describe, expect, it } from 'vitest'
 
 describe('utils/sampling — shuffle', () => {

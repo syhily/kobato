@@ -6,7 +6,7 @@ import type {
   ListingPostCard,
   Post,
   SidebarPostLink,
-} from '@kobato/catalog/model.ts'
+} from '@kobato/catalog/model'
 
 export function toClientPost(post: Post): ClientPost {
   const {

@@ -1,11 +1,11 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
+import type { PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared'
 
-import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate.ts'
-import { postDescriptor } from '@kobato/server/domains/posts/descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { makeEntityMutations } from '@kobato/server/domains/content/entities/mutate'
+import { postDescriptor } from '@kobato/server/domains/posts/descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 const mutations = makeEntityMutations(postDescriptor)
 

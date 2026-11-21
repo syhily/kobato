@@ -1,12 +1,12 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
-import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 
 import {
   __isRumModuleRequestedForTests,
   __resetRumHookForTests,
   isRumDenied,
   useRum,
-} from '@kobato/web-client/hooks/use-rum.ts'
+} from '@kobato/web-client/hooks/use-rum'
 import { renderHook, waitFor } from '@testing-library/react'
 // @vitest-environment jsdom
 import { StrictMode } from 'react'
@@ -24,7 +24,7 @@ vi.mock('react-router', () => ({
   useMatches: () => matches.current,
 }))
 
-vi.mock('@kobato/web-client/lib/rum/openobserve-rum.ts', () => ({
+vi.mock('@kobato/web-client/lib/rum/openobserve-rum', () => ({
   startRum: rum.startRum,
   stopRum: rum.stopRum,
   suspendRum: rum.suspendRum,

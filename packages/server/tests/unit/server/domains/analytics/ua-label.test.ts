@@ -1,4 +1,4 @@
-import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse.ts'
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { describe, expect, it } from 'vitest'
 
 describe('ua-parse — formatUaLabel', () => {

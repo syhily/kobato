@@ -1,8 +1,8 @@
-import type { AssetsLoaderShape } from '@kobato/settings/projection.ts'
+import type { AssetsLoaderShape } from '@kobato/settings/projection'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { StorageCards } from '@kobato/web-admin/ui/settings/storage/StorageCards.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { StorageCards } from '@kobato/web-admin/ui/settings/storage/StorageCards'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

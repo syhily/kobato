@@ -1,5 +1,5 @@
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { SearchBar } from '@kobato/web-public/ui/Search.tsx'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { SearchBar } from '@kobato/web-public/ui/Search'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SearchBar widget', () => {

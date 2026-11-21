@@ -1,8 +1,8 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { describe, expect, it } from 'vitest'
 
 const EXPECTED: Record<AppLocale, string> = {

@@ -3,7 +3,7 @@ import {
   isOnSiteOrigin,
   parseAssetUrlPath,
   STORAGE_ROUTE_PREFIX,
-} from '@kobato/assets/asset-url.ts'
+} from '@kobato/assets/asset-url'
 import { describe, expect, it } from 'vitest'
 
 const HASH = 'a'.repeat(64)

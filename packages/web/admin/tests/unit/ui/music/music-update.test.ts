@@ -1,6 +1,6 @@
-import type { AdminMusicDto } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto } from '@kobato/contracts/music'
 
-import { buildMusicUpdate, splitArtistDraft } from '@kobato/web-admin/ui/music/music-update.ts'
+import { buildMusicUpdate, splitArtistDraft } from '@kobato/web-admin/ui/music/music-update'
 import { describe, expect, it } from 'vitest'
 
 const music: Pick<AdminMusicDto, 'id' | 'name' | 'artist' | 'album'> = {

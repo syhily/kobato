@@ -1,4 +1,4 @@
-import type { RouteManifest, RouteManifestRoute } from '@kobato/distribution/route-warmup.ts'
+import type { RouteManifest, RouteManifestRoute } from '@kobato/distribution/route-warmup'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null

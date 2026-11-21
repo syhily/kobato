@@ -1,9 +1,9 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
-import { UserEditForm } from '@kobato/web-admin/ui/users/UserEditForm.tsx'
-import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
+import { UserEditForm } from '@kobato/web-admin/ui/users/UserEditForm'
+import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

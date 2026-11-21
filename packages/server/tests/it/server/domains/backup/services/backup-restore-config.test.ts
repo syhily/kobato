@@ -1,6 +1,6 @@
-import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { packTar } from '@kobato/server/tests/utils/backup-buffer.ts'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { packTar } from '@kobato/server/tests/utils/backup-buffer'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -46,7 +46,7 @@ afterEach(() => {
 })
 
 async function stageFullArchive() {
-  const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+  const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
   return stageBackup(
     packTar([
       { name: 'kobato.db', data: fakeSqliteFile() },
@@ -58,7 +58,7 @@ async function stageFullArchive() {
 
 describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   it('applies the content database, the analytics sidecar, and the config file in one run', async () => {
-    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore')
     const staged = await stageFullArchive()
 
     const result = await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')
@@ -76,7 +76,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   })
 
   it('skips the config in env-only mode (no config file) and reports configApplied: false', async () => {
-    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore')
     holder.configPath = null
     vi.unstubAllEnvs()
     const staged = await stageFullArchive()
@@ -89,7 +89,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   })
 
   it('a config write failure never rolls back the completed engine swaps', async () => {
-    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore')
     holder.configPath = join(holder.dir!, 'missing-dir', 'kobato.config.json')
     vi.stubEnv('KOBATO_CONFIG_FILE', holder.configPath)
     const staged = await stageFullArchive()
@@ -102,7 +102,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
   })
 
   it('withAnalytics: false leaves the live sidecar untouched (the setup restore path)', async () => {
-    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore')
     const staged = await stageFullArchive()
 
     const result = await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz', { withAnalytics: false })
@@ -117,7 +117,7 @@ describe('restoreFromStagedBackup — sqlite → duckdb → config', () => {
 describe('restore — the config leg joins the pre-restore crash-consistency machinery', () => {
   it('cleanupPreRestoreFiles drops the parked live config and keeps the restored one', async () => {
     const { cleanupPreRestoreFiles, restoreFromStagedBackup } =
-      await import('@kobato/server/domains/backup/services/restore.ts')
+      await import('@kobato/server/domains/backup/services/restore')
     const staged = await stageFullArchive()
     await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')
 
@@ -129,7 +129,7 @@ describe('restore — the config leg joins the pre-restore crash-consistency mac
   })
 
   it('boot recovery restores a config target that went missing mid-swap', async () => {
-    const { recoverPreRestoreFiles } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { recoverPreRestoreFiles } = await import('@kobato/server/domains/backup/services/restore')
     writeFileSync(`${holder.configPath!}.pre-restore`, '{ "live": true }')
     writeFileSync(`${holder.configPath!}.restore-staging`, '{ "half": ')
     rmSync(holder.configPath!)
@@ -142,7 +142,7 @@ describe('restore — the config leg joins the pre-restore crash-consistency mac
   })
 
   it('boot recovery drops a stale config sibling when the target exists', async () => {
-    const { recoverPreRestoreFiles } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { recoverPreRestoreFiles } = await import('@kobato/server/domains/backup/services/restore')
     writeFileSync(`${holder.configPath!}.pre-restore`, '{ "live": true }')
 
     await recoverPreRestoreFiles()
@@ -153,7 +153,7 @@ describe('restore — the config leg joins the pre-restore crash-consistency mac
 
   it('a failed restore rolls the parked live config back', async () => {
     const { rollbackPreRestoreFiles, restoreFromStagedBackup } =
-      await import('@kobato/server/domains/backup/services/restore.ts')
+      await import('@kobato/server/domains/backup/services/restore')
     const staged = await stageFullArchive()
     await restoreFromStagedBackup(staged, 'backup-test.db.tar.gz')
     expect(readFileSync(holder.configPath!).equals(CONFIG_BYTES)).toBe(true)
@@ -165,7 +165,7 @@ describe('restore — the config leg joins the pre-restore crash-consistency mac
   })
 
   it('applies a config whose only issue is legacy keys (boot migrates them)', async () => {
-    const { restoreFromStagedBackup, stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup, stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const legacyConfig = Buffer.from(
       `${JSON.stringify({ auth: { sessionSecret: 's'.repeat(32) }, paths: { data: './data' } })}\n`,
     )
@@ -192,7 +192,7 @@ describe('restore — a config the next boot would reject never reaches the swap
   }
 
   it('rejects a value the boot schema rejects at staging time (short session secret)', async () => {
-    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const archive = archiveWithConfig(Buffer.from(JSON.stringify({ security: { sessionSecret: 'x' } })))
 
     await expect(stageBackup(archive)).rejects.toThrow(ActionFailure)
@@ -202,7 +202,7 @@ describe('restore — a config the next boot would reject never reaches the swap
   })
 
   it('rejects a config with a key the schema does not know', async () => {
-    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const archive = archiveWithConfig(Buffer.from(JSON.stringify({ redis: { url: 'redis://x' } })))
 
     const staged = await stageBackup(archive)
@@ -215,7 +215,7 @@ describe('restore — a config the next boot would reject never reaches the swap
   })
 
   it('aborts a restore handed a bad staged config directly, before touching any live file', async () => {
-    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { restoreFromStagedBackup } = await import('@kobato/server/domains/backup/services/restore')
     const dir = mkdtempSync(join(tmpdir(), 'kobato-bad-config-'))
     try {
       const configPath = join(dir, 'kobato.config.json')

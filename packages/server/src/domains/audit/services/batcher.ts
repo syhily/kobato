@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { AuditEventInput } from '@kobato/server/domains/audit/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { AuditEventInput } from '@kobato/server/domains/audit/types'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths.ts'
-import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
+import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
 import {
   deserializeDeadLetterJsonLine,
   type FlushResult,
@@ -11,10 +11,10 @@ import {
   replayDeadLetter,
   serializeDeadLetterJsonLines,
   writeDeadLetter,
-} from '@kobato/server/infra/db/insert-batcher.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { idFromString } from '@kobato/utils/id.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/db/insert-batcher'
+import { getLogger } from '@kobato/server/infra/logger'
+import { idFromString } from '@kobato/utils/id'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('audit.batcher')
 

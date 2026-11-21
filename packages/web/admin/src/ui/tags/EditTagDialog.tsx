@@ -1,7 +1,7 @@
-import type { AdminTagDto } from '@kobato/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags'
 
-import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
-import { Button } from '@kobato/ui/components/button.tsx'
+import { brandingVersionSuffix } from '@kobato/settings/presentation'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-settings-context.tsx'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-settings-context'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

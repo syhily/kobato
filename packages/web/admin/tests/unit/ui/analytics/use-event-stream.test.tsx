@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import type { RealtimeEvent } from '@kobato/contracts/analytics.ts'
+import type { RealtimeEvent } from '@kobato/contracts/analytics'
 
-import { useEventStream } from '@kobato/web-admin/ui/analytics/use-event-stream.ts'
+import { useEventStream } from '@kobato/web-admin/ui/analytics/use-event-stream'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

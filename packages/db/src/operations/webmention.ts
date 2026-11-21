@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { NewWebmention, WebmentionRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
+import type { NewWebmention, WebmentionRow } from '@kobato/db/types'
 
-import { isUniqueConstraintError } from '@kobato/db/errors.ts'
-import { webmention } from '@kobato/db/schema/webmention.ts'
+import { isUniqueConstraintError } from '@kobato/db/errors'
+import { webmention } from '@kobato/db/schema/webmention'
 import { and, asc, count, desc, eq, gte, isNull, lt, lte, or, sql } from 'drizzle-orm'
 
 export type WebmentionStatus = WebmentionRow['status']

@@ -1,8 +1,8 @@
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users'
 
-import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView.tsx'
-import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard.tsx'
-import { renderInRouter, renderToHtml, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render.tsx'
+import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
+import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard'
+import { renderInRouter, renderToHtml, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
@@ -130,7 +130,7 @@ describe('snapshot: UserOperationsCard', () => {
   })
 })
 
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query.ts')
+const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
 
 describe('snapshot: UserDetailView', () => {
   beforeEach(() => {

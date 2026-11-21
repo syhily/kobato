@@ -1,73 +1,73 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications.ts'
-import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
-import { migrateDatabase } from '@kobato/db/migrate.ts'
-import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets.ts'
+import { NOTIFICATION_SOURCES } from '@kobato/contracts/notifications'
+import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { migrateDatabase } from '@kobato/db/migrate'
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
 import {
   closeAnalyticsForRestore,
   initAnalyticsDatabase,
   snapshotAnalyticsTo,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine.ts'
-import { rescheduleGeoipUpdate } from '@kobato/server/domains/analytics/geoip/scheduler.ts'
-import { flipBrandingDrivers } from '@kobato/server/domains/assets/services/storage.ts'
-import { rescheduleArchive } from '@kobato/server/domains/audit/services/scheduler.ts'
-import { wireSessionStorageDb } from '@kobato/server/domains/auth/session-storage.ts'
-import { createRestoreCompletion } from '@kobato/server/domains/backup/restore-completion.ts'
-import { wireRestoreMachine } from '@kobato/server/domains/backup/restore-machine.ts'
-import { rescheduleBackup } from '@kobato/server/domains/backup/scheduler.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine'
+import { rescheduleGeoipUpdate } from '@kobato/server/domains/analytics/geoip/scheduler'
+import { flipBrandingDrivers } from '@kobato/server/domains/assets/services/storage'
+import { rescheduleArchive } from '@kobato/server/domains/audit/services/scheduler'
+import { wireSessionStorageDb } from '@kobato/server/domains/auth/session-storage'
+import { createRestoreCompletion } from '@kobato/server/domains/backup/restore-completion'
+import { wireRestoreMachine } from '@kobato/server/domains/backup/restore-machine'
+import { rescheduleBackup } from '@kobato/server/domains/backup/scheduler'
 import {
   BackupEncryptionMisconfiguredError,
   wireBackupEncryption,
   wireBackupSnapshots,
-} from '@kobato/server/domains/backup/services/backup.ts'
-import { recoverPreRestoreFiles, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore.ts'
-import { resetLikeTokenSweep, startLikeTokenSweep } from '@kobato/server/domains/comments/services/likes.ts'
+} from '@kobato/server/domains/backup/services/backup'
+import { recoverPreRestoreFiles, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore'
+import { resetLikeTokenSweep, startLikeTokenSweep } from '@kobato/server/domains/comments/services/likes'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
-} from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { notifyAdmins } from '@kobato/server/domains/notifications/service.ts'
-import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention.ts'
-import { syncObservabilityRuntime } from '@kobato/server/domains/observability/runtime-manager.ts'
-import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { runZeaburMailCleanupAtBoot } from '@kobato/server/domains/settings/services/zeabur-mail-cleanup.ts'
-import { wireS3Migration } from '@kobato/server/domains/storage/s3-migration.ts'
-import { wireWebmentionPostPublishHook } from '@kobato/server/domains/webmentions/enqueue.ts'
-import { clearLocalizedOutputs, wipeCacheForRestore } from '@kobato/server/infra/cache/registry.ts'
-import { isVitest } from '@kobato/server/infra/config.ts'
+} from '@kobato/server/domains/content/services/asset-url-backfill'
+import { notifyAdmins } from '@kobato/server/domains/notifications/service'
+import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention'
+import { syncObservabilityRuntime } from '@kobato/server/domains/observability/runtime-manager'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes'
+import { runZeaburMailCleanupAtBoot } from '@kobato/server/domains/settings/services/zeabur-mail-cleanup'
+import { wireS3Migration } from '@kobato/server/domains/storage/s3-migration'
+import { wireWebmentionPostPublishHook } from '@kobato/server/domains/webmentions/enqueue'
+import { clearLocalizedOutputs, wipeCacheForRestore } from '@kobato/server/infra/cache/registry'
+import { isVitest } from '@kobato/server/infra/config'
 import {
   flushAllBatchers,
   initAllBatchers,
   replayAllDeadLetters,
   resetAllBatchers,
-} from '@kobato/server/infra/db/batcher-registry.ts'
+} from '@kobato/server/infra/db/batcher-registry'
 import {
   sweepOrphanedJobRuns,
   wireJobFailureNotifier,
   wireJobRunRecorder,
-} from '@kobato/server/infra/db/job-run-recorder.ts'
-import { resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
-import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics.ts'
-import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { setJobHandleGetter } from '@kobato/server/infra/job-registry.ts'
+} from '@kobato/server/infra/db/job-run-recorder'
+import { resolveDatabasePath } from '@kobato/server/infra/db/paths'
+import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics'
+import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { setJobHandleGetter } from '@kobato/server/infra/job-registry'
 import {
   closeHttpServer,
   setRestartGetDb,
   setRestartRefreshSettings,
   setServerPhase,
-} from '@kobato/server/infra/lifecycle.ts'
-import '@kobato/server/domains/analytics/services/batcher.ts'
-import '@kobato/server/domains/analytics/services/pv-batcher.ts'
-import '@kobato/server/domains/audit/services/batcher.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
-import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+} from '@kobato/server/infra/lifecycle'
+import '@kobato/server/domains/analytics/services/batcher'
+import '@kobato/server/domains/analytics/services/pv-batcher'
+import '@kobato/server/domains/audit/services/batcher'
+import { getLogger } from '@kobato/server/infra/logger'
+import { seaAssetPath } from '@kobato/server/infra/sea/sea'
+import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
+import { isRecord } from '@kobato/utils/type-guards'
 
 function migrationsRanInHmr(): boolean {
   const data: unknown = import.meta.hot?.data

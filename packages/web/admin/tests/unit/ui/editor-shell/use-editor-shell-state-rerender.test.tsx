@@ -1,4 +1,4 @@
-import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { act } from '@testing-library/react'
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
@@ -26,11 +26,11 @@ const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft', () => ({
   useCreateDraft: vi.fn(() => ({
     sessionId: 'sess-1',
     loadedDraft: null,
@@ -39,7 +39,7 @@ vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts', () => ({
   })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-shell-layout.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-shell-layout', () => ({
   useEditorShellLayout: vi.fn(() => ({
     metaOpen: true,
     setMetaOpen: vi.fn(),
@@ -47,14 +47,14 @@ vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-shell-layout.ts', () => ({
   })),
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts', () => ({
   useEditorKeyboardShortcuts: vi.fn(),
 }))
 
-import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state.ts'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state'
 
 const renderHook = renderHookWithI18n
 

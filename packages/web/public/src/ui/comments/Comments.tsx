@@ -1,17 +1,17 @@
-import type { CommentFormUser } from '@kobato/catalog/model.ts'
+import type { CommentFormUser } from '@kobato/catalog/model'
 import type {
   CommentItemWire as CommentItemType,
   Comments as CommentsData,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
-} from '@kobato/contracts/comments.ts'
+} from '@kobato/contracts/comments'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem.tsx'
-import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem'
+import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
 import {
   CommentsActionsContext,
   CommentsIdentityContext,
@@ -22,7 +22,7 @@ import {
   useCommentsActions,
   useCommentsReplySlot,
   useCommentsTree,
-} from '@kobato/web-public/ui/comments/comments-context.ts'
+} from '@kobato/web-public/ui/comments/comments-context'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { flushSync } from 'react-dom'

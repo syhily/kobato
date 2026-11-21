@@ -1,14 +1,14 @@
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { music } from '@kobato/db/schema/media.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { adminMusicRouter } from '@kobato/server/http/controllers/admin/music.controller.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { music } from '@kobato/db/schema/media'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { adminMusicRouter } from '@kobato/server/http/controllers/admin/music.controller'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,10 +16,10 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 // Music search hits external providers; the controller mapping is pinned
 // through function-level doubles.
 const searchMusic = vi
-  .spyOn(await import('@kobato/server/domains/music/services/search.ts'), 'searchMusic')
+  .spyOn(await import('@kobato/server/domains/music/services/search'), 'searchMusic')
   .mockImplementation(() => Promise.resolve({ results: [] }) as never)
 const addMusic = vi
-  .spyOn(await import('@kobato/server/domains/music/services/write/add.ts'), 'addMusic')
+  .spyOn(await import('@kobato/server/domains/music/services/write/add'), 'addMusic')
   .mockImplementation(() => Promise.resolve(undefined) as never)
 
 const mem = makeMemoryBackend()

@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@kobato/sanitize/sanitize-html.ts'
+import { sanitizeHtml } from '@kobato/sanitize/sanitize-html'
 import { type RefObject, useEffect } from 'react'
 
 const GAP = 8

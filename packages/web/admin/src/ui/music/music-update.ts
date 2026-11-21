@@ -1,4 +1,4 @@
-import type { AdminMusicDto, AdminMusicUpdateInput } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto, AdminMusicUpdateInput } from '@kobato/contracts/music'
 
 export interface MusicEditDraft {
   name: string

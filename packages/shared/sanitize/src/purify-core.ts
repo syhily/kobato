@@ -1,4 +1,4 @@
-import type { SanitizeStrategyConfig } from '@kobato/sanitize/config.ts'
+import type { SanitizeStrategyConfig } from '@kobato/sanitize/config'
 import type createDOMPurify from 'dompurify'
 
 // Shared DOMPurify core for both sanitize engines. The engines differ only in

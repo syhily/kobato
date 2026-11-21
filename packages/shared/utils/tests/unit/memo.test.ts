@@ -1,4 +1,4 @@
-import { createBoundedMap, createPromiseMemo } from '@kobato/utils/memo.ts'
+import { createBoundedMap, createPromiseMemo } from '@kobato/utils/memo'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('createPromiseMemo', () => {

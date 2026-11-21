@@ -1,9 +1,9 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ComponentType } from 'react'
 import type { NavigateFunction } from 'react-router'
 
-import { EditorRouteError } from '@kobato/web-admin/ui/editor-shell/EditorRouteError.tsx'
-import { EditorRouteSkeleton } from '@kobato/web-admin/ui/editor-shell/EditorRouteSkeleton.tsx'
+import { EditorRouteError } from '@kobato/web-admin/ui/editor-shell/EditorRouteError'
+import { EditorRouteSkeleton } from '@kobato/web-admin/ui/editor-shell/EditorRouteSkeleton'
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 
 type EditorShellComponent<TDetail> = ComponentType<{

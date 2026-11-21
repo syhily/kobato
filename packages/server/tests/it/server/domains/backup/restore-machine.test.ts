@@ -5,9 +5,9 @@ const prepareForSwapMock = vi.hoisted(() => vi.fn())
 const reopenAfterSwapMock = vi.hoisted(() => vi.fn().mockResolvedValue({ fake: 'db' }))
 const completeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 
-const machine = await import('@kobato/server/domains/backup/restore-machine.ts')
+const machine = await import('@kobato/server/domains/backup/restore-machine')
 
 function wire() {
   machine.wireRestoreMachine({

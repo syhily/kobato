@@ -1,11 +1,11 @@
-import type { Comments as CommentsData } from '@kobato/contracts/comments.ts'
+import type { Comments as CommentsData } from '@kobato/contracts/comments'
 
-import { makeComment } from '@kobato/contracts/tests/utils/catalog.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { Comments } from '@kobato/web-public/ui/comments/Comments.tsx'
+import { makeComment } from '@kobato/contracts/tests/utils/catalog'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { Comments } from '@kobato/web-public/ui/comments/Comments'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -15,12 +15,12 @@ mockTanstackQuery()
 
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 
-vi.mock('@kobato/web-client/editor/inkling-labels.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels.ts')>()
+vi.mock('@kobato/web-client/editor/inkling-labels', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 
-vi.mock('@kobato/web-public/ui/comments/CommentBodyEditor.tsx', () => ({
+vi.mock('@kobato/web-public/ui/comments/CommentBodyEditor', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
       {labels?.['placeholder.editor'] ?? 'english-defaults'}

@@ -1,17 +1,17 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   getCommentFlashServerSnapshot,
   getCommentFlashSnapshot,
   subscribeCommentFlash,
-} from '@kobato/web-client/lib/comment-flash.ts'
-import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags.ts'
-import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions.tsx'
-import { CommentAuthorLine, CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine.tsx'
-import { InlineEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineEditForm.tsx'
-import { InlineOwnEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineOwnEditForm.tsx'
+} from '@kobato/web-client/lib/comment-flash'
+import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags'
+import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions'
+import { CommentAuthorLine, CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine'
+import { InlineEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineEditForm'
+import { InlineOwnEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineOwnEditForm'
 import {
   commentBodyClass,
   commentContentClass,
@@ -20,9 +20,9 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
-import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml.tsx'
-import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context.ts'
+} from '@kobato/web-public/ui/comments/comment-item/presentation'
+import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml'
+import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context'
 import { XIcon } from 'lucide-react'
 import { useState, type ReactNode, useSyncExternalStore } from 'react'
 

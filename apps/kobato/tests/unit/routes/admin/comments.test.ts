@@ -1,8 +1,8 @@
-import { rootMatchesWithI18n, tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import { rootMatchesWithI18n, tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import { describe, expect, it } from 'vitest'
 
-import { meta } from '@/routes/admin/comments.tsx'
+import { meta } from '@/routes/admin/comments'
 
 const parseCommentFiltersFromSearchParams = (params: URLSearchParams) => parseCommentFilters(params, tZhCN)
 

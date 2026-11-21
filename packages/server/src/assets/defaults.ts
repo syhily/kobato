@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createHash } from 'node:crypto'
 
 export const SVG_SLOTS = ['faviconSvg', 'logoSvg', 'logoDarkSvg', 'logoLargeSvg', 'logoLargeDarkSvg'] as const

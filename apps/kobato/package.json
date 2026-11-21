@@ -78,7 +78,6 @@
     "nodemailer": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-intl": "catalog:",
     "react-router": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:",

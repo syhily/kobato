@@ -1,12 +1,12 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
-import { adminUser } from '@kobato/server/tests/utils/session.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postTable } from '@kobato/db/schema/post'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
+import { adminUser } from '@kobato/server/tests/utils/session'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -101,7 +101,7 @@ function makeArgs(slug: string, viewer: SessionUser | null = null) {
   }
 }
 
-const { loadPagePreview } = await import('@kobato/server/http/loaders/page-preview.ts')
+const { loadPagePreview } = await import('@kobato/server/http/loaders/page-preview')
 
 describe('loadPagePreview — slug redirect logic', () => {
   it('redirects to /posts/slug when a published post matches', async () => {

@@ -1,5 +1,5 @@
-import { buildObjectKey, extractHostForFriendKey } from '@kobato/server/domains/images/key.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { buildObjectKey, extractHostForFriendKey } from '@kobato/server/domains/images/key'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 describe('server/images/key — buildObjectKey', () => {

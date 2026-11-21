@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema'
 
 import { DEFAULT_NODES, createHeadlessEditor } from '@kobato/inkling'
-import { compactLexicalEditorState } from '@kobato/inkling-internal/headless/dialect.ts'
+import { compactLexicalEditorState } from '@kobato/inkling-internal/headless/dialect'
 import { withDOM } from '@lexical/headless/dom'
 import { describe, expect, it } from 'vitest'
 

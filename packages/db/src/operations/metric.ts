@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { MetricRow, NewMetric } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
+import type { MetricRow, NewMetric } from '@kobato/db/types'
 
-import { metric } from '@kobato/db/schema/metric.ts'
+import { metric } from '@kobato/db/schema/metric'
 import { and, eq, sql } from 'drizzle-orm'
 
 function whereTarget(target: EntityTarget) {

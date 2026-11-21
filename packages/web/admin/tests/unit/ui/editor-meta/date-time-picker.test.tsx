@@ -1,6 +1,6 @@
-import { Calendar } from '@kobato/ui/components/calendar.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker.tsx'
+import { Calendar } from '@kobato/ui/components/calendar'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 

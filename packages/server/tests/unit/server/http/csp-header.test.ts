@@ -1,7 +1,7 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { buildCspHeader } from '@kobato/server/http/middleware-pipeline.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { buildCspHeader } from '@kobato/server/http/middleware-pipeline'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 const NONCE = 'abcdef0123456789'

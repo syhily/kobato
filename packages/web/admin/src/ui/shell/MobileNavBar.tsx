@@ -1,10 +1,10 @@
-import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell.tsx'
+import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 
-import { hasAtLeast } from '@kobato/auth/roles.ts'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useSidebar } from '@kobato/ui/lib/sidebar-context.ts'
-import { useIsActiveLink } from '@kobato/web-admin/ui/shell/use-is-active-link.ts'
+import { hasAtLeast } from '@kobato/auth/roles'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useSidebar } from '@kobato/ui/lib/sidebar-context'
+import { useIsActiveLink } from '@kobato/web-admin/ui/shell/use-is-active-link'
 import { EllipsisIcon, NotebookPenIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

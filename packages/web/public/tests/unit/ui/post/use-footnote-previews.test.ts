@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useFootnotePreviews } from '@kobato/web-public/ui/post/use-footnote-previews.ts'
+import { useFootnotePreviews } from '@kobato/web-public/ui/post/use-footnote-previews'
 import { renderHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'

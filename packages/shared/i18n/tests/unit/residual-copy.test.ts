@@ -1,6 +1,6 @@
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import { describe, expect, it } from 'vitest'
 
 describe('UI catalog — regional Traditional comment wording', () => {

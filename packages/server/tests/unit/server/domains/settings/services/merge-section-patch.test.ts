@@ -1,4 +1,4 @@
-import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch'
 import { describe, expect, it } from 'vitest'
 
 describe('domains/settings/services — mergeSectionPatch', () => {

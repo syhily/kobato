@@ -1,15 +1,15 @@
-import { music } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { music } from '@kobato/db/schema/media'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const publicUrlMock = await import('@kobato/server/infra/storage/public-url.ts')
+const publicUrlMock = await import('@kobato/server/infra/storage/public-url')
 vi.spyOn(publicUrlMock, 'resolveAssetUrl').mockImplementation((path: string) => `https://cdn.example.com/${path}`)
 const safeResolveAssetUrl = vi
   .spyOn(publicUrlMock, 'safeResolveAssetUrl')
   .mockImplementation((path: string) => `https://cdn.example.com/${path}`)
 
 const { DEFAULT_MUSIC_COVER_URL, getMusicMetaForPlayer, getPublicMusicMetasByIds } =
-  await import('@kobato/server/domains/music/services/read.ts')
+  await import('@kobato/server/domains/music/services/read')
 
 const db = getTestDb()
 

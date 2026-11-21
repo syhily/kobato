@@ -1,16 +1,16 @@
-import { TASK_CATALOG } from '@kobato/contracts/jobs.ts'
-import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox.ts'
-import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
-import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention.ts'
-import { adminJobsRouter } from '@kobato/server/http/controllers/admin/jobs.controller.ts'
-import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { TASK_CATALOG } from '@kobato/contracts/jobs'
+import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox'
+import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
+import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention'
+import { adminJobsRouter } from '@kobato/server/http/controllers/admin/jobs.controller'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
 import {
   __resetSchedulerTaskStatesForTests,
   scheduleJob,
   stopAllScheduledJobs,
-} from '@kobato/server/infra/scheduler-utils.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+} from '@kobato/server/infra/scheduler-utils'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

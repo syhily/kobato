@@ -1,9 +1,9 @@
-import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { EditorShellStatus, RevisionLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { EditorShellStatus, RevisionLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence.ts'
-import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
+import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence'
+import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 
 export type SaveBodyVerdict =
   | { kind: 'conflict'; expectedToken: string }

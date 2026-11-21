@@ -1,4 +1,4 @@
-import { sliceFont } from '@kobato/server/domains/fonts/slice.ts'
+import { sliceFont } from '@kobato/server/domains/fonts/slice'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'

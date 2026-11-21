@@ -7,7 +7,7 @@ import {
   restoreFromStagedBackup,
   stageBackup,
   type RestoreOptions,
-} from '@kobato/server/domains/backup/services/restore.ts'
+} from '@kobato/server/domains/backup/services/restore'
 import {
   isTarArchive,
   readCString,
@@ -15,8 +15,8 @@ import {
   TAR_BLOCK,
   tarEntryHeader,
   tarPaddingSize,
-} from '@kobato/server/domains/backup/services/tar.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/domains/backup/services/tar'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

@@ -1,7 +1,7 @@
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { Label } from '@kobato/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 
 export interface CategoryFieldProps {

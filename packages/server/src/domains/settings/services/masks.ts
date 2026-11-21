@@ -1,6 +1,6 @@
-import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types'
 
-import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
+import { SECRET_FIELDS } from '@kobato/settings/secrets'
 
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   const masks: SecretMasks = {

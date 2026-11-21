@@ -1,10 +1,10 @@
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 import type { DateRange } from 'react-day-picker'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Calendar } from '@kobato/ui/components/calendar.tsx'
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { Calendar } from '@kobato/ui/components/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CalendarIcon } from 'lucide-react'
 
 const TRIGGER_CLASSES =

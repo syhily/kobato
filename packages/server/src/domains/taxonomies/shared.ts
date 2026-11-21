@@ -1,7 +1,7 @@
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error'
 
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export type TaxonomyEntityKind = 'category' | 'tag'
 

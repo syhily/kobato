@@ -1,10 +1,10 @@
-import type { SafeUser } from '@kobato/db/operations/user.ts'
+import type { SafeUser } from '@kobato/db/operations/user'
 
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { passkeyCredential } from '@kobato/db/schema/passkey'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -36,7 +36,7 @@ function bundleWithWebsite(website: string) {
   }
 }
 
-const passkeyService = await import('@kobato/server/domains/auth/passkey/service.ts')
+const passkeyService = await import('@kobato/server/domains/auth/passkey/service')
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
@@ -633,7 +633,7 @@ describe('passkey — passkey login method blocks password login', () => {
   it('blocks credential login when loginMethod is passkey', async () => {
     await seedUser({ email: 'forced@example.com', loginMethod: 'passkey' })
 
-    const { handleCredentialLogin } = await import('@kobato/server/domains/auth/services/credential.ts')
+    const { handleCredentialLogin } = await import('@kobato/server/domains/auth/services/credential')
     const formData = new FormData()
     formData.set('email', 'forced@example.com')
     formData.set('password', 'Password123!')

@@ -1,8 +1,8 @@
-import type { VariantProps } from '@kobato/ui/lib/cva.ts'
+import type { VariantProps } from '@kobato/ui/lib/cva'
 /* eslint-disable no-constant-binary-expression */
 import type { ClassValue } from 'cn'
 
-import { cva, cx } from '@kobato/ui/lib/cva.ts'
+import { cva, cx } from '@kobato/ui/lib/cva'
 import { describe, expect, test } from 'vitest'
 
 describe('cx', () => {

@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { commentWithUser, whereTarget } from '@kobato/server/domains/comments/repos/shared.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { user } from '@kobato/db/schema/user'
+import { commentWithUser, whereTarget } from '@kobato/server/domains/comments/repos/shared'
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
 function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {

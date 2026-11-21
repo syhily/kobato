@@ -1,8 +1,8 @@
-import { adminFriendsContract } from '@kobato/api/admin/friends.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@kobato/server/domains/friends/service.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { adminFriendsContract } from '@kobato/api/admin/friends'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@kobato/server/domains/friends/service'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminFriendsContract)
 

@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { entityPermalink } from '@kobato/server/domains/content/urls.ts'
-import { findLivePageBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
-import { findLivePostBySlug } from '@kobato/server/domains/posts/services/single.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { entityPermalink } from '@kobato/server/domains/content/urls'
+import { findLivePageBySlug } from '@kobato/server/domains/pages/services/public-query'
+import { findLivePostBySlug } from '@kobato/server/domains/posts/services/single'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { tryParseUrl } from '@kobato/utils/safe-url'
 
 export interface WebmentionTarget {
   type: 'post' | 'page'

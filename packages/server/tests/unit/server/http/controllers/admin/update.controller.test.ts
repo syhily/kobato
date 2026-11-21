@@ -1,6 +1,6 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The update service hits GitHub and the job tracks a process-level
@@ -8,21 +8,21 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 // runs for real (buffered) and is observed through a spy.
 const serviceMocks = {
   checkForUpdate: vi
-    .spyOn(await import('@kobato/server/domains/update/service.ts'), 'checkForUpdate')
+    .spyOn(await import('@kobato/server/domains/update/service'), 'checkForUpdate')
     .mockResolvedValue({ updateAvailable: false } as never),
   applyUpdate: vi
-    .spyOn(await import('@kobato/server/domains/update/service.ts'), 'applyUpdate')
+    .spyOn(await import('@kobato/server/domains/update/service'), 'applyUpdate')
     .mockResolvedValue({ fromVersion: '6.4.0', toVersion: '6.5.0' } as never),
 }
 const jobMocks = {
   getUpdateJobStatus: vi
-    .spyOn(await import('@kobato/server/domains/update/job.ts'), 'getUpdateJobStatus')
+    .spyOn(await import('@kobato/server/domains/update/job'), 'getUpdateJobStatus')
     .mockReturnValue({ state: 'idle', targetVersion: null } as never),
 }
 
 const { RPCHandler } = await import('@orpc/server/fetch')
-const { adminUpdateRouter } = await import('@kobato/server/http/controllers/admin/update.controller.ts')
-const auditModule = await import('@kobato/server/domains/audit/services/record.ts')
+const { adminUpdateRouter } = await import('@kobato/server/http/controllers/admin/update.controller')
+const auditModule = await import('@kobato/server/domains/audit/services/record')
 const recordAuditSpy = vi.spyOn(auditModule, 'recordAuditEventFromContext')
 const handler = new RPCHandler(adminUpdateRouter)
 

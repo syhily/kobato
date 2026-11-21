@@ -1,7 +1,7 @@
-import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@kobato/contracts/music.ts'
+import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@kobato/contracts/music'
 
-import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useCallback, useMemo, useState } from 'react'
 
 export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] {

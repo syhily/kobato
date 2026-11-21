@@ -1,4 +1,4 @@
-import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error.ts'
+import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error'
 import { useEffect } from 'react'
 
 export function useChunkErrorRecovery(): void {

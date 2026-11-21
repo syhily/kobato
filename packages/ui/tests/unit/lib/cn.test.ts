@@ -1,4 +1,4 @@
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { describe, expect, it } from 'vitest'
 
 describe('cn() — Tailwind utility merging', () => {

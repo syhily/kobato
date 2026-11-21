@@ -1,5 +1,5 @@
-import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/presentation.ts'
-import { coerceBoolean, sortOrderSchema } from '@kobato/settings/sections/shared.ts'
+import { DEFAULT_FOOTNOTES_SECTION_TITLE } from '@kobato/settings/presentation'
+import { coerceBoolean, sortOrderSchema } from '@kobato/settings/sections/shared'
 import { z } from 'zod'
 
 export const contentSchema = z.object({

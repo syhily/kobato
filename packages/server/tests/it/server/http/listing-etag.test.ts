@@ -1,22 +1,22 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const trackPageView = vi.spyOn(await import('@kobato/server/domains/analytics/track.ts'), 'trackPageView')
+const trackPageView = vi.spyOn(await import('@kobato/server/domains/analytics/track'), 'trackPageView')
 
 const db = getTestDb()
 

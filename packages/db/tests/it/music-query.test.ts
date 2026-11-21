@@ -1,10 +1,5 @@
-import {
-  findMusicByPlayerId,
-  findMusicBySourceAndId,
-  insertMusic,
-  softDeleteMusic,
-} from '@kobato/db/operations/music.ts'
-import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
+import { findMusicByPlayerId, findMusicBySourceAndId, insertMusic, softDeleteMusic } from '@kobato/db/operations/music'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

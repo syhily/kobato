@@ -1,10 +1,10 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 type TestTranslator = (id: string, values?: any) => string
 
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import { createIntl, createIntlCache } from 'react-intl'
 
 const MESSAGES = {

@@ -1,10 +1,10 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { enqueueWebmention } from '@kobato/server/domains/webmentions/inbox-enqueue.ts'
-import { webmentionReceiveSchema } from '@kobato/server/domains/webmentions/schema.ts'
-import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit.ts'
-import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit.ts'
-import { isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
+import { enqueueWebmention } from '@kobato/server/domains/webmentions/inbox-enqueue'
+import { webmentionReceiveSchema } from '@kobato/server/domains/webmentions/schema'
+import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit'
+import { rateLimitByIp } from '@kobato/server/http/middlewares/rate-limit'
+import { isWebmentionReceiveEnabled } from '@kobato/settings/getters'
 import { Hono } from 'hono'
 
 const MAX_FORM_BODY_BYTES = 16 * 1024

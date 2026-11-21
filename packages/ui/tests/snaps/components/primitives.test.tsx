@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
-import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
 import {
   Card,
   CardAction,
@@ -13,8 +13,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@kobato/ui/components/card.tsx'
-import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+} from '@kobato/ui/components/card'
+import { Checkbox } from '@kobato/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -23,14 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@kobato/ui/components/dialog.tsx'
+} from '@kobato/ui/components/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kobato/ui/components/dropdown-menu.tsx'
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
+} from '@kobato/ui/components/dropdown-menu'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import {
   Field,
   FieldContent,
@@ -40,8 +40,9 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from '@kobato/ui/components/field.tsx'
-import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
+} from '@kobato/ui/components/field'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content'
+import { Input } from '@kobato/ui/components/input'
 import {
   InputGroup,
   InputGroupAddon,
@@ -49,9 +50,8 @@ import {
   InputGroupInput,
   InputGroupText,
   InputGroupTextarea,
-} from '@kobato/ui/components/input-group.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
+} from '@kobato/ui/components/input-group'
+import { Label } from '@kobato/ui/components/label'
 import {
   Pagination,
   PaginationContent,
@@ -60,12 +60,12 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@kobato/ui/components/pagination.tsx'
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { RadioGroup, RadioGroupItem } from '@kobato/ui/components/radio-group.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { Separator } from '@kobato/ui/components/separator.tsx'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@kobato/ui/components/sheet.tsx'
+} from '@kobato/ui/components/pagination'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { RadioGroup, RadioGroupItem } from '@kobato/ui/components/radio-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { Separator } from '@kobato/ui/components/separator'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@kobato/ui/components/sheet'
 import {
   Sidebar,
   SidebarContent,
@@ -74,10 +74,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from '@kobato/ui/components/sidebar.tsx'
-import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
-import { Toaster } from '@kobato/ui/components/sonner.tsx'
-import { Switch } from '@kobato/ui/components/switch.tsx'
+} from '@kobato/ui/components/sidebar'
+import { Skeleton } from '@kobato/ui/components/skeleton'
+import { Toaster } from '@kobato/ui/components/sonner'
+import { Switch } from '@kobato/ui/components/switch'
 import {
   Table,
   TableBody,
@@ -86,11 +86,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@kobato/ui/components/table.tsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
-import { Tooltip } from '@kobato/ui/components/tooltip.tsx'
-import { renderToHtml } from '@kobato/ui/tests/utils/render.tsx'
+} from '@kobato/ui/components/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { Tooltip } from '@kobato/ui/components/tooltip'
+import { renderToHtml } from '@kobato/ui/tests/utils/render'
 
 describe('snapshot: Button primitives', () => {
   it('renders the default variant', () => {

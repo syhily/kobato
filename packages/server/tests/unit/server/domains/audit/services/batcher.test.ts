@@ -1,15 +1,11 @@
-import type { DatabaseHandle } from '@kobato/db/database.ts'
+import type { DatabaseHandle } from '@kobato/db/database'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import {
-  flushAuditLog,
-  pushAuditEvent,
-  replayDeadLetterAuditLog,
-} from '@kobato/server/domains/audit/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables } from '@kobato/server/tests/utils/integration-db.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog, pushAuditEvent, replayDeadLetterAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables } from '@kobato/server/tests/utils/integration-db'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let handle: DatabaseHandle

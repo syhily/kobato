@@ -1,4 +1,4 @@
-import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup.ts'
+import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup'
 
 const SENTINEL_PATTERN = new RegExp(`["'\`]${CHUNKS_SENTINEL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'\`]`)
 

@@ -1,4 +1,4 @@
-import { isValidTrustedProxyEntry, matchesTrustedProxy } from '@kobato/server/infra/ip-match.ts'
+import { isValidTrustedProxyEntry, matchesTrustedProxy } from '@kobato/server/infra/ip-match'
 import { describe, expect, it } from 'vitest'
 
 describe('server/infra/ip-match — isValidTrustedProxyEntry', () => {

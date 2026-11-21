@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { ServerTranslator } from '@kobato/server/infra/i18n'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -13,19 +13,19 @@ process.argv.push('--config', CONFIG_PATH)
 process.env.security__sessionSecret = 'email-preview-only-session-secret-000000'
 process.env.security__encryptionKey = 'email-preview-only-encryption-key-000000'
 
-const { render } = await import('@kobato/server/infra/email/render.tsx')
-const { AdminNotificationEmail } = await import('@kobato/server/infra/email/templates/AdminNotificationEmail.tsx')
-const { ApprovedComment } = await import('@kobato/server/infra/email/templates/ApprovedComment.tsx')
-const { AuthorInvite } = await import('@kobato/server/infra/email/templates/AuthorInvite.tsx')
-const { ConfirmSubscription } = await import('@kobato/server/infra/email/templates/ConfirmSubscription.tsx')
-const { NewReply } = await import('@kobato/server/infra/email/templates/NewReply.tsx')
-const { PasswordReset } = await import('@kobato/server/infra/email/templates/PasswordReset.tsx')
-const { SignInLink } = await import('@kobato/server/infra/email/templates/SignInLink.tsx')
-const { SignInOtp } = await import('@kobato/server/infra/email/templates/SignInOtp.tsx')
-const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
-const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
-const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales.ts')
-const { unsafeCast } = await import('@kobato/utils/unsafe-cast.ts')
+const { render } = await import('@kobato/server/infra/email/render')
+const { AdminNotificationEmail } = await import('@kobato/server/infra/email/templates/AdminNotificationEmail')
+const { ApprovedComment } = await import('@kobato/server/infra/email/templates/ApprovedComment')
+const { AuthorInvite } = await import('@kobato/server/infra/email/templates/AuthorInvite')
+const { ConfirmSubscription } = await import('@kobato/server/infra/email/templates/ConfirmSubscription')
+const { NewReply } = await import('@kobato/server/infra/email/templates/NewReply')
+const { PasswordReset } = await import('@kobato/server/infra/email/templates/PasswordReset')
+const { SignInLink } = await import('@kobato/server/infra/email/templates/SignInLink')
+const { SignInOtp } = await import('@kobato/server/infra/email/templates/SignInOtp')
+const { createServerTranslator } = await import('@kobato/server/infra/i18n')
+const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot')
+const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales')
+const { unsafeCast } = await import('@kobato/utils/unsafe-cast')
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '..', 'emails')

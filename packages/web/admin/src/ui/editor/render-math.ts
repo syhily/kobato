@@ -1,7 +1,7 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 import type { CardConfig } from '@kobato/inkling'
 
-import { orpc } from '@kobato/web-client/api/client.ts'
+import { orpc } from '@kobato/web-client/api/client'
 
 const MATH_RENDER_DEBOUNCE_MS = 200
 

@@ -1,7 +1,7 @@
-import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { queryExportRows } from '@kobato/db/duckdb/queries/export.ts'
+import { queryExportRows } from '@kobato/db/duckdb/queries/export'
 
 const CSV_COLUMNS = ['path', 'views', 'visitors', 'referers'] as const
 

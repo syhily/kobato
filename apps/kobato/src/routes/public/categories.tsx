@@ -1,10 +1,10 @@
-import { listingHeaders } from '@kobato/server/http/route-cache-headers.ts'
-import { createSsrCaller, unwrapListingPayload } from '@kobato/server/http/ssr-caller.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody.tsx'
+import { listingHeaders } from '@kobato/server/http/route-cache-headers'
+import { createSsrCaller, unwrapListingPayload } from '@kobato/server/http/ssr-caller'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody'
 import { data } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/categories'
 

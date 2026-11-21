@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
 
-import { incrementMetricPvBatch } from '@kobato/db/operations/metric.ts'
-import { targetKey } from '@kobato/db/target.ts'
-import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry.ts'
-import { FlushLoop } from '@kobato/server/infra/db/insert-batcher.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { incrementMetricPvBatch } from '@kobato/db/operations/metric'
+import { targetKey } from '@kobato/db/target'
+import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
+import { FlushLoop } from '@kobato/server/infra/db/insert-batcher'
+import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('metrics.batcher')
 

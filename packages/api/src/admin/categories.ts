@@ -6,8 +6,8 @@ import {
   adminCategoryIdInput,
   adminCategoryUpsertInput,
   adminCategoryUpsertOutputDto,
-} from '@kobato/contracts/categories.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/categories'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminCategoriesContract = {

@@ -1,8 +1,8 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { SettingsSection } from '@kobato/settings/sections'
 
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
 import { z } from 'zod'
 
 export const INVALID_SETTINGS_DESCRIPTOR = {

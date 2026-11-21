@@ -1,20 +1,25 @@
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/contracts/comments.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared.ts'
-import type { AdminCommentsResult } from '@kobato/server/domains/comments/types.ts'
+import type {
+  AdminCommentStatus,
+  AdminPendingDashboardDto,
+  AdminPendingItemDto,
+  CommentTextMatch,
+} from '@kobato/contracts/comments'
+import type { Database } from '@kobato/db/database'
+import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared'
+import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'
 
-import { findMetricByPublicId } from '@kobato/db/operations/metric.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
+import { findMetricByPublicId } from '@kobato/db/operations/metric'
+import { comment } from '@kobato/db/schema/comment'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import {
   countAdminComments,
   listAdminComments,
   listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
-} from '@kobato/server/domains/comments/repos/admin-query.ts'
-import { asCommentTarget } from '@kobato/server/domains/comments/services/shared.ts'
-import { entityPermalink } from '@kobato/server/domains/content/urls.ts'
+} from '@kobato/server/domains/comments/repos/admin-query'
+import { asCommentTarget } from '@kobato/server/domains/comments/services/shared'
+import { entityPermalink } from '@kobato/server/domains/content/urls'
 import { sql } from 'drizzle-orm'
 
 const DASHBOARD_EXCERPT_LIMIT = 120
@@ -109,9 +114,9 @@ export interface LoadAllCommentsOptions {
   limit: number
   filterPublicId?: string
   filterUserId?: number
-  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
+  status?: AdminCommentStatus
   filterQ?: string
-  filterMatch?: 'contains' | 'does-not-contain'
+  filterMatch?: CommentTextMatch
   filterCreatedAfter?: Date
   filterCreatedBefore?: Date
 }

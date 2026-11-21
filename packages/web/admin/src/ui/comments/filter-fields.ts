@@ -1,26 +1,27 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
-import type { FilterFieldSpec } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { AdminCommentStatus, CommentTextMatch } from '@kobato/contracts/comments'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
+import type { FilterFieldSpec } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { resolveSingleDateFilterBounds } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { resolveSingleDateFilterBounds } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { CalendarIcon, FileTextIcon, ListChecksIcon, SearchIcon, UserIcon } from 'lucide-react'
 
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
 
-export type TextFilterOperator = 'contains' | 'does-not-contain'
+export type TextFilterOperator = CommentTextMatch
 
-export const TEXT_FILTER_OPERATORS: readonly { value: TextFilterOperator; labelId: UiMessageId }[] = [
+export const TEXT_FILTER_OPERATORS = [
   { value: 'contains', labelId: 'admin.comments.filter.contains' },
   { value: 'does-not-contain', labelId: 'admin.comments.filter.doesNotContain' },
-] as const
+] as const satisfies readonly { value: CommentTextMatch; labelId: UiMessageId }[]
 
 export const DEFAULT_TEXT_OPERATOR: TextFilterOperator = 'contains'
 
 export function isTextFilterOperator(value: unknown): value is TextFilterOperator {
-  return value === 'contains' || value === 'does-not-contain'
+  return TEXT_FILTER_OPERATORS.some((operator) => operator.value === value)
 }
 
 export interface TextFilterValue {
@@ -41,16 +42,16 @@ export function textFilterLabel(v: TextFilterValue, t: I18nValue['t']): string {
   )
 }
 
-export const STATUS_OPTIONS: { value: string; labelId: UiMessageId }[] = [
+export const STATUS_OPTIONS = [
   { value: 'pending', labelId: 'admin.comments.filter.status.pending' },
   { value: 'approved', labelId: 'admin.comments.filter.status.approved' },
   { value: 'deleteRequested', labelId: 'admin.comments.filter.status.deleteRequested' },
-]
+] as const satisfies readonly { value: Exclude<AdminCommentStatus, 'all'>; labelId: UiMessageId }[]
 
 export interface CommentsFilterQuery {
   pageKey?: string
   userId?: string
-  status?: 'pending' | 'approved' | 'deleteRequested'
+  status?: Exclude<AdminCommentStatus, 'all'>
   q?: string
   match?: TextFilterOperator
   createdAfter?: string

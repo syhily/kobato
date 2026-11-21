@@ -1,4 +1,4 @@
-import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'
+import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US'
 
 export const kobatoInklingLabelsZhHK = {
   'placeholder.editor': '開始撰寫內容…',

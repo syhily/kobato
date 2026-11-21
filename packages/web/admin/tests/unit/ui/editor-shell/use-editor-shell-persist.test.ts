@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -37,7 +37,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-autosave', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
@@ -45,19 +45,19 @@ const localDraftState = vi.hoisted(() => ({
   loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
 
-vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts', () => ({
+vi.mock('@kobato/web-admin/ui/editor-shell/drafts/use-local-draft', () => ({
   useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
 }))
 
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
-import type { UseEditorShellPersistArgs } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist.ts'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
+import type { UseEditorShellPersistArgs } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts'
-import { useLocalDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
-import { useEditorShellPersist } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave'
+import { useLocalDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft'
+import { useEditorShellPersist } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist'
 
 const renderHook = renderHookWithI18n
 

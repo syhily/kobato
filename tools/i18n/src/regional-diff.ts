@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-import { kobatoInklingLabelsEnUS } from '@kobato/i18n/inkling-labels/en-US.ts'
-import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
-import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK.ts'
-import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
-import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
-import { serverMessagesZhCN } from '@kobato/i18n/messages/server/zh-CN.ts'
-import { serverMessagesZhHK } from '@kobato/i18n/messages/server/zh-HK.ts'
-import { serverMessagesZhTW } from '@kobato/i18n/messages/server/zh-TW.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
+import { kobatoInklingLabelsEnUS } from '@kobato/i18n/inkling-labels/en-US'
+import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
+import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK'
+import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'
+import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US'
+import { serverMessagesZhCN } from '@kobato/i18n/messages/server/zh-CN'
+import { serverMessagesZhHK } from '@kobato/i18n/messages/server/zh-HK'
+import { serverMessagesZhTW } from '@kobato/i18n/messages/server/zh-TW'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhHK } from '@kobato/i18n/messages/ui/zh-HK'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 
 type Table = Record<string, string>
 

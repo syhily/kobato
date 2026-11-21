@@ -1,8 +1,8 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { closeDatabase, openDatabase } from '@kobato/db/database.ts'
-import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate.ts'
-import { createTestDatabaseFile } from '@kobato/db/tests/utils/integration-db.ts'
+import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
+import { createTestDatabaseFile } from '@kobato/db/tests/utils/integration-db'
 import { sql } from 'drizzle-orm'
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'

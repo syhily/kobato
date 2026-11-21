@@ -1,17 +1,17 @@
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { saveDraftRevision, publishLatestRevision } from '@kobato/server/domains/content/repos/mutate.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { saveDraftRevision, publishLatestRevision } from '@kobato/server/domains/content/repos/mutate'
 import {
   findContentById,
   findContentsByIds,
   findLatestRevision,
   findLatestDraft,
   listRevisions,
-} from '@kobato/server/domains/content/revisions.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/domains/content/revisions'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

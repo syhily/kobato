@@ -27,8 +27,8 @@
 // one, so the originals are fine there.
 //
 
-import { isSea } from '@kobato/server/infra/sea/sea.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { isSea } from '@kobato/server/infra/sea/sea'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import fs from 'node:fs'
 import { isMainThread } from 'node:worker_threads'
 

@@ -1,16 +1,16 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace'
 
-import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
+import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { METRIC } from '@kobato/server/infra/trace/metrics'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
 import {
   isSqliteQueryTraceSubscribed,
   sqlOperation,
   startSqliteQueryTrace,
   stopSqliteQueryTrace,
-} from '@kobato/server/infra/trace/sqlite.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/sqlite'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

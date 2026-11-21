@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ParentCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
+import type { Database } from '@kobato/db/database'
+import type { ParentCommentRow } from '@kobato/server/domains/comments/repos/shared'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { user } from '@kobato/db/schema/user.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { user } from '@kobato/db/schema/user'
 import { and, count, desc, eq, gte, inArray } from 'drizzle-orm'
 
 export function countApprovedCommentsByUser(db: Database, userId: number): number {

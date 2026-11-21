@@ -1,4 +1,4 @@
-import { formatTimeLabel } from '@kobato/web-admin/ui/analytics/time-labels.ts'
+import { formatTimeLabel } from '@kobato/web-admin/ui/analytics/time-labels'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // Analytics bucket labels are BROWSER-zoned: the helper must format the parsed

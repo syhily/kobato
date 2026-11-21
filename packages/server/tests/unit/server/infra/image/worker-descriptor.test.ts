@@ -1,10 +1,10 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { DomainErrorWire } from '@kobato/server/infra/http/errors.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { DomainErrorWire } from '@kobato/server/infra/http/errors'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { WorkerDomainError } from '@kobato/server/infra/image/process-worker.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { domainErrorFromWire } from '@kobato/server/infra/http/errors'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { WorkerDomainError } from '@kobato/server/infra/image/process-worker'
 import { describe, expect, it } from 'vitest'
 
 function wireFromWorkerError(error: WorkerDomainError): DomainErrorWire {

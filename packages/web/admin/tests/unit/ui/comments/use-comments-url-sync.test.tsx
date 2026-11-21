@@ -2,8 +2,8 @@
 
 import type { ReactElement, ReactNode } from 'react'
 
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render as rtlRender } from '@testing-library/react'
 import { useState } from 'react'
@@ -19,7 +19,7 @@ const api = vi.hoisted(() => ({
   searchAuthors: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
@@ -40,14 +40,14 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields.ts')
+const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields')
 const { parseCommentFiltersFromSearchParams, useCommentsController } =
-  await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
-const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+  await import('@kobato/web-admin/ui/comments/use-comments-controller')
+const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 
-import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
+import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields'
 
 type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
 type Controller = ReturnType<typeof useCommentsController>

@@ -1,38 +1,38 @@
-import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft'
 import type {
   ConflictFreezeSource,
   EditorShellDetail,
   EditorShellStatus,
   EntityLike,
   UseEditorShellStateArgs,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 import type { NavigateFunction } from 'react-router'
 
-import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence.ts'
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   useAutosave,
   type AutosaveFlushOutcome,
   type AutosaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts'
+} from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived'
 import {
   planBodySave,
   planCreatePublishedAt,
   planDraftSave,
   planPublish,
   verdictBodySave,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-persist-plan.ts'
-import { useActionBanner } from '@kobato/web-admin/ui/editor-shell/use-action-banner.ts'
-import { useEditorShellPersistConflict } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-conflict.ts'
-import { useEditorShellPersistMutations } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-mutations.ts'
-import { useEditorShellPersistRace } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-race.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-persist-plan'
+import { useActionBanner } from '@kobato/web-admin/ui/editor-shell/use-action-banner'
+import { useEditorShellPersistConflict } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-conflict'
+import { useEditorShellPersistMutations } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-mutations'
+import { useEditorShellPersistRace } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist-race'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface EditorShellPersistDraft<TMeta> {

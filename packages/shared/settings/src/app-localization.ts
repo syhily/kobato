@@ -1,11 +1,11 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { RepresentationRevisions } from '@kobato/settings/representation-scopes.ts'
-import type { BlogSettingsSnapshot } from '@kobato/settings/snapshot.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { RepresentationRevisions } from '@kobato/settings/representation-scopes'
+import type { BlogSettingsSnapshot } from '@kobato/settings/snapshot'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
-import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
+import { getBlogSettingsSnapshotSync } from '@kobato/settings/getters'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
 
 export interface AppLocalization {
   locale: AppLocale

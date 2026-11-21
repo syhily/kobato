@@ -1,17 +1,17 @@
-import type { FooterNavItem } from '@kobato/settings/types.ts'
+import type { FooterNavItem } from '@kobato/settings/types'
 
-import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials'
+import { Button } from '@kobato/ui/components/button'
+import { Label } from '@kobato/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   asFooterNavType,
   asSocialNetwork,
   TYPE_LABEL_IDS,
   type FooterNavItemRowState,
-} from '@kobato/web-admin/ui/settings/navigation/row-model.ts'
-import { SortableDragHandle, useSortableRow } from '@kobato/web-admin/ui/shared/sortable.tsx'
+} from '@kobato/web-admin/ui/settings/navigation/row-model'
+import { SortableDragHandle, useSortableRow } from '@kobato/web-admin/ui/shared/sortable'
 import { Trash2Icon } from 'lucide-react'
 
 export function SortableFooterNavRow({

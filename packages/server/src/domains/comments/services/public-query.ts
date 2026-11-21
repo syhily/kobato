@@ -1,30 +1,30 @@
-import type { LatestComment } from '@kobato/contracts/comments.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/types.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { LatestComment } from '@kobato/contracts/comments'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
+import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/types'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { hasAtLeast } from '@kobato/auth/roles.ts'
-import { userSession } from '@kobato/server/domains/auth/primitives.ts'
-import { toLatestComment } from '@kobato/server/domains/comments/projection.ts'
-import { countApprovedCommentsByUser } from '@kobato/server/domains/comments/repos/public-query/by-id.ts'
+import { hasAtLeast } from '@kobato/auth/roles'
+import { userSession } from '@kobato/server/domains/auth/primitives'
+import { toLatestComment } from '@kobato/server/domains/comments/projection'
+import { countApprovedCommentsByUser } from '@kobato/server/domains/comments/repos/public-query/by-id'
 import {
   adminUserIds,
   commentsByIds,
   latestDistinctCommentIds,
-} from '@kobato/server/domains/comments/repos/public-query/digest.ts'
+} from '@kobato/server/domains/comments/repos/public-query/digest'
 import {
   commentFingerprintRows,
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
-} from '@kobato/server/domains/comments/repos/public-query/threads.ts'
-import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/comments/repos/public-query/threads'
+import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared'
+import { getLogger } from '@kobato/server/infra/logger'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { getSidebarWidgetCount } from '@kobato/settings/presentation'
+import { idFromString } from '@kobato/utils/id'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.parse')

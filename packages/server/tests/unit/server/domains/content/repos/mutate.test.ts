@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { ContentRow } from '@kobato/db/types'
 
-import { checkTokenConflict, lockMetaAndLoadLatest } from '@kobato/server/domains/content/repos/mutate.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { checkTokenConflict, lockMetaAndLoadLatest } from '@kobato/server/domains/content/repos/mutate'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]

@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Toaster as Sonner } from 'sonner'
 
 type ToasterProps = ComponentProps<typeof Sonner>

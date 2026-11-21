@@ -3,7 +3,7 @@ import {
   scanI18nLiterals,
   scanSourceForI18nLiterals,
   type ScanAllowlistEntry,
-} from '@tests/utils/i18n-literals.ts'
+} from '@tests/utils/i18n-literals'
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

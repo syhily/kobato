@@ -1,5 +1,5 @@
-import { expect, test } from '@tests/browser/support/fixtures.ts'
-import { waitForHydration } from '@tests/browser/support/journey.ts'
+import { expect, test } from '@tests/browser/support/fixtures'
+import { waitForHydration } from '@tests/browser/support/journey'
 
 test('aligns the sidebar brand, search trigger, and active menu edges', async ({ adminPage }) => {
   await adminPage.goto('/admin')

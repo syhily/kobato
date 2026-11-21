@@ -1,15 +1,15 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { Database } from '@kobato/db/database'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { entityCommentUrl } from '@kobato/server/domains/content/urls.ts'
-import { wirePostPublishHook } from '@kobato/server/domains/posts/publish-hooks.ts'
-import { rescheduleWebmentionOutbox } from '@kobato/server/domains/webmentions/outbox-scheduler.ts'
-import { normalizeForMatch } from '@kobato/server/domains/webmentions/verify.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { tryParseUrl } from '@kobato/utils/safe-url.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { entityCommentUrl } from '@kobato/server/domains/content/urls'
+import { wirePostPublishHook } from '@kobato/server/domains/posts/publish-hooks'
+import { rescheduleWebmentionOutbox } from '@kobato/server/domains/webmentions/outbox-scheduler'
+import { normalizeForMatch } from '@kobato/server/domains/webmentions/verify'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { tryParseUrl } from '@kobato/utils/safe-url'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const MAX_OUTBOUND_LINKS_PER_POST = 50
 

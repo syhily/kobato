@@ -1,6 +1,6 @@
-import type { RawAccessEvent } from '@kobato/server/domains/analytics/types.ts'
+import type { RawAccessEvent } from '@kobato/server/domains/analytics/types'
 
-import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/analytics/enrich.ts'
+import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/analytics/enrich'
 import { describe, expect, it } from 'vitest'
 
 describe('analytics/enrich — enrichEvent', () => {

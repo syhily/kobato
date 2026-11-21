@@ -1,10 +1,10 @@
-import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { call } from '@orpc/server'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
-const { adminMailRouter } = await import('@kobato/server/http/controllers/admin/mail.controller.ts')
+const { adminMailRouter } = await import('@kobato/server/http/controllers/admin/mail.controller')
 
 const mail = await createCaptureMailFixture()
 

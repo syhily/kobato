@@ -1,7 +1,7 @@
-import { buildPageUpsertPayload } from '@kobato/web-admin/ui/pages/build-page-upsert-payload.ts'
-import { EMPTY_PAGE_META_DRAFT } from '@kobato/web-admin/ui/pages/page-meta.ts'
-import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-upsert-payload.ts'
-import { EMPTY_POST_META_DRAFT } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import { buildPageUpsertPayload } from '@kobato/web-admin/ui/pages/build-page-upsert-payload'
+import { EMPTY_PAGE_META_DRAFT } from '@kobato/web-admin/ui/pages/page-meta'
+import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-upsert-payload'
+import { EMPTY_POST_META_DRAFT } from '@kobato/web-admin/ui/posts/post-meta'
 import { describe, expect, it } from 'vitest'
 
 describe('upsert payloads — contentLanguage', () => {

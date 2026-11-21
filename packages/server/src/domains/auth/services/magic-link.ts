@@ -1,20 +1,20 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 
-import { findUserById } from '@kobato/db/operations/user.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
+import { findUserById } from '@kobato/db/operations/user'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import {
   authFlowError,
   formFieldString,
   type AuthFlowResult,
   type SigninFlowContext,
-} from '@kobato/server/domains/auth/services/shared.ts'
-import { consumeToken, issueSignInLinkToken } from '@kobato/server/domains/auth/verification-tokens.ts'
-import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
-import { sendSignInLink } from '@kobato/server/infra/email/sender.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/auth/services/shared'
+import { consumeToken, issueSignInLinkToken } from '@kobato/server/domains/auth/verification-tokens'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin'
+import { sendSignInLink } from '@kobato/server/infra/email/sender'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { getLogger } from '@kobato/server/infra/logger'
+import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@kobato/server/infra/rate-limit'
 
 const log = getLogger('auth.magic-link')
 

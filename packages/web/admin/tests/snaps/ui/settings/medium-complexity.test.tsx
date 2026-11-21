@@ -1,4 +1,4 @@
-import type { AssetsLoaderShape, CommentsLoaderShape, MailLoaderShape } from '@kobato/settings/projection.ts'
+import type { AssetsLoaderShape, CommentsLoaderShape, MailLoaderShape } from '@kobato/settings/projection'
 import type {
   AnalyticsSettings,
   ContentSettings,
@@ -10,24 +10,24 @@ import type {
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
-} from '@kobato/settings/types.ts'
+} from '@kobato/settings/types'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
-import { AssetsForm } from '@kobato/web-admin/ui/settings/AssetsForm.tsx'
-import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
-import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm.tsx'
-import { ContentForm } from '@kobato/web-admin/ui/settings/content/ContentForm.tsx'
-import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
-import { LimitsForm } from '@kobato/web-admin/ui/settings/LimitsForm.tsx'
-import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
-import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
-import { ThresholdForm } from '@kobato/web-admin/ui/settings/rate-limit/ThresholdForm.tsx'
-import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm.tsx'
-import { SeoForm } from '@kobato/web-admin/ui/settings/SeoForm.tsx'
-import { SidebarForm } from '@kobato/web-admin/ui/settings/sidebar/SidebarForm.tsx'
-import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm'
+import { AssetsForm } from '@kobato/web-admin/ui/settings/AssetsForm'
+import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView'
+import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm'
+import { ContentForm } from '@kobato/web-admin/ui/settings/content/ContentForm'
+import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm'
+import { LimitsForm } from '@kobato/web-admin/ui/settings/LimitsForm'
+import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm'
+import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor'
+import { ThresholdForm } from '@kobato/web-admin/ui/settings/rate-limit/ThresholdForm'
+import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm'
+import { SeoForm } from '@kobato/web-admin/ui/settings/SeoForm'
+import { SidebarForm } from '@kobato/web-admin/ui/settings/sidebar/SidebarForm'
+import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

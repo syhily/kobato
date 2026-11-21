@@ -1,4 +1,4 @@
-import { decodeHtmlEntities, tencentProvider } from '@kobato/server/domains/music/providers/tencent.ts'
+import { decodeHtmlEntities, tencentProvider } from '@kobato/server/domains/music/providers/tencent'
 import { Buffer } from 'node:buffer'
 import { describe, expect, it, vi } from 'vitest'
 

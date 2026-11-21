@@ -1,4 +1,4 @@
-import { layoutCanvasLines } from '@kobato/server/render/pretext-layout.ts'
+import { layoutCanvasLines } from '@kobato/server/render/pretext-layout'
 import { createCanvas } from '@napi-rs/canvas'
 import { describe, expect, it } from 'vitest'
 

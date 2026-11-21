@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ImageRow, NewImage } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { ImageRow, NewImage } from '@kobato/db/types'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list.ts'
-import { image } from '@kobato/db/schema/media.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list'
+import { image } from '@kobato/db/schema/media'
 import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
 
 export interface AdminImagesListFilters {

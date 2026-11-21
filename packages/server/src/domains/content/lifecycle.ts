@@ -1,32 +1,28 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type {
-  ContentType,
-  PublishLatestResult,
-  SaveDraftResult,
-} from '@kobato/server/domains/content/schemas/revision.ts'
-import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { AdminRevisionDto } from '@kobato/contracts/revision'
+import type { Database } from '@kobato/db/database'
+import type { ContentRow } from '@kobato/db/types'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
+import type { ContentType, PublishLatestResult, SaveDraftResult } from '@kobato/server/domains/content/schemas/revision'
+import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds'
 
-import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/inkling/headless/collect.ts'
-import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect.ts'
-import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
+import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/inkling/headless/collect'
+import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect'
+import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
 import {
   isEquivalentToPublishedLatest,
   publishLatestRevision,
   saveDraftRevision,
-} from '@kobato/server/domains/content/repos/mutate.ts'
-import { findContentById, findLatestDraft, findLatestRevision } from '@kobato/server/domains/content/revisions.ts'
-import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish.ts'
-import { syncLibraryImageBlocks } from '@kobato/server/domains/content/services/image-sync.ts'
-import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize.ts'
-import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/lexical/lexical-projection.ts'
-import { getLogger, type Logger } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/domains/content/repos/mutate'
+import { findContentById, findLatestDraft, findLatestRevision } from '@kobato/server/domains/content/revisions'
+import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish'
+import { syncLibraryImageBlocks } from '@kobato/server/domains/content/services/image-sync'
+import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize'
+import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
+import { getLogger, type Logger } from '@kobato/server/infra/logger'
 
 const log = getLogger('content.lifecycle')
 

@@ -1,5 +1,5 @@
-import { music } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { music } from '@kobato/db/schema/media'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const randomBytesMock = vi.hoisted(() => vi.fn())
@@ -10,7 +10,7 @@ vi.mock('node:crypto', async (importOriginal) => {
 })
 
 const { generateUniquePlayerId, downloadBinary, MAX_AUDIO_BYTES, MAX_COVER_BYTES, PLAYER_ID_RETRY_LIMIT } =
-  await import('@kobato/server/domains/music/services/write/shared.ts')
+  await import('@kobato/server/domains/music/services/write/shared')
 
 const db = getTestDb()
 

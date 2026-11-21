@@ -1,4 +1,4 @@
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
 import { randomUUID } from 'node:crypto'
 

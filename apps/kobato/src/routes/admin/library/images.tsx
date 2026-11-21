@@ -1,7 +1,7 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('author')
 

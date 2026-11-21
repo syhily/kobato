@@ -1,4 +1,4 @@
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments.ts'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments'
 import { describe, expect, it } from 'vitest'
 
 describe('utils/comments', () => {

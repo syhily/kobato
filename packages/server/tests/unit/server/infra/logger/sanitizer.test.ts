@@ -1,4 +1,4 @@
-import { resBindings, sanitizeReqHeaders } from '@kobato/server/infra/logger/sanitizer.ts'
+import { resBindings, sanitizeReqHeaders } from '@kobato/server/infra/logger/sanitizer'
 import { describe, expect, it } from 'vitest'
 
 describe('sanitizeReqHeaders', () => {

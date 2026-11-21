@@ -1,18 +1,18 @@
-import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
+import type { AuditContext } from '@kobato/server/domains/audit/types'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user as userTable } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { user as userTable } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import {
   buildAuditContext,
   recordAuditEvent,
   recordAuditEventFromContext,
-} from '@kobato/server/domains/audit/services/record.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/audit/services/record'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 

@@ -1,7 +1,7 @@
-import type { LoginMethod } from '@kobato/contracts/users.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { SafeUser } from '@kobato/db/operations/user.ts'
-import type { PasskeyCredentialRow } from '@kobato/db/types.ts'
+import type { LoginMethod } from '@kobato/contracts/users'
+import type { Database } from '@kobato/db/database'
+import type { SafeUser } from '@kobato/db/operations/user'
+import type { PasskeyCredentialRow } from '@kobato/db/types'
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -9,19 +9,19 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
 
-import { isValidPasskeyDomain } from '@kobato/auth/network.ts'
-import { isUniqueConstraintError } from '@kobato/db/errors.ts'
-import { findSafeUserById, findUserByEmail } from '@kobato/db/operations/user.ts'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsBundle } from '@kobato/settings/getters.ts'
-import { tryParseUrl } from '@kobato/utils/safe-url.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { isValidPasskeyDomain } from '@kobato/auth/network'
+import { isUniqueConstraintError } from '@kobato/db/errors'
+import { findSafeUserById, findUserByEmail } from '@kobato/db/operations/user'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { passkeyCredential } from '@kobato/db/schema/passkey'
+import { user } from '@kobato/db/schema/user'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { requireBlogSettingsBundle } from '@kobato/settings/getters'
+import { tryParseUrl } from '@kobato/utils/safe-url'
+import { isRecord } from '@kobato/utils/type-guards'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   generateAuthenticationOptions as swaGenerateAuthenticationOptions,
   generateRegistrationOptions as swaGenerateRegistrationOptions,

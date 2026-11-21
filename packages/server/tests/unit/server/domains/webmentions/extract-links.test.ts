@@ -1,7 +1,7 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { extractExternalLinks, MAX_OUTBOUND_LINKS_PER_POST } from '@kobato/server/domains/webmentions/enqueue.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { extractExternalLinks, MAX_OUTBOUND_LINKS_PER_POST } from '@kobato/server/domains/webmentions/enqueue'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 const SITE_HOST = 'example.com'

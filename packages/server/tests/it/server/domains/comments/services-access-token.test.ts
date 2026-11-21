@@ -1,16 +1,16 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { comment } from '@kobato/db/schema/comment'
+import { metric } from '@kobato/db/schema/metric'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The transports are covered elsewhere; these spies pass through to the
 // real senders (mail is disabled in the test bundle, so they stay quiet).
-const emailModule = await import('@kobato/server/domains/comments/services/email.ts')
+const emailModule = await import('@kobato/server/domains/comments/services/email')
 vi.spyOn(emailModule, 'sendApprovedComment')
 vi.spyOn(emailModule, 'sendNewComment')
 vi.spyOn(emailModule, 'sendNewReply')
@@ -19,7 +19,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { canonicalizeCommentBody } = await import('@kobato/server/domains/comments/services/canonicalize.ts')
+const { canonicalizeCommentBody } = await import('@kobato/server/domains/comments/services/canonicalize')
 
 const db = getTestDb()
 
@@ -55,13 +55,13 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 
 describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
-    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup.ts')
+    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup')
     expect(await findCommentWithUserById(db, 9999)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup.ts')
+    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup')
     const r = await findCommentWithUserById(db, id)
     expect(r?.name).toBe('Alice')
   })
@@ -72,7 +72,7 @@ describe('comments/services/moderate — approveComment', () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, isPending: true })
 
-    const { approveComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { approveComment } = await import('@kobato/server/domains/comments/services/moderate')
     await approveComment(db, String(id))
 
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
@@ -84,7 +84,7 @@ describe('comments/services/moderate — deleteCommentById', () => {
   it('hard-deletes the row', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { deleteCommentById } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { deleteCommentById } = await import('@kobato/server/domains/comments/services/moderate')
     await deleteCommentById(db, id)
     const rows = await db.select({ id: comment.id }).from(comment)
     expect(rows).toHaveLength(0)
@@ -96,7 +96,7 @@ describe('comments/services/moderate — updateComment', () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, content: 'old' })
     const expected = await canonicalizeCommentBody(NEW_BODY)
-    const { updateComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { updateComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
     const rows = await db.select({ content: comment.content, body: comment.body }).from(comment)
@@ -104,21 +104,21 @@ describe('comments/services/moderate — updateComment', () => {
     expect(rows[0]?.body).toEqual(expected.body)
   })
   it('returns null when the comment does not exist', async () => {
-    const { updateComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { updateComment } = await import('@kobato/server/domains/comments/services/moderate')
     expect(await updateComment(db, '9999', NEW_BODY)).toBeNull()
   })
 })
 
 describe('comments/services/moderate — updateOwnComment', () => {
   it('returns null when the comment does not exist', async () => {
-    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
     expect(await updateOwnComment(db, '9999', makeCommentBody('x'))).toBeNull()
   })
   it('edits inside the grace window without re-pending', async () => {
     const u1 = await seedUser()
     const now = new Date()
     const id = await seedComment({ userId: u1, updatedAt: now, createdAt: now })
-    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
@@ -128,19 +128,19 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const u1 = await seedUser()
     const old = new Date(Date.now() - 60 * 60 * 1000)
     const id = await seedComment({ userId: u1, createdAt: old, updatedAt: old })
-    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate.ts')
+    const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(true)
-    const { sendNewComment } = await import('@kobato/server/domains/comments/services/email.ts')
+    const { sendNewComment } = await import('@kobato/server/domains/comments/services/email')
     expect(sendNewComment).toHaveBeenCalled()
   })
 })
 
 describe('comments/services/admin-query — loadAdminPendingDashboard', () => {
   it('returns empty items + zero counts on an empty table', async () => {
-    const { loadAdminPendingDashboard } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAdminPendingDashboard } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAdminPendingDashboard(db, 'all', 0, 10)
     expect(r.items).toEqual([])
     expect(r.total).toBe(0)
@@ -149,7 +149,7 @@ describe('comments/services/admin-query — loadAdminPendingDashboard', () => {
   it('returns a pending approval item', async () => {
     const u1 = await seedUser()
     await seedComment({ userId: u1, isPending: true })
-    const { loadAdminPendingDashboard } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAdminPendingDashboard } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAdminPendingDashboard(db, 'approval', 0, 10)
     expect(r.items).toHaveLength(1)
     expect(r.items[0]?.kind).toBe('approval')
@@ -159,7 +159,7 @@ describe('comments/services/admin-query — loadAdminPendingDashboard', () => {
 
 describe('comments/services/admin-query — loadAllComments', () => {
   it('returns empty page when status filter yields nothing', async () => {
-    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAllComments(db, { offset: 0, limit: 10, status: 'pending' })
     expect(r.total).toBe(0)
     expect(r.hasMore).toBe(false)
@@ -169,13 +169,13 @@ describe('comments/services/admin-query — loadAllComments', () => {
     const u1 = await seedUser()
     await seedComment({ userId: u1, isPending: false })
     await seedComment({ userId: u1, isPending: true })
-    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAllComments(db, { offset: 0, limit: 10, status: 'all' })
     expect(r.total).toBe(2)
     expect(r.comments).toHaveLength(2)
   })
   it('returns empty result when filterPublicId matches no metric', async () => {
-    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAllComments(db, { offset: 0, limit: 10, filterPublicId: randomUUID() })
     expect(r.total).toBe(0)
     expect(r.comments).toEqual([])
@@ -189,7 +189,7 @@ describe('comments/services/admin-query — loadAllComments', () => {
     const pubId = randomUUID()
     await db.insert(metric).values({ type: 'post', ownerId: pid[0]!.id, publicId: pubId })
     await seedComment({ userId: u1, ownerId: pid[0]!.id })
-    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query.ts')
+    const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAllComments(db, { offset: 0, limit: 10, filterPublicId: pubId })
     expect(r.total).toBe(1)
     expect(r.comments[0]?.pageTitle).toBe('Filtered')
@@ -199,7 +199,7 @@ describe('comments/services/admin-query — loadAllComments', () => {
 describe('comments/services/admin-query — searchPageOptions / searchAuthorOptions', () => {
   it('delegates to the underlying repo functions', async () => {
     const { searchPageOptions, searchAuthorOptions } =
-      await import('@kobato/server/domains/comments/services/admin-query.ts')
+      await import('@kobato/server/domains/comments/services/admin-query')
     expect(await searchPageOptions(db, undefined, 10)).toEqual([])
     expect(await searchAuthorOptions(db, undefined, 10)).toEqual([])
   })
@@ -208,7 +208,7 @@ describe('comments/services/admin-query — searchPageOptions / searchAuthorOpti
 describe('comments/services/token — issue/revoke cycle', () => {
   it('issues a token that cleanupExpiredTokens accepts, then is revoked', async () => {
     const { issueCommentToken, cleanupExpiredTokens, revokeCommentToken } =
-      await import('@kobato/server/domains/comments/services/token-store.ts')
+      await import('@kobato/server/domains/comments/services/token-store')
     const tok = await issueCommentToken(db, 1, 2, 'post:1', 60)
     const cookie = { 'post:1': [{ token: tok, expiresAt: Date.now() + 60_000 }] }
 
@@ -224,13 +224,13 @@ describe('comments/services/token — issue/revoke cycle', () => {
 
 describe('comments/services/token — appendCommentToken', () => {
   it('adds a new entry to the per-pageKey list', async () => {
-    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store')
     const out = appendCommentToken({}, 'post:1', 'tok', 60)
     expect(out['post:1']).toHaveLength(1)
     expect(out['post:1']?.[0]).toMatchObject({ token: 'tok' })
   })
   it('appends to an existing list without mutating the input', async () => {
-    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { appendCommentToken } = await import('@kobato/server/domains/comments/services/token-store')
     const before = appendCommentToken({}, 'post:1', 'tok1', 60)
     const after = appendCommentToken(before, 'post:1', 'tok2', 60)
     expect(after['post:1']).toHaveLength(2)
@@ -239,13 +239,13 @@ describe('comments/services/token — appendCommentToken', () => {
 
 describe('comments/services/token — cleanupExpiredTokens', () => {
   it('returns empty result when the cookie is empty', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const r = await cleanupExpiredTokens(db, {})
     expect(r.cleaned).toEqual({})
     expect(r.validEntries).toEqual([])
   })
   it('skips entries whose local expiresAt has already passed', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token: 'expired', expiresAt: Date.now() - 1000 }],
     })
@@ -254,7 +254,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   })
   it('accepts a real token issued by issueCommentToken (plain-JSON wire format)', async () => {
     const { issueCommentToken, cleanupExpiredTokens } =
-      await import('@kobato/server/domains/comments/services/token-store.ts')
+      await import('@kobato/server/domains/comments/services/token-store')
     const token = await issueCommentToken(db, 42, 7, 'post:1', 60)
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
@@ -264,7 +264,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned['post:1']).toHaveLength(1)
   })
   it('skips entries whose stored payload is not a payload object', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
@@ -278,7 +278,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned).toEqual({})
   })
   it('skips entries whose stored payload fails the shape guard', async () => {
-    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
@@ -294,20 +294,20 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
 
 describe('comments/services/token — verifyCommentOwnership', () => {
   it('returns token=null when no token list is supplied', async () => {
-    const { verifyCommentOwnership } = await import('@kobato/server/domains/comments/services/token-store.ts')
+    const { verifyCommentOwnership } = await import('@kobato/server/domains/comments/services/token-store')
     const r = await verifyCommentOwnership(db, {}, '7')
     expect(r.token).toBeNull()
   })
   it('returns the matched token when a backed token matches the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } =
-      await import('@kobato/server/domains/comments/services/token-store.ts')
+      await import('@kobato/server/domains/comments/services/token-store')
     const token = await issueCommentToken(db, 77, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
     expect(r.token).toBe(token)
   })
   it('returns token=null when the backed token does not match the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } =
-      await import('@kobato/server/domains/comments/services/token-store.ts')
+      await import('@kobato/server/domains/comments/services/token-store')
     const token = await issueCommentToken(db, 111, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
     expect(r.token).toBeNull()
@@ -316,7 +316,7 @@ describe('comments/services/token — verifyCommentOwnership', () => {
 
 describe('comments/services/access — verifyCommentAccess', () => {
   it('short-circuits with ok=true for an admin session, no token rows needed', async () => {
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, '1', { id: '1', role: 'admin' })
     expect(r.ok).toBe(true)
     expect(r.cleaned).toEqual({})
@@ -325,8 +325,8 @@ describe('comments/services/access — verifyCommentAccess', () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
     const { issueCommentToken, appendCommentToken } =
-      await import('@kobato/server/domains/comments/services/token-store.ts')
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+      await import('@kobato/server/domains/comments/services/token-store')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const token = await issueCommentToken(db, id, u1, 'post:1', 60)
     const cookie = appendCommentToken(appendCommentToken({}, 'post:9', 'ghost-token', 60), 'post:1', token, 60)
 
@@ -337,26 +337,26 @@ describe('comments/services/access — verifyCommentAccess', () => {
     expect(r.cleaned['post:9']).toBeUndefined()
   })
   it('returns ok=false when no token and no session ownership', async () => {
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, '9999')
     expect(r.ok).toBe(false)
   })
   it('returns ok=true when the session user matches the comment author', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, String(id), { id: String(u1), role: 'visitor' })
     expect(r.ok).toBe(true)
   })
   it('returns ok=false when the session user does not own the comment', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, String(id), { id: '99999', role: 'visitor' })
     expect(r.ok).toBe(false)
   })
   it('returns ok=false when the comment does not exist for the session user', async () => {
-    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access.ts')
+    const { verifyCommentAccess } = await import('@kobato/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, '9999', { id: '42', role: 'visitor' })
     expect(r.ok).toBe(false)
   })

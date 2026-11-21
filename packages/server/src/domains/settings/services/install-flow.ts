@@ -1,15 +1,15 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/types'
 
-import { upsertSetting } from '@kobato/db/operations/setting.ts'
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales.ts'
-import { buildDefaultSectionPayloads } from '@kobato/server/domains/settings/sections/registry.ts'
-import { descriptorFor, messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/settings/sections/assets.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { upsertSetting } from '@kobato/db/operations/setting'
+import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
+import { buildDefaultSectionPayloads } from '@kobato/server/domains/settings/sections/registry'
+import { descriptorFor, messageDescriptor } from '@kobato/server/infra/http/error-descriptor'
+import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/settings/sections/assets'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface InstallSeedInput {
   title: string

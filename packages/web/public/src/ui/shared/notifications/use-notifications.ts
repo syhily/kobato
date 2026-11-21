@@ -1,8 +1,8 @@
-import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications.ts'
+import type { NotificationDto, NotificationTab } from '@kobato/contracts/notifications'
 
-import { NOTIFICATION_TABS } from '@kobato/contracts/notifications.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { NOTIFICATION_TABS } from '@kobato/contracts/notifications'
+import { isRecord } from '@kobato/utils/type-guards'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import {
   type InfiniteData,
   type QueryClient,

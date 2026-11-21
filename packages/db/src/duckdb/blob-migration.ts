@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database.ts'
+import type { Database } from '@kobato/db/database'
+import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
 
 const BOOT_FLAG_SCOPE = 'system.analytics-blob-migration'
 

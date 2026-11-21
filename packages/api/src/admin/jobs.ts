@@ -1,4 +1,4 @@
-import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/contracts/jobs.ts'
+import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/contracts/jobs'
 import { oc } from '@orpc/contract'
 
 export const adminJobsContract = {

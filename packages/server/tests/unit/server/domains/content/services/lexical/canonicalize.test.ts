@@ -6,7 +6,7 @@ vi.mock('katex', () => ({
   },
 }))
 vi.mock('katex/contrib/mhchem', () => ({}))
-vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/shiki', () => ({
   SHIKI_THEMES: { light: 'github-light', dark: 'github-dark' },
   SHIKI_SUPPORTED_LANGUAGES: new Set(['typescript', 'text']),
   createShikiHighlighter: () =>
@@ -16,14 +16,14 @@ vi.mock('@kobato/server/infra/lexical/shiki.ts', () => ({
   shikiTransformers: () => [],
 }))
 
-import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalMusicPlayer,
   lexicalParagraph,
-} from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/tests/utils/lexical'
 
 describe('content/services/lexical/canonicalize — canonicalizeLexicalEditorState', () => {
   it('returns the validated state for valid input', async () => {

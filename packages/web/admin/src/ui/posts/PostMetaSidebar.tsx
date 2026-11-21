@@ -1,20 +1,20 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
-import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
+import type { PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 
-import { BasicInfoCard } from '@kobato/web-admin/ui/editor-meta/BasicInfoCard.tsx'
-import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField.tsx'
-import { CoverOgCard } from '@kobato/web-admin/ui/editor-meta/CoverOgCard.tsx'
-import { ToggleOptionsCard } from '@kobato/web-admin/ui/editor-meta/ToggleOptionsCard.tsx'
-import { futureLocalInputValueOrEmpty } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
-import { AliasField } from '@kobato/web-admin/ui/posts/meta/AliasField.tsx'
-import { CategoryField } from '@kobato/web-admin/ui/posts/meta/CategoryField.tsx'
-import { TagsField } from '@kobato/web-admin/ui/posts/meta/TagsField.tsx'
-import { POST_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/posts/post-meta.ts'
+import { BasicInfoCard } from '@kobato/web-admin/ui/editor-meta/BasicInfoCard'
+import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField'
+import { CoverOgCard } from '@kobato/web-admin/ui/editor-meta/CoverOgCard'
+import { ToggleOptionsCard } from '@kobato/web-admin/ui/editor-meta/ToggleOptionsCard'
+import { futureLocalInputValueOrEmpty } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
+import { AliasField } from '@kobato/web-admin/ui/posts/meta/AliasField'
+import { CategoryField } from '@kobato/web-admin/ui/posts/meta/CategoryField'
+import { TagsField } from '@kobato/web-admin/ui/posts/meta/TagsField'
+import { POST_META_TOGGLE_FIELDS } from '@kobato/web-admin/ui/posts/post-meta'
 import { type ReactNode } from 'react'
 
 export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {

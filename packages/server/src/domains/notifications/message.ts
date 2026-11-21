@@ -1,11 +1,11 @@
-import type { NotificationRow } from '@kobato/db/types.ts'
-import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
-import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { NotificationRow } from '@kobato/db/types'
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
+import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n'
 
-import { BASE_LOCALE } from '@kobato/i18n/locales.ts'
-import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { BASE_LOCALE } from '@kobato/i18n/locales'
+import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n'
+import { getLogger } from '@kobato/server/infra/logger'
+import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('notifications.message')
 

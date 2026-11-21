@@ -1,7 +1,7 @@
-import type { MailgunConfig } from '@kobato/server/infra/email/transports/mailgun.ts'
+import type { MailgunConfig } from '@kobato/server/infra/email/transports/mailgun'
 import type { MockInstance } from 'vitest'
 
-import { MailgunTransport } from '@kobato/server/infra/email/transports/mailgun.ts'
+import { MailgunTransport } from '@kobato/server/infra/email/transports/mailgun'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const baseConfig: MailgunConfig = {

@@ -48,8 +48,8 @@ function viteUserConfig(rrCtx: Record<string, unknown> = {}, userCfg: UserConfig
   return { ...(rrCtx as UserConfig), ...userCfg } as UserConfig
 }
 
-const { reactRouterHonoServer } = await import('@kobato/server/infra/hono/dev.ts')
-const { getViteDevServer, setViteDevServer } = await import('@kobato/server/infra/hono/dev-server-ref.ts')
+const { reactRouterHonoServer } = await import('@kobato/server/infra/hono/dev')
+const { getViteDevServer, setViteDevServer } = await import('@kobato/server/infra/hono/dev-server-ref')
 
 describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
   beforeEach(() => {
@@ -255,7 +255,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
     it('uses the virtual module + warns once when no entry exists', async () => {
       vi.resetModules()
       stderrWriteMock.mockClear()
-      const { reactRouterHonoServer: freshPlugin } = await import('@kobato/server/infra/hono/dev.ts')
+      const { reactRouterHonoServer: freshPlugin } = await import('@kobato/server/infra/hono/dev')
       const plugin = freshPlugin()
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(viteUserConfig(projectContext()), {} as never)) as UserConfig

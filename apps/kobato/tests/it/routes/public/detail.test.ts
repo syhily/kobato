@@ -1,17 +1,17 @@
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
+import type { AppLocalization } from '@kobato/settings/app-localization'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { friend as friendTable } from '@kobato/db/schema/friend.ts'
-import { metric as metricTable } from '@kobato/db/schema/metric.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
-import { CACHE_PROFILES } from '@kobato/server/infra/http/headers.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { adminSession, emptySession, regularSession } from '@kobato/server/tests/utils/session.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { friend as friendTable } from '@kobato/db/schema/friend'
+import { metric as metricTable } from '@kobato/db/schema/metric'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postTable } from '@kobato/db/schema/post'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { CACHE_PROFILES } from '@kobato/server/infra/http/headers'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { adminSession, emptySession, regularSession } from '@kobato/server/tests/utils/session'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { and, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
@@ -19,12 +19,12 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Session resolution stays controlled; every domain service runs for real
 // behind call-through spies.
-const postSingle = await import('@kobato/server/domains/posts/services/single.ts')
-const pagesPublicQuery = await import('@kobato/server/domains/pages/services/public-query.ts')
-const friendsService = await import('@kobato/server/domains/friends/service.ts')
-const tagsService = await import('@kobato/server/domains/taxonomies/tags/service.ts')
-const detailCritical = await import('@kobato/server/http/loaders/detail-critical.ts')
-const bodyHtml = await import('@kobato/server/domains/content/services/body-html.ts')
+const postSingle = await import('@kobato/server/domains/posts/services/single')
+const pagesPublicQuery = await import('@kobato/server/domains/pages/services/public-query')
+const friendsService = await import('@kobato/server/domains/friends/service')
+const tagsService = await import('@kobato/server/domains/taxonomies/tags/service')
+const detailCritical = await import('@kobato/server/http/loaders/detail-critical')
+const bodyHtml = await import('@kobato/server/domains/content/services/body-html')
 
 const realFindPostBySlug = postSingle.findPostBySlug
 const realFindPageBySlug = pagesPublicQuery.findPageBySlug
@@ -35,7 +35,7 @@ const realResolveBodyHtml = bodyHtml.resolveBodyHtml
 
 const mocks = {
   resolveSessionContext: vi
-    .spyOn(await import('@kobato/server/domains/auth/primitives.ts'), 'resolveSessionContext')
+    .spyOn(await import('@kobato/server/domains/auth/primitives'), 'resolveSessionContext')
     .mockImplementation(async () => ({ session: emptySession(), user: null, dirty: false }) as never),
   findPostBySlug: vi.spyOn(postSingle, 'findPostBySlug').mockImplementation(realFindPostBySlug),
   findPageBySlug: vi.spyOn(pagesPublicQuery, 'findPageBySlug').mockImplementation(realFindPageBySlug),
@@ -141,8 +141,8 @@ function gateOnce(mock: (typeof mocks)[keyof typeof mocks]): { release: () => vo
   return { release }
 }
 
-const postRoute = await import('@/routes/public/post/detail.tsx')
-const pageRoute = await import('@/routes/public/page/detail.tsx')
+const postRoute = await import('@/routes/public/post/detail')
+const pageRoute = await import('@/routes/public/page/detail')
 
 describe('routes/post.detail loader', () => {
   it('301-redirects a post alias to the canonical slug', async () => {

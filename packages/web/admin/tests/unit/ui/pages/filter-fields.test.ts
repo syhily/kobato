@@ -1,9 +1,9 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   buildPageFilterFields as buildPageFilterFieldsBase,
   deriveStatusFields,
   type PageFilterFieldKey,
-} from '@kobato/web-admin/ui/pages/filter-fields.ts'
+} from '@kobato/web-admin/ui/pages/filter-fields'
 import { describe, expect, it } from 'vitest'
 
 const fields = buildPageFilterFieldsBase([{ id: 'u-1', name: '雨帆' }], tZhCN)

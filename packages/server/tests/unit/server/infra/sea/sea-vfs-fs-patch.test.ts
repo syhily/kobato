@@ -2,7 +2,7 @@ import {
   createSequentialReadv,
   createSequentialWritev,
   installSeaVfsRuntimePatches,
-} from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
+} from '@kobato/server/infra/sea/sea-vfs-fs-patch'
 import fs from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

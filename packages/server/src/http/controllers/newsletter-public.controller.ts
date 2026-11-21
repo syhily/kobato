@@ -1,8 +1,8 @@
-import { newsletterContract } from '@kobato/api/newsletter.ts'
-import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service.ts'
-import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
-import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { newsletterContract } from '@kobato/api/newsletter'
+import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service'
+import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base'
+import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(newsletterContract).use(resourceRateLimit)
 

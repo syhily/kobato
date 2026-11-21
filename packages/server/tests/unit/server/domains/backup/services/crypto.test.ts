@@ -4,7 +4,7 @@ import {
   createBackupCipher,
   createBackupDecipher,
   isEncryptedBackup,
-} from '@kobato/server/domains/backup/services/crypto.ts'
+} from '@kobato/server/domains/backup/services/crypto'
 import { randomBytes } from 'node:crypto'
 import { Readable, Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'

@@ -1,8 +1,8 @@
-import type { Post, PostVisibilityOptions } from '@kobato/catalog/model.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { Post, PostVisibilityOptions } from '@kobato/catalog/model'
+import type { Database } from '@kobato/db/database'
 
-import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate.ts'
-import { listPublicPosts } from '@kobato/server/domains/posts/services/public-query.ts'
+import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'
+import { listPublicPosts } from '@kobato/server/domains/posts/services/public-query'
 
 export async function listPublicPostsWithContent(
   db: Database,

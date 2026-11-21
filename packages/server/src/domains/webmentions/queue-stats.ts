@@ -1,12 +1,9 @@
-import type { QueueTaskStatsDto } from '@kobato/contracts/jobs.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { QueueTaskStatsDto } from '@kobato/contracts/jobs'
+import type { Database } from '@kobato/db/database'
 
-import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox.ts'
-import {
-  countWebmentionOutboxByStatus,
-  findNextWebmentionOutboxDueAt,
-} from '@kobato/db/operations/webmention-outbox.ts'
-import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention.ts'
+import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention'
+import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox'
+import { countWebmentionOutboxByStatus, findNextWebmentionOutboxDueAt } from '@kobato/db/operations/webmention-outbox'
 
 function dueAtToIso(due: Date | 'now' | null): string | null {
   if (due === null) {

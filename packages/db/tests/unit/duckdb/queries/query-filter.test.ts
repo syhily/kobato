@@ -1,5 +1,5 @@
-import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
-import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'
+import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { describe, expect, it } from 'vitest'
 
 const baseQuery = { range: { startAt: 100, endAt: 200 } }

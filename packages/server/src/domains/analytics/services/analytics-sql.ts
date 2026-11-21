@@ -1,10 +1,10 @@
-import type { AnalyticsOperation, AnalyticsReader } from '@kobato/db/duckdb/query.ts'
-import type { DbOutcome } from '@kobato/server/infra/trace/sanitize.ts'
+import type { AnalyticsOperation, AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { DbOutcome } from '@kobato/server/infra/trace/sanitize'
 import type { Compilable } from 'kysely'
 
-import { executeAnalyticsQuery, setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query.ts'
-import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { recordDbOperation } from '@kobato/server/infra/trace/metrics.ts'
+import { executeAnalyticsQuery, setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
+import { withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { recordDbOperation } from '@kobato/server/infra/trace/metrics'
 
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,

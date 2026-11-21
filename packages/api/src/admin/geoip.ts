@@ -3,7 +3,7 @@ import {
   adminGeoipStatusOutputDto,
   adminGeoipUpdateInput,
   adminGeoipUpdateOutputDto,
-} from '@kobato/contracts/geoip.ts'
+} from '@kobato/contracts/geoip'
 import { oc } from '@orpc/contract'
 
 export const adminGeoipContract = {

@@ -1,10 +1,9 @@
-import type { MusicProvider } from '@kobato/server/domains/music/providers/types.ts'
+import type { MetingSource } from '@kobato/contracts/music'
+import type { MusicProvider } from '@kobato/server/domains/music/providers/types'
 
-import { neteaseProvider } from '@kobato/server/domains/music/providers/netease.ts'
-import { tencentProvider } from '@kobato/server/domains/music/providers/tencent.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-
-type MetingSource = 'netease' | 'tencent'
+import { neteaseProvider } from '@kobato/server/domains/music/providers/netease'
+import { tencentProvider } from '@kobato/server/domains/music/providers/tencent'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const providers = new Map<MetingSource, MusicProvider>([
   ['netease', neteaseProvider],
@@ -22,5 +21,3 @@ export function getProvider(source: string): MusicProvider {
 export function __setProviderForTests(source: MetingSource, provider: MusicProvider | null): void {
   providers.set(source, provider ?? (source === 'netease' ? neteaseProvider : tencentProvider))
 }
-
-export type { MetingSource }

@@ -1,7 +1,7 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
-import { tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { isWebmentionReceiveEnabled } from '@kobato/settings/getters'
+import { tryParseUrl } from '@kobato/utils/safe-url'
 
 export function webmentionLinkHeader(bundle: BlogSettingsBundle | null): string | null {
   if (!isWebmentionReceiveEnabled(bundle)) {

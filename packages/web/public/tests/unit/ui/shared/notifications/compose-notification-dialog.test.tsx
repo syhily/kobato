@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
+import type { AdminUserDto } from '@kobato/contracts/users'
 import type { ReactElement, ReactNode } from 'react'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,7 +21,7 @@ const captured = vi.hoisted(() => ({
   onDirectSuccess: [] as (() => void)[],
 }))
 
-const orpcQueryMod = await import('@kobato/web-client/api/orpc-query.ts')
+const orpcQueryMod = await import('@kobato/web-client/api/orpc-query')
 vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
   notifications: { key: () => ['notifications'] },
   admin: {
@@ -52,7 +52,7 @@ afterAll(() => {
 })
 
 const { ComposeNotificationDialog } =
-  await import('@kobato/web-public/ui/shared/notifications/ComposeNotificationDialog.tsx')
+  await import('@kobato/web-public/ui/shared/notifications/ComposeNotificationDialog')
 
 function makeUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   return {

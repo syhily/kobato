@@ -7,10 +7,10 @@ import type {
 } from '@kobato/inkling'
 
 import { InklingComposer } from '@kobato/inkling'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useTheme } from '@kobato/ui/lib/ThemeProvider.tsx'
-import { useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels.ts'
-import { useEditorBodyReset } from '@kobato/web-client/editor/use-editor-body-reset.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useTheme } from '@kobato/ui/lib/ThemeProvider'
+import { useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels'
+import { useEditorBodyReset } from '@kobato/web-client/editor/use-editor-body-reset'
 import { useCallback, useState } from 'react'
 
 export interface UseEditorSurfaceArgs<TBody extends SerializedEditorState> {

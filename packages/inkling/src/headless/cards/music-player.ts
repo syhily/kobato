@@ -6,9 +6,9 @@ import {
   type CardRenderOutput,
   elementFromHtml,
   isFeedVariantRender,
-} from '@kobato/inkling-internal/headless/cards/card-html.ts'
-import { resolveKobatoImageRenderEnv } from '@kobato/inkling-internal/headless/cards/kobato-image.ts'
-import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
+} from '@kobato/inkling-internal/headless/cards/card-html'
+import { resolveKobatoImageRenderEnv } from '@kobato/inkling-internal/headless/cards/kobato-image'
+import { MUSIC_PLAYER_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
 
 export const MUSIC_PLAYER_CARD_PROPERTIES = [
   { name: 'playerId', default: '' },

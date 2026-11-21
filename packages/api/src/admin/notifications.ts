@@ -4,7 +4,7 @@ import {
   adminSendBroadcastInput,
   adminSendDirectInput,
   adminSendOutput,
-} from '@kobato/contracts/notifications.ts'
+} from '@kobato/contracts/notifications'
 import { oc } from '@orpc/contract'
 
 export const adminNotificationsContract = {

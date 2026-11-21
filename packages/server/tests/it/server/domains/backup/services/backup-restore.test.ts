@@ -1,31 +1,27 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
   snapshotAnalyticsTo,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import {
-  closeTestAnalyticsDb,
-  createTestAnalyticsDb,
-  seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '@kobato/server/tests/utils/analytics-db'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 let analyticsHandle: AnalyticsHandle
 
-import { findBackupByTimestamp } from '@kobato/db/operations/backup.ts'
-import { createNotificationWithRecipients } from '@kobato/db/operations/notification.ts'
-import { notification } from '@kobato/db/schema/notification.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { category } from '@kobato/db/schema/taxonomy.ts'
-import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@kobato/server/domains/backup/services/backup.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { extractBackupFile, unpackBackupPayload } from '@kobato/server/tests/utils/backup-buffer.ts'
+import { findBackupByTimestamp } from '@kobato/db/operations/backup'
+import { createNotificationWithRecipients } from '@kobato/db/operations/notification'
+import { notification } from '@kobato/db/schema/notification'
+import { post } from '@kobato/db/schema/post'
+import { category } from '@kobato/db/schema/taxonomy'
+import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@kobato/server/domains/backup/services/backup'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { extractBackupFile, unpackBackupPayload } from '@kobato/server/tests/utils/backup-buffer'
 
 const mem = makeMemoryBackend()
 
@@ -106,7 +102,7 @@ describe('backup and restore integration', () => {
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
-    const { openDatabase, closeDatabase } = await import('@kobato/db/database.ts')
+    const { openDatabase, closeDatabase } = await import('@kobato/db/database')
     const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
     const restored = openDatabase(join(dir, 'restored.db'))
     try {
@@ -133,8 +129,8 @@ describe('backup and restore integration', () => {
       closeDatabase(restored)
     }
 
-    const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@kobato/db/duckdb/database.ts')
-    const { ACCESS_EVENTS_DDL } = await import('@kobato/db/duckdb/access-events.ts')
+    const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@kobato/db/duckdb/database')
+    const { ACCESS_EVENTS_DDL } = await import('@kobato/db/duckdb/access-events')
     writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
     const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_EVENTS_DDL)
     try {
@@ -144,7 +140,7 @@ describe('backup and restore integration', () => {
       await closeAnalyticsDatabase(restoredAnalytics)
     }
 
-    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const staged = await stageBackup(buffer!)
     const { rmSync } = await import('node:fs')
     try {
@@ -207,10 +203,10 @@ describe('backup and restore integration', () => {
 describe('encrypted backups', () => {
   it('creates a .enc archive that round-trips through stageBackup with the password', async () => {
     const { createBackup, isBackupEncrypted, listBackups } =
-      await import('@kobato/server/domains/backup/services/backup.ts')
-    const { isEncryptedBackup } = await import('@kobato/server/domains/backup/services/crypto.ts')
+      await import('@kobato/server/domains/backup/services/backup')
+    const { isEncryptedBackup } = await import('@kobato/server/domains/backup/services/crypto')
     const { EncryptedBackupPasswordRequired, stageBackup } =
-      await import('@kobato/server/domains/backup/services/restore.ts')
+      await import('@kobato/server/domains/backup/services/restore')
     const { readFileSync, rmSync } = await import('node:fs')
 
     const { fileName, timestamp } = await createBackup(db, null, { passwordOverride: 'correct horse battery staple' })
@@ -246,8 +242,8 @@ describe('encrypted backups', () => {
 
   it('encrypts with the wired settings password when no per-run override is given', async () => {
     const { wireBackupEncryption, resetBackupEncryption } =
-      await import('@kobato/server/domains/backup/services/backup.ts')
-    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+      await import('@kobato/server/domains/backup/services/backup')
+    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const { rmSync } = await import('node:fs')
 
     wireBackupEncryption({ resolveEncryptionPassword: () => 'settings-password' })
@@ -266,8 +262,8 @@ describe('encrypted backups', () => {
 
   it('a per-run override wins over the wired settings password', async () => {
     const { wireBackupEncryption, resetBackupEncryption } =
-      await import('@kobato/server/domains/backup/services/backup.ts')
-    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore.ts')
+      await import('@kobato/server/domains/backup/services/backup')
+    const { stageBackup } = await import('@kobato/server/domains/backup/services/restore')
     const { rmSync } = await import('node:fs')
 
     wireBackupEncryption({ resolveEncryptionPassword: () => 'settings-password' })

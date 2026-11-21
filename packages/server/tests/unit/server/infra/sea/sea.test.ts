@@ -7,8 +7,8 @@ import {
   resolveCacheDir,
   seaAssetPath,
   seaVfsRoot,
-} from '@kobato/server/infra/sea/sea.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/sea/sea'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'

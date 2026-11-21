@@ -1,10 +1,10 @@
-import type { auditLog } from '@kobato/db/schema/config.ts'
+import type { auditLog } from '@kobato/db/schema/config'
 import type { z } from 'zod'
 
-import { auditLogItemDto } from '@kobato/contracts/audit.ts'
-import { maskIp, maskUserAgent, stripL3Markers } from '@kobato/server/domains/audit/privacy.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { auditLogItemDto } from '@kobato/contracts/audit'
+import { maskIp, maskUserAgent, stripL3Markers } from '@kobato/server/domains/audit/privacy'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { isRecord } from '@kobato/utils/type-guards'
 
 export function parseDate(dateStr: string | undefined): Date | undefined {
   if (!dateStr) {

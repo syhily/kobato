@@ -1,4 +1,4 @@
-import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens.ts'
+import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens'
 import { describe, expect, it } from 'vitest'
 
 describe('infra/crypto/tokens', () => {

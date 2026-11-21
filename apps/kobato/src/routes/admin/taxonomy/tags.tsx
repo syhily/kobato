@@ -1,7 +1,7 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('author')
 

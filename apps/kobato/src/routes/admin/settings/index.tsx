@@ -1,11 +1,11 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { SettingsWorkspace } from '@kobato/web-admin/ui/settings/shell/SettingsWorkspace.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { SettingsWorkspace } from '@kobato/web-admin/ui/settings/shell/SettingsWorkspace'
 import { useCallback } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
-import type { SettingsOutletContext } from '@/routes/admin/settings/layout.tsx'
+import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const meta = titleMeta('meta.title.admin.settings')
 

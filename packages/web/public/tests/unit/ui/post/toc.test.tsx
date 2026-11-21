@@ -1,9 +1,9 @@
-import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 

@@ -1,9 +1,9 @@
-import { passkeyContract } from '@kobato/api/passkey.ts'
-import { generateAuthenticationOptions } from '@kobato/server/domains/auth/passkey/service.ts'
-import { implementPublic, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { passkeyContract } from '@kobato/api/passkey'
+import { generateAuthenticationOptions } from '@kobato/server/domains/auth/passkey/service'
+import { implementPublic, passkeyGuard } from '@kobato/server/http/orpc-base'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { tryPasskeyAuthBeginRateLimit } from '@kobato/server/infra/rate-limit'
 
 const authBegin = implementPublic(passkeyContract)
   .authBegin.use(passkeyGuard)

@@ -5,7 +5,7 @@ import {
   removeOwnedTraceResources,
   isTraceVolumeName,
   parseTraceState,
-} from '@kobato/trace/lib.ts'
+} from '@kobato/trace/lib'
 import { describe, expect, it } from 'vitest'
 
 describe('OpenObserve trace state guard and ownership grammar', () => {

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -9,7 +9,7 @@ const commit = vi.hoisted(() => vi.fn())
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

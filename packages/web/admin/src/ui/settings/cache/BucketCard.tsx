@@ -1,25 +1,25 @@
-import type { CacheBucketId } from '@kobato/cache/types.ts'
-import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
-import type { CacheSettings } from '@kobato/settings/types.ts'
-import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status.ts'
+import type { CacheBucketId } from '@kobato/cache/types'
+import type { CacheBucketStats } from '@kobato/contracts/cache'
+import type { CacheSettings } from '@kobato/settings/types'
+import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatBytes } from '@kobato/utils/format.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web-admin/ui/settings/cache/cache-constants.ts'
-import { clamp, formatTtl, hoursToSeconds } from '@kobato/web-admin/ui/settings/cache/cache-formatters.ts'
+import { Button } from '@kobato/ui/components/button'
+import { Input } from '@kobato/ui/components/input'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatBytes } from '@kobato/utils/format'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web-admin/ui/settings/cache/cache-constants'
+import { clamp, formatTtl, hoursToSeconds } from '@kobato/web-admin/ui/settings/cache/cache-formatters'
 import {
   type BucketDraft,
   draftsEqual,
   snapshotFromSettings,
   validateBucket,
-} from '@kobato/web-admin/ui/settings/cache/cache-validation.ts'
-import { BucketSaveStatus, ReadOnlyStatusLine } from '@kobato/web-admin/ui/settings/cache/CacheStatusLine.tsx'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation.ts'
+} from '@kobato/web-admin/ui/settings/cache/cache-validation'
+import { BucketSaveStatus, ReadOnlyStatusLine } from '@kobato/web-admin/ui/settings/cache/CacheStatusLine'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation'
 import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
 

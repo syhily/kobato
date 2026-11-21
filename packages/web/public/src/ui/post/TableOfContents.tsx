@@ -1,17 +1,12 @@
-import type { MarkdownHeading, TocOpts } from '@kobato/inkling/headless/toc.ts'
+import type { MarkdownHeading, TocOpts } from '@kobato/inkling/headless/toc'
 
-import { generateToC } from '@kobato/inkling/headless/toc.ts'
-import {
-  LazyAnimatePresence,
-  LazyMotionButton,
-  LazyMotionDiv,
-  LazyMotionSpan,
-} from '@kobato/ui/components/lazy-motion.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { transitions } from '@kobato/web-client/lib/motion.ts'
-import { useSeoSettingsOptional } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { TocItems } from '@kobato/web-public/ui/post/TocItems.tsx'
+import { generateToC } from '@kobato/inkling/headless/toc'
+import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv, LazyMotionSpan } from '@kobato/ui/components/lazy-motion'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { transitions } from '@kobato/web-client/lib/motion'
+import { useSeoSettingsOptional } from '@kobato/web-client/settings/blog-settings-context'
+import { TocItems } from '@kobato/web-public/ui/post/TocItems'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 

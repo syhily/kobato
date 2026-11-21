@@ -1,17 +1,17 @@
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runArchiveJob = vi
-  .spyOn(await import('@kobato/server/domains/audit/services/archive.ts'), 'runArchiveJob')
+  .spyOn(await import('@kobato/server/domains/audit/services/archive'), 'runArchiveJob')
   .mockResolvedValue(undefined as never)
 const db = {}
 
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
-const { rescheduleArchive } = await import('@kobato/server/domains/audit/services/scheduler.ts')
-const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry.ts')
-const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
+const { rescheduleArchive } = await import('@kobato/server/domains/audit/services/scheduler')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry')
+const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
 
 let currentDb = db
 setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })

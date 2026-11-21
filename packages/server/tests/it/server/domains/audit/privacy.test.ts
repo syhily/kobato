@@ -1,4 +1,4 @@
-import { stripL3Markers, tagL3InDetails } from '@kobato/server/domains/audit/privacy.ts'
+import { stripL3Markers, tagL3InDetails } from '@kobato/server/domains/audit/privacy'
 import { describe, expect, it } from 'vitest'
 
 describe('audit/privacy', () => {

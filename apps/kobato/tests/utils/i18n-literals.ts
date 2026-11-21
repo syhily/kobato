@@ -1,4 +1,4 @@
-import { isKnownLocaleValue } from '@kobato/i18n/locales.ts'
+import { isKnownLocaleValue } from '@kobato/i18n/locales'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { parseAst } from 'vite'

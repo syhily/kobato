@@ -1,11 +1,7 @@
-import {
-  __setMaxmindDbPathForTests,
-  getGeoReader,
-  resetGeoReader,
-} from '@kobato/server/domains/analytics/geoip/lookup.ts'
-import { serverConfig } from '@kobato/server/infra/config.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { writeMinimalMmdb } from '@kobato/server/tests/utils/minimal-mmdb.ts'
+import { __setMaxmindDbPathForTests, getGeoReader, resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup'
+import { serverConfig } from '@kobato/server/infra/config'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { writeMinimalMmdb } from '@kobato/server/tests/utils/minimal-mmdb'
 import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'

@@ -1,14 +1,14 @@
-import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/seo/meta.ts'
-import { detailHeaders } from '@kobato/server/http/route-cache-headers.ts'
-import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller.ts'
-import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm.tsx'
-import { Friends } from '@kobato/web-public/ui/friends/Friends.tsx'
-import { PageDetailBody } from '@kobato/web-public/ui/post/PageDetailBody.tsx'
-import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList.tsx'
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPage } from '@kobato/seo/meta'
+import { detailHeaders } from '@kobato/server/http/route-cache-headers'
+import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@kobato/server/http/ssr-caller'
+import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm'
+import { Friends } from '@kobato/web-public/ui/friends/Friends'
+import { PageDetailBody } from '@kobato/web-public/ui/post/PageDetailBody'
+import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList'
 import { Suspense } from 'react'
 import { Await, data } from 'react-router'
 
-import type { RouteHandle } from '@/root.tsx'
+import type { RouteHandle } from '@/root'
 
 import type { Route } from './+types/detail'
 

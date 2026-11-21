@@ -1,13 +1,13 @@
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/lexical/lexical-prerender.ts', () => ({
+vi.mock('@kobato/server/infra/lexical/lexical-prerender', () => ({
   prerenderLexicalEditorState: vi.fn(async (state: unknown) => state),
 }))
 
-import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
-import { MAX_COMMENT_LENGTH } from '@kobato/server/domains/comments/services/policy.ts'
-import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
+import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
+import { MAX_COMMENT_LENGTH } from '@kobato/server/domains/comments/services/policy'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender'
 
 describe('comments/services/canonicalize — pre-render length gate', () => {
   it('rejects an over-length state before paying for the prerender', async () => {

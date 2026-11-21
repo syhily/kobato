@@ -1,9 +1,9 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
-import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView.tsx'
+import { requireRole } from '@kobato/server/domains/auth/rbac'
+import { getRequestContext } from '@kobato/server/http/request-context'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/audit-log'
 

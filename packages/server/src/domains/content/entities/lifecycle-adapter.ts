@@ -2,11 +2,11 @@ import type {
   MetaEntityDescriptor,
   MetaRowBase,
   UpsertMetaInputBase,
-} from '@kobato/server/domains/content/entities/descriptor.ts'
-import type { ContentEntityAdapter } from '@kobato/server/domains/content/lifecycle.ts'
+} from '@kobato/server/domains/content/entities/descriptor'
+import type { ContentEntityAdapter } from '@kobato/server/domains/content/lifecycle'
 
-import { recordForceOverwriteAudit } from '@kobato/server/domains/content/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { recordForceOverwriteAudit } from '@kobato/server/domains/content/lifecycle'
+import { getLogger } from '@kobato/server/infra/logger'
 
 export function makeContentEntityAdapter<
   TMeta extends MetaRowBase,

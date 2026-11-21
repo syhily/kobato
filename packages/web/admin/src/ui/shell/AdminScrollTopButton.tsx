@@ -1,9 +1,9 @@
 import type { RefObject } from 'react'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll.ts'
+import { Button } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll'
 import { ArrowUpIcon } from 'lucide-react'
 
 export interface AdminScrollTopButtonProps {

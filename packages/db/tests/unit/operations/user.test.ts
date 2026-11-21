@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import { describe, expect, it, vi } from 'vitest'
 
@@ -39,7 +39,7 @@ function createSelectCapture(rows: unknown[]) {
 
 describe('infra/db/operations/user — SafeUser projections', () => {
   it('findSafeUserById selects exactly the SafeUser whitelist (no sensitive columns)', async () => {
-    const { findSafeUserById } = await import('@kobato/db/operations/user.ts')
+    const { findSafeUserById } = await import('@kobato/db/operations/user')
     const { db, captured } = createSelectCapture([])
     await findSafeUserById(db, 1)
     const keys = Object.keys(captured.projections[0]!)
@@ -50,14 +50,14 @@ describe('infra/db/operations/user — SafeUser projections', () => {
   })
 
   it('findSafeUserByEmail uses the identical whitelist (no drift between the two finders)', async () => {
-    const { findSafeUserByEmail } = await import('@kobato/db/operations/user.ts')
+    const { findSafeUserByEmail } = await import('@kobato/db/operations/user')
     const { db, captured } = createSelectCapture([])
     await findSafeUserByEmail(db, 'a@example.com')
     expect(Object.keys(captured.projections[0]!).sort()).toEqual([...SAFE_USER_COLUMNS].sort())
   })
 
   it('returns the row when found and null when missing', async () => {
-    const { findSafeUserById } = await import('@kobato/db/operations/user.ts')
+    const { findSafeUserById } = await import('@kobato/db/operations/user')
     const row = { id: 1, name: 'Alice' }
     const found = createSelectCapture([row])
     expect(await findSafeUserById(found.db, 1)).toBe(row)

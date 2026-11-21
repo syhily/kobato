@@ -1,5 +1,5 @@
-import type { SocialNetwork } from '@kobato/settings/socials.ts'
-import type { BrandingObjectRef, ContentSettings, SidebarSettings, SidebarWidgetType } from '@kobato/settings/types.ts'
+import type { SocialNetwork } from '@kobato/settings/socials'
+import type { BrandingObjectRef, ContentSettings, SidebarSettings, SidebarWidgetType } from '@kobato/settings/types'
 
 export function getSidebarWidgetCount(
   settings: SidebarSettings,

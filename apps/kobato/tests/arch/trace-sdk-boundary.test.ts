@@ -185,7 +185,7 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/domains/observability/runtime-manager.ts'),
       'utf-8',
     )
-    expect(managerSource).toContain("await import('@kobato/server/infra/trace/runtime.ts')")
+    expect(managerSource).toContain("await import('@kobato/server/infra/trace/runtime')")
     const serverSource = readFileSync(join(PROJECT_ROOT, 'apps/kobato/src/server.ts'), 'utf-8')
     expect(serverSource).not.toContain('infra/trace/runtime')
   })

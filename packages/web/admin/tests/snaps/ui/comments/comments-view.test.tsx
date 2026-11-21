@@ -1,12 +1,12 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { AdminCommentRow } from '@kobato/web-admin/ui/comments/AdminCommentRow.tsx'
-import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
-import { EditUserDialog } from '@kobato/web-admin/ui/comments/EditUserDialog.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { AdminCommentRow } from '@kobato/web-admin/ui/comments/AdminCommentRow'
+import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
+import { EditUserDialog } from '@kobato/web-admin/ui/comments/EditUserDialog'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -70,7 +70,7 @@ const stubActions = vi.hoisted((): CommentActions => {
   }
 })
 
-const commentsControllerMod = await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
+const commentsControllerMod = await import('@kobato/web-admin/ui/comments/use-comments-controller')
 vi.spyOn(commentsControllerMod, 'useCommentsController').mockImplementation((() => ({
   comments: controllerState.comments,
   total: controllerState.total,

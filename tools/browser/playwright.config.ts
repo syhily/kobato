@@ -1,4 +1,4 @@
-import { browserEnv } from '@kobato/browser/browser-env.ts'
+import { browserEnv } from '@kobato/browser/browser-env'
 import { defineConfig } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 

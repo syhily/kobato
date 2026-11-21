@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export type CacheBucketId = (typeof CACHE_DECLARATIONS)[number]['id']
 

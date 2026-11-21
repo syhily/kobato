@@ -1,4 +1,4 @@
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import {
   ActionFailure,
   DOMAIN_ERROR_CODES,
@@ -8,7 +8,7 @@ import {
   ErrorMessages,
   type DomainErrorIssue,
   type DomainErrorWire,
-} from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 describe('server/infra/http/errors — DOMAIN_ERROR_CODES', () => {

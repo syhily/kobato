@@ -2,18 +2,18 @@
 
 import type { ReactElement } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{ui}</BlogSettingsProvider>))
 }
-import type { AnalyticsSettings } from '@kobato/settings/types.ts'
-import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
+import type { AnalyticsSettings } from '@kobato/settings/types'
+import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
@@ -24,7 +24,7 @@ const hookMock = vi.hoisted(() => ({
   pending: false,
 }))
 
-const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload.ts')
+const useFileUploadMod = await import('@kobato/web-admin/ui/shared/use-file-upload')
 vi.spyOn(useFileUploadMod, 'useFileUpload').mockImplementation(((options: UseFileUploadOptions) => {
   hookMock.options = options
   return { upload: hookMock.upload, pending: hookMock.pending }
@@ -34,7 +34,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm.tsx'
+import { AnalyticsForm } from '@kobato/web-admin/ui/settings/AnalyticsForm'
 
 const analytics: AnalyticsSettings = {
   analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: true },

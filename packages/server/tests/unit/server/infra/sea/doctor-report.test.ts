@@ -1,11 +1,11 @@
-import type { DoctorProbes } from '@kobato/server/infra/sea/doctor-report.ts'
+import type { DoctorProbes } from '@kobato/server/infra/sea/doctor-report'
 
 import {
   collectDoctorReport,
   doctorOk,
   formatDoctorText,
   parseProbeIssues,
-} from '@kobato/server/infra/sea/doctor-report.ts'
+} from '@kobato/server/infra/sea/doctor-report'
 import { describe, expect, it } from 'vitest'
 
 function probes(overrides: Partial<DoctorProbes> = {}): DoctorProbes {

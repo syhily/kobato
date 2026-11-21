@@ -1,5 +1,5 @@
-import { ROLE_LABEL_KEYS, ROLE_LEVELS, hasAtLeast } from '@kobato/auth/roles.ts'
-import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
+import { ROLE_LABEL_KEYS, ROLE_LEVELS, hasAtLeast } from '@kobato/auth/roles'
+import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { describe, expect, it } from 'vitest'
 
 describe('utils/roles — ROLE_LEVELS', () => {

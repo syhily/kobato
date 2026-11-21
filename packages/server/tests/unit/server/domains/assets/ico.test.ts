@@ -1,4 +1,4 @@
-import { encodeIco } from '@kobato/server/domains/assets/ico.ts'
+import { encodeIco } from '@kobato/server/domains/assets/ico'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 

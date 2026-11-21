@@ -1,4 +1,4 @@
-import { saveBodyInput, saveResultOutput } from '@kobato/contracts/revision.ts'
+import { saveBodyInput, saveResultOutput } from '@kobato/contracts/revision'
 import { oc } from '@orpc/contract'
 
 export function revisionContract(basePath: `/${string}`) {

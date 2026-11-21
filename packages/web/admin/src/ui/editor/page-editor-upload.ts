@@ -1,9 +1,9 @@
 import type { FileUploader } from '@kobato/inkling'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
-import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpc } from '@kobato/web-client/api/client.ts'
+import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpc } from '@kobato/web-client/api/client'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 

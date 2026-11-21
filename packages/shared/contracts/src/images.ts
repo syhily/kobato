@@ -1,4 +1,4 @@
-import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
+import { idString, isoDateTime } from '@kobato/contracts/primitives'
 import { z } from 'zod'
 
 const optionalTrimmed = (max: number) =>

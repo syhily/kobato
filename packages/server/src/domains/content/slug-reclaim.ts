@@ -1,10 +1,10 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision'
 
-import { isUniqueConstraintError } from '@kobato/db/errors.ts'
-import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@kobato/db/operations/slug-registry.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
+import { isUniqueConstraintError } from '@kobato/db/errors'
+import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@kobato/db/operations/slug-registry'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 
 export function reclaimSlugOnRestore(
   tx: Database,

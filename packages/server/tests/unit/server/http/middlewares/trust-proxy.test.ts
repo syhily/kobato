@@ -1,11 +1,11 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { trustProxy } from '@kobato/server/http/middlewares/trust-proxy.ts'
+import { trustProxy } from '@kobato/server/http/middlewares/trust-proxy'
 import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 

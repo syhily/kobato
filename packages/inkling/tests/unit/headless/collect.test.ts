@@ -2,7 +2,7 @@ import {
   collectLexicalHeadings,
   collectLexicalImageStoragePaths,
   collectLexicalMusicPlayerIds,
-} from '@kobato/inkling-internal/headless/collect.ts'
+} from '@kobato/inkling-internal/headless/collect'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
@@ -10,7 +10,7 @@ import {
   lexicalImage,
   lexicalMusicPlayer,
   lexicalParagraph,
-} from '@kobato/inkling/tests/utils/lexical.ts'
+} from '@kobato/inkling/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 function quote(children: unknown[]) {

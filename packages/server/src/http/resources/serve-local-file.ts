@@ -1,5 +1,5 @@
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { resolveLocalPath } from '@kobato/server/infra/storage/backends/local.ts'
+import { getLogger } from '@kobato/server/infra/logger'
+import { resolveLocalPath } from '@kobato/server/infra/storage/backends/local'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { Readable } from 'node:stream'

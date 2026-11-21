@@ -5,17 +5,17 @@ import type {
   WorkerOkResponse,
   WorkerRequest,
   WorkerResponse,
-} from '@kobato/server/infra/image/process-worker.ts'
-import type { Span } from '@kobato/server/infra/trace/facade.ts'
-import type { ImageOperation, ImageSizeBucket } from '@kobato/server/infra/trace/sanitize.ts'
+} from '@kobato/server/infra/image/process-worker'
+import type { Span } from '@kobato/server/infra/trace/facade'
+import type { ImageOperation, ImageSizeBucket } from '@kobato/server/infra/trace/sanitize'
 
-import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/distribution/sea-assets.ts'
-import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isSea, getEmbeddedAsset, seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
-import { startSpan } from '@kobato/server/infra/trace/facade.ts'
-import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics.ts'
+import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/distribution/sea-assets'
+import { domainErrorFromWire } from '@kobato/server/infra/http/errors'
+import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
+import { getLogger } from '@kobato/server/infra/logger'
+import { isSea, getEmbeddedAsset, seaAssetPath } from '@kobato/server/infra/sea/sea'
+import { startSpan } from '@kobato/server/infra/trace/facade'
+import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics'
 import { existsSync, readFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { dirname, join } from 'node:path'

@@ -1,4 +1,4 @@
-import type { ServerMessages } from '@kobato/i18n/messages/server/en-US.ts'
+import type { ServerMessages } from '@kobato/i18n/messages/server/en-US'
 
 export const serverMessagesZhHK = {
   'email.common.automaticNotice': '本郵件由系統自動發出，無法回覆。',

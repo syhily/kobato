@@ -1,4 +1,4 @@
-import { notFound, pngResponse } from '@kobato/server/infra/http/status.ts'
+import { notFound, pngResponse } from '@kobato/server/infra/http/status'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
 describe('server/infra/http/status — notFound', () => {

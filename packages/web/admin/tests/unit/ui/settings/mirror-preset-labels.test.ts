@@ -1,10 +1,10 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { GRAVATAR_MIRROR_PRESETS } from '@kobato/web-admin/ui/settings/gravatar-mirror-presets.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { GRAVATAR_MIRROR_PRESETS } from '@kobato/web-admin/ui/settings/gravatar-mirror-presets'
 import { describe, expect, it } from 'vitest'
 
 const PREFIX = 'admin.settings.comments.avatar.mirrorPreset.'

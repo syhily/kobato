@@ -1,11 +1,11 @@
-import { logger, root } from '@kobato/server/infra/logger.ts'
+import { logger, root } from '@kobato/server/infra/logger'
 import {
   __resetLogSinkForTests,
   clearLogSink,
   pushLogLine,
   setLogSink,
   type LogSink,
-} from '@kobato/server/infra/logger/sink.ts'
+} from '@kobato/server/infra/logger/sink'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 
 const originalRootLevel = root.level

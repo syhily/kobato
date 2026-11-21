@@ -1,12 +1,12 @@
-import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { ErrorIssueWire, ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { ServerTranslator } from '@kobato/server/infra/i18n'
 import type { z } from 'zod'
 
-import { zodIssueParams } from '@kobato/contracts/api-error.ts'
-import { BASE_LOCALE } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { zodIssueParams } from '@kobato/contracts/api-error'
+import { BASE_LOCALE } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 
 export const RAW_MESSAGE_KEY = 'error.api.rawMessage'
 

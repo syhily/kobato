@@ -1,6 +1,6 @@
-import type { ClearCacheTarget } from '@kobato/cache/types.ts'
-import type { AdminCacheStatsDto, ClearCacheResultDto } from '@kobato/contracts/cache.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { AdminCacheStatsDto, ClearCacheResultDto } from '@kobato/contracts/cache'
+import type { Database } from '@kobato/db/database'
 
 import {
   clearAllBuckets,
@@ -9,9 +9,9 @@ import {
   getCacheBuckets,
   snapshotAllBuckets,
   snapshotReservedBuckets,
-} from '@kobato/server/infra/cache/buckets.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/infra/cache/buckets'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export async function getAdminCacheStats(db: Database): Promise<AdminCacheStatsDto> {
   const [buckets, reserved] = await Promise.all([snapshotAllBuckets(), snapshotReservedBuckets(db)])

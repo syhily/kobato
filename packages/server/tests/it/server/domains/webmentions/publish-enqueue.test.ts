@@ -1,13 +1,13 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox.ts'
-import { webmentionOutbox } from '@kobato/db/schema/webmention.ts'
-import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith } from '@kobato/server/tests/utils/lexical.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
+import { webmentionOutbox } from '@kobato/db/schema/webmention'
+import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith } from '@kobato/server/tests/utils/lexical'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

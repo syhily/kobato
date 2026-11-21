@@ -1,17 +1,17 @@
-import { post } from '@kobato/db/schema/post.ts'
-import { webmention } from '@kobato/db/schema/webmention.ts'
-import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+import { post } from '@kobato/db/schema/post'
+import { webmention } from '@kobato/db/schema/webmention'
+import { receiveWebmention } from '@kobato/server/domains/webmentions/receive'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { htmlResponse, installFetch } from '@kobato/test/fetch'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]
 __setDnsLookupForTests(dnsSeam)
 
 const sendNewWebmention = vi
-  .spyOn(await import('@kobato/server/domains/webmentions/email.ts'), 'sendNewWebmention')
+  .spyOn(await import('@kobato/server/domains/webmentions/email'), 'sendNewWebmention')
   .mockImplementation(async () => ({ ok: true }) as never)
 
 const db = getTestDb()
@@ -125,7 +125,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     const first = await receive('https://sender.example/post')
     expect(first.outcome).toBe('inserted')
 
-    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention.ts')
+    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention')
     await setWebmentionStatus(db, first.row.id, 'approved')
 
     enqueueSource('https://sender.example/post')
@@ -146,7 +146,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     await seedLivePost('wm-target')
     enqueueSource('https://sender.example/post')
     const first = await receive('https://sender.example/post')
-    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention.ts')
+    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention')
     await setWebmentionStatus(db, first.row.id, 'rejected')
 
     enqueueSource('https://sender.example/post')

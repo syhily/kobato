@@ -7,7 +7,7 @@ import {
   stateFilePath,
   waitForOpenObserve,
   writeState,
-} from '@kobato/trace/lib.ts'
+} from '@kobato/trace/lib'
 
 async function main(): Promise<void> {
   ensureDocker()

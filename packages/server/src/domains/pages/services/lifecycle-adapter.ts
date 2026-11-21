@@ -1,4 +1,4 @@
-import { makeContentEntityAdapter } from '@kobato/server/domains/content/entities/lifecycle-adapter.ts'
-import { pageDescriptor } from '@kobato/server/domains/pages/descriptor.ts'
+import { makeContentEntityAdapter } from '@kobato/server/domains/content/entities/lifecycle-adapter'
+import { pageDescriptor } from '@kobato/server/domains/pages/descriptor'
 
 export const pageLifecycleAdapter = makeContentEntityAdapter(pageDescriptor)

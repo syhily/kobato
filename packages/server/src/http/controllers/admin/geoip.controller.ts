@@ -1,7 +1,7 @@
-import { adminGeoipContract } from '@kobato/api/admin/geoip.ts'
-import { getGeoipDbStatus, runRemoteGeoipUpdate } from '@kobato/server/domains/analytics/geoip/update.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
+import { adminGeoipContract } from '@kobato/api/admin/geoip'
+import { getGeoipDbStatus, runRemoteGeoipUpdate } from '@kobato/server/domains/analytics/geoip/update'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
 
 const impl = implementAdmin(adminGeoipContract)
 

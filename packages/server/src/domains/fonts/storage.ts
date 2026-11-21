@@ -1,7 +1,7 @@
-import type { StorageDriver } from '@kobato/settings/types.ts'
+import type { StorageDriver } from '@kobato/settings/types'
 
-import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
-import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry.ts'
+import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy'
+import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry'
 
 export function fontPrefix(hash: string): string {
   return `fonts/${hash}/`

@@ -1,9 +1,9 @@
-import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { SiteIdentitySettings } from '@kobato/settings/types'
 
-import { GeneralAuthorCard } from '@kobato/web-admin/ui/settings/general/GeneralAuthorCard.tsx'
-import { GeneralFooterCard } from '@kobato/web-admin/ui/settings/general/GeneralFooterCard.tsx'
-import { GeneralIdentityCard } from '@kobato/web-admin/ui/settings/general/GeneralIdentityCard.tsx'
-import { GeneralTimeZoneCard } from '@kobato/web-admin/ui/settings/general/GeneralTimeZoneCard.tsx'
+import { GeneralAuthorCard } from '@kobato/web-admin/ui/settings/general/GeneralAuthorCard'
+import { GeneralFooterCard } from '@kobato/web-admin/ui/settings/general/GeneralFooterCard'
+import { GeneralIdentityCard } from '@kobato/web-admin/ui/settings/general/GeneralIdentityCard'
+import { GeneralTimeZoneCard } from '@kobato/web-admin/ui/settings/general/GeneralTimeZoneCard'
 
 interface GeneralFormProps {
   siteIdentity: SiteIdentitySettings

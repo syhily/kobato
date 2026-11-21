@@ -1,14 +1,14 @@
-import { commentsTokenContract } from '@kobato/api/comments.ts'
-import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
-import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup.ts'
-import { parseComments } from '@kobato/server/domains/comments/services/public-query.ts'
+import { commentsTokenContract } from '@kobato/api/comments'
+import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
+import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup'
+import { parseComments } from '@kobato/server/domains/comments/services/public-query'
 import {
   cleanupExpiredTokens,
   revokeCommentToken,
   verifyCommentOwnership,
-} from '@kobato/server/domains/comments/services/token-store.ts'
-import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/comments/services/token-store'
+import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(commentsTokenContract)
 

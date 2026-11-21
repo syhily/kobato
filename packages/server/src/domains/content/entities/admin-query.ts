@@ -1,19 +1,19 @@
-import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { AdminRevisionDto } from '@kobato/contracts/revision'
+import type { Database } from '@kobato/db/database'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
   MetaRowBase,
   UpsertMetaInputBase,
-} from '@kobato/server/domains/content/entities/descriptor.ts'
-import type { MetaListQueries } from '@kobato/server/domains/content/entities/meta-repo.ts'
-import type { LimitOffset } from '@kobato/server/domains/content/pagination.ts'
-import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list.ts'
+} from '@kobato/server/domains/content/entities/descriptor'
+import type { MetaListQueries } from '@kobato/server/domains/content/entities/meta-repo'
+import type { LimitOffset } from '@kobato/server/domains/content/pagination'
+import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list'
 
-import { toAdminRevisionDto } from '@kobato/server/domains/content/projection.ts'
-import { findContentById, findLatestRevision, listRevisions } from '@kobato/server/domains/content/revisions.ts'
-import { listForAdmin } from '@kobato/server/domains/content/services/admin-list.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
+import { findContentById, findLatestRevision, listRevisions } from '@kobato/server/domains/content/revisions'
+import { listForAdmin } from '@kobato/server/domains/content/services/admin-list'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface EntityAdminDetail<TAdminDto> {
   meta: TAdminDto

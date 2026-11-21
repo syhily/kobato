@@ -1,4 +1,4 @@
-import { mailSchema } from '@kobato/settings/sections/mail.ts'
+import { mailSchema } from '@kobato/settings/sections/mail'
 import { describe, expect, it } from 'vitest'
 
 describe('settings/sections/mail', () => {

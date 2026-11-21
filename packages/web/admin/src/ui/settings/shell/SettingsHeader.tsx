@@ -1,4 +1,4 @@
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { XIcon } from 'lucide-react'
 import { useNavigate } from 'react-router'
 

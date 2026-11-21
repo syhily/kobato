@@ -1,10 +1,10 @@
-import type { Tag } from '@kobato/catalog/model.ts'
-import type { AdminTagDto } from '@kobato/contracts/tags.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { TagRow } from '@kobato/db/types.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { Tag } from '@kobato/catalog/model'
+import type { AdminTagDto } from '@kobato/contracts/tags'
+import type { Database } from '@kobato/db/database'
+import type { TagRow } from '@kobato/db/types'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { hasAtLeast } from '@kobato/auth/roles.ts'
+import { hasAtLeast } from '@kobato/auth/roles'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -14,18 +14,18 @@ import {
   insertTag,
   listAdminTagRows,
   updateTag,
-} from '@kobato/db/operations/tag.ts'
-import { tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
-import { countPostsByTaxonomy, listPostTitlesByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy.ts'
+} from '@kobato/db/operations/tag'
+import { tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate'
+import { countPostsByTaxonomy, listPostTitlesByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
   taxonomyNotFound,
-} from '@kobato/server/domains/taxonomies/shared.ts'
-import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
+} from '@kobato/server/domains/taxonomies/shared'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve'
 import { asc, eq, inArray } from 'drizzle-orm'
 
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {

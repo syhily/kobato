@@ -1,5 +1,5 @@
-import { projectError } from '@kobato/server/infra/trace/sanitize.ts'
-import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
+import { projectError } from '@kobato/server/infra/trace/sanitize'
+import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths'
 
 export const LOG_LINE_MAX_BYTES = 32 * 1024
 export const LOG_BODY_MAX_LENGTH = 200

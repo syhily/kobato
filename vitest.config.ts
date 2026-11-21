@@ -1,14 +1,14 @@
-import sharedSnapsProject from '@kobato/test/projects/shared-snaps.ts'
-import sharedUnitProject from '@kobato/test/projects/shared-unit.ts'
-import webSnapsProject from '@kobato/test/projects/web-snaps.ts'
-import { webUnitProjects } from '@kobato/test/projects/web-unit.ts'
+import sharedSnapsProject from '@kobato/test/projects/shared-snaps'
+import sharedUnitProject from '@kobato/test/projects/shared-unit'
+import webSnapsProject from '@kobato/test/projects/web-snaps'
+import { webUnitProjects } from '@kobato/test/projects/web-unit'
 import { defineConfig } from 'vitest/config'
 
-import { appItProjects } from './apps/kobato/tests/it/vitest.config.ts'
-import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config.ts'
-import { inklingUnitProjects } from './packages/inkling/tests/vitest.config.ts'
-import { serverItProjects } from './packages/server/tests/it/vitest.config.ts'
-import { serverUnitProjects } from './packages/server/tests/unit/vitest.config.ts'
+import { appItProjects } from './apps/kobato/tests/it/vitest.config'
+import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config'
+import { inklingUnitProjects } from './packages/inkling/tests/vitest.config'
+import { serverItProjects } from './packages/server/tests/it/vitest.config'
+import { serverUnitProjects } from './packages/server/tests/unit/vitest.config'
 
 export default defineConfig({
   resolve: {

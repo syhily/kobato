@@ -2,7 +2,7 @@ import {
   isNativePackageModule,
   isPlatformSpecifierArg,
   redirectNativeRequires,
-} from '@kobato/pack/sea/redirect-native-requires.ts'
+} from '@kobato/pack/sea/redirect-native-requires'
 import { readdirSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'

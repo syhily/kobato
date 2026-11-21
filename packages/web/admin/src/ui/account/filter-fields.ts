@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
-import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
+import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { FileTextIcon, ListChecksIcon, SearchIcon } from 'lucide-react'
 
 export type MyCommentFilterFieldKey = 'status' | 'page' | 'text'

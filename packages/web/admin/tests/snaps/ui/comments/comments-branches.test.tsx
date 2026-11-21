@@ -1,12 +1,12 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields'
+import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -70,7 +70,7 @@ const stubActions = vi.hoisted((): CommentActions => {
   }
 })
 
-const commentsControllerMod = await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
+const commentsControllerMod = await import('@kobato/web-admin/ui/comments/use-comments-controller')
 vi.spyOn(commentsControllerMod, 'useCommentsController').mockImplementation((() => ({
   comments: controllerState.comments,
   total: controllerState.total,

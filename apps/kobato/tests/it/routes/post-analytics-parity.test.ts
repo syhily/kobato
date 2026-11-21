@@ -1,27 +1,27 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
-import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/contracts/analytics.ts'
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
+import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/contracts/analytics'
+import { post as postTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { tag as tagTable } from '@kobato/db/schema/taxonomy'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { authorSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+} from '@kobato/server/tests/utils/analytics-db'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { authorSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
-vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,
 }))
@@ -32,8 +32,8 @@ const session = authorSession()
 analytics.handle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analytics.handle)
 
-const adminRoute = await import('@/routes/admin/posts/analytics.tsx')
-const editorRoute = await import('@/routes/editor/post/analytics.tsx')
+const adminRoute = await import('@/routes/admin/posts/analytics')
+const editorRoute = await import('@/routes/editor/post/analytics')
 
 const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000')
 

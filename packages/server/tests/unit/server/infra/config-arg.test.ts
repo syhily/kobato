@@ -1,4 +1,4 @@
-import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
+import { parseConfigArg } from '@kobato/server/infra/config-arg'
 import { describe, expect, it } from 'vitest'
 
 describe('infra/config-arg — parseConfigArg', () => {

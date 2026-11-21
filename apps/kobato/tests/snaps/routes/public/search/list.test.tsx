@@ -1,8 +1,8 @@
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import SearchListRoute from '@/routes/public/search/list.tsx'
+import SearchListRoute from '@/routes/public/search/list'
 
 describe('snapshot: routes/public/search/list', () => {
   it('renders the search listing route', () => {

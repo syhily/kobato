@@ -21,7 +21,7 @@ const wireRestoreMachine = vi.fn((deps: { complete: (success: boolean, err?: Err
   restoreCallback = deps.complete
 })
 
-vi.mock('@kobato/db/database.ts', () => ({
+vi.mock('@kobato/db/database', () => ({
   openDatabase: vi.fn(() => ({ db: dbMock, client: clientMock, path: ':memory:', inMemory: true, closed: false })),
   closeDatabase: (handle: { closed: boolean }) => {
     closeDatabase(handle)
@@ -29,74 +29,74 @@ vi.mock('@kobato/db/database.ts', () => ({
   },
 }))
 
-vi.mock('@kobato/server/infra/db/paths.ts', () => ({
+vi.mock('@kobato/server/infra/db/paths', () => ({
   resolveDatabasePath: () => ':memory:',
 }))
 
-vi.mock('@kobato/db/migrate.ts', () => ({
+vi.mock('@kobato/db/migrate', () => ({
   migrateDatabase: (...args: unknown[]) => migrateDatabase(...args),
 }))
 
-vi.mock('@kobato/server/infra/config.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@kobato/server/infra/config.ts')>()),
+vi.mock('@kobato/server/infra/config', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@kobato/server/infra/config')>()),
   isVitest: () => true,
 }))
 
-vi.mock('@kobato/server/infra/lifecycle.ts', () => ({
+vi.mock('@kobato/server/infra/lifecycle', () => ({
   registerShutdownHook: (fn: () => unknown) => registerShutdownHook(fn),
   restartServer: (...args: unknown[]) => restartServer(...args),
   setRestartGetDb: (...args: unknown[]) => setRestartGetDb(...args),
   setRestartRefreshSettings: (...args: unknown[]) => setRestartRefreshSettings(...args),
 }))
 
-vi.mock('@kobato/server/infra/db/batcher-registry.ts', () => ({
+vi.mock('@kobato/server/infra/db/batcher-registry', () => ({
   initAllBatchers: (...args: unknown[]) => initAllBatchers(...args),
   flushAllBatchers: (...args: unknown[]) => flushAllBatchers(...args),
   resetAllBatchers: (...args: unknown[]) => resetAllBatchers(...args),
 }))
 
-vi.mock('@kobato/server/domains/analytics/services/batcher.ts', () => ({}))
-vi.mock('@kobato/server/domains/analytics/services/pv-batcher.ts', () => ({}))
-vi.mock('@kobato/server/domains/audit/services/batcher.ts', () => ({}))
+vi.mock('@kobato/server/domains/analytics/services/batcher', () => ({}))
+vi.mock('@kobato/server/domains/analytics/services/pv-batcher', () => ({}))
+vi.mock('@kobato/server/domains/audit/services/batcher', () => ({}))
 
-vi.mock('@kobato/server/domains/audit/services/scheduler.ts', () => ({
+vi.mock('@kobato/server/domains/audit/services/scheduler', () => ({
   rescheduleArchive: vi.fn(),
 }))
 
-vi.mock('@kobato/server/domains/backup/scheduler.ts', () => ({
+vi.mock('@kobato/server/domains/backup/scheduler', () => ({
   rescheduleBackup: vi.fn(),
 }))
 
-vi.mock('@kobato/server/infra/email/sender.ts', () => ({
+vi.mock('@kobato/server/infra/email/sender', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-vi.mock('@kobato/server/domains/settings/services/section-changes.ts', () => ({
+vi.mock('@kobato/server/domains/settings/services/section-changes', () => ({
   registerSectionChangeHandler: vi.fn(),
 }))
 
-vi.mock('@kobato/server/domains/backup/restore-machine.ts', () => ({
+vi.mock('@kobato/server/domains/backup/restore-machine', () => ({
   wireRestoreMachine: (deps: { complete: (success: boolean, err?: Error) => Promise<void> }) =>
     wireRestoreMachine(deps),
 }))
 
-vi.mock('@kobato/server/bootstrap/analytics-lifecycle.ts', () => ({
+vi.mock('@kobato/server/bootstrap/analytics-lifecycle', () => ({
   initAnalyticsDatabase: vi.fn(),
   closeAnalyticsForRestore: vi.fn(),
   snapshotAnalyticsTo: vi.fn(),
 }))
 
-vi.mock('@kobato/server/domains/comments/services/likes.ts', () => ({
+vi.mock('@kobato/server/domains/comments/services/likes', () => ({
   resetLikeTokenSweep: (...args: unknown[]) => resetLikeTokenSweep(...args),
   startLikeTokenSweep: (...args: unknown[]) => startLikeTokenSweep(...args),
 }))
 
-vi.mock('@kobato/server/domains/settings/services/hydrate.ts', () => ({
+vi.mock('@kobato/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: (...args: unknown[]) => refreshBlogSettings(...args),
 }))
 
 const { reopenDatabase, prepareDatabaseForRestore, getDb, getDatabaseHandle } =
-  await import('@kobato/server/bootstrap/db-lifecycle.ts')
+  await import('@kobato/server/bootstrap/db-lifecycle')
 
 describe('db-lifecycle', () => {
   beforeEach(() => {

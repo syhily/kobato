@@ -1,19 +1,19 @@
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeSession } from '@kobato/server/tests/utils/session.ts'
-import { makeRouteContext } from '@tests/utils/context.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { user } from '@kobato/db/schema/user'
+import { getSetupToken } from '@kobato/server/domains/auth/setup-token'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { makeRouteContext } from '@tests/utils/context'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/http/request-context.ts', async () => {
-  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock.ts')
+vi.mock('@kobato/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock')
   return createRequestContextMockModule()
 })
 
-vi.mock('@kobato/server/domains/auth/services/setup.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/domains/auth/services/setup.ts')>(
-    '@kobato/server/domains/auth/services/setup.ts',
+vi.mock('@kobato/server/domains/auth/services/setup', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/server/domains/auth/services/setup')>(
+    '@kobato/server/domains/auth/services/setup',
   )
   return {
     ...actual,
@@ -25,10 +25,10 @@ const CSRF_TOKEN = 'setup-route-csrf-token'
 
 const db = getTestDb()
 
-const mockContext = await import('@kobato/server/http/request-context.ts')
-const flows = await import('@kobato/server/domains/auth/services/setup.ts')
-const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/server/infra/rate-limit.ts')
-const { action, loader } = await import('@/routes/auth/setup/index.tsx')
+const mockContext = await import('@kobato/server/http/request-context')
+const flows = await import('@kobato/server/domains/auth/services/setup')
+const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/server/infra/rate-limit')
+const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeAll(() => {
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()

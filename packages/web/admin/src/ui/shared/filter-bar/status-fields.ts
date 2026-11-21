@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export type StatusQueryFields<F extends Record<string, unknown>> = {
   deletedStatus: 'all' | 'deleted' | 'normal'

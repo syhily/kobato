@@ -1,7 +1,7 @@
-import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { dateFnsLocaleFor, formatDate } from '@kobato/utils/format.ts'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { dateFnsLocaleFor, formatDate } from '@kobato/utils/format'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, type ComponentProps } from 'react'
 import {

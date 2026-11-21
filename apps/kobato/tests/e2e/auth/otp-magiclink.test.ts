@@ -1,6 +1,6 @@
-import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
-import { callE2eRpc } from '@kobato/harness/rpc.ts'
-import { SmtpCapture, extractMagicLinkPath, extractOtpCode } from '@kobato/harness/smtp.ts'
+import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http'
+import { callE2eRpc } from '@kobato/harness/rpc'
+import { SmtpCapture, extractMagicLinkPath, extractOtpCode } from '@kobato/harness/smtp'
 import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 

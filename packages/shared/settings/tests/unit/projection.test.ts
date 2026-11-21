@@ -1,6 +1,6 @@
-import type { CommentsSettings, MailSettings } from '@kobato/settings/types.ts'
+import type { CommentsSettings, MailSettings } from '@kobato/settings/types'
 
-import { projectAssetsForAdmin, projectCommentsForAdmin, projectMailForAdmin } from '@kobato/settings/projection.ts'
+import { projectAssetsForAdmin, projectCommentsForAdmin, projectMailForAdmin } from '@kobato/settings/projection'
 import { describe, expect, it } from 'vitest'
 
 describe('settings/projection — projectAssetsForAdmin', () => {

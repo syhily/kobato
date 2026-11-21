@@ -1,4 +1,4 @@
-import { uploadImageMetadataSchema } from '@kobato/contracts/images.ts'
+import { uploadImageMetadataSchema } from '@kobato/contracts/images'
 import { describe, expect, it } from 'vitest'
 
 describe('contracts/images — uploadImageMetadataSchema', () => {

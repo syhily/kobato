@@ -1,12 +1,12 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { upsertSetting } from '@kobato/db/operations/setting.ts'
-import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { adminSession, adminUser } from '@kobato/server/tests/utils/session.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+import { upsertSetting } from '@kobato/db/operations/setting'
+import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { adminSession, adminUser } from '@kobato/server/tests/utils/session'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
 import { Hono } from 'hono'
 import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -65,7 +65,7 @@ afterEach(async () => {
 describe('brandingRouter', () => {
   it('uploads a valid branding asset', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const form = new FormData()
@@ -83,7 +83,7 @@ describe('brandingRouter', () => {
 
   it('rejects upload with unknown slot', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const form = new FormData()
@@ -96,7 +96,7 @@ describe('brandingRouter', () => {
 
   it('rejects upload when file is missing', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const form = new FormData()
@@ -108,7 +108,7 @@ describe('brandingRouter', () => {
 
   it('clears a valid branding slot', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const res = await app.request('/api/admin/branding/clear', {
@@ -122,7 +122,7 @@ describe('brandingRouter', () => {
 
   it('rejects clear with invalid slot', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const res = await app.request('/api/admin/branding/clear', {
@@ -135,7 +135,7 @@ describe('brandingRouter', () => {
 
   it('rejects uploads that exceed the body limit', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding.ts')
+    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
     app.route('/', brandingRouter)
 
     const form = new FormData()

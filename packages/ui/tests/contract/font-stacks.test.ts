@@ -1,5 +1,5 @@
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { DEFAULT_FONT_STACKS } from '@kobato/ui/lib/font-stacks.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { DEFAULT_FONT_STACKS } from '@kobato/ui/lib/font-stacks'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

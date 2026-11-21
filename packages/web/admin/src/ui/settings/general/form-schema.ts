@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { SiteIdentitySettings } from '@kobato/settings/types'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { z } from 'zod'
 
 export interface TimeZoneItem {

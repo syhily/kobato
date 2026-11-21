@@ -1,7 +1,7 @@
 import {
   acquireRealtimeConnection,
   realtimeConnectionKey,
-} from '@kobato/server/domains/analytics/services/realtime-connections.ts'
+} from '@kobato/server/domains/analytics/services/realtime-connections'
 import { describe, expect, it } from 'vitest'
 
 describe('realtimeConnectionKey', () => {

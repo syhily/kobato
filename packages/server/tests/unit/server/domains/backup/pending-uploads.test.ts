@@ -5,10 +5,10 @@ import {
   peekEncryptedUpload,
   releaseEncryptedUpload,
   resetPendingEncryptedUploads,
-} from '@kobato/server/domains/backup/pending-uploads.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
-import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
+} from '@kobato/server/domains/backup/pending-uploads'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
+import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let seq = 0

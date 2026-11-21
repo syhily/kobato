@@ -1,23 +1,23 @@
-import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   buildPostFilterFields,
   postFiltersFromSearch,
   postFiltersToSearch,
   type PostsFilterQuery,
   syncPostFiltersFromUrl,
-} from '@kobato/web-admin/ui/posts/filter-fields.ts'
-import { PostRow } from '@kobato/web-admin/ui/posts/PostRow.tsx'
-import { PostsSkeleton } from '@kobato/web-admin/ui/posts/PostsSkeleton.tsx'
-import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar.tsx'
-import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts'
-import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
-import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/web-admin/ui/posts/filter-fields'
+import { PostRow } from '@kobato/web-admin/ui/posts/PostRow'
+import { PostsSkeleton } from '@kobato/web-admin/ui/posts/PostsSkeleton'
+import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar'
+import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills'
+import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useState } from 'react'

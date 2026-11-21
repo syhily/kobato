@@ -1,4 +1,4 @@
-import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessages } from '@kobato/i18n/messages/ui/en-US'
 
 export const uiMessagesZhCN = {
   'common.action.back': '返回',

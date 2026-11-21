@@ -1,5 +1,5 @@
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
 import { MoveDiagonal2Icon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 

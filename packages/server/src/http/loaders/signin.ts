@@ -1,14 +1,14 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { logout } from '@kobato/server/domains/auth/primitives.ts'
-import { readLivePendingOtp } from '@kobato/server/domains/auth/services/otp.ts'
-import { authFlowError, authFlowMessage } from '@kobato/server/domains/auth/services/shared.ts'
-import { destroySession } from '@kobato/server/domains/auth/session-storage.ts'
-import { peekToken } from '@kobato/server/domains/auth/verification-tokens.ts'
-import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate.ts'
-import { getRequestContext, type RequestContext } from '@kobato/server/http/request-context.ts'
-import { safeRedirectPath } from '@kobato/utils/safe-url.ts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { logout } from '@kobato/server/domains/auth/primitives'
+import { readLivePendingOtp } from '@kobato/server/domains/auth/services/otp'
+import { authFlowError, authFlowMessage } from '@kobato/server/domains/auth/services/shared'
+import { destroySession } from '@kobato/server/domains/auth/session-storage'
+import { peekToken } from '@kobato/server/domains/auth/verification-tokens'
+import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate'
+import { getRequestContext, type RequestContext } from '@kobato/server/http/request-context'
+import { safeRedirectPath } from '@kobato/utils/safe-url'
 import { data, redirect } from 'react-router'
 
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])

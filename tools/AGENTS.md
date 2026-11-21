@@ -16,5 +16,5 @@
 - **Product src never depends on tools.** No `src/` module under `apps/*` or `packages/*` may import a tools package — not even type-only. Tools may depend on product packages (`test` and `pack` do), never the reverse. Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - Product **tests** import tools freely (`@kobato/test`, `@kobato/harness`) — the sanctioned seam, declared in each package's devDependencies.
 - Build-time configs reach `pack` through its package specifier; the root and `apps/kobato` package.json files both declare the workspace link.
-- Tools packages declare every import in their own package.json. Tool source and tests use `@kobato/<name>/...` self-imports (self-link declared) and `@kobato/<name>/tests/...` for helpers. Packages invoked directly by `node` expose `"./*": "./src/*"` so package self-resolution works without a bundler.
+- Tools packages declare every import in their own package.json. Tool source and tests use `@kobato/<name>/...` self-imports (self-link declared) and `@kobato/<name>/tests/...` for helpers. Packages invoked directly by `node` expose source wildcard exports with `.ts`/`.tsx` fallback targets so package self-resolution works without a bundler.
 - `scripts/` (outside this umbrella) stays shell/node-builtin-only; anything needing project modules belongs here instead.

@@ -1,4 +1,4 @@
-import { ACCEPT_CH_HEADER } from '@kobato/server/http/middleware-pipeline.ts'
+import { ACCEPT_CH_HEADER } from '@kobato/server/http/middleware-pipeline'
 import { describe, expect, it } from 'vitest'
 
 describe('Accept-CH opt-in', () => {

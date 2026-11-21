@@ -15,10 +15,10 @@ const fileStoreMock = vi.hoisted(() => ({
   wipeCache: vi.fn<() => Promise<void>>(),
 }))
 
-vi.mock('@kobato/server/infra/cache/file-store.ts', () => fileStoreMock)
+vi.mock('@kobato/server/infra/cache/file-store', () => fileStoreMock)
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
 import {
   __resetCacheCountersForTests,
   AvatarStatus,
@@ -30,9 +30,9 @@ import {
   set,
   through,
   wipeCacheForRestore,
-} from '@kobato/server/infra/cache/registry.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/infra/cache/registry'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 
 const REVISIONS = representationRevisionsFor(TEST_BLOG_SETTINGS_BUNDLE)
 

@@ -1,9 +1,9 @@
-import type { MetricType } from '@kobato/contracts/analytics.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { MetricType } from '@kobato/contracts/analytics'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { ComponentType } from 'react'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatDisplayName } from '@kobato/utils/format.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatDisplayName } from '@kobato/utils/format'
 import {
   SiAcer,
   SiAndroid,
@@ -81,8 +81,8 @@ import {
   SiX,
   SiXiaomi,
   SiYandexcloud,
-} from '@kobato/web-admin/ui/analytics/metric-brands.tsx'
-import { metricValueLabelId } from '@kobato/web-admin/ui/analytics/metric-labels.ts'
+} from '@kobato/web-admin/ui/analytics/metric-brands'
+import { metricValueLabelId } from '@kobato/web-admin/ui/analytics/metric-labels'
 import { Bot, Globe, Laptop, MonitorCheck, Mouse, Smartphone, Tablet, Terminal } from 'lucide-react'
 
 type IconComponent = ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>

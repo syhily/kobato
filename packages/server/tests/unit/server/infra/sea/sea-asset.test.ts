@@ -1,4 +1,4 @@
-import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset.ts'
+import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

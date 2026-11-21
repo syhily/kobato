@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 
-import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx'
+import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog'
 import type { ReactElement } from 'react'
 
-import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog.ts'
-import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
-import { tZhCN, makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
+import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
+import { tZhCN, makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { createHeadlessEditor } from '@kobato/inkling'
-import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels.ts'
-import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry.ts'
-import { MUSIC_PLAYER_META_KEYS } from '@kobato/inkling/headless/artifacts.ts'
-import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html.ts'
+import { lookupLabel, resolveLabels } from '@kobato/inkling-internal/labels/inkling-labels'
+import { getHostCard } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
+import { MUSIC_PLAYER_META_KEYS } from '@kobato/inkling/headless/artifacts'
+import { type CardRenderContext, FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   MUSIC_PLAYER_CARD_PROPERTIES,
@@ -18,24 +18,24 @@ import {
   musicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/inkling/headless/cards/music-player.ts'
+} from '@kobato/inkling/headless/cards/music-player'
 import {
   renderSolutionCard,
   SOLUTION_CARD_CLASSES,
   SOLUTION_CARD_PROPERTIES,
   SOLUTION_NESTED_EDITOR,
-} from '@kobato/inkling/headless/cards/solution.ts'
+} from '@kobato/inkling/headless/cards/solution'
 import {
   renderTwoColumnCard,
   TWO_COLUMN_CARD_CLASSES,
   TWO_COLUMN_CARD_PROPERTIES,
   TWO_COLUMN_NESTED_EDITORS,
-} from '@kobato/inkling/headless/cards/two-column.ts'
+} from '@kobato/inkling/headless/cards/two-column'
 import {
   MUSIC_PLAYER_NODE_TYPE,
   SOLUTION_NODE_TYPE,
   TWO_COLUMN_NODE_TYPE,
-} from '@kobato/inkling/headless/node-whitelist.ts'
+} from '@kobato/inkling/headless/node-whitelist'
 import {
   BaseMusicPlayerNode,
   BaseSolutionNode,
@@ -49,8 +49,8 @@ import {
   TwoColumnCardView,
   TwoColumnPaneView,
 } from '@kobato/inkling/host-cards'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { MusicCardPicker, musicPickMeta } from '@kobato/web-admin/ui/editor/music-card-picker.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { MusicCardPicker, musicPickMeta } from '@kobato/web-admin/ui/editor/music-card-picker'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'
 import { JSDOM } from 'jsdom'
@@ -63,7 +63,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
 }))
 
 const musicPickerDialogProps: { current: MusicPickerDialogProps | null } = { current: null }
-vi.mock('@kobato/web-admin/ui/editor/pickers/MusicPickerDialog.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/editor/pickers/MusicPickerDialog', () => ({
   MusicPickerDialog: (props: MusicPickerDialogProps) => {
     musicPickerDialogProps.current = props
     return null

@@ -16,12 +16,12 @@ const childProcessMocks = vi.hoisted(() => ({ spawn: vi.fn() }))
 
 const pipelineMocks = vi.hoisted(() => ({ runSelfUpdate: vi.fn() }))
 
-vi.mock('@kobato/server/infra/lifecycle.ts', () => lifecycleMocks)
+vi.mock('@kobato/server/infra/lifecycle', () => lifecycleMocks)
 vi.mock('node:child_process', () => ({ spawn: childProcessMocks.spawn }))
-vi.mock('@kobato/server/domains/update/pipeline.ts', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
+vi.mock('@kobato/server/domains/update/pipeline', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
 
 async function loadJob() {
-  return import('@kobato/server/domains/update/job.ts')
+  return import('@kobato/server/domains/update/job')
 }
 
 describe('update/job scheduleSelfRestart (default restart)', () => {

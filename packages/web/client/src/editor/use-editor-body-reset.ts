@@ -13,7 +13,7 @@
 
 import type { LexicalEditor, SerializedEditorState } from '@kobato/inkling'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 function identitySeed<TBody>(body: TBody): TBody {

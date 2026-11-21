@@ -7,8 +7,8 @@ import {
   stateFilePath,
   waitForOpenObserve,
   warn,
-} from '@kobato/trace/lib.ts'
-import { applyRetention } from '@kobato/trace/provision.ts'
+} from '@kobato/trace/lib'
+import { applyRetention } from '@kobato/trace/provision'
 
 async function main(): Promise<void> {
   const state = await readState()

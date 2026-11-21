@@ -1,12 +1,12 @@
-import type { CommentsLoaderShape } from '@kobato/settings/projection.ts'
+import type { CommentsLoaderShape } from '@kobato/settings/projection'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { type CommentsFormProps } from '@kobato/web-admin/ui/settings/comments/model.ts'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
-import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { type CommentsFormProps } from '@kobato/web-admin/ui/settings/comments/model'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 
 export function CommentsPaginationCard({ comments }: CommentsFormProps) {
   const { t } = useI18n()

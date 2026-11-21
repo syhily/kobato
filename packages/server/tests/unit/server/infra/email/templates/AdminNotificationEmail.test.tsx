@@ -1,6 +1,6 @@
-import { render } from '@kobato/server/infra/email/render.tsx'
-import AdminNotificationEmail from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
+import { render } from '@kobato/server/infra/email/render'
+import AdminNotificationEmail from '@kobato/server/infra/email/templates/AdminNotificationEmail'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
 

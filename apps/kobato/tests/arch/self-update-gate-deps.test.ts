@@ -1,5 +1,5 @@
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { SELF_UPDATE_GATE_REASON_KEYS } from '@kobato/server/infra/sea/self-update-gate.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { SELF_UPDATE_GATE_REASON_KEYS } from '@kobato/server/infra/sea/self-update-gate'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -84,8 +84,8 @@ describe('server/infra/sea/self-update-gate — zero-side-effect import contract
   it('reads the English baseline directly instead of the server translator', () => {
     const source = readFileSync(resolve(process.cwd(), ENTRY), 'utf8')
     expect(source).toMatch(/import\s*\{[^}]*uiMessagesEnUS[^}]*\}\s*from\s*'@kobato\/i18n\/messages\/ui\/en-US/)
-    expect(source).not.toContain('@kobato/server/infra/i18n.ts')
-    expect(source).not.toContain('@kobato/server/infra/http/error-descriptor.ts')
+    expect(source).not.toContain('@kobato/server/infra/i18n')
+    expect(source).not.toContain('@kobato/server/infra/http/error-descriptor')
   })
 
   it('keeps every gate reason parameter-free (so the baseline value is the fallback)', () => {

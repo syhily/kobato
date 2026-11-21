@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { DEFAULT_LOCALE, normalizeAppLocale, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { isSupportedTimeZone } from '@kobato/settings/timezones.ts'
+import { DEFAULT_LOCALE, normalizeAppLocale, SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { isSupportedTimeZone } from '@kobato/settings/timezones'
 import { z } from 'zod'
 
 const generalMessages = {

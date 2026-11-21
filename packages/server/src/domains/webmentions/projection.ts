@@ -2,8 +2,8 @@ import type {
   AdminWebmentionOutboxWire,
   AdminWebmentionWire,
   PublicWebmentionWire,
-} from '@kobato/contracts/webmentions.ts'
-import type { WebmentionOutboxRow, WebmentionRow } from '@kobato/db/types.ts'
+} from '@kobato/contracts/webmentions'
+import type { WebmentionOutboxRow, WebmentionRow } from '@kobato/db/types'
 
 export function asAdminWebmentionWire(row: WebmentionRow): AdminWebmentionWire {
   return {

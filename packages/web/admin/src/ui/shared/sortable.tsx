@@ -12,7 +12,7 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { GripVerticalIcon } from 'lucide-react'
 
 export const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]

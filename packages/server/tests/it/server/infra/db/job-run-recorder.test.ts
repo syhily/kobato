@@ -1,5 +1,5 @@
-import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs.ts'
-import { jobRun } from '@kobato/db/schema/job-run.ts'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/contracts/jobs'
+import { jobRun } from '@kobato/db/schema/job-run'
 import {
   JOB_FAILURE_NOTIFY_DEDUPE_MS,
   JOB_RUN_KEEP_PER_TASK,
@@ -11,8 +11,8 @@ import {
   startJobRun,
   sweepOrphanedJobRuns,
   wireJobFailureNotifier,
-} from '@kobato/server/infra/db/job-run-recorder.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/infra/db/job-run-recorder'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

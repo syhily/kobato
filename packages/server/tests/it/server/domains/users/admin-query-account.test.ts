@@ -1,19 +1,19 @@
-import { comment } from '@kobato/db/schema/comment.ts'
-import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
-import { user, verification } from '@kobato/db/schema/user.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
-import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { passkeyCredential } from '@kobato/db/schema/passkey'
+import { user, verification } from '@kobato/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
+import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
-const admin = await import('@kobato/server/domains/users/services/admin.ts')
-const account = await import('@kobato/server/domains/users/services/account.ts')
-const adminQuery = await import('@kobato/server/domains/users/repos/admin-query.ts')
-const userOps = await import('@kobato/db/operations/user.ts')
+const admin = await import('@kobato/server/domains/users/services/admin')
+const account = await import('@kobato/server/domains/users/services/account')
+const adminQuery = await import('@kobato/server/domains/users/repos/admin-query')
+const userOps = await import('@kobato/db/operations/user')
 
 const db = getTestDb()
 const mail = await createCaptureMailFixture()
@@ -520,7 +520,7 @@ describe('users/services/account — updateAccountPassword', () => {
   it('revokes outstanding credential-bypass tokens on a successful change', async () => {
     const bcrypt = await import('bcryptjs')
     const { issueResetToken, issueSignInLinkToken, issueOtpToken, peekToken } =
-      await import('@kobato/server/domains/auth/verification-tokens.ts')
+      await import('@kobato/server/domains/auth/verification-tokens')
     const hashed = await bcrypt.hash('correct', 4)
     const u = await seedUser({ name: 'P', email: 'p2@example.com', password: hashed })
     const { token } = issueResetToken(db, u.id)

@@ -1,7 +1,7 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RequestContext } from '@kobato/server/http/request-context'
 
-import { getDb } from '@kobato/server/bootstrap/db-lifecycle.ts'
+import { getDb } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   buildCsrfCookieHeader,
   CSRF_COOKIE_NAME,
@@ -9,15 +9,15 @@ import {
   ensureCsrfToken,
   isCsrfCookieValue,
   mintCsrfCookieValue,
-} from '@kobato/server/domains/auth/csrf.ts'
-import { resolveSessionContext } from '@kobato/server/domains/auth/primitives.ts'
-import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@kobato/server/domains/auth/session-storage.ts'
-import { getClientAddress } from '@kobato/server/http/request/client-address.ts'
-import { isExempt as isCookieExemptPath } from '@kobato/server/http/request/cookie-exempt.ts'
-import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
-import { serverConfig } from '@kobato/server/infra/config.ts'
-import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/domains/auth/csrf'
+import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
+import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@kobato/server/domains/auth/session-storage'
+import { getClientAddress } from '@kobato/server/http/request/client-address'
+import { isExempt as isCookieExemptPath } from '@kobato/server/http/request/cookie-exempt'
+import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
+import { serverConfig } from '@kobato/server/infra/config'
+import { createLazyAppSnapshot } from '@kobato/settings/app-localization'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createMiddleware } from 'hono/factory'
 import { randomBytes } from 'node:crypto'
 

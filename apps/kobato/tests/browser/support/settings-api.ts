@@ -1,8 +1,8 @@
-import type { BrowserEnv } from '@kobato/browser/browser-env.ts'
+import type { BrowserEnv } from '@kobato/browser/browser-env'
 
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
-import { callE2eRpc } from '@kobato/harness/rpc.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http'
+import { callE2eRpc } from '@kobato/harness/rpc'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
 
 export const BASELINE_GENERAL = {
   locale: 'zh-CN',

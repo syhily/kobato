@@ -2,7 +2,7 @@ import {
   ARTICLE_LIST_MAX_DEPTH,
   lexicalEditorStateSchema,
   MAX_TREE_DEPTH,
-} from '@kobato/inkling-internal/headless/schema.ts'
+} from '@kobato/inkling-internal/headless/schema'
 import { describe, expect, it } from 'vitest'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {

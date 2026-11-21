@@ -1,5 +1,5 @@
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { BaseLayout } from '@kobato/web-public/ui/chrome/BaseLayout.tsx'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { BaseLayout } from '@kobato/web-public/ui/chrome/BaseLayout'
 import { describe, expect, it } from 'vitest'
 
 const adminUser = { id: '1', name: 'admin', role: 'admin' as const }

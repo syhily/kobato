@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { ServerPhase } from '@kobato/server/infra/lifecycle.ts'
+import type { Database } from '@kobato/db/database'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { ServerPhase } from '@kobato/server/infra/lifecycle'
 
 import {
   peekRestoreJobPhase,
@@ -9,10 +9,10 @@ import {
   tryBeginRestore,
   wireRestoreMachine,
   type RestoreMachineDeps,
-} from '@kobato/server/domains/backup/restore-machine.ts'
-import { readyHandler } from '@kobato/server/http/ready.ts'
-import { __getLifecycleContainer, setServerPhase } from '@kobato/server/infra/lifecycle.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/backup/restore-machine'
+import { readyHandler } from '@kobato/server/http/ready'
+import { __getLifecycleContainer, setServerPhase } from '@kobato/server/infra/lifecycle'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -86,7 +86,7 @@ describe('/ready endpoint', () => {
   it('is exempt from install-gate middleware', async () => {
     const db = getTestDb()
     await clearAllTables(db)
-    const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
+    const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate')
     const gated = new Hono<Env>()
     gated.use('*', async (c, next) => {
       c.set('requestContext', {

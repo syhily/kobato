@@ -1,5 +1,5 @@
-import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives.ts'
-import { CONTENT_LANGUAGE_MAX_LENGTH } from '@kobato/i18n/content-language.ts'
+import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives'
+import { CONTENT_LANGUAGE_MAX_LENGTH } from '@kobato/i18n/content-language'
 import { z } from 'zod'
 
 export const slugSchema = z

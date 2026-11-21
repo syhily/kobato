@@ -4,11 +4,11 @@ import type {
   StorageBackend,
   StoredObjectMeta,
   StreamWithMeta,
-} from '@kobato/server/infra/storage/backend.ts'
-import type { StorageDriver } from '@kobato/settings/types.ts'
+} from '@kobato/server/infra/storage/backend'
+import type { StorageDriver } from '@kobato/settings/types'
 
-import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend.ts'
-import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy.ts'
+import { StorageObjectNotFound } from '@kobato/server/infra/storage/backend'
+import { cacheControlForVisibility } from '@kobato/server/infra/storage/key-policy'
 import { Readable } from 'node:stream'
 
 export interface MemoryStoredObject {

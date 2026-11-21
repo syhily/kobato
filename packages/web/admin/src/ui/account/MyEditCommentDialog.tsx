@@ -1,7 +1,7 @@
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema.ts'
-import { Button } from '@kobato/ui/components/button.tsx'
+import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/ui/components/dialog'
+import { Label } from '@kobato/ui/components/label'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

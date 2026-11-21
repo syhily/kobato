@@ -11,7 +11,7 @@ import {
   formatRelativeTime,
   formatRelativeValue,
   siteDateParts,
-} from '@kobato/utils/format.ts'
+} from '@kobato/utils/format'
 import { describe, expect, it } from 'vitest'
 
 const INSTANT = '2024-03-05T06:07:08Z'

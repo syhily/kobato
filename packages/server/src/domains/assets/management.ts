@@ -1,22 +1,22 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BrandingObjectRef } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { BrandingObjectRef } from '@kobato/settings/types'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { type BinarySlot } from '@kobato/server/assets/defaults.ts'
-import { generateFaviconPack } from '@kobato/server/domains/assets/generate.ts'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { type BinarySlot } from '@kobato/server/assets/defaults'
+import { generateFaviconPack } from '@kobato/server/domains/assets/generate'
 import {
   type BrandingSlot,
   deleteBrandingObject,
   ensureMatchesSlot,
   putBrandingObject,
-} from '@kobato/server/domains/assets/services/storage.ts'
-import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/domains/assets/services/storage'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { activeBackend } from '@kobato/server/infra/storage/registry'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('branding.management')
 

@@ -2,20 +2,20 @@ import type {
   FrontendRumRelay,
   ServerTraceRuntimeConfig,
   TraceConfigResolution,
-} from '@kobato/server/infra/trace/config.ts'
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
+} from '@kobato/server/infra/trace/config'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
 
-import { activeFrontendRelay, activeFrontendRum, traceEnvironment } from '@kobato/server/infra/trace/config.ts'
-import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade.ts'
+import { activeFrontendRelay, activeFrontendRum, traceEnvironment } from '@kobato/server/infra/trace/config'
+import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade'
 import {
   __resetFrontendGateForTests,
   activateFrontendGate,
   deactivateFrontendGate,
   verifiedFrontendBootstrap,
   verifiedFrontendRelay,
-} from '@kobato/server/infra/trace/frontend-gate.ts'
-import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/frontend-gate'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

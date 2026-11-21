@@ -1,7 +1,7 @@
-import type { DatabaseHandle } from '@kobato/db/database.ts'
+import type { DatabaseHandle } from '@kobato/db/database'
 
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { getLogger } from '@kobato/server/infra/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('batcher-registry')
 

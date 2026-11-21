@@ -1,18 +1,18 @@
 // @vitest-environment happy-dom
 
-import type { CardRenderContext } from '@kobato/inkling/headless/cards/card-html.ts'
+import type { CardRenderContext } from '@kobato/inkling/headless/cards/card-html'
 
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import {
   MUSIC_PLAYER_CARD_CLASSES,
   type MusicPlayerCardMeta,
   musicPlayerFallbackHtml,
   renderMusicPlayerCard,
-} from '@kobato/inkling/headless/cards/music-player.ts'
-import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure.ts'
-import { MusicPlayerCard } from '@kobato/ui/components/music-player/music-player.tsx'
-import { __resetProgrammaticVolumeSupportForTests } from '@kobato/ui/lib/use-music-playback.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+} from '@kobato/inkling/headless/cards/music-player'
+import { diffHtmlStructures, structureFromHtml } from '@kobato/test/dom-structure'
+import { MusicPlayerCard } from '@kobato/ui/components/music-player/music-player'
+import { __resetProgrammaticVolumeSupportForTests } from '@kobato/ui/lib/use-music-playback'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it, vi } from 'vitest'

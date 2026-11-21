@@ -1,9 +1,9 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
-import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths.ts'
-import { minimalMmdbBytes } from '@kobato/server/tests/utils/minimal-mmdb.ts'
-import { adminSession, adminUser } from '@kobato/server/tests/utils/session.ts'
+import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths'
+import { minimalMmdbBytes } from '@kobato/server/tests/utils/minimal-mmdb'
+import { adminSession, adminUser } from '@kobato/server/tests/utils/session'
 import { Hono } from 'hono'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
@@ -40,7 +40,7 @@ afterAll(() => {
 })
 
 async function makeRouter() {
-  const { maxmindRouter } = await import('@kobato/server/http/resources/maxmind.ts')
+  const { maxmindRouter } = await import('@kobato/server/http/resources/maxmind')
   return maxmindRouter
 }
 

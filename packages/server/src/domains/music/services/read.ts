@@ -1,6 +1,6 @@
-import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/contracts/music.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { MusicRow } from '@kobato/db/types.ts'
+import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/contracts/music'
+import type { Database } from '@kobato/db/database'
+import type { MusicRow } from '@kobato/db/types'
 
 import {
   type AdminMusicListFilters,
@@ -9,11 +9,11 @@ import {
   findMusicByPlayerId,
   findMusicByPlayerIds,
   listAdminMusicRows,
-} from '@kobato/db/operations/music.ts'
-import { toAdminMusicDto } from '@kobato/server/domains/music/projection.ts'
-import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix } from '@kobato/settings/presentation.ts'
+} from '@kobato/db/operations/music'
+import { toAdminMusicDto } from '@kobato/server/domains/music/projection'
+import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { brandingVersionSuffix } from '@kobato/settings/presentation'
 
 export interface ListMusicInput {
   q?: string

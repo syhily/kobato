@@ -1,4 +1,4 @@
-import { applyLikeOptimistic, createLikeButtonState } from '@kobato/web-public/ui/LikeActions.tsx'
+import { applyLikeOptimistic, createLikeButtonState } from '@kobato/web-public/ui/LikeActions'
 import { describe, expect, it } from 'vitest'
 
 describe('createLikeButtonState', () => {

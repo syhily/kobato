@@ -1,6 +1,6 @@
-import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@kobato/settings/sections'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 describe('contract: blog-settings fixture matches the section registry', () => {

@@ -1,4 +1,4 @@
-import { successDto, voidOutput } from '@kobato/contracts/primitives.ts'
+import { successDto, voidOutput } from '@kobato/contracts/primitives'
 import {
   adminUserUpdateInput,
   adminUsersCountOutputSchema,
@@ -19,7 +19,7 @@ import {
   adminUserUpdateRoleOutputDto,
   adminUsersListInput,
   adminUsersListOutputDto,
-} from '@kobato/contracts/users.ts'
+} from '@kobato/contracts/users'
 import { oc } from '@orpc/contract'
 
 export const adminUsersCrudContract = {

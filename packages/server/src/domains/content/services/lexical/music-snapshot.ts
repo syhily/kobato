@@ -1,10 +1,10 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds'
 
-import { collectLexicalMusicPlayerIds } from '@kobato/inkling/headless/collect.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { parseAssetUrl } from '@kobato/server/infra/storage/public-url.ts'
+import { collectLexicalMusicPlayerIds } from '@kobato/inkling/headless/collect'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { getLogger } from '@kobato/server/infra/logger'
+import { parseAssetUrl } from '@kobato/server/infra/storage/public-url'
 
 const log = getLogger('lexical.music-snapshot')
 

@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
 import type { ReactNode } from 'react'
 
-import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog.ts'
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
@@ -20,7 +20,7 @@ const api = vi.hoisted(() => ({
   searchAuthors: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
@@ -41,11 +41,11 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields.ts')
-import type { AdminCommentsPage, CommentIntents } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields')
+import type { AdminCommentsPage, CommentIntents } from '@kobato/web-admin/ui/comments/use-comments-controller'
 
-const { useCommentsController } = await import('@kobato/web-admin/ui/comments/use-comments-controller.ts')
-const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+const { useCommentsController } = await import('@kobato/web-admin/ui/comments/use-comments-controller')
+const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)

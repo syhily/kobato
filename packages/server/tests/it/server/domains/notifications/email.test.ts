@@ -1,19 +1,19 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { user } from '@kobato/db/schema/user.ts'
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { user } from '@kobato/db/schema/user'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import {
   notifyAdmins,
   replyToThread,
   sendBroadcast,
   sendDirectMessage,
   unreadCount,
-} from '@kobato/server/domains/notifications/service.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/notifications/service'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 
 function emailLogs(level: 'warn' | 'error') {
@@ -259,7 +259,7 @@ describe('notifications email — failure isolation', () => {
   })
 
   it('a thrown send for one recipient does not starve the rest of the fan-out', async () => {
-    const senderModule = await import('@kobato/server/infra/email/sender.ts')
+    const senderModule = await import('@kobato/server/infra/email/sender')
     await seedUser('admin', 'admin')
     await seedUser('admin', 'admin2')
     const rejectOnce = vi.spyOn(senderModule, 'sendEmail').mockRejectedValueOnce(new Error('bad address'))
@@ -386,8 +386,8 @@ describe('notifications email — descriptor resolution', () => {
     setSiteLocale('zh-TW')
     await seedUser('admin', 'admin')
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-    const { createNotificationWithRecipients } = await import('@kobato/db/operations/notification.ts')
-    const { sendNotificationEmail } = await import('@kobato/server/domains/notifications/email.ts')
+    const { createNotificationWithRecipients } = await import('@kobato/db/operations/notification')
+    const { sendNotificationEmail } = await import('@kobato/server/domains/notifications/email')
     const adminRows = db.select().from(user).all()
 
     const row = createNotificationWithRecipients(

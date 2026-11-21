@@ -1,7 +1,7 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
+import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@kobato/settings/socials'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema'
 import { z } from 'zod'
 
 export const socialsValidationMessages = {

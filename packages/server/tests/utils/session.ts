@@ -1,4 +1,4 @@
-import type { BlogSession, BlogSessionData, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSession, BlogSessionData, SessionUser } from '@kobato/server/domains/auth/session-storage'
 
 import { createSession } from 'react-router'
 

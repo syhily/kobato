@@ -1,13 +1,13 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { contentBootstrapContract } from '@kobato/api/content.ts'
-import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope.ts'
-import { uiMessagesForScope } from '@kobato/i18n/catalog.ts'
-import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
-import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render.ts'
-import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'
-import { implementPublic } from '@kobato/server/http/orpc-base.ts'
-import { parseThemeCookie } from '@kobato/utils/theme-cookie.ts'
+import { contentBootstrapContract } from '@kobato/api/content'
+import { uiMessagesForScope } from '@kobato/i18n/catalog'
+import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
+import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render'
+import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks'
+import { implementPublic } from '@kobato/server/http/orpc-base'
+import { parseThemeCookie } from '@kobato/utils/theme-cookie'
 
 function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBundle {
   return { ...redactSecretsFromBundle(bundle), observability: null }

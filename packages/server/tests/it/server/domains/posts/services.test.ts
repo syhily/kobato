@@ -1,20 +1,20 @@
-import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
-import type { SidebarSettings } from '@kobato/settings/types.ts'
+import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
+import type { SidebarSettings } from '@kobato/settings/types'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalParagraph,
   stubMusicResolver,
-} from '@kobato/server/tests/utils/lexical.ts'
-import { adminUser } from '@kobato/server/tests/utils/session.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/tests/utils/lexical'
+import { adminUser } from '@kobato/server/tests/utils/session'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -94,7 +94,7 @@ async function linkTag(postId: number, tagId: number): Promise<void> {
 
 describe('posts/services/admin-query — listPostsForAdmin', () => {
   it('returns an empty result when there are no posts', async () => {
-    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     const r = await listPostsForAdmin(db, {})
     expect(r.posts).toEqual([])
     expect(r.total).toBe(0)
@@ -102,7 +102,7 @@ describe('posts/services/admin-query — listPostsForAdmin', () => {
   it('returns posts + total', async () => {
     await seedPost({ slug: 'a', publishedRevisionId: 1 })
     await seedPost({ slug: 'b', publishedRevisionId: 1 })
-    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     const r = await listPostsForAdmin(db, { offset: 0, limit: 10 })
     expect(r.total).toBe(2)
     expect(r.posts).toHaveLength(2)
@@ -110,7 +110,7 @@ describe('posts/services/admin-query — listPostsForAdmin', () => {
   it('filters by lifecycle=draft', async () => {
     await seedPost({ slug: 'pub', published: true, publishedRevisionId: 1 })
     await seedPost({ slug: 'drf', published: false })
-    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { listPostsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     const r = await listPostsForAdmin(db, { lifecycle: 'draft' })
     expect(r.total).toBe(1)
   })
@@ -118,13 +118,13 @@ describe('posts/services/admin-query — listPostsForAdmin', () => {
 
 describe('posts/services/admin-query — getPostDetailForAdmin', () => {
   it('throws NOT_FOUND when the post does not exist', async () => {
-    const { getPostDetailForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { getPostDetailForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     await expect(getPostDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
   it('returns the post with revision + tags', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     const pid = await seedPost({ slug: 'det', publishedRevisionId: revId })
-    const { getPostDetailForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { getPostDetailForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     const r = await getPostDetailForAdmin(db, pid)
     expect(r?.post.slug).toBe('det')
   })
@@ -135,7 +135,7 @@ describe('posts/services/admin-query — listRevisionsForAdmin', () => {
     const pid = await seedPost({ slug: 'rev' })
     await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft', body: emptyLexicalBody() })
     await seedContent({ type: 'post', ownerId: pid, revisionNo: 2, status: 'published', body: emptyLexicalBody() })
-    const { listRevisionsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query.ts')
+    const { listRevisionsForAdmin } = await import('@kobato/server/domains/posts/services/admin-query')
     const rows = await listRevisionsForAdmin(db, pid)
     expect(rows).toHaveLength(2)
   })
@@ -143,15 +143,15 @@ describe('posts/services/admin-query — listRevisionsForAdmin', () => {
 
 describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
   it('returns null when the slug does not exist', async () => {
-    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     expect(await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'nope', adminUser())).toBeNull()
   })
   it('returns the published revision when no draft exists', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'prev', publishedRevisionId: revId })
-    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'prev', adminUser())
     expect(r?.preview.slug).toBe('prev')
     expect(r?.hasNewerDraft).toBe(false)
@@ -159,8 +159,8 @@ describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
   it('returns the draft when one exists', async () => {
     const pid = await seedPost({ slug: 'dr', publishedRevisionId: null })
     await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft' })
-    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { loadDraftPreviewBySlug } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'dr', adminUser())
     expect(r?.hasNewerDraft).toBe(true)
   })
@@ -168,14 +168,14 @@ describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
 
 describe('posts/services/search-index — removePostIndex', () => {
   it('deletes the search index row without error', async () => {
-    const { removePostIndex } = await import('@kobato/server/domains/posts/services/search-index.ts')
+    const { removePostIndex } = await import('@kobato/server/domains/posts/services/search-index')
     expect(() => removePostIndex(db, 9999)).not.toThrow()
   })
 })
 
 describe('posts/services/search-reindex — reindexSearchBatch', () => {
   it('returns processed=0 when no posts match', async () => {
-    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex.ts')
+    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex')
     const r = await reindexSearchBatch(db)
     expect(r.processed).toBe(0)
     expect(r.total).toBe(0)
@@ -189,7 +189,7 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
       bodyText: 'hi',
     })
     await seedPost({ slug: 'idx', publishedRevisionId: revId })
-    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex.ts')
+    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex')
     const r = await reindexSearchBatch(db)
     expect(r.processed).toBe(1)
     expect(r.failed).toBe(0)
@@ -209,7 +209,7 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
       ],
     })
     await seedPost({ slug: 'idx-legacy', publishedRevisionId: revId })
-    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex.ts')
+    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex')
     const r = await reindexSearchBatch(db)
     expect(r.processed).toBe(0)
     expect(r.failed).toBe(1)
@@ -224,7 +224,7 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
     })
     await seedPost({ slug: 'a', publishedRevisionId: revId })
     await seedPost({ slug: 'b', publishedRevisionId: revId })
-    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex.ts')
+    const { reindexSearchBatch } = await import('@kobato/server/domains/posts/services/search-reindex')
     const r = await reindexSearchBatch(db, { batchSize: 1, offset: 0 })
     expect(r.processed).toBe(1)
     expect(r.total).toBe(2)
@@ -234,14 +234,14 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
 
 describe('posts/services/mutate — createPost', () => {
   it('creates a new draft post with slug derived from title', async () => {
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     const dto = await createPost(db, { title: 'Hello World' }, null)
     expect(dto.slug).toBe('hello-world')
     expect(dto.published).toBe(false)
   })
   it('throws CONFLICT on duplicate slug', async () => {
     await seedPost({ slug: 'taken' })
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     await expect(createPost(db, { title: 'Taken' }, null)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -250,34 +250,34 @@ describe('posts/services/mutate — createPost', () => {
 
 describe('posts/services/mutate — updatePostMeta', () => {
   it('updates title and slug together', async () => {
-    const { createPost, updatePostMeta } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost, updatePostMeta } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Old Title' }, null)
     const dto = await updatePostMeta(db, { id: Number(created.id), title: 'New Title' })
     expect(dto.title).toBe('New Title')
     expect(dto.slug).toBe('new-title')
   })
   it('throws BAD_REQUEST when id is missing', async () => {
-    const { updatePostMeta } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { updatePostMeta } = await import('@kobato/server/domains/posts/services/mutate')
     await expect(updatePostMeta(db, { title: 'X' })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
   })
 })
 
 describe('posts/services/mutate — deletePost / restorePost / unpublishPost', () => {
   it('soft-deletes a post', async () => {
-    const { createPost, deletePost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost, deletePost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Delete' }, null)
     const r = await deletePost(db, Number(created.id))
     expect(r.deleted).toBe(true)
   })
   it('restores a soft-deleted post', async () => {
-    const { createPost, deletePost, restorePost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost, deletePost, restorePost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Restore' }, null)
     await deletePost(db, Number(created.id))
     const r = await restorePost(db, Number(created.id))
     expect(r.restored).toBe(true)
   })
   it('unpublishes a published post', async () => {
-    const { createPost, unpublishPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost, unpublishPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Unpublish' }, null)
     await db
       .update(postMetaTable)
@@ -290,10 +290,10 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
 
 describe('content/lifecycle (post adapter) — saveBody draft / publish', () => {
   it('saves a draft revision for an existing post', async () => {
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Draft Me' }, null)
-    const { saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { saveBody } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const r = await saveBody(
       db,
       postLifecycleAdapter,
@@ -308,10 +308,10 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
     expect(r.status).toBe('saved')
   })
   it('publishes the latest revision', async () => {
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Publish Me' }, null)
-    const { saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { saveBody } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const r = await saveBody(
       db,
       postLifecycleAdapter,
@@ -326,7 +326,7 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
     expect(r.status).toBe('saved')
   })
   it('audits a force save against the latest revision of any status (not just drafts)', async () => {
-    const { createPost } = await import('@kobato/server/domains/posts/services/mutate.ts')
+    const { createPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Force Audit' }, null)
     const pid = Number(created.id)
     await seedContent({
@@ -336,8 +336,8 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
       status: 'published',
       clientRevisionToken: '00000000-0000-4000-8000-000000000042',
     })
-    const { saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter.ts')
+    const { saveBody } = await import('@kobato/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@kobato/server/domains/posts/services/lifecycle-adapter')
     const spy = vi.spyOn(postLifecycleAdapter, 'recordForceOverwrite')
     try {
       const r = await saveBody(
@@ -365,9 +365,9 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
 describe('posts/services/search-index — indexPost', () => {
   it('inserts a search index row with no embedding', async () => {
     const pid = await seedPost({ slug: 'idx-post' })
-    const { indexPost } = await import('@kobato/server/domains/posts/services/search-index.ts')
+    const { indexPost } = await import('@kobato/server/domains/posts/services/search-index')
     await indexPost(db, pid, 'Title', 'Summary', 'body')
-    const { postSearchIndex } = await import('@kobato/db/schema/content.ts')
+    const { postSearchIndex } = await import('@kobato/db/schema/content')
     const rows = await db.select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('body')
@@ -377,54 +377,54 @@ describe('posts/services/search-index — indexPost', () => {
 describe('posts/services/single — findPostMetaById / BySlug / BySlugForUpdate / PublicBySlug', () => {
   it('finds a row by id', async () => {
     const id = await seedPost({ slug: 'find-id' })
-    const { findPostMetaById } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostMetaById } = await import('@kobato/server/domains/posts/services/single')
     const r = await findPostMetaById(db, id)
     expect(r?.slug).toBe('find-id')
   })
   it('finds a row by slug', async () => {
     await seedPost({ slug: 'find-slug' })
-    const { findPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single')
     const r = await findPostMetaBySlug(db, 'find-slug')
     expect(r).not.toBeNull()
   })
   it('finds a row by slug with FOR UPDATE', async () => {
     await seedPost({ slug: 'for-update' })
-    const { findPostMetaBySlugForUpdate } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostMetaBySlugForUpdate } = await import('@kobato/server/domains/posts/services/single')
     const r = await findPostMetaBySlugForUpdate(db, 'for-update')
     expect(r).not.toBeNull()
   })
   it('skips soft-deleted rows in the public lookup', async () => {
     await seedPost({ slug: 'pub-deleted', deletedAt: new Date() })
-    const { findPublicPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPublicPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single')
     expect(await findPublicPostMetaBySlug(db, 'pub-deleted')).toBeNull()
   })
   it('returns null when the slug does not exist', async () => {
-    const { findPublicPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPublicPostMetaBySlug } = await import('@kobato/server/domains/posts/services/single')
     expect(await findPublicPostMetaBySlug(db, 'nope')).toBeNull()
   })
 })
 
 describe('posts/services/single — findPostBySlug', () => {
   it('returns null when slug does not exist', async () => {
-    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single')
     expect(await findPostBySlug(db, 'nope')).toBeNull()
   })
   it('returns null for a soft-deleted row', async () => {
     await seedPost({ slug: 'del', deletedAt: new Date() })
-    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single')
     expect(await findPostBySlug(db, 'del')).toBeNull()
   })
   it('returns the post with body when published + revision exists', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'full', publishedRevisionId: revId })
-    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single')
     const r = await findPostBySlug(db, 'full')
     expect(r?.id).toBe(String(pid))
   })
   it('returns null for a scheduled post (publishedAt in the future)', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'future', publishedRevisionId: revId, publishedAt: new Date('2099-01-01') })
-    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single.ts')
+    const { findPostBySlug } = await import('@kobato/server/domains/posts/services/single')
     expect(await findPostBySlug(db, 'future')).toBeNull()
   })
 })
@@ -433,7 +433,7 @@ describe('posts/services/public-query — listPublicPosts', () => {
   it('applies limit + offset', async () => {
     await seedPost({ slug: 'a', publishedRevisionId: 1, firstPublishedAt: new Date('2026-01-01') })
     await seedPost({ slug: 'b', publishedRevisionId: 1, firstPublishedAt: new Date('2026-02-01') })
-    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query')
     const rows = await listPublicPosts(db, { limit: 1 })
     expect(rows).toHaveLength(1)
   })
@@ -442,7 +442,7 @@ describe('posts/services/public-query — listPublicPosts', () => {
     const lifeId = await seedCategory('life')
     await seedPost({ slug: 'a', publishedRevisionId: 1, categoryId: techId })
     await seedPost({ slug: 'b', publishedRevisionId: 1, categoryId: lifeId })
-    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query')
     const rows = await listPublicPosts(db, { categoryId: techId })
     expect(rows).toHaveLength(1)
   })
@@ -452,7 +452,7 @@ describe('posts/services/public-query — countPublicPosts', () => {
   it('counts rows matching filters', async () => {
     await seedPost({ slug: 'a', publishedRevisionId: 1 })
     await seedPost({ slug: 'b', publishedRevisionId: 1 })
-    const { countPublicPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { countPublicPosts } = await import('@kobato/server/domains/posts/services/public-query')
     expect(await countPublicPosts(db)).toBe(2)
   })
 })
@@ -462,13 +462,13 @@ describe('posts/services/public-query — listPublicPostCardsPaginated / listCli
     for (let i = 0; i < 3; i++) {
       await seedPost({ slug: `pg-${i}`, publishedRevisionId: 1 })
     }
-    const { listPublicPostCardsPaginated } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { listPublicPostCardsPaginated } = await import('@kobato/server/domains/posts/services/public-query')
     const cards = await listPublicPostCardsPaginated(db, 1, 2)
     expect(cards).toHaveLength(2)
   })
   it('listClientPosts returns posts with empty body', async () => {
     await seedPost({ slug: 'cl', publishedRevisionId: 1 })
-    const { listClientPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { listClientPosts } = await import('@kobato/server/domains/posts/services/public-query')
     const posts = await listClientPosts(db)
     expect(posts[0]?.slug).toBe('cl')
   })
@@ -476,12 +476,12 @@ describe('posts/services/public-query — listPublicPostCardsPaginated / listCli
 
 describe('posts/services/public-query — getClientPostsWithMetadata', () => {
   it('returns [] for empty input', async () => {
-    const { getClientPostsWithMetadata } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { getClientPostsWithMetadata } = await import('@kobato/server/domains/posts/services/public-query')
     expect(await getClientPostsWithMetadata(db, [], { likes: true, views: true, comments: true })).toEqual([])
   })
   it('joins likes/views/comments metadata per post', async () => {
     const pid = await seedPost({ slug: 'meta', publishedRevisionId: 1 })
-    const { getClientPostsWithMetadata } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { getClientPostsWithMetadata } = await import('@kobato/server/domains/posts/services/public-query')
     const out = await getClientPostsWithMetadata(db, [{ id: String(pid) }], {
       likes: true,
       views: true,
@@ -494,13 +494,13 @@ describe('posts/services/public-query — getClientPostsWithMetadata', () => {
 
 describe('posts/services/featured — selectFeaturePosts', () => {
   it('returns [] when featureEnabled=false', async () => {
-    const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured')
     const out = await selectFeaturePosts(db, 'seed')
     expect(out).toEqual([])
   })
   it('returns pinned posts first when featureEnabled=true', async () => {
-    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {
@@ -513,7 +513,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
       await seedPost({ slug: 'pin1', publishedRevisionId: 1, pinnedAt: new Date('2026-01-01'), cover: '/c.png' })
       await seedPost({ slug: 'pin2', publishedRevisionId: 1, pinnedAt: new Date('2026-01-02'), cover: '/c.png' })
       await seedPost({ slug: 'pin3', publishedRevisionId: 1, pinnedAt: new Date('2026-01-03'), cover: '/c.png' })
-      const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+      const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured')
       const out = await selectFeaturePosts(db, 'seed')
       expect(out).toHaveLength(3)
     } finally {
@@ -521,8 +521,8 @@ describe('posts/services/featured — selectFeaturePosts', () => {
     }
   })
   it('falls back to recent posts when fewer than 3 are pinned', async () => {
-    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot.ts')
-    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+    const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@kobato/settings/snapshot')
+    const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
     const tweaked = {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: {
@@ -541,7 +541,7 @@ describe('posts/services/featured — selectFeaturePosts', () => {
           firstPublishedAt: new Date('2025-01-01'),
         })
       }
-      const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+      const { selectFeaturePosts } = await import('@kobato/server/domains/posts/services/featured')
       const out = await selectFeaturePosts(db, 'seed')
       expect(out).toHaveLength(3)
       expect(out[0]?.slug).toBe('pin1')
@@ -554,13 +554,13 @@ describe('posts/services/featured — selectFeaturePosts', () => {
 describe('posts/services/featured — selectSidebarPosts', () => {
   it('returns [] when the recent-posts widget is disabled or its count is zero', async () => {
     await seedPost({ slug: 'side', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
     expect(await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 0))).toEqual([])
   })
 
   it('returns posts when published + revision exists', async () => {
     await seedPost({ slug: 'side', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
     const rows = await selectSidebarPosts(db, sidebarSelection())
     expect(rows[0]?.slug).toBe('side')
   })
@@ -569,7 +569,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     await seedPost({ slug: 's1', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
     await seedPost({ slug: 's2', publishedRevisionId: 2, publishedAt: new Date('2020-01-02') })
     await seedPost({ slug: 's3', publishedRevisionId: 3, publishedAt: new Date('2020-01-03') })
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
 
     const two = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 2))
     expect(two).toHaveLength(2)
@@ -586,7 +586,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     for (let i = 0; i < 8; i++) {
       await seedPost({ slug: `p-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
 
     const first = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
     const second = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
@@ -599,7 +599,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     for (let i = 0; i < 8; i++) {
       await seedPost({ slug: `p-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
 
     const selections = new Set<string>()
     for (const seed of [
@@ -620,7 +620,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     for (let i = 0; i < 6; i++) {
       await seedPost({ slug: `c-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
     const before = await selectSidebarPosts(db, sidebarSelection('post:1|2026-11-08|1', 3))
 
     await seedPost({ slug: 'c-new', publishedRevisionId: 7, publishedAt: new Date('2020-01-01') })
@@ -639,7 +639,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
       client: getDatabaseHandle().client,
       logger: { logQuery: (query) => queries.push(query) },
     })
-    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured.ts')
+    const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
 
     const rows = await selectSidebarPosts(counting, sidebarSelection('post:1|2026-11-08|1', 5))
 
@@ -653,7 +653,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
 describe('posts/services/public-query — listSitemapPosts', () => {
   it('returns rows with slug + dates for published posts', async () => {
     await seedPost({ slug: 'sm', publishedRevisionId: 1 })
-    const { listSitemapPosts } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { listSitemapPosts } = await import('@kobato/server/domains/posts/services/public-query')
     const rows = await listSitemapPosts(db)
     expect(rows[0]?.slug).toBe('sm')
   })
@@ -661,12 +661,12 @@ describe('posts/services/public-query — listSitemapPosts', () => {
 
 describe('posts/services/public-query — getPostsBySlugs', () => {
   it('returns [] for empty slugs', async () => {
-    const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query')
     expect(await getPostsBySlugs(db, [])).toEqual([])
   })
   it('returns posts by slug', async () => {
     await seedPost({ slug: 'slug-a', publishedRevisionId: 1, published: true })
-    const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query.ts')
+    const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query')
     const posts = await getPostsBySlugs(db, ['slug-a'])
     expect(posts).toHaveLength(1)
   })
@@ -686,7 +686,7 @@ describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitle
       publishedAt: new Date('2099-01-01'),
     })
     await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1, categoryId: lifeId })
-    const { listPostTitlesByCategoryId } = await import('@kobato/server/domains/posts/services/taxonomy.ts')
+    const { listPostTitlesByCategoryId } = await import('@kobato/server/domains/posts/services/taxonomy')
     const titles = await listPostTitlesByCategoryId(db, techId)
     expect(titles.sort()).toEqual(['Hidden', 'Scheduled', 'Visible'])
   })
@@ -696,7 +696,7 @@ describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitle
     const draftPid = await seedPost({ slug: 'draft', title: 'Draft', published: false, publishedRevisionId: null })
     await linkTag(livePid, tid)
     await linkTag(draftPid, tid)
-    const { listPostTitlesByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy.ts')
+    const { listPostTitlesByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy')
     expect(await listPostTitlesByTaxonomy(db, 'React')).toEqual(['Live'])
   })
 })
@@ -705,7 +705,7 @@ describe('posts/services/feed — listPublicPostsWithContent', () => {
   it('returns posts with the hydrated published revision', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'feed', publishedRevisionId: revId })
-    const { listPublicPostsWithContent } = await import('@kobato/server/domains/posts/services/feed.ts')
+    const { listPublicPostsWithContent } = await import('@kobato/server/domains/posts/services/feed')
     const posts = await listPublicPostsWithContent(db)
     expect(posts[0]?.slug).toBe('feed')
   })

@@ -1,5 +1,5 @@
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { Image, RawImage } from '@kobato/web-public/ui/widgets/Image.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { Image, RawImage } from '@kobato/web-public/ui/widgets/Image'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: Image', () => {

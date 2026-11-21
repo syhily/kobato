@@ -1,4 +1,4 @@
-import { createInflight } from '@kobato/server/infra/cache/inflight.ts'
+import { createInflight } from '@kobato/server/infra/cache/inflight'
 import { describe, expect, it } from 'vitest'
 
 describe('shared/inflight — createInflight', () => {

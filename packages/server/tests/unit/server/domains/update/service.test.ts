@@ -1,18 +1,18 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const gateMocks = vi.hoisted(() => ({ evaluateSelfUpdateGate: vi.fn() }))
 const releaseMocks = vi.hoisted(() => ({ fetchLatestRelease: vi.fn() }))
 const jobMocks = vi.hoisted(() => ({ startUpdateJob: vi.fn() }))
 
-vi.mock('@kobato/server/infra/sea/self-update-gate.ts', () => ({
+vi.mock('@kobato/server/infra/sea/self-update-gate', () => ({
   evaluateSelfUpdateGate: gateMocks.evaluateSelfUpdateGate,
 }))
-vi.mock('@kobato/server/domains/update/release.ts', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))
-vi.mock('@kobato/server/domains/update/job.ts', () => ({ startUpdateJob: jobMocks.startUpdateJob }))
-vi.mock('@kobato/distribution/app.ts', () => ({ APP_VERSION: '6.4.0' }))
+vi.mock('@kobato/server/domains/update/release', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))
+vi.mock('@kobato/server/domains/update/job', () => ({ startUpdateJob: jobMocks.startUpdateJob }))
+vi.mock('@kobato/distribution/app', () => ({ APP_VERSION: '6.4.0' }))
 
-const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@kobato/server/domains/update/service.ts')
+const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@kobato/server/domains/update/service')
 
 function release(tagName: string) {
   return {

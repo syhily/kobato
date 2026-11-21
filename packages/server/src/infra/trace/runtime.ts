@@ -1,4 +1,4 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type {
   ActiveTraceIds,
   Counter,
@@ -9,8 +9,8 @@ import type {
   SpanOptions,
   TraceDelegate,
   UpDownCounter,
-} from '@kobato/server/infra/trace/facade.ts'
-import type { LogPipeline } from '@kobato/server/infra/trace/logs-runtime.ts'
+} from '@kobato/server/infra/trace/facade'
+import type { LogPipeline } from '@kobato/server/infra/trace/logs-runtime'
 import type {
   Context,
   Counter as OtelCounter,
@@ -25,33 +25,29 @@ import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
 import type { MetricReader } from '@opentelemetry/sdk-metrics'
 import type { SpanExporter } from '@opentelemetry/sdk-trace'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { clearLogSink, setLogSink } from '@kobato/server/infra/logger/sink.ts'
-import {
-  activateExportHealth,
-  deactivateExportHealth,
-  observeExporter,
-} from '@kobato/server/infra/trace/export-health.ts'
-import { installTraceDelegate, uninstallTraceDelegate } from '@kobato/server/infra/trace/facade.ts'
-import { activateFrontendGate, deactivateFrontendGate } from '@kobato/server/infra/trace/frontend-gate.ts'
-import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
+import { getLogger } from '@kobato/server/infra/logger'
+import { clearLogSink, setLogSink } from '@kobato/server/infra/logger/sink'
+import { activateExportHealth, deactivateExportHealth, observeExporter } from '@kobato/server/infra/trace/export-health'
+import { installTraceDelegate, uninstallTraceDelegate } from '@kobato/server/infra/trace/facade'
+import { activateFrontendGate, deactivateFrontendGate } from '@kobato/server/infra/trace/frontend-gate'
+import { buildLogPipeline } from '@kobato/server/infra/trace/logs-runtime'
 import {
   isAllowedMetricName,
   METRIC,
   metricKind,
   sanitizeMetricAttributes,
   sanitizeMetricValue,
-} from '@kobato/server/infra/trace/metrics.ts'
+} from '@kobato/server/infra/trace/metrics'
 import {
   RUM_PRIVACY_VERIFY_TIMEOUT_MS,
   type FrontendPipelineVerifier,
   verifyRumPrivacyPipeline,
-} from '@kobato/server/infra/trace/pipeline-verify.ts'
-import { traceResourceAttributes } from '@kobato/server/infra/trace/resource.ts'
-import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@kobato/server/infra/trace/sanitize.ts'
-import { startSqliteQueryTrace, stopSqliteQueryTrace } from '@kobato/server/infra/trace/sqlite.ts'
+} from '@kobato/server/infra/trace/pipeline-verify'
+import { traceResourceAttributes } from '@kobato/server/infra/trace/resource'
+import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@kobato/server/infra/trace/sanitize'
+import { startSqliteQueryTrace, stopSqliteQueryTrace } from '@kobato/server/infra/trace/sqlite'
 import { context, SpanKind as OtelSpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { W3CTraceContextPropagator } from '@opentelemetry/core'

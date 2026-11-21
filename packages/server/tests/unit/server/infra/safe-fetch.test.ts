@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net'
 import type { Mock } from 'vitest'
 
-import { createDialLookup, safeFetch } from '@kobato/server/infra/safe-fetch.ts'
+import { createDialLookup, safeFetch } from '@kobato/server/infra/safe-fetch'
 import { lookup } from 'node:dns/promises'
 import { createServer } from 'node:http'
 import { Agent, fetch as undiciFetch } from 'undici'

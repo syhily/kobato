@@ -1,9 +1,9 @@
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/contracts/comments.ts'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/contracts/comments'
 
-import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
-import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel.tsx'
-import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard.tsx'
-import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render.tsx'
+import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
+import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel'
+import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const approvalItem: AdminPendingItemDto = {

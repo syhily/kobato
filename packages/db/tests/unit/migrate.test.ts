@@ -6,7 +6,7 @@ vi.mock('drizzle-orm/node-sqlite/migrator', () => ({
   migrate: migrateMock,
 }))
 
-const { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } = await import('@kobato/db/migrate.ts')
+const { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } = await import('@kobato/db/migrate')
 
 describe('db migrations', () => {
   beforeEach(() => {

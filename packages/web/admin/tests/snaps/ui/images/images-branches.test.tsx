@@ -1,10 +1,10 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
-import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
+import type { AdminImageDto } from '@kobato/contracts/images'
+import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView.tsx'
-import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView'
+import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -40,7 +40,7 @@ const controller = vi.hoisted<ControllerShape>(() => ({
   activeFilters: [],
 }))
 
-const imagesReducerMod = await import('@kobato/web-admin/ui/images/use-images-reducer.ts')
+const imagesReducerMod = await import('@kobato/web-admin/ui/images/use-images-reducer')
 vi.spyOn(imagesReducerMod, 'useImagesReducer').mockImplementation((() => controller) as never)
 
 afterAll(() => {

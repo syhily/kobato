@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults.ts'
+import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults'
 import { z } from 'zod'
 
 export const rateLimitBucketMessages = {

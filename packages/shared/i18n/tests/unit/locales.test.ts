@@ -7,7 +7,7 @@ import {
   normalizeAppLocale,
   toOpenGraphLocale,
   type AppLocale,
-} from '@kobato/i18n/locales.ts'
+} from '@kobato/i18n/locales'
 import { describe, expect, it } from 'vitest'
 
 describe('i18n/locales', () => {

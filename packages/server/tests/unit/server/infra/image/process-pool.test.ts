@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const { WorkerPool, getProcessPool, stopProcessPool, __setWorkerFactory, __resetWorkerFactory } =
-  await import('@kobato/server/infra/image/process-pool.ts')
+  await import('@kobato/server/infra/image/process-pool')
 
 class FakeWorker extends EventEmitter {
   posted: Array<{ id: number; type: string; input: unknown }> = []

@@ -1,4 +1,4 @@
-import { computePageWindow, DENSE_THRESHOLD } from '@kobato/ui/lib/pagination.ts'
+import { computePageWindow, DENSE_THRESHOLD } from '@kobato/ui/lib/pagination'
 import { describe, expect, it } from 'vitest'
 
 describe('computePageWindow', () => {

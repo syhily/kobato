@@ -1,5 +1,5 @@
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -11,17 +11,17 @@ const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 const zoomLock = vi.hoisted(() => ({ acquire: vi.fn(), release: vi.fn() }))
 
-vi.mock('@kobato/web-client/editor/inkling-labels.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels.ts')>()
+vi.mock('@kobato/web-client/editor/inkling-labels', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 
-vi.mock('@kobato/web-client/lib/viewport-zoom-lock.ts', () => ({
+vi.mock('@kobato/web-client/lib/viewport-zoom-lock', () => ({
   acquireViewportZoomLock: zoomLock.acquire,
   releaseViewportZoomLock: zoomLock.release,
 }))
 
-vi.mock('@kobato/web-public/ui/comments/CommentBodyEditor.tsx', () => ({
+vi.mock('@kobato/web-public/ui/comments/CommentBodyEditor', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
       {labels?.['placeholder.editor'] ?? 'english-defaults'}

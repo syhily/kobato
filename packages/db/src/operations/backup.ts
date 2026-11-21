@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BackupRow, NewBackup } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { BackupRow, NewBackup } from '@kobato/db/types'
 
-import { backup } from '@kobato/db/schema/backup.ts'
+import { backup } from '@kobato/db/schema/backup'
 import { desc, eq, lt } from 'drizzle-orm'
 
 export async function insertBackup(db: Database, values: NewBackup): Promise<BackupRow> {

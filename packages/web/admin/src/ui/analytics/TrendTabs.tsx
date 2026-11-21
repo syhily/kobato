@@ -1,12 +1,12 @@
-import { Card, CardContent } from '@kobato/ui/components/card.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
-import { Heatmap } from '@kobato/web-admin/ui/analytics/Heatmap.tsx'
-import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels.ts'
-import { type AnalyticsScope, type HeatmapMetric } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
-import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
+import { Card, CardContent } from '@kobato/ui/components/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context'
+import { Heatmap } from '@kobato/web-admin/ui/analytics/Heatmap'
+import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels'
+import { type AnalyticsScope, type HeatmapMetric } from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart'
 
 const METRIC_OPTIONS: readonly HeatmapMetric[] = ['visits', 'visitors']
 

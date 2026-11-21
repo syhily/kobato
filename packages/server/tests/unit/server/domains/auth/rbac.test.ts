@@ -1,4 +1,4 @@
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
 import {
   canEditImage,
@@ -11,8 +11,8 @@ import {
   requireRole,
   requireUserRole,
   type ViewerIdentity,
-} from '@kobato/server/domains/auth/rbac.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/server/domains/auth/rbac'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
 function viewer(role: 'admin' | 'author' | 'visitor', id = '1'): ViewerIdentity {

@@ -1,12 +1,12 @@
-import { Button } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   buildAnalyticsInput,
   type AnalyticsScope,
   type AnalyticsState,
-} from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
-import { orpc } from '@kobato/web-client/api/client.ts'
+} from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { orpc } from '@kobato/web-client/api/client'
 import { DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'

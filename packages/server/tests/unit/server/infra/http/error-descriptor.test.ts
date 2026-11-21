@@ -1,7 +1,7 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 
-import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import {
   descriptorFor,
   descriptorMessage,
@@ -11,9 +11,9 @@ import {
   rawMessageDescriptor,
   zodIssueToWire,
   zodIssuesToWire,
-} from '@kobato/server/infra/http/error-descriptor.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { rateLimitBucketMessages } from '@kobato/settings/rate-limit-bucket.ts'
+} from '@kobato/server/infra/http/error-descriptor'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { rateLimitBucketMessages } from '@kobato/settings/rate-limit-bucket'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

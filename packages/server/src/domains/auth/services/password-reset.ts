@@ -1,26 +1,26 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { User } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { User } from '@kobato/db/types'
 
 import {
   MAX_PASSWORD_BYTES,
   MIN_PASSWORD_LENGTH,
   PASSWORD_COMPLEXITY_RE,
   passwordWithinBcryptLimit,
-} from '@kobato/auth/security.ts'
-import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
-import { establishLoginSession } from '@kobato/server/domains/auth/primitives.ts'
+} from '@kobato/auth/security'
+import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@kobato/db/operations/user'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service'
+import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import {
   authFlowError,
   authFlowSuccess,
   type AuthFlowResult,
   type SigninFlowContext,
-} from '@kobato/server/domains/auth/services/shared.ts'
-import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens.ts'
-import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
-import { sendPasswordReset } from '@kobato/server/infra/email/sender.ts'
-import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/auth/services/shared'
+import { consumeToken, issueResetToken, revokeTokensFor } from '@kobato/server/domains/auth/verification-tokens'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin'
+import { sendPasswordReset } from '@kobato/server/infra/email/sender'
+import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@kobato/server/infra/rate-limit'
 import bcrypt from 'bcryptjs'
 
 export interface PasswordResetFlowDeps {

@@ -1,6 +1,6 @@
-import { WechatIcon } from '@kobato/ui/icons/brand.tsx'
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog.tsx'
+import { WechatIcon } from '@kobato/ui/icons/brand'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: QRDialog', () => {

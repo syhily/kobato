@@ -1,8 +1,8 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   parseTextFilterValue,
   textFilterValueLabel as textFilterValueLabelBase,
-} from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import { describe, expect, it } from 'vitest'
 
 const textFilterValueLabel = (

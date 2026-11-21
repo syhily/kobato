@@ -10,11 +10,11 @@
 // values, calendar URL parts, feed/sitemap/API wire formats, analytics bucket labels
 // — machine formats stay machine formats.
 
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { Locale as DateFnsLocale } from 'date-fns'
 
 import { TZDate } from '@date-fns/tz'
-import { createBoundedMap } from '@kobato/utils/memo.ts'
+import { createBoundedMap } from '@kobato/utils/memo'
 import { enUS, zhCN, zhHK, zhTW } from 'date-fns/locale'
 
 const DATE_FNS_LOCALES = {

@@ -1,6 +1,6 @@
-import { makeCategory } from '@kobato/contracts/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody.tsx'
+import { makeCategory } from '@kobato/contracts/tests/utils/catalog'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: CategoriesBody', () => {

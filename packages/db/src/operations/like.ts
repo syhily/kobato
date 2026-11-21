@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget, EntityType } from '@kobato/db/target.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget, EntityType } from '@kobato/db/target'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { like, metric } from '@kobato/db/schema/metric.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { like, metric } from '@kobato/db/schema/metric'
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
 function whereLikeTarget(target: EntityTarget) {

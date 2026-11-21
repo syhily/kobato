@@ -1,4 +1,4 @@
-import { evaluateSelfUpdateGate, type SelfUpdateGateEnvironment } from '@kobato/server/infra/sea/self-update-gate.ts'
+import { evaluateSelfUpdateGate, type SelfUpdateGateEnvironment } from '@kobato/server/infra/sea/self-update-gate'
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

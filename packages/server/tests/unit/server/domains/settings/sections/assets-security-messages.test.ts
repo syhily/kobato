@@ -1,6 +1,6 @@
-import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor.ts'
-import { assetsValidationMessages, assetsWriteSchema } from '@kobato/settings/sections/assets.ts'
-import { securitySchema, securityValidationMessages } from '@kobato/settings/sections/security.ts'
+import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor'
+import { assetsValidationMessages, assetsWriteSchema } from '@kobato/settings/sections/assets'
+import { securitySchema, securityValidationMessages } from '@kobato/settings/sections/security'
 import { describe, expect, it } from 'vitest'
 
 function issueOf(

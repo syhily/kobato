@@ -1,24 +1,24 @@
 import type { ReactNode } from 'react'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { asRoute } from '@kobato/test/route-test-utils'
 // SSR-render the editor route Component wrappers (loader gate, navigate wiring, layout
 // context). The TipTap editors cannot fully SSR, so assert the wrapper renders without
 // throwing.
-import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-import EditorLayoutRouteRaw from '@/routes/editor/layout.tsx'
-import PageEditRouteRaw from '@/routes/editor/page/edit.tsx'
-import PageNewRouteRaw from '@/routes/editor/page/new.tsx'
-import PostAnalyticsRouteRaw from '@/routes/editor/post/analytics.tsx'
-import PostEditRouteRaw from '@/routes/editor/post/edit.tsx'
-import PostNewRouteRaw from '@/routes/editor/post/new.tsx'
+import EditorLayoutRouteRaw from '@/routes/editor/layout'
+import PageEditRouteRaw from '@/routes/editor/page/edit'
+import PageNewRouteRaw from '@/routes/editor/page/new'
+import PostAnalyticsRouteRaw from '@/routes/editor/post/analytics'
+import PostEditRouteRaw from '@/routes/editor/post/edit'
+import PostNewRouteRaw from '@/routes/editor/post/new'
 
 const EditorLayoutRoute = asRoute(EditorLayoutRouteRaw)
 const PageEditRoute = asRoute(PageEditRouteRaw)

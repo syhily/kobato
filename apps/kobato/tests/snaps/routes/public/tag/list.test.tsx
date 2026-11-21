@@ -1,9 +1,9 @@
-import { makePost } from '@kobato/contracts/tests/utils/catalog.ts'
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makePost } from '@kobato/contracts/tests/utils/catalog'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import TagListRoute from '@/routes/public/tag/list.tsx'
+import TagListRoute from '@/routes/public/tag/list'
 
 describe('snapshot: routes/public/tag/list', () => {
   it('renders the tag listing route', () => {

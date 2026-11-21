@@ -1,10 +1,10 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database.ts'
+import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { analyzeDatabase } from '@kobato/db/operations/maintenance.ts'
-import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore.ts'
-import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
-import { restartServer } from '@kobato/server/infra/lifecycle.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { analyzeDatabase } from '@kobato/db/operations/maintenance'
+import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore'
+import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
+import { restartServer } from '@kobato/server/infra/lifecycle'
+import { getLogger } from '@kobato/server/infra/logger'
 
 export interface RestoreCompletionDeps {
   reopenDatabase(): Promise<DatabaseHandle>

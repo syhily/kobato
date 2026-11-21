@@ -1,15 +1,15 @@
 // @vitest-environment happy-dom
 
-import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header.tsx'
+import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header'
 
-import { diffHtmlStructures } from '@kobato/test/dom-structure.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { diffHtmlStructures } from '@kobato/test/dom-structure'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout.ts')
-const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout.ts'), 'useLogout')
+const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout')
+const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout'), 'useLogout')
 void realUseLogout
 useLogoutSpy.mockImplementation((() => vi.fn()) as never)
 
@@ -17,8 +17,8 @@ afterAll(() => {
   useLogoutSpy.mockRestore()
 })
 
-const { LazyUserMenu } = await import('@kobato/web-public/ui/chrome/LazyUserMenu.tsx')
-const { UserMenu } = await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
+const { LazyUserMenu } = await import('@kobato/web-public/ui/chrome/LazyUserMenu')
+const { UserMenu } = await import('@kobato/web-public/ui/chrome/UserMenu')
 
 const currentUser: HeaderCurrentUser = { id: '1', name: '管理员', role: 'admin' }
 
@@ -53,7 +53,7 @@ describe('ui/public/chrome/LazyUserMenu', () => {
   })
 
   it('mounts the real menu OPEN on the first click and keeps it mounted after close', async () => {
-    await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
+    await import('@kobato/web-public/ui/chrome/UserMenu')
 
     renderLazy(1)
     fireEvent.click(screen.getByLabelText('用户菜单，1 条未读消息'))
@@ -68,7 +68,7 @@ describe('ui/public/chrome/LazyUserMenu', () => {
   }, 15_000)
 
   it('moves focus into the open menu after a keyboard activation (Base UI virtual focus)', async () => {
-    await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
+    await import('@kobato/web-public/ui/chrome/UserMenu')
 
     renderLazy()
     fireEvent.click(screen.getByLabelText('用户菜单'), { detail: 0 })

@@ -1,19 +1,19 @@
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import * as lifecycle from '@kobato/server/domains/content/lifecycle.ts'
-import * as adminQuery from '@kobato/server/domains/pages/services/admin-query.ts'
-import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
-import * as mutate from '@kobato/server/domains/pages/services/mutate.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import * as lifecycle from '@kobato/server/domains/content/lifecycle'
+import * as adminQuery from '@kobato/server/domains/pages/services/admin-query'
+import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
+import * as mutate from '@kobato/server/domains/pages/services/mutate'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalHeading,
   lexicalImage,
   stubMusicResolver,
-} from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

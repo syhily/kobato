@@ -1,12 +1,12 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch.ts'
+import type { Database } from '@kobato/db/database'
+import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch'
 
-import { findMusicByPlayerId } from '@kobato/db/operations/music.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { redactUrlForLog } from '@kobato/utils/safe-url.ts'
+import { findMusicByPlayerId } from '@kobato/db/operations/music'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { safeFetch } from '@kobato/server/infra/safe-fetch'
+import { redactUrlForLog } from '@kobato/utils/safe-url'
 import { randomBytes } from 'node:crypto'
 
 const log = getLogger('music.service')

@@ -1,14 +1,14 @@
-import type { MetingSearchHit } from '@kobato/contracts/music.ts'
+import type { MetingSearchHit } from '@kobato/contracts/music'
 
-import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { AddMusicDialog } from '@kobato/web-admin/ui/music/AddMusicDialog.tsx'
-import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView.tsx'
-import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
-import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
-import { SearchAlbumCard } from '@kobato/web-admin/ui/music/SearchAlbumCard.tsx'
-import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminMusic } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { AddMusicDialog } from '@kobato/web-admin/ui/music/AddMusicDialog'
+import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView'
+import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
+import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context'
+import { SearchAlbumCard } from '@kobato/web-admin/ui/music/SearchAlbumCard'
+import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -47,7 +47,7 @@ const searchHookMock = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/music/use-meting-music-search.ts', () => ({
+vi.mock('@kobato/web-admin/ui/music/use-meting-music-search', () => ({
   useMetingMusicSearch: () => searchHookMock.state,
 }))
 
@@ -110,7 +110,7 @@ vi.mock('motion/react', async () => {
   }
 })
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog', () => import('@kobato/web-admin/tests/utils/dialog'))
 
 function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHit {
   return {

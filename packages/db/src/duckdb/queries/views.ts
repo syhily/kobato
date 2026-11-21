@@ -1,11 +1,11 @@
-import type { ResolvedAnalyticsQuery, ViewsPoint, ViewsSeries } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
-import type { TimeUnit } from '@kobato/utils/date-range.ts'
+import type { ResolvedAnalyticsQuery, ViewsPoint, ViewsSeries } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { TimeUnit } from '@kobato/utils/date-range'
 
-import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'
-import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter.ts'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
-import { pickTimeUnit } from '@kobato/utils/date-range.ts'
+import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
+import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
+import { pickTimeUnit } from '@kobato/utils/date-range'
 import { sql } from 'kysely'
 
 const UNIT_FORMAT: Record<TimeUnit, string> = {

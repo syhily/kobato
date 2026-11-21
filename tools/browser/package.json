@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "scripts": {
     "sea:browser": "node src/sea.ts",

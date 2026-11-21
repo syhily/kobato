@@ -1,7 +1,7 @@
 import type { Hono } from 'hono'
 
-import { wrapFetchWithLeakedResponseHandler } from '@kobato/server/http/leaked-response.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { wrapFetchWithLeakedResponseHandler } from '@kobato/server/http/leaked-response'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 interface FakeApp {

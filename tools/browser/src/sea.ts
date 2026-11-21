@@ -1,6 +1,6 @@
-import { runBrowserSuite } from '@kobato/browser/run.ts'
-import { fail } from '@kobato/pack/sea/exec.ts'
-import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths.ts'
+import { runBrowserSuite } from '@kobato/browser/run'
+import { fail } from '@kobato/pack/sea/exec'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
 import { resolve as resolvePath } from 'node:path'
 
 const arg = process.argv[2]

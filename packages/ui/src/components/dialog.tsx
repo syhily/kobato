@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { XIcon } from 'lucide-react'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {

@@ -1,12 +1,7 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import {
-  isCsrfValidationSkipped,
-  isPathExempt,
-  validateCsrfToken,
-  CSRF_HEADER,
-} from '@kobato/server/domains/auth/csrf.ts'
-import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
+import { isCsrfValidationSkipped, isPathExempt, validateCsrfToken, CSRF_HEADER } from '@kobato/server/domains/auth/csrf'
+import { localizedHttpException } from '@kobato/server/http/localized-http-exception'
 import { createMiddleware } from 'hono/factory'
 
 export const csrfGuard = createMiddleware<Env>(async (c, next) => {

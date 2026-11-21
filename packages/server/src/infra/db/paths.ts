@@ -1,5 +1,5 @@
-import { resolveStoragePath } from '@kobato/db/database.ts'
-import { serverConfig } from '@kobato/server/infra/config.ts'
+import { resolveStoragePath } from '@kobato/db/database'
+import { serverConfig } from '@kobato/server/infra/config'
 
 let testPaths: { database: string; analytics: string } | null = null
 

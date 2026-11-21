@@ -1,11 +1,11 @@
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot'
 import {
   lexicalBodyWith,
   lexicalMusicPlayer,
   lexicalParagraph,
   stubMusicResolver,
-} from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 const META = {

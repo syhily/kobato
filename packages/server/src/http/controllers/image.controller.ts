@@ -1,6 +1,6 @@
-import { imagesContract } from '@kobato/api/images.ts'
-import { resolveImageRef } from '@kobato/server/domains/images/services/resolve.ts'
-import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base.ts'
+import { imagesContract } from '@kobato/api/images'
+import { resolveImageRef } from '@kobato/server/domains/images/services/resolve'
+import { implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 
 const impl = implementPublic(imagesContract).use(resourceRateLimit)
 

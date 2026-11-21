@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import type { DateRange } from '@kobato/utils/date-range.ts'
+import type { DateRange } from '@kobato/utils/date-range'
 
-import { calendarMachineDay } from '@kobato/ui/components/calendar.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker.tsx'
+import { calendarMachineDay } from '@kobato/ui/components/calendar'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

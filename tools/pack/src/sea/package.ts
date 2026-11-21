@@ -1,5 +1,5 @@
-import { fail } from '@kobato/pack/sea/exec.ts'
-import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaDistDir } from '@kobato/pack/sea/paths.ts'
+import { fail } from '@kobato/pack/sea/exec'
+import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaDistDir } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFile, rename, rm, writeFile } from 'node:fs/promises'

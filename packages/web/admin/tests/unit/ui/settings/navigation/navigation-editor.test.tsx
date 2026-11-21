@@ -2,20 +2,20 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { NavigationSettings } from '@kobato/settings/types.ts'
+import type { NavigationSettings } from '@kobato/settings/types'
 
-import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
+import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.fn()
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   resetStatus: vi.fn(),

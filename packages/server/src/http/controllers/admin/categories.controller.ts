@@ -1,13 +1,13 @@
-import { adminCategoriesContract } from '@kobato/api/admin/categories.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { adminCategoriesContract } from '@kobato/api/admin/categories'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   deleteAdminCategory,
   reorderAdminCategories,
   upsertAdminCategory,
-} from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
-import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/taxonomies/categories/services/mutate'
+import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/categories/services/query'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminCategoriesContract)
 

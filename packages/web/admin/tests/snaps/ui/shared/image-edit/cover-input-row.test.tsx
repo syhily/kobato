@@ -1,8 +1,8 @@
-import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-const mod_UploadImageDialog = await import('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx')
+const mod_UploadImageDialog = await import('@kobato/web-admin/ui/shared/image-edit/UploadImageDialog')
 vi.spyOn(mod_UploadImageDialog, 'UploadImageDialog').mockImplementation((() => null) as never)
 
 afterAll(() => {

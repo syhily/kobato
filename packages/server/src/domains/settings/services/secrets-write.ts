@@ -1,9 +1,9 @@
-import type { Setting } from '@kobato/db/types.ts'
-import type { SettingsSection } from '@kobato/settings/sections.ts'
+import type { Setting } from '@kobato/db/types'
+import type { SettingsSection } from '@kobato/settings/sections'
 
-import { isRecord } from '@kobato/server/domains/settings/services/section-patch.ts'
-import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
-import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
+import { isRecord } from '@kobato/server/domains/settings/services/section-patch'
+import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'
+import { SECRET_FIELDS } from '@kobato/settings/secrets'
 
 export function applySectionPatch(
   section: SettingsSection,

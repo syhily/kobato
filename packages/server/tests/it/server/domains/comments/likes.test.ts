@@ -1,8 +1,8 @@
-import { comment } from '@kobato/db/schema/comment.ts'
-import { like, metric } from '@kobato/db/schema/metric.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { bumpPageView, flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { like, metric } from '@kobato/db/schema/metric'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { bumpPageView, flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher'
 import {
   decreaseLikes,
   increaseLikes,
@@ -12,9 +12,9 @@ import {
   resetLikeTokenSweep,
   startLikeTokenSweep,
   validateLikeToken,
-} from '@kobato/server/domains/comments/services/likes.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/comments/services/likes'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

@@ -1,4 +1,4 @@
-import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
+import { getSidebarWidgetCount } from '@kobato/settings/presentation'
 import { describe, expect, it } from 'vitest'
 
 describe('getSidebarWidgetCount', () => {

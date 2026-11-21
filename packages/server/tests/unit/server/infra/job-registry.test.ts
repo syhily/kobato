@@ -10,8 +10,8 @@ const {
   scheduleRegisteredJob,
   setJobHandleGetter,
   startAllRegisteredJobs,
-} = await import('@kobato/server/infra/job-registry.ts')
-const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils.ts')
+} = await import('@kobato/server/infra/job-registry')
+const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
 
 describe('job registry', () => {
   beforeEach(() => {

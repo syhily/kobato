@@ -1,17 +1,17 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RequestContext } from '@kobato/server/http/request-context'
 
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { deriveStatelessCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
-import { adminUser, makeSession } from '@kobato/server/tests/utils/session.ts'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { deriveStatelessCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { adminUser, makeSession } from '@kobato/server/tests/utils/session'
 import { Hono } from 'hono'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const EXISTING_CSRF_COOKIE = 'a'.repeat(64)
 
-const sessionContextModule = await import('@kobato/server/domains/auth/primitives.ts')
-const sessionStorageModule = await import('@kobato/server/domains/auth/session-storage.ts')
-const clientAddressModule = await import('@kobato/server/http/request/client-address.ts')
+const sessionContextModule = await import('@kobato/server/domains/auth/primitives')
+const sessionStorageModule = await import('@kobato/server/domains/auth/session-storage')
+const clientAddressModule = await import('@kobato/server/http/request/client-address')
 
 describe('requestContextMiddleware', () => {
   const fakeDb = getDatabaseHandle().db
@@ -48,7 +48,7 @@ describe('requestContextMiddleware', () => {
     }
     resolveSessionContext.mockImplementation(async () => ({ session, user, dirty: false, ...sessionCtx }) as never)
 
-    const { requestContextMiddleware } = await import('@kobato/server/http/middlewares/request-context.ts')
+    const { requestContextMiddleware } = await import('@kobato/server/http/middlewares/request-context')
     const app = new Hono<Env>()
     app.use(requestContextMiddleware)
     return { app, session, user }
@@ -79,8 +79,8 @@ describe('requestContextMiddleware', () => {
   it('pins the settings bundle and localization from ONE snapshot capture', async () => {
     const { app } = await buildApp()
     const { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } =
-      await import('@kobato/settings/tests/utils/blog-settings.ts')
-    const { resolveAppLocalization } = await import('@kobato/settings/app-localization.ts')
+      await import('@kobato/settings/tests/utils/blog-settings')
+    const { resolveAppLocalization } = await import('@kobato/settings/app-localization')
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
     app.get('/', (c) => {

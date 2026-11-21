@@ -1,4 +1,4 @@
-import { useElementWidth } from '@kobato/ui/lib/use-element-width.ts'
+import { useElementWidth } from '@kobato/ui/lib/use-element-width'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

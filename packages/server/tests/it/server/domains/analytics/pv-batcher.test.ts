@@ -1,14 +1,14 @@
-import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { sql } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
 async function freshBatcher() {
-  const mod = await import('@kobato/server/domains/analytics/services/pv-batcher.ts')
+  const mod = await import('@kobato/server/domains/analytics/services/pv-batcher')
   resetAllBatchers()
   return mod
 }

@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { DEFAULT_SVG_ETAG } from '@kobato/server/assets/defaults.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { DEFAULT_SVG_ETAG } from '@kobato/server/assets/defaults'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -15,7 +15,7 @@ function requestContextFor(settings: BlogSettingsBundle | null, locale: 'zh-CN' 
 }
 
 async function buildApp(settings: BlogSettingsBundle | null = TEST_BLOG_SETTINGS_BUNDLE) {
-  const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
+  const { assetsRouter } = await import('@kobato/server/http/resources/assets')
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
     c.set('requestContext', requestContextFor(settings))
@@ -50,6 +50,16 @@ describe('assetsRouter', () => {
 
     const res = await app.request('/logo.svg', { headers: { 'if-none-match': `"${DEFAULT_SVG_ETAG.logoSvg}"` } })
     expect(res.status).toBe(304)
+  })
+
+  it('supports weak and multi-value if-none-match headers', async () => {
+    const app = await buildApp()
+    const etag = `"${DEFAULT_SVG_ETAG.logoSvg}"`
+
+    for (const header of [`W/${etag}`, `"unrelated", ${etag}`]) {
+      const res = await app.request('/logo.svg', { headers: { 'if-none-match': header } })
+      expect(res.status).toBe(304)
+    }
   })
 
   it('serves webmanifest from the REQUEST-pinned settings snapshot', async () => {

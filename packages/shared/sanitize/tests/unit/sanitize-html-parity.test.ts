@@ -1,6 +1,6 @@
-import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/sanitize/config.ts'
-import { sanitizeHtmlEngine as browserEngine } from '@kobato/sanitize/engine.browser.ts'
-import { sanitizeHtmlEngine as nodeEngine } from '@kobato/sanitize/engine.node.ts'
+import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/sanitize/config'
+import { sanitizeHtmlEngine as browserEngine } from '@kobato/sanitize/engine.browser'
+import { sanitizeHtmlEngine as nodeEngine } from '@kobato/sanitize/engine.node'
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 

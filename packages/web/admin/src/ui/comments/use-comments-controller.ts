@@ -1,27 +1,27 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments.ts'
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
-import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AdminCommentWire as AdminComment } from '@kobato/contracts/comments'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idStr } from '@kobato/utils/id.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
+import { idStr } from '@kobato/utils/id'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   type CommentFilterFieldKey,
   type CommentsFilterQuery,
   STATUS_OPTIONS,
   isTextFilterOperator,
   textFilterLabel,
-} from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import { type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
+} from '@kobato/web-admin/ui/comments/filter-fields'
+import { type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   isSingleDateFilterOperator,
   singleDateFilterLabel,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { orpc } from '@kobato/web-client/api/client.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
+import { orpc } from '@kobato/web-client/api/client'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import { useSearchParams } from 'react-router'

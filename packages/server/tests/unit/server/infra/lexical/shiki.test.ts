@@ -1,5 +1,5 @@
-import { HIGHLIGHT_LANGUAGES } from '@kobato/server/infra/lexical/languages.ts'
-import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki.ts'
+import { HIGHLIGHT_LANGUAGES } from '@kobato/server/infra/lexical/languages'
+import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki'
 import { bundledLanguages, createHighlighter } from 'shiki'
 import { describe, expect, it } from 'vitest'
 

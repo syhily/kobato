@@ -1,18 +1,18 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
-import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent.ts'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
+import type { RumConsent } from '@kobato/web-client/lib/rum/rum-consent'
 
-import { frontendRumBootstrapSchema } from '@kobato/telemetry/rum.ts'
-import { rumRouteContextFromMatches } from '@kobato/web-client/lib/rum/rum-route.ts'
+import { frontendRumBootstrapSchema } from '@kobato/telemetry/rum'
+import { rumRouteContextFromMatches } from '@kobato/web-client/lib/rum/rum-route'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
 
-type RumModule = typeof import('@kobato/web-client/lib/rum/openobserve-rum.ts')
+type RumModule = typeof import('@kobato/web-client/lib/rum/openobserve-rum')
 
 let rumModulePromise: Promise<RumModule> | null = null
 let pendingStopTimer: ReturnType<typeof setTimeout> | null = null
 
 function loadRumModule(): Promise<RumModule> {
-  rumModulePromise ??= import('@kobato/web-client/lib/rum/openobserve-rum.ts')
+  rumModulePromise ??= import('@kobato/web-client/lib/rum/openobserve-rum')
   return rumModulePromise
 }
 

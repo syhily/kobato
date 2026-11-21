@@ -1,4 +1,4 @@
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useMutation } from '@tanstack/react-query'
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

@@ -1,9 +1,9 @@
-import type { AdminTagDto } from '@kobato/contracts/tags.ts'
+import type { AdminTagDto } from '@kobato/contracts/tags'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog.tsx'
-import { TagsView } from '@kobato/web-admin/ui/tags/TagsView.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog'
+import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -17,7 +17,7 @@ queryMocks.infinite = {
   fetchNextPage: vi.fn(),
 }
 
-vi.mock('@kobato/ui/components/dialog.tsx', () => import('@kobato/web-admin/tests/utils/dialog.tsx'))
+vi.mock('@kobato/ui/components/dialog', () => import('@kobato/web-admin/tests/utils/dialog'))
 
 describe('snapshot: TagsView', () => {
   beforeEach(() => {

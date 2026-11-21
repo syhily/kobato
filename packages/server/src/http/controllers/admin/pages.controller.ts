@@ -1,23 +1,23 @@
-import { adminPagesContract } from '@kobato/api/admin/pages.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
+import { adminPagesContract } from '@kobato/api/admin/pages'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   listPagesForAdmin,
   getPageDetailForAdmin,
   listRevisionsForAdmin as listPageRevisionsForAdmin,
-} from '@kobato/server/domains/pages/services/admin-query.ts'
-import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
+} from '@kobato/server/domains/pages/services/admin-query'
+import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
 import {
   createPage,
   deletePage,
   restorePage,
   unpublishPage,
   updatePageMeta,
-} from '@kobato/server/domains/pages/services/mutate.ts'
-import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/pages/services/mutate'
+import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revision-shared'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminPagesContract)
 

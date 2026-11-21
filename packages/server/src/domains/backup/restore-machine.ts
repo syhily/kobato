@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getLogger } from '@kobato/server/infra/logger'
 
 export type RestorePhase = 'idle' | 'draining' | 'restoring' | 'completed' | 'failed'
 

@@ -1,10 +1,10 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
-import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { projectAssetsForAdmin } from '@kobato/settings/projection.ts'
-import { BrandingView } from '@kobato/web-admin/ui/branding/BrandingView.tsx'
+import { requireRole } from '@kobato/server/domains/auth/rbac'
+import { getRequestContext } from '@kobato/server/http/request-context'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { projectAssetsForAdmin } from '@kobato/settings/projection'
+import { BrandingView } from '@kobato/web-admin/ui/branding/BrandingView'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/branding'
 

@@ -1,16 +1,16 @@
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
-import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
+import type { O2Client } from '@kobato/server/domains/observability/o2-client'
 
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
-import { throwO2Failure } from '@kobato/server/domains/observability/errors.ts'
-import { createO2Client } from '@kobato/server/domains/observability/o2-client.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
+import { throwO2Failure } from '@kobato/server/domains/observability/errors'
+import { createO2Client } from '@kobato/server/domains/observability/o2-client'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import {
   isSecureObservabilityOrigin,
   normalizeObservabilityOrigin,
   OBSERVABILITY_ORGANIZATION_PATTERN,
-} from '@kobato/server/infra/observability.ts'
+} from '@kobato/server/infra/observability'
 
 export interface ConnectionProbeResult {
   organization: 'created' | 'exists'

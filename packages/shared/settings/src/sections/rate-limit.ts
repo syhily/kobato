@@ -1,6 +1,6 @@
-import { rateLimitBucketSchema, upgradeLegacyRateLimitBuckets } from '@kobato/settings/rate-limit-bucket.ts'
-import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { rateLimitBucketSchema, upgradeLegacyRateLimitBuckets } from '@kobato/settings/rate-limit-bucket'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const RATE_LIMIT_BUCKET_KEYS = unsafeCast<readonly (keyof typeof rateLimitDefaults)[]>(

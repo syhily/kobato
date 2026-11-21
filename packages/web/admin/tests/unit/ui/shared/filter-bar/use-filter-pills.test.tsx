@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,7 +14,7 @@ const api = vi.hoisted(() => ({
   searchAuthors: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
@@ -31,8 +31,8 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields.ts')
-const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+const { buildCommentFilterFields } = await import('@kobato/web-admin/ui/comments/filter-fields')
+const { useFilterPills } = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)
 

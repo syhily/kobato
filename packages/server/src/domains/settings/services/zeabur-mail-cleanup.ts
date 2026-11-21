@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US.ts'
+import type { Database } from '@kobato/db/database'
+import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 
-import { NOTIFICATION_SOURCES, type NotificationSource } from '@kobato/contracts/notifications.ts'
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { NOTIFICATION_SOURCES, type NotificationSource } from '@kobato/contracts/notifications'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
+import { getLogger } from '@kobato/server/infra/logger'
+import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('settings.zeabur-mail-cleanup')
 const [ZEABUR_MAIL_CLEANUP_SOURCE] = NOTIFICATION_SOURCES

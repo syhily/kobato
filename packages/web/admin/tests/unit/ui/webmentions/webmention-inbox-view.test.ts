@@ -1,11 +1,11 @@
-import type { AdminWebmentionWire } from '@kobato/contracts/webmentions.ts'
+import type { AdminWebmentionWire } from '@kobato/contracts/webmentions'
 import type { InfiniteData } from '@tanstack/react-query'
 
 import {
   applyReverifyToPages,
   moderateMentionInPages,
   type AdminWebmentionsPage,
-} from '@kobato/web-admin/ui/webmentions/WebmentionInboxView.tsx'
+} from '@kobato/web-admin/ui/webmentions/WebmentionInboxView'
 import { describe, expect, it } from 'vitest'
 
 function makeMention(overrides: Partial<AdminWebmentionWire> = {}): AdminWebmentionWire {

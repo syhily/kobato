@@ -1,8 +1,8 @@
-import type { BrowserEnv } from '@kobato/browser/browser-env.ts'
+import type { BrowserEnv } from '@kobato/browser/browser-env'
 import type { BrowserContext, Locator, Page } from '@playwright/test'
 
 import { expect } from '@playwright/test'
-import { BASELINE_GENERAL } from '@tests/browser/support/settings-api.ts'
+import { BASELINE_GENERAL } from '@tests/browser/support/settings-api'
 
 export const LOCALE_LABELS = {
   'en-US': 'English (United States)',

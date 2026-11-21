@@ -7,9 +7,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@kobato/ui/components/alert-dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/ui/components/alert-dialog'
+import { Input } from '@kobato/ui/components/input'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useState } from 'react'
 
 interface BackupPasswordDialogProps {

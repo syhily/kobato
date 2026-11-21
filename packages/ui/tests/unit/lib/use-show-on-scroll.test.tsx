@@ -1,5 +1,5 @@
-import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll.ts'
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { useShowOnScroll } from '@kobato/ui/lib/use-show-on-scroll'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import { describe, expect, it } from 'vitest'
 
 describe('useShowOnScroll', () => {

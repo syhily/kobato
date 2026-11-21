@@ -1,6 +1,6 @@
-import type { RouteManifest } from '@kobato/distribution/route-warmup.ts'
+import type { RouteManifest } from '@kobato/distribution/route-warmup'
 
-import { collectManifestChunks, isWarmupManifest, parseClientManifest } from '@kobato/distribution/warmup-manifest.ts'
+import { collectManifestChunks, isWarmupManifest, parseClientManifest } from '@kobato/distribution/warmup-manifest'
 import { describe, expect, it } from 'vitest'
 
 const PREFIX = 'window.__reactRouterManifest='

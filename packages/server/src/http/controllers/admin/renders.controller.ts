@@ -1,12 +1,12 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 
-import { adminRendersContract } from '@kobato/api/admin/renders.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html.ts'
-import { reindexSearchBatch } from '@kobato/server/domains/posts/services/search-reindex.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
+import { adminRendersContract } from '@kobato/api/admin/renders'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html'
+import { reindexSearchBatch } from '@kobato/server/domains/posts/services/search-reindex'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor'
+import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex'
 import katex from 'katex'
 
 interface RenderMathOutput {

@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const pipelineMocks = vi.hoisted(() => ({ runSelfUpdate: vi.fn() }))
 
-vi.mock('@kobato/server/domains/update/pipeline.ts', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
+vi.mock('@kobato/server/domains/update/pipeline', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
 
 async function loadJob() {
-  return import('@kobato/server/domains/update/job.ts')
+  return import('@kobato/server/domains/update/job')
 }
 
 function deferred<T>() {
@@ -99,8 +99,8 @@ describe('update/job startUpdateJob', () => {
 
   it('localizes a pipeline descriptor on the failed status per request locale', async () => {
     const job = await loadJob()
-    const { descriptorFor } = await import('@kobato/server/infra/http/error-descriptor.ts')
-    const { DomainError } = await import('@kobato/server/infra/http/errors.ts')
+    const { descriptorFor } = await import('@kobato/server/infra/http/error-descriptor')
+    const { DomainError } = await import('@kobato/server/infra/http/errors')
     const gate = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
 

@@ -5,12 +5,12 @@ vi.mock('@simplewebauthn/browser', () => ({
   startRegistration: vi.fn(),
 }))
 
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 
-import AdminLayoutRouteRaw from '@/routes/auth/layout.tsx'
-import AdminInstallRouteRaw from '@/routes/auth/setup/index.tsx'
-import LoginRouteRaw from '@/routes/auth/signin.tsx'
+import AdminLayoutRouteRaw from '@/routes/auth/layout'
+import AdminInstallRouteRaw from '@/routes/auth/setup/index'
+import LoginRouteRaw from '@/routes/auth/signin'
 
 const LoginRoute = asRoute(LoginRouteRaw)
 const AdminInstallRoute = asRoute(AdminInstallRouteRaw)

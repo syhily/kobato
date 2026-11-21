@@ -5,7 +5,7 @@ import {
   adminFontSetSlotOutputDto,
   listFontsOutputDto,
   setFontSlotInputDto,
-} from '@kobato/contracts/fonts.ts'
+} from '@kobato/contracts/fonts'
 import { oc } from '@orpc/contract'
 
 export const adminFontsContract = {

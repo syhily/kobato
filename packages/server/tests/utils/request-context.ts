@@ -1,12 +1,12 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { RequestContext } from '@kobato/server/http/request-context'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
-import { regularSession } from '@kobato/server/tests/utils/session.ts'
-import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
+import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
+import { regularSession } from '@kobato/server/tests/utils/session'
+import { createLazyAppSnapshot } from '@kobato/settings/app-localization'
 
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
   Partial<Pick<AppLocalization, 'timeFormat' | 'revision' | 'revisions'>>

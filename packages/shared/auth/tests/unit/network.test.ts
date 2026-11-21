@@ -1,4 +1,4 @@
-import { isBlockedFetchHost, isValidPasskeyDomain } from '@kobato/auth/network.ts'
+import { isBlockedFetchHost, isValidPasskeyDomain } from '@kobato/auth/network'
 import { describe, expect, it } from 'vitest'
 
 describe('auth: network boundary', () => {

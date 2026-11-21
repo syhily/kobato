@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@kobato/server/http/resources/serve-local-file.ts'
-import { s3StorageRedirect } from '@kobato/server/http/resources/storage-redirect.ts'
-import { contentTypeForKey } from '@kobato/server/infra/storage/key-policy.ts'
+import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@kobato/server/http/resources/serve-local-file'
+import { s3StorageRedirect } from '@kobato/server/http/resources/storage-redirect'
+import { contentTypeForKey } from '@kobato/server/infra/storage/key-policy'
 import { Hono } from 'hono'
 
 export const localStorageRouter = new Hono<Env>()

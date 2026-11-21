@@ -1,15 +1,15 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
-import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { clear } from '@kobato/server/infra/cache/registry.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
+import { clear } from '@kobato/server/infra/cache/registry'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
-import '@kobato/server/render/warmup/content-cache.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
+import '@kobato/server/render/warmup/content-cache'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const BUNDLE: BlogSettingsBundle = structuredClone(TEST_BLOG_SETTINGS_BUNDLE)

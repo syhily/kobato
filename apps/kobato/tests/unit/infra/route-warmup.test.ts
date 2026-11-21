@@ -1,17 +1,17 @@
-import type { RouteManifest } from '@kobato/distribution/route-warmup.ts'
+import type { RouteManifest } from '@kobato/distribution/route-warmup'
 
 import {
   deriveTier2RouteIds,
   routeWarmupPlugin,
   TIER1_ROUTES,
   tier2BucketForRouteId,
-} from '@kobato/toolchain/src/vite/route-warmup.ts'
+} from '@kobato/toolchain/src/vite/route-warmup'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import routes from '@/routes.ts'
+import routes from '@/routes'
 
 function buildManifest(prefix: string): string {
   return `${prefix}${JSON.stringify(

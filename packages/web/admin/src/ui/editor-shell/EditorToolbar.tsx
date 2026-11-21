@@ -1,9 +1,9 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { EditorToolbarState } from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { EditorToolbarState } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   ArrowLeftIcon,
   ChartLineIcon,

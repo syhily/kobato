@@ -1,4 +1,4 @@
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
 export interface AuditContext {
   viewer: { id: number | string; role?: string } | null

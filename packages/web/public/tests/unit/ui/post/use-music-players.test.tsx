@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { safeMediaSrc, useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players.tsx'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { safeMediaSrc, useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players'
 import { act } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
-const musicPlayerMod = await import('@kobato/ui/components/music-player/music-player.tsx')
+const musicPlayerMod = await import('@kobato/ui/components/music-player/music-player')
 vi.spyOn(musicPlayerMod, 'MusicPlayerCard').mockImplementation((({
   url,
   name,

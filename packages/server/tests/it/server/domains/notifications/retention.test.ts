@@ -1,18 +1,13 @@
-import type { Role } from '@kobato/auth/roles.ts'
+import type { Role } from '@kobato/auth/roles'
 
-import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification.ts'
-import { notification, notificationRecipient } from '@kobato/db/schema/notification.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import {
-  markRead,
-  recallMessage,
-  sendBroadcast,
-  sendDirectMessage,
-} from '@kobato/server/domains/notifications/service.ts'
-import { runDbMaintenance } from '@kobato/server/infra/db/maintenance.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification'
+import { notification, notificationRecipient } from '@kobato/db/schema/notification'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { markRead, recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service'
+import { runDbMaintenance } from '@kobato/server/infra/db/maintenance'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { count, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

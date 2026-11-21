@@ -1,24 +1,19 @@
-import type { EntityTarget } from '@kobato/db/target.ts'
+import type { EntityTarget } from '@kobato/db/target'
 
-import { contentDetailContract } from '@kobato/api/content.ts'
-import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html.ts'
-import { listAllFriends } from '@kobato/server/domains/friends/service.ts'
-import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured.ts'
-import { getTagsByNames, listAllTags } from '@kobato/server/domains/taxonomies/tags/service.ts'
-import { translateThrownResponse } from '@kobato/server/http/content-signals.ts'
-import { loadDetailCritical, trackDetailPageView } from '@kobato/server/http/loaders/detail-critical.ts'
-import { loadPagePreview } from '@kobato/server/http/loaders/page-preview.ts'
-import { loadPostPreview } from '@kobato/server/http/loaders/post-detail.ts'
-import { selectSidebarTags, sidebarSelection } from '@kobato/server/http/loaders/sidebar-select.ts'
-import { implementPublic } from '@kobato/server/http/orpc-base.ts'
-import {
-  etagHeaderMatches,
-  pageEtag,
-  postEtag,
-  representationFromLocalization,
-} from '@kobato/server/infra/http/etag.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { contentDetailContract } from '@kobato/api/content'
+import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html'
+import { listAllFriends } from '@kobato/server/domains/friends/service'
+import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured'
+import { getTagsByNames, listAllTags } from '@kobato/server/domains/taxonomies/tags/service'
+import { translateThrownResponse } from '@kobato/server/http/content-signals'
+import { loadDetailCritical, trackDetailPageView } from '@kobato/server/http/loaders/detail-critical'
+import { loadPagePreview } from '@kobato/server/http/loaders/page-preview'
+import { loadPostPreview } from '@kobato/server/http/loaders/post-detail'
+import { selectSidebarTags, sidebarSelection } from '@kobato/server/http/loaders/sidebar-select'
+import { implementPublic } from '@kobato/server/http/orpc-base'
+import { etagHeaderMatches, pageEtag, postEtag, representationFromLocalization } from '@kobato/server/infra/http/etag'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(contentDetailContract)
 

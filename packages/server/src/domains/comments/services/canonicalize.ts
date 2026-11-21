@@ -1,19 +1,19 @@
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { lexicalStateToPlainText } from '@kobato/inkling/headless'
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts.ts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling/headless/artifacts'
 import {
   commentEditorStateSchema,
   commentEditorStateTextLength,
   isCommentEditorStateBlank,
-} from '@kobato/inkling/headless/comment-schema.ts'
-import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { decideContentLengthGate } from '@kobato/server/domains/comments/services/policy.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender.ts'
-import { computeCommentContentProjection } from '@kobato/server/infra/lexical/lexical-projection.ts'
+} from '@kobato/inkling/headless/comment-schema'
+import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { decideContentLengthGate } from '@kobato/server/domains/comments/services/policy'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { prerenderLexicalEditorState } from '@kobato/server/infra/lexical/lexical-prerender'
+import { computeCommentContentProjection } from '@kobato/server/infra/lexical/lexical-projection'
 import { z } from 'zod'
 
 const COMMENT_MAX_BLOCKS = 200

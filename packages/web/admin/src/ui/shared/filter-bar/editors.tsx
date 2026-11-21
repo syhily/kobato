@@ -1,31 +1,25 @@
-import type { DateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import type { TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+import type { DateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import type { TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import type {
   FilterOptionItem,
   OptionsFilterField,
   SearchFieldState,
   SearchFilterField,
   TextFilterField,
-} from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxItem,
-  ComboboxTrigger,
-  ComboboxValue,
-} from '@kobato/ui/components/combobox.tsx'
+import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kobato/ui/components/dropdown-menu.tsx'
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { DateRangeCalendarPicker } from '@kobato/web-admin/ui/shared/filter-bar/calendar-picker.tsx'
-import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list.tsx'
+} from '@kobato/ui/components/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { DateRangeCalendarPicker } from '@kobato/web-admin/ui/shared/filter-bar/calendar-picker'
+import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list'
 import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 

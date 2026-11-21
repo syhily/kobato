@@ -1,10 +1,10 @@
-import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsDatabase, AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsDatabase, AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'
-import { METRIC_DIMENSIONS } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
-import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter.ts'
-import { createAnalyticsQuery, createEnvMetricQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
+import { METRIC_DIMENSIONS } from '@kobato/db/duckdb/queries/metric-dimensions'
+import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'
+import { createAnalyticsQuery, createEnvMetricQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql, type SelectQueryBuilder } from 'kysely'
 
 function shapeMetricQuery<TB extends keyof AnalyticsDatabase>(

@@ -1,7 +1,7 @@
-import { Input } from '@kobato/ui/components/input.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useSettingsSearchFilter } from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
-import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint.tsx'
+import { Input } from '@kobato/ui/components/input'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useSettingsSearchFilter } from '@kobato/web-admin/ui/settings/shell/use-settings-search'
+import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint'
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 

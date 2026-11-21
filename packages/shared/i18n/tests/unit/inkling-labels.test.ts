@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 
-import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'
+import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
 import {
   kobatoInklingLabelsEnUS,
   type KobatoInklingLabelKey,
   type KobatoInklingLabelTable,
-} from '@kobato/i18n/inkling-labels/en-US.ts'
-import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
-import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK.ts'
-import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
+} from '@kobato/i18n/inkling-labels/en-US'
+import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
+import { kobatoInklingLabelsZhHK } from '@kobato/i18n/inkling-labels/zh-HK'
+import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'
 import { describe, expect, it } from 'vitest'
 
 const EN_KEYS = Object.keys(kobatoInklingLabelsEnUS).sort() as KobatoInklingLabelKey[]

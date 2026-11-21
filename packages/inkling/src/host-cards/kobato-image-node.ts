@@ -1,4 +1,4 @@
-import type { CardRenderOutput } from '@kobato/inkling-internal/headless/cards/card-html.ts'
+import type { CardRenderOutput } from '@kobato/inkling-internal/headless/cards/card-html'
 import type { ExportDOMOptions } from '@kobato/inkling-internal/nodes/base/export-dom'
 import type { LexicalEditor } from 'lexical'
 
@@ -7,7 +7,7 @@ import {
   kobatoImageImportSpec,
   normalizeKobatoImageLayout,
   renderKobatoImageNode,
-} from '@kobato/inkling-internal/headless/cards/kobato-image.ts'
+} from '@kobato/inkling-internal/headless/cards/kobato-image'
 import { createRenderContext } from '@kobato/inkling-internal/nodes/base/render-context'
 import { ImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
 

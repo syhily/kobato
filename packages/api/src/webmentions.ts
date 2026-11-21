@@ -1,4 +1,4 @@
-import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions.ts'
+import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions'
 import { oc } from '@orpc/contract'
 
 export const webmentionsContract = {

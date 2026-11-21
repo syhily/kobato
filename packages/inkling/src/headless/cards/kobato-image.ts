@@ -1,7 +1,7 @@
 import type { DecoratorNodeProperty } from '@kobato/inkling-internal/nodes/base/card-specs'
 import type { CardImportSpec } from '@kobato/inkling-internal/nodes/base/import-spec'
 
-import { getImageSrcset } from '@kobato/assets/images.ts'
+import { getImageSrcset } from '@kobato/assets/images'
 import {
   absolutizeAssetSrcForFeed,
   type CardRenderContext,
@@ -9,8 +9,8 @@ import {
   elementFromHtml,
   htmlToPlainText,
   isFeedVariantRender,
-} from '@kobato/inkling-internal/headless/cards/card-html.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/inkling-internal/headless/cards/card-html'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const KOBATO_IMAGE_LAYOUTS = ['left', 'center', 'right'] as const
 export type KobatoImageLayout = (typeof KOBATO_IMAGE_LAYOUTS)[number]

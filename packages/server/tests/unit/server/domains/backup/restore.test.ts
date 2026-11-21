@@ -1,11 +1,11 @@
-import { createBackupCipher, isEncryptedBackup } from '@kobato/server/domains/backup/services/crypto.ts'
+import { createBackupCipher, isEncryptedBackup } from '@kobato/server/domains/backup/services/crypto'
 import {
   EncryptedBackupPasswordRequired,
   decompressedSizeGuard,
   stageBackup,
-} from '@kobato/server/domains/backup/services/restore.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { extractBackupFile, unpackBackupPayload, packTar } from '@kobato/server/tests/utils/backup-buffer.ts'
+} from '@kobato/server/domains/backup/services/restore'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { extractBackupFile, unpackBackupPayload, packTar } from '@kobato/server/tests/utils/backup-buffer'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -78,7 +78,7 @@ describe('services/backup — unpackBackupPayload', () => {
   })
 
   it('rejects an analytics-only upload for the setup admin check', async () => {
-    const { assertBackupContainsAdmin } = await import('@kobato/server/tests/utils/backup-buffer.ts')
+    const { assertBackupContainsAdmin } = await import('@kobato/server/tests/utils/backup-buffer')
     await expect(assertBackupContainsAdmin(fakeDuckdbFile())).rejects.toThrow('备份中不包含管理员账号')
   })
 

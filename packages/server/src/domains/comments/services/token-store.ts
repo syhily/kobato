@@ -1,13 +1,13 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 import type {
   CommentTokenCookie,
   CommentTokenCookieEntry,
-} from '@kobato/server/domains/comments/services/comment-token.ts'
+} from '@kobato/server/domains/comments/services/comment-token'
 
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { getLogger } from '@kobato/server/infra/logger'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { isRecord } from '@kobato/utils/type-guards'
 import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 

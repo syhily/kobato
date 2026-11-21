@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { ToggleRow } from '@kobato/web-admin/ui/editor-meta/ToggleRow.tsx'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { ToggleRow } from '@kobato/web-admin/ui/editor-meta/ToggleRow'
 
 export interface ToggleField {
   key: string

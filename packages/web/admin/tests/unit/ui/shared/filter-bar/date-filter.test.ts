@@ -1,4 +1,4 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   dateFilterLabel as dateFilterLabelBase,
@@ -8,7 +8,7 @@ import {
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
   singleDateFilterLabel as singleDateFilterLabelBase,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { describe, expect, it } from 'vitest'
 
 const dateFilterLabel = (value: Parameters<typeof dateFilterLabelBase>[0]) => dateFilterLabelBase(value, tZhCN)

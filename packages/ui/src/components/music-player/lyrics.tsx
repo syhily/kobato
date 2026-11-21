@@ -1,5 +1,5 @@
-import { parseLrc } from '@kobato/ui/components/music-player/lrc.ts'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { parseLrc } from '@kobato/ui/components/music-player/lrc'
+import { cn } from '@kobato/ui/lib/cn'
 import { useEffect, useMemo, useRef } from 'react'
 
 export type LyricsPanelProps = {

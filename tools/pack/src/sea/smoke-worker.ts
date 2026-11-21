@@ -1,5 +1,5 @@
-import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@kobato/server/infra/image/process-pool.ts'
-import { isSea } from '@kobato/server/infra/sea/sea.ts'
+import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@kobato/server/infra/image/process-pool'
+import { isSea } from '@kobato/server/infra/sea/sea'
 import { parentPort, Worker, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
 

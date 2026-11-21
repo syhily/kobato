@@ -1,7 +1,7 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 import type { MiddlewareHandler } from 'hono'
 
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { cors } from 'hono/cors'
 
 export function corsMiddleware(): MiddlewareHandler<Env> {

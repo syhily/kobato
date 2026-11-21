@@ -1,5 +1,5 @@
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { NotWordPressView } from '@kobato/web-public/ui/chrome/NotWordPressView.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { NotWordPressView } from '@kobato/web-public/ui/chrome/NotWordPressView'
 import { isRouteErrorResponse } from 'react-router'
 
 const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'

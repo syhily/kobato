@@ -2,9 +2,9 @@
 
 import type { ReactNode } from 'react'
 
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { DEFAULT_RETRY_DELAYS_MS, useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { DEFAULT_RETRY_DELAYS_MS, useAutosave } from '@kobato/web-admin/ui/editor-shell/drafts/use-autosave'
 import { renderHook as renderDomHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

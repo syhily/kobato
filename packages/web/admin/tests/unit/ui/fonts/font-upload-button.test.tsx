@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
+import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -12,7 +12,7 @@ const hookMock = vi.hoisted(() => ({
   upload: vi.fn(),
 }))
 
-vi.mock('@kobato/web-admin/ui/shared/use-file-upload.ts', () => ({
+vi.mock('@kobato/web-admin/ui/shared/use-file-upload', () => ({
   useFileUpload: (options: UseFileUploadOptions) => {
     hookMock.options = options
     return { upload: hookMock.upload, pending: false }
@@ -27,12 +27,12 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
+vi.mock('@kobato/web-client/api/orpc-query', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton'
 
 function makeWrapper() {
   const client = new QueryClient({

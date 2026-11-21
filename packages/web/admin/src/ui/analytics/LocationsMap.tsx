@@ -1,20 +1,20 @@
-import type { MetricRow } from '@kobato/contracts/analytics.ts'
+import type { MetricRow } from '@kobato/contracts/analytics'
 
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
-import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
-import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
-import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState.tsx'
-import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query.ts'
-import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
+import { Skeleton } from '@kobato/ui/components/skeleton'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useHydrated } from '@kobato/ui/lib/use-hydrated'
+import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context'
+import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
+import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'
+import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 
 const LazyLocationsMapInner = lazy(() =>
-  import('@kobato/web-admin/ui/analytics/LocationsMapInner.tsx').then((module) => ({
+  import('@kobato/web-admin/ui/analytics/LocationsMapInner').then((module) => ({
     default: module.LocationsMapInner,
   })),
 )

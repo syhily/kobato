@@ -1,9 +1,9 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { PostMetaRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { PostMetaRow } from '@kobato/db/types'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('posts.publish-hooks')
 

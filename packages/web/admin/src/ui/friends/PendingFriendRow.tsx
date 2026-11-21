@@ -1,8 +1,8 @@
-import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends'
 
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { safeHref } from '@kobato/utils/safe-url.ts'
+import { Badge } from '@kobato/ui/components/badge'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { safeHref } from '@kobato/utils/safe-url'
 import { CheckIcon, ExternalLinkIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 

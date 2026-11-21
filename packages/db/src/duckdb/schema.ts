@@ -1,5 +1,5 @@
-import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events.ts'
-import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@kobato/db/duckdb/device-env.ts'
+import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events'
+import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@kobato/db/duckdb/device-env'
 
 const ANALYTICS_SCHEMA = [
   { name: 'access_events', ddl: ACCESS_EVENTS_DDL },

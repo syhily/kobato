@@ -1,12 +1,12 @@
-import type { ErrorMessageParams } from '@kobato/contracts/api-error.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
-import type { DomainErrorIssue } from '@kobato/server/infra/http/errors.ts'
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { ErrorMessageParams } from '@kobato/contracts/api-error'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RequestContext } from '@kobato/server/http/request-context'
+import type { DomainErrorIssue } from '@kobato/server/infra/http/errors'
+import type { ServerTranslator } from '@kobato/server/infra/i18n'
 import type { Context } from 'hono'
 
-import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import {
   apiErrorData,
   codeForStatus,
@@ -14,16 +14,16 @@ import {
   translateApiError,
   translateDomainError,
   type TranslatedDomainError,
-} from '@kobato/server/http/translate-domain-error.ts'
+} from '@kobato/server/http/translate-domain-error'
 import {
   carriesErrorMessageDescriptor,
   descriptorFor,
   zodIssuesToWire,
-} from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { getLogger } from '@kobato/server/infra/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { HTTPException } from 'hono/http-exception'
 import { ZodError } from 'zod'
 

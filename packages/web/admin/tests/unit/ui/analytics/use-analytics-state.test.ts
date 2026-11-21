@@ -1,8 +1,8 @@
-import type { DateRange, PresetKey } from '@kobato/utils/date-range.ts'
+import type { DateRange, PresetKey } from '@kobato/utils/date-range'
 
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { PRESET_KEYS, computeDateRange } from '@kobato/utils/date-range.ts'
-import { buildAnalyticsInput, useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { PRESET_KEYS, computeDateRange } from '@kobato/utils/date-range'
+import { buildAnalyticsInput, useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mock = vi.hoisted(() => ({

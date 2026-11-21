@@ -2,17 +2,17 @@ import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { RadioGroup } from '@kobato/ui/components/radio-group.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatDateTime } from '@kobato/utils/format.ts'
-import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker.tsx'
-import { dateToLocalInputValue } from '@kobato/web-admin/ui/editor-shell/editor-datetime.ts'
-import { LabelledRadioCard } from '@kobato/web-admin/ui/shared/form/LabelledRadio.tsx'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { Badge } from '@kobato/ui/components/badge'
+import { Label } from '@kobato/ui/components/label'
+import { RadioGroup } from '@kobato/ui/components/radio-group'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatDateTime } from '@kobato/utils/format'
+import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker'
+import { dateToLocalInputValue } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
+import { LabelledRadioCard } from '@kobato/web-admin/ui/shared/form/LabelledRadio'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 

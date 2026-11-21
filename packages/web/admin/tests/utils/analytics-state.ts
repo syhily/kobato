@@ -1,4 +1,4 @@
-import type { AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import type { AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 
 export function makeAnalyticsState(overrides: Partial<AnalyticsState> = {}): AnalyticsState {
   return {

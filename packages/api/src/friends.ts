@@ -1,4 +1,4 @@
-import { friendsApplyOutputSchema, applyFriendSchema } from '@kobato/contracts/friends.ts'
+import { friendsApplyOutputSchema, applyFriendSchema } from '@kobato/contracts/friends'
 import { oc } from '@orpc/contract'
 
 export const friendsContract = {

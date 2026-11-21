@@ -1,11 +1,11 @@
-import type { ContentRow } from '@kobato/db/types.ts'
-import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle.ts'
+import type { ContentRow } from '@kobato/db/types'
+import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
@@ -13,24 +13,23 @@ import {
   lexicalMusicPlayer,
   lexicalParagraph,
   stubMusicResolver,
-} from '@kobato/server/tests/utils/lexical.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/tests/utils/lexical'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { asc, eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const syncLibraryImageBlocks = vi.spyOn(
-  await import('@kobato/server/domains/content/services/image-sync.ts'),
+  await import('@kobato/server/domains/content/services/image-sync'),
   'syncLibraryImageBlocks',
 )
-const findLatestRevision = vi.spyOn(await import('@kobato/server/domains/content/revisions.ts'), 'findLatestRevision')
+const findLatestRevision = vi.spyOn(await import('@kobato/server/domains/content/revisions'), 'findLatestRevision')
 const computeBodyProjections = vi.spyOn(
-  await import('@kobato/server/infra/lexical/lexical-projection.ts'),
+  await import('@kobato/server/infra/lexical/lexical-projection'),
   'computeBodyProjections',
 )
 
-const { loadDraftPreviewBySlug, saveBody } = await import('@kobato/server/domains/content/lifecycle.ts')
-const { canonicalizeLexicalEditorState } =
-  await import('@kobato/server/domains/content/services/lexical/canonicalize.ts')
+const { loadDraftPreviewBySlug, saveBody } = await import('@kobato/server/domains/content/lifecycle')
+const { canonicalizeLexicalEditorState } = await import('@kobato/server/domains/content/services/lexical/canonicalize')
 
 const db = getTestDb()
 

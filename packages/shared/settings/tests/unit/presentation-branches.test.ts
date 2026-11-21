@@ -1,6 +1,6 @@
-import type { BrandingObjectRef, SidebarSettings } from '@kobato/settings/types.ts'
+import type { BrandingObjectRef, SidebarSettings } from '@kobato/settings/types'
 
-import { brandingVersionSuffix, extractXHandle, isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
+import { brandingVersionSuffix, extractXHandle, isSidebarWidgetEnabled } from '@kobato/settings/presentation'
 import { describe, expect, it } from 'vitest'
 
 function sidebarSettings(widgets: SidebarSettings['sidebar']['widgets']): SidebarSettings {

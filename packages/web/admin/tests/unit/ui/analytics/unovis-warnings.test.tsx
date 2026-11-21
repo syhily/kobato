@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -28,8 +28,8 @@ vi.mock('@unovis/react', () => ({
   VisTopoJSONMapSelectors: { feature: 'feature' },
 }))
 
-import { LocationsMapInner } from '@kobato/web-admin/ui/analytics/LocationsMapInner.tsx'
-import { ViewsChartInner } from '@kobato/web-admin/ui/analytics/ViewsChartInner.tsx'
+import { LocationsMapInner } from '@kobato/web-admin/ui/analytics/LocationsMapInner'
+import { ViewsChartInner } from '@kobato/web-admin/ui/analytics/ViewsChartInner'
 
 describe('Unovis configuration warnings', () => {
   it('configures chart crosshair accessors and only passes known map areas', () => {

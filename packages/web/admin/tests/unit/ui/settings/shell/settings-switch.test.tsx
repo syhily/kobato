@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch.tsx'
+import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

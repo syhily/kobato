@@ -1,5 +1,5 @@
-import { isRecord } from '@kobato/utils/type-guards.ts'
-import { buildDeviceEnvBeacon } from '@kobato/web-client/lib/device-env.ts'
+import { isRecord } from '@kobato/utils/type-guards'
+import { buildDeviceEnvBeacon } from '@kobato/web-client/lib/device-env'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
 

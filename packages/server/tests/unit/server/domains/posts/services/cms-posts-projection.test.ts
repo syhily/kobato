@@ -1,9 +1,9 @@
-import type { ContentRow, PostMetaRow } from '@kobato/db/types.ts'
+import type { ContentRow, PostMetaRow } from '@kobato/db/types'
 
 import { describe, expect, it } from 'vitest'
 
-const { toCmsPost } = await import('@kobato/server/domains/posts/projection.ts')
-const { toClientPostFromMeta } = await import('@kobato/server/domains/posts/repos/shared.ts')
+const { toCmsPost } = await import('@kobato/server/domains/posts/projection')
+const { toClientPostFromMeta } = await import('@kobato/server/domains/posts/repos/shared')
 
 function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')

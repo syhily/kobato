@@ -1,15 +1,15 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import {
   MAX_PASSWORD_BYTES,
   MIN_PASSWORD_LENGTH,
   passwordWithinBcryptLimit,
   PASSWORD_COMPLEXITY_RE,
-} from '@kobato/auth/security.ts'
-import { clearable, mergePatchInput } from '@kobato/contracts/merge-patch.ts'
-import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
-import { optionalHttpUrlSchema } from '@kobato/utils/url-schema.ts'
+} from '@kobato/auth/security'
+import { clearable, mergePatchInput } from '@kobato/contracts/merge-patch'
+import { idString, isoDateTime } from '@kobato/contracts/primitives'
+import { optionalHttpUrlSchema } from '@kobato/utils/url-schema'
 import { z } from 'zod'
 
 export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const

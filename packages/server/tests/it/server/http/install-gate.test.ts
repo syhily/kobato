@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { user } from '@kobato/db/schema/user.ts'
-import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { user } from '@kobato/db/schema/user'
+import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
@@ -52,7 +52,7 @@ afterEach(async () => {
 
 describe('honoInstallGateMiddleware', () => {
   async function makeApp() {
-    const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate.ts')
+    const { honoInstallGateMiddleware } = await import('@kobato/server/http/middlewares/install-gate')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set('requestContext', {

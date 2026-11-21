@@ -2,7 +2,7 @@ import {
   adminSettingsBootstrapOutputSchema,
   adminSettingsUpdateInput,
   adminSettingsUpdateOutput,
-} from '@kobato/contracts/settings.ts'
+} from '@kobato/contracts/settings'
 import { oc } from '@orpc/contract'
 
 export const adminSettingsContract = {

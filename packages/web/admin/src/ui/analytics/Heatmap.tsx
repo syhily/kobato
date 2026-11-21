@@ -1,19 +1,19 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatNumber } from '@kobato/utils/format.ts'
-import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
-import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState.tsx'
-import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels.ts'
-import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query.ts'
+import { Skeleton } from '@kobato/ui/components/skeleton'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatNumber } from '@kobato/utils/format'
+import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context'
+import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
+import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels'
+import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'
 import {
   buildAnalyticsInput,
   type AnalyticsScope,
   type HeatmapMetric,
-} from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 

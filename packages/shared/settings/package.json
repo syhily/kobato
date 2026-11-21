@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./tests/*": "./tests/*",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@kobato/assets": "workspace:*",
@@ -12,7 +16,6 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "react-intl": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

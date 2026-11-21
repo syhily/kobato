@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./*.json": "./src/*.json",
+    "./tests/*": "./tests/*",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "catalog:",

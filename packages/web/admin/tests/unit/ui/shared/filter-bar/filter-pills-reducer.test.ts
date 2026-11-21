@@ -1,4 +1,4 @@
-import { filterPillsReducer, type ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import { filterPillsReducer, type ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import { describe, expect, it } from 'vitest'
 
 type Field = 'status' | 'page' | 'author'

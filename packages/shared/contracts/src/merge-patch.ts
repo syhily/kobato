@@ -1,5 +1,5 @@
-import { idString } from '@kobato/contracts/primitives.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { idString } from '@kobato/contracts/primitives'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 // Merge-patch input contract (RFC 7396 semantics) for every field-update

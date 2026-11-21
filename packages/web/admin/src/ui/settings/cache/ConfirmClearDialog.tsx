@@ -1,5 +1,5 @@
-import type { ClearCacheTarget } from '@kobato/cache/types.ts'
-import type { CacheBucketStats } from '@kobato/contracts/cache.ts'
+import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { CacheBucketStats } from '@kobato/contracts/cache'
 
 import {
   AlertDialog,
@@ -10,8 +10,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@kobato/ui/components/alert-dialog.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/ui/components/alert-dialog'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 

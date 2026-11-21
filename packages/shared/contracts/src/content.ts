@@ -1,6 +1,6 @@
-import type { ResolvedFonts } from '@kobato/assets/fonts.ts'
-import type { Role } from '@kobato/auth/roles.ts'
-import type { ListingPageLoaderData } from '@kobato/catalog/listing.ts'
+import type { ResolvedFonts } from '@kobato/assets/fonts'
+import type { Role } from '@kobato/auth/roles'
+import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type {
   Category,
   ClientTag,
@@ -12,12 +12,12 @@ import type {
   ListingPostCard,
   ListingPostCardWithMetadata,
   SidebarPostLink,
-} from '@kobato/catalog/model.ts'
-import type { DetailPageComments, LatestComment } from '@kobato/contracts/comments.ts'
-import type { KobatoInklingLabelTable } from '@kobato/i18n/inkling-labels/en-US.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+} from '@kobato/catalog/model'
+import type { DetailPageComments, LatestComment } from '@kobato/contracts/comments'
+import type { KobatoInklingLabelTable } from '@kobato/i18n/inkling-labels/en-US'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { z } from 'zod'
 
 export const contentRedirectSignalSchema = z.object({

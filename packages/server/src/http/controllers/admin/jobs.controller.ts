@@ -1,16 +1,16 @@
-import { adminJobsContract } from '@kobato/api/admin/jobs.ts'
+import { adminJobsContract } from '@kobato/api/admin/jobs'
 import {
   TASK_CATALOG,
   type JobHistoryOutput,
   type JobRunDto,
   type JobSummaryDto,
   type JobsListDto,
-} from '@kobato/contracts/jobs.ts'
-import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration.ts'
-import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils.ts'
+} from '@kobato/contracts/jobs'
+import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration'
+import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { latestJobRunsByTask, listJobRuns, type JobRunRow } from '@kobato/server/infra/db/job-run-recorder'
+import { getSchedulerTaskState } from '@kobato/server/infra/scheduler-utils'
 
 const impl = implementAdmin(adminJobsContract)
 

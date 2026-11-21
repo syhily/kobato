@@ -1,4 +1,4 @@
-import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex.ts'
+import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex'
 import katex from 'katex'
 import { describe, expect, it } from 'vitest'
 

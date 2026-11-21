@@ -1,10 +1,10 @@
-import type { VariantProps } from '@kobato/ui/lib/cva.ts'
+import type { VariantProps } from '@kobato/ui/lib/cva'
 import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
 import type { ReactNode } from 'react'
 
-import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
-import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
-import { LazyPopup as Popup } from '@kobato/web-public/ui/widgets/LazyPopup.tsx'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content'
+import { LazyPopup as Popup } from '@kobato/web-public/ui/widgets/LazyPopup'
 import { Suspense, lazy, useCallback, useState } from 'react'
 
 export interface QRDialogProps extends VariantProps<typeof buttonVariants> {

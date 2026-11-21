@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema.ts'
+import type { Database } from '@kobato/db/database'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
-import { findImagesByIds, updateImageNote } from '@kobato/db/operations/image.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { idFromString } from '@kobato/utils/id.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { findImagesByIds, updateImageNote } from '@kobato/db/operations/image'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { idFromString } from '@kobato/utils/id'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 interface ImageNodeView extends LexicalNodeJson {
   src: string

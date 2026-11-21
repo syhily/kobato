@@ -1,4 +1,4 @@
-import { buildAdminListConditions } from '@kobato/server/domains/comments/repos/shared.ts'
+import { buildAdminListConditions } from '@kobato/server/domains/comments/repos/shared'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
 

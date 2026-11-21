@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { slugRegistry } from '@kobato/db/schema/config.ts'
+import { slugRegistry } from '@kobato/db/schema/config'
 import { eq, and } from 'drizzle-orm'
 
 export function insertSlugRegistry(

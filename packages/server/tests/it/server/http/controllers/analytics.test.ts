@@ -1,17 +1,17 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+} from '@kobato/server/tests/utils/analytics-db'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
@@ -20,7 +20,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { analyticsRouter } = await import('@kobato/server/http/controllers/analytics.controller.ts')
+const { analyticsRouter } = await import('@kobato/server/http/controllers/analytics.controller')
 
 const rangeInput = { startAt: 1000, endAt: 2000 }
 

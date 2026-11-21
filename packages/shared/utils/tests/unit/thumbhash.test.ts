@@ -4,7 +4,7 @@ import {
   thumbHashToApproximateAspectRatio,
   thumbHashToDataURL,
   thumbHashToRGBA,
-} from '@kobato/utils/thumbhash.ts'
+} from '@kobato/utils/thumbhash'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import sharp from 'sharp'

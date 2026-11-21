@@ -1,10 +1,10 @@
-import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/settings/types'
 
-import { backup as backupTable } from '@kobato/db/schema/backup.ts'
-import { image, music } from '@kobato/db/schema/media.ts'
-import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { backup as backupTable } from '@kobato/db/schema/backup'
+import { image, music } from '@kobato/db/schema/media'
+import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

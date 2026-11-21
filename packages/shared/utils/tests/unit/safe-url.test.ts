@@ -1,4 +1,4 @@
-import { redactUrlForLog, safeHref, safeRedirectPath, tryParseUrl } from '@kobato/utils/safe-url.ts'
+import { redactUrlForLog, safeHref, safeRedirectPath, tryParseUrl } from '@kobato/utils/safe-url'
 import { describe, expect, it } from 'vitest'
 
 describe('client: safe-url utilities', () => {

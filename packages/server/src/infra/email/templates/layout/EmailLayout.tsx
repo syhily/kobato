@@ -1,9 +1,9 @@
-import type { RichTextTag, ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { RichTextTag, ServerTranslator } from '@kobato/server/infra/i18n'
 
 import { TZDate } from '@date-fns/tz'
-import { Body, Container, Html, Link, Section, Text } from '@kobato/server/infra/email/render.tsx'
-import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { Body, Container, Html, Link, Section, Text } from '@kobato/server/infra/email/render'
+import { light } from '@kobato/server/infra/email/templates/styles/tokens'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { getYear } from 'date-fns'
 import { useState } from 'react'
 

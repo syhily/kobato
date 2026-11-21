@@ -1,4 +1,4 @@
-import { isExempt } from '@kobato/server/http/request/cookie-exempt.ts'
+import { isExempt } from '@kobato/server/http/request/cookie-exempt'
 import { describe, expect, it } from 'vitest'
 
 describe('isExempt', () => {

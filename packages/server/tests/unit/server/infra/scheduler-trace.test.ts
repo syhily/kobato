@@ -1,4 +1,4 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
 
 import { SpanStatusCode } from '@opentelemetry/api'
@@ -7,14 +7,14 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 // The recorder writes job history rows; its id contract (42) is pinned
 // through function doubles.
-const recorder = await import('@kobato/server/infra/db/job-run-recorder.ts')
+const recorder = await import('@kobato/server/infra/db/job-run-recorder')
 const startJobRun = vi.spyOn(recorder, 'startJobRun').mockImplementation(() => 42 as never)
 const finishJobRun = vi.spyOn(recorder, 'finishJobRun').mockImplementation(() => undefined as never)
 
-import { scheduleJob, stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
-import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { TestMetricReader } from '@kobato/test/in-memory-metric-reader.ts'
+import { scheduleJob, stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils'
+import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { TestMetricReader } from '@kobato/test/in-memory-metric-reader'
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

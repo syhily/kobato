@@ -1,12 +1,12 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { replayDeadLetterAccessLog } from '@kobato/server/domains/analytics/services/batcher.ts'
-import { initAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { replayDeadLetterAccessLog } from '@kobato/server/domains/analytics/services/batcher'
+import { initAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

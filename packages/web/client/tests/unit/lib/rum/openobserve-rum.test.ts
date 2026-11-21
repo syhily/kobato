@@ -1,6 +1,6 @@
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
 import {
   __pollRumStatusForTests,
   __resetRumForTests,
@@ -8,14 +8,14 @@ import {
   startRum,
   stopRum,
   suspendRum,
-} from '@kobato/web-client/lib/rum/openobserve-rum.ts'
-import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web-client/lib/rum/rum-url-policy.ts'
+} from '@kobato/web-client/lib/rum/openobserve-rum'
+import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web-client/lib/rum/rum-url-policy'
 import {
   makeResourceEvent,
   makeViewEvent,
   RUM_TEST_SESSION_ID,
   RUM_TEST_TRACE_ID,
-} from '@kobato/web-client/tests/utils/rum-events.ts'
+} from '@kobato/web-client/tests/utils/rum-events'
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -162,7 +162,7 @@ describe('startRum initialization', () => {
   it('survives an HMR module re-evaluation without re-initializing', async () => {
     await startRum(BOOTSTRAP, ROUTE)
     vi.resetModules()
-    const reloaded = await import('@kobato/web-client/lib/rum/openobserve-rum.ts')
+    const reloaded = await import('@kobato/web-client/lib/rum/openobserve-rum')
     await reloaded.startRum(BOOTSTRAP, { id: 'routes/public/home', template: '/' })
 
     expect(sdk.init).toHaveBeenCalledOnce()
@@ -329,7 +329,7 @@ describe('runtime status polling', () => {
   it('has no reload/navigation recovery path or test seam', async () => {
     const source = readFileSync(join(process.cwd(), 'packages/web/client/src/lib/rum/openobserve-rum.ts'), 'utf8')
     expect(source).not.toMatch(/\.reload\s*\(|reloadPage|__setRumPageReloadForTests/)
-    const module = await import('@kobato/web-client/lib/rum/openobserve-rum.ts')
+    const module = await import('@kobato/web-client/lib/rum/openobserve-rum')
     expect(Reflect.get(module, '__setRumPageReloadForTests')).toBeUndefined()
   })
 

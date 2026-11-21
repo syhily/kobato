@@ -1,7 +1,7 @@
-import type { AuditLogActorDto } from '@kobato/contracts/audit.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
-import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { AuditLogActorDto } from '@kobato/contracts/audit'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
+import type { FilterFieldSpec, FilterOptionItem } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
 

@@ -1,29 +1,29 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
-import { comment as commentTable } from '@kobato/db/schema/comment.ts'
-import { setting } from '@kobato/db/schema/config.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { user as userTable } from '@kobato/db/schema/user.ts'
-import { webmention as webmentionTable } from '@kobato/db/schema/webmention.ts'
+import { comment as commentTable } from '@kobato/db/schema/comment'
+import { setting } from '@kobato/db/schema/config'
+import { post as postTable } from '@kobato/db/schema/post'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { user as userTable } from '@kobato/db/schema/user'
+import { webmention as webmentionTable } from '@kobato/db/schema/webmention'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
+} from '@kobato/server/tests/utils/analytics-db'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

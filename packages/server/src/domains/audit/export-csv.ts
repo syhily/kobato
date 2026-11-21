@@ -1,6 +1,6 @@
-import type { auditLog } from '@kobato/db/schema/config.ts'
+import type { auditLog } from '@kobato/db/schema/config'
 
-import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection.ts'
+import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection'
 
 const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
 

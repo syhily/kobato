@@ -1,26 +1,26 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { feedRouter } from '@kobato/server/http/resources/feed.ts'
-import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { get } from '@kobato/server/infra/cache/registry.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { feedRouter } from '@kobato/server/http/resources/feed'
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
+import { get } from '@kobato/server/infra/cache/registry'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Feeds are generated for real from the seeded database; the spy counts
 // generations to prove cache hits without regeneration.
-const generateFeeds = vi.spyOn(await import('@kobato/server/render/feed/generator.tsx'), 'generateFeeds')
+const generateFeeds = vi.spyOn(await import('@kobato/server/render/feed/generator'), 'generateFeeds')
 
 const db = getTestDb()
 

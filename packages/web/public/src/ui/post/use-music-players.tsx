@@ -1,7 +1,7 @@
-import type { MusicPlayerCardProps } from '@kobato/ui/components/music-player/music-player.tsx'
+import type { MusicPlayerCardProps } from '@kobato/ui/components/music-player/music-player'
 
-import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { isHttpUrl } from '@kobato/utils/safe-url.ts'
+import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider'
+import { isHttpUrl } from '@kobato/utils/safe-url'
 import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IntlContext } from 'react-intl'
@@ -40,7 +40,7 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
     let cancelled = false
     const roots: Root[] = []
 
-    void import('@kobato/ui/components/music-player/music-player.tsx').then(({ MusicPlayerCard }) => {
+    void import('@kobato/ui/components/music-player/music-player').then(({ MusicPlayerCard }) => {
       if (cancelled) {
         return
       }

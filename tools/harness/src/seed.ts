@@ -1,5 +1,5 @@
-import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
+import { isRecord } from '@kobato/utils/type-guards'
 import { readFile } from 'node:fs/promises'
 import { DatabaseSync } from 'node:sqlite'
 

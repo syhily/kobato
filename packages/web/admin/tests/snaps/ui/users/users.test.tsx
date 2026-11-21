@@ -1,10 +1,10 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { InviteAuthorDialog } from '@kobato/web-admin/ui/users/InviteAuthorDialog.tsx'
-import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable.tsx'
-import { UsersToolbar } from '@kobato/web-admin/ui/users/UsersToolbar.tsx'
-import { UsersView } from '@kobato/web-admin/ui/users/UsersView.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { InviteAuthorDialog } from '@kobato/web-admin/ui/users/InviteAuthorDialog'
+import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
+import { UsersToolbar } from '@kobato/web-admin/ui/users/UsersToolbar'
+import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: UsersView', () => {

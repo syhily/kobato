@@ -1,4 +1,4 @@
-import { apiErrorDescriptorKey, extractApiErrorMessage, isApiAccepted } from '@kobato/web-client/lib/api-error.ts'
+import { apiErrorDescriptorKey, extractApiErrorMessage, isApiAccepted } from '@kobato/web-client/lib/api-error'
 import { describe, expect, it } from 'vitest'
 
 describe('extractApiErrorMessage', () => {

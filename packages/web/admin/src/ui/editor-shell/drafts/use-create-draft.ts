@@ -1,13 +1,13 @@
 import type { ZodType } from 'zod'
 
-import { draftEditKey, useDraftSession } from '@kobato/web-admin/ui/editor-shell/drafts/draft-session.ts'
+import { draftEditKey, useDraftSession } from '@kobato/web-admin/ui/editor-shell/drafts/draft-session'
 import {
   DRAFT_STORAGE_VERSION,
   removeDraft,
   setDraft,
   type DraftRecord,
   type DraftType,
-} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts'
+} from '@kobato/web-admin/ui/editor-shell/drafts/draft-store'
 import { useCallback, useState } from 'react'
 
 export interface CreateDraftConfig<TBody> {

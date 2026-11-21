@@ -1,8 +1,8 @@
-import type { AvatarSource } from '@kobato/assets/avatar.ts'
+import type { AvatarSource } from '@kobato/assets/avatar'
 
-import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar.ts'
-import { encodedEmail } from '@kobato/auth/security.ts'
-import { user } from '@kobato/db/schema/user.ts'
+import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar'
+import { encodedEmail } from '@kobato/auth/security'
+import { user } from '@kobato/db/schema/user'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
   defaultAvatarPath,
@@ -18,13 +18,13 @@ import {
   resolveAvatarForEmail,
   resolveAvatarSize,
   serveAvatar,
-} from '@kobato/server/domains/comments/services/avatar.ts'
-import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/cache/registry.ts'
-import { imageWidth } from '@kobato/server/infra/image/compress.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/comments/services/avatar'
+import { type AvatarEntry, AvatarStatus, get, set } from '@kobato/server/infra/cache/registry'
+import { imageWidth } from '@kobato/server/infra/image/compress'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

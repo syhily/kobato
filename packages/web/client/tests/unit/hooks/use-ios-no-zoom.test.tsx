@@ -1,5 +1,5 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { useIosNoZoomOnFocus } from '@kobato/web-client/hooks/use-ios-no-zoom.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { useIosNoZoomOnFocus } from '@kobato/web-client/hooks/use-ios-no-zoom'
 import { describe, expect, it } from 'vitest'
 
 describe('useIosNoZoomOnFocus', () => {

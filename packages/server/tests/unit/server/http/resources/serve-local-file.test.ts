@@ -2,7 +2,7 @@ import {
   IMMUTABLE_CACHE_CONTROL,
   parseRange,
   respondWithLocalFile,
-} from '@kobato/server/http/resources/serve-local-file.ts'
+} from '@kobato/server/http/resources/serve-local-file'
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'

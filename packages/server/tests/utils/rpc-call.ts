@@ -1,6 +1,6 @@
-import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
+import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
-import { apiRouter } from '@kobato/server/http/api-router.ts'
+import { apiRouter } from '@kobato/server/http/api-router'
 import { RPCHandler } from '@orpc/server/fetch'
 
 const handler = new RPCHandler(apiRouter)

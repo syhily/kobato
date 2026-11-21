@@ -1,4 +1,4 @@
-import { blobColumns, blobsMap, doublesMap, index1Of } from '@kobato/db/duckdb/access-events.ts'
+import { blobColumns, blobsMap, doublesMap, index1Of } from '@kobato/db/duckdb/access-events'
 import { describe, expect, it } from 'vitest'
 
 describe('blobsMap slot contract', () => {

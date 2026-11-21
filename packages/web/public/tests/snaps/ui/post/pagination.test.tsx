@@ -1,5 +1,5 @@
-import { renderInRouter, renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { Pagination } from '@kobato/web-public/ui/post/Pagination.tsx'
+import { renderInRouter, renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { Pagination } from '@kobato/web-public/ui/post/Pagination'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: Pagination', () => {

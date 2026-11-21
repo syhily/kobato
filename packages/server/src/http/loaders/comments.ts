@@ -1,20 +1,20 @@
-import type { CommentFormUser } from '@kobato/catalog/model.ts'
-import type { DetailPageComments } from '@kobato/contracts/comments.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { CommentFormUser } from '@kobato/catalog/model'
+import type { DetailPageComments } from '@kobato/contracts/comments'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget } from '@kobato/db/target'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { userSession } from '@kobato/server/domains/auth/primitives.ts'
-import { asCommentItemsWire } from '@kobato/server/domains/comments/projection.ts'
-import { queryLikes } from '@kobato/server/domains/comments/services/likes.ts'
+import { userSession } from '@kobato/server/domains/auth/primitives'
+import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
+import { queryLikes } from '@kobato/server/domains/comments/services/likes'
 import {
   commentThreadFingerprint,
   loadComments,
   parseComments,
-} from '@kobato/server/domains/comments/services/public-query.ts'
-import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared.ts'
-import { loadSidebarData } from '@kobato/server/http/loaders/sidebar.ts'
+} from '@kobato/server/domains/comments/services/public-query'
+import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared'
+import { loadSidebarData } from '@kobato/server/http/loaders/sidebar'
 
 function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | undefined {
   if (user === undefined) {

@@ -1,12 +1,12 @@
-import { clearBrandingAsset, uploadBrandingAsset } from '@kobato/server/domains/assets/management.ts'
-import { isBrandingSlot } from '@kobato/server/domains/assets/services/storage.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { errorJsonResponse } from '@kobato/server/http/errors.ts'
-import { csrfGuard } from '@kobato/server/http/middlewares/csrf.ts'
-import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
-import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { clearBrandingAsset, uploadBrandingAsset } from '@kobato/server/domains/assets/management'
+import { isBrandingSlot } from '@kobato/server/domains/assets/services/storage'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { errorJsonResponse } from '@kobato/server/http/errors'
+import { csrfGuard } from '@kobato/server/http/middlewares/csrf'
+import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac'
+import { adminUploadRoute } from '@kobato/server/http/resources/admin-upload-route'
+import { getLogger } from '@kobato/server/infra/logger'
+import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('branding.http')
 

@@ -4,10 +4,10 @@
 
 import type { BrowserContext, Page } from '@playwright/test'
 
-import { browserEnv } from '@kobato/browser/browser-env.ts'
+import { browserEnv } from '@kobato/browser/browser-env'
 import { test as base } from '@playwright/test'
-import { signInAdmin } from '@tests/browser/support/journey.ts'
-import { SettingsApi } from '@tests/browser/support/settings-api.ts'
+import { signInAdmin } from '@tests/browser/support/journey'
+import { SettingsApi } from '@tests/browser/support/settings-api'
 
 interface WorkerFixtures {
   authState: Awaited<ReturnType<BrowserContext['storageState']>>

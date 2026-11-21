@@ -1,9 +1,9 @@
-import { createBackup, cleanupOldBackups } from '@kobato/server/domains/backup/services/backup.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { jobDb, registerJob, scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { computeNextRun } from '@kobato/server/infra/scheduler-utils.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+import { createBackup, cleanupOldBackups } from '@kobato/server/domains/backup/services/backup'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { jobDb, registerJob, scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
+import { computeNextRun } from '@kobato/server/infra/scheduler-utils'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 
 const log = getLogger('backup.scheduler')
 

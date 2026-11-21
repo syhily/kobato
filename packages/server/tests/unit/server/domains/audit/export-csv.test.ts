@@ -1,4 +1,4 @@
-import { csvEscapeDisplay } from '@kobato/server/domains/audit/export-csv.ts'
+import { csvEscapeDisplay } from '@kobato/server/domains/audit/export-csv'
 import { describe, expect, it } from 'vitest'
 
 describe('csvEscapeDisplay', () => {

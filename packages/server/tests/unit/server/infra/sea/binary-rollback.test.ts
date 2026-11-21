@@ -1,4 +1,4 @@
-import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback.ts'
+import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback'
 import { existsSync, unlinkSync } from 'node:fs'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

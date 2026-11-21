@@ -1,10 +1,10 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {
   ScrollSpyProvider,
   useScrollSpy,
   useScrollSpyContext,
   useScrollSpyNav,
-} from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('ui/admin/settings/shell/useSettingsScrollSpy — extra', () => {

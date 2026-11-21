@@ -1,5 +1,5 @@
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const seq = (revision: string): number => Number(revision.slice(revision.lastIndexOf(':') + 1))
@@ -33,7 +33,7 @@ describe('settings/snapshot — revision token', () => {
   it('mints a different boot id per module evaluation (a restart never reuses tokens)', async () => {
     async function freshBootRevision(): Promise<string> {
       vi.resetModules()
-      const { BLOG_SETTINGS_SNAPSHOT_SLOT: freshSlot } = await import('@kobato/settings/snapshot.ts')
+      const { BLOG_SETTINGS_SNAPSHOT_SLOT: freshSlot } = await import('@kobato/settings/snapshot')
       freshSlot.write(TEST_BLOG_SETTINGS_BUNDLE)
       return freshSlot.readSnapshot().revision
     }

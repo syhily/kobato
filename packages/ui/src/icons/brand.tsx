@@ -1,7 +1,7 @@
-import type { SocialNetwork } from '@kobato/settings/socials.ts'
-import type { LucideIcon } from '@kobato/ui/icons/types.ts'
+import type { SocialNetwork } from '@kobato/settings/socials'
+import type { LucideIcon } from '@kobato/ui/icons/types'
 
-import { createIcon } from '@kobato/ui/icons/create-icon.tsx'
+import { createIcon } from '@kobato/ui/icons/create-icon'
 
 export const GithubIcon: LucideIcon = createIcon('github', '0 0 1024 1024', [
   [

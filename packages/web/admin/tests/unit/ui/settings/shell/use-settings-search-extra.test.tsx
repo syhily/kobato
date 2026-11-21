@@ -1,10 +1,10 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import {
   SettingsSearchProvider,
   useSettingsSearch,
   useSettingsSearchContext,
   useSettingsSearchFilter,
-} from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
+} from '@kobato/web-admin/ui/settings/shell/use-settings-search'
 import * as React from 'react'
 import { describe, expect, it } from 'vitest'
 

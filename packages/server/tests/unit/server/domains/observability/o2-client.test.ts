@@ -1,5 +1,5 @@
-import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
+import { createO2Client, O2ClientError } from '@kobato/server/domains/observability/o2-client'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]

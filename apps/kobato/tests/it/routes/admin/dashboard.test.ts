@@ -1,21 +1,21 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
-import { comment as commentTable } from '@kobato/db/schema/comment.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
+import { comment as commentTable } from '@kobato/db/schema/comment'
+import { post as postTable } from '@kobato/db/schema/post'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { adminSession, authorSession } from '@kobato/server/tests/utils/session.ts'
-import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
-import { makeLoaderArgs } from '@tests/utils/context.ts'
+} from '@kobato/server/tests/utils/analytics-db'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { adminSession, authorSession } from '@kobato/server/tests/utils/session'
+import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
+import { makeLoaderArgs } from '@tests/utils/context'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -23,7 +23,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { loader } = await import('@/routes/admin/dashboard.tsx')
+const { loader } = await import('@/routes/admin/dashboard')
 
 beforeEach(async () => {
   await clearAllTables(db)

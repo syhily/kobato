@@ -1,4 +1,4 @@
-import { useDevicePixelRatio } from '@kobato/ui/lib/use-device-pixel-ratio.ts'
+import { useDevicePixelRatio } from '@kobato/ui/lib/use-device-pixel-ratio'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

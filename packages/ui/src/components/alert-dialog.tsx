@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
-import { Button, buttonVariants } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
 
 function AlertDialog({ ...props }: ComponentProps<typeof BaseAlertDialog.Root>) {
   return <BaseAlertDialog.Root data-slot="alert-dialog" {...props} />

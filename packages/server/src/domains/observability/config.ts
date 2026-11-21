@@ -1,7 +1,7 @@
-import type { TraceRuntimeSettings } from '@kobato/server/infra/trace/config.ts'
-import type { ObservabilitySettings } from '@kobato/settings/types.ts'
+import type { TraceRuntimeSettings } from '@kobato/server/infra/trace/config'
+import type { ObservabilitySettings } from '@kobato/settings/types'
 
-import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption.ts'
+import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption'
 
 export type ObservabilitySettingsSlice = ObservabilitySettings['observability']
 

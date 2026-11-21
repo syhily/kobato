@@ -1,16 +1,16 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline.ts'
-import { requestContext } from '@kobato/server/http/request-context.ts'
-import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { emptySession } from '@kobato/server/tests/utils/session.ts'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline'
+import { requestContext } from '@kobato/server/http/request-context'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { emptySession } from '@kobato/server/tests/utils/session'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

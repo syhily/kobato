@@ -1,9 +1,9 @@
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { createHeadlessEditor, type SerializedEditorState } from '@kobato/inkling'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { useEditorBodyReset } from '@kobato/web-client/editor/use-editor-body-reset.ts'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { useEditorBodyReset } from '@kobato/web-client/editor/use-editor-body-reset'
+import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes'
 // @vitest-environment jsdom
 // jsdom: the decorator cards (codeblock) in COMMENT_EDITOR_NODES serialize
 // through @lexical/html, which needs a DOM document for the parse → toJSON

@@ -1,12 +1,12 @@
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
-import type { PageFilterFieldKey } from '@kobato/web-admin/ui/pages/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { AdminUserDto } from '@kobato/contracts/users'
+import type { PageFilterFieldKey } from '@kobato/web-admin/ui/pages/filter-fields'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { PagesView } from '@kobato/web-admin/ui/pages/PagesView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminPage } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { PagesView } from '@kobato/web-admin/ui/pages/PagesView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -30,7 +30,7 @@ queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
 
 queryMocks.dispatch = vi.fn()
 
-const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 vi.spyOn(filterPillsMod, 'useFilterPills').mockImplementation((({ fields }: { fields: unknown }) => ({
   filters: queryMocks.filters,
   hasFilters: queryMocks.filters.length > 0,

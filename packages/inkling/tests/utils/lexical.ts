@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }

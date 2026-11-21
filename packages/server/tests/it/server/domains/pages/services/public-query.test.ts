@@ -1,15 +1,15 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
 import {
   findLivePageBySlug,
   findPageBySlug,
   findPublicPageMetaBySlug,
   listSitemapPages,
-} from '@kobato/server/domains/pages/services/public-query.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/domains/pages/services/public-query'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

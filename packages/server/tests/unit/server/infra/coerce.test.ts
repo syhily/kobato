@@ -1,4 +1,4 @@
-import { isNumeric, readStringArray, safeBigInt } from '@kobato/server/infra/coerce.ts'
+import { isNumeric, readStringArray, safeBigInt } from '@kobato/server/infra/coerce'
 import { describe, expect, it } from 'vitest'
 
 describe('server/infra/coerce — safeBigInt', () => {

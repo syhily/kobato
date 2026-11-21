@@ -1,10 +1,6 @@
-import type {
-  EditorShellDetail,
-  EntityLike,
-  RevisionLike,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+import type { EditorShellDetail, EntityLike, RevisionLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { deriveBaselineRevision } from '@kobato/web-admin/ui/editor-shell/editor-shell-derived.ts'
+import { deriveBaselineRevision } from '@kobato/web-admin/ui/editor-shell/editor-shell-derived'
 import { useCallback, useState } from 'react'
 
 export function useEditorShellPersistRace<TEntity extends EntityLike>(detail: EditorShellDetail<TEntity> | undefined) {

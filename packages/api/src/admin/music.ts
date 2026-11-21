@@ -9,8 +9,8 @@ import {
   listMusicOutputDto,
   searchMusicOutputDto,
   updateMusicOutputDto,
-} from '@kobato/contracts/music.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/music'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminMusicContract = {

@@ -13,7 +13,7 @@ describe('server boot — observability sync runs after settings hydration', () 
     expect(syncIndex).toBeGreaterThan(-1)
     expect(hydrateIndex).toBeLessThan(syncIndex)
     expect(source).toContain(
-      "import { hydrateBlogSettings, refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'",
+      "import { hydrateBlogSettings, refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'",
     )
   })
 })

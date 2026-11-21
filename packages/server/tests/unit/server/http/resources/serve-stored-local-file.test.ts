@@ -3,10 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-await import('@kobato/server/infra/data-paths.ts')
-const { __setStorageDirForTests } = await import('@kobato/server/infra/data-paths.ts')
-const { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } =
-  await import('@kobato/server/http/resources/serve-local-file.ts')
+await import('@kobato/server/infra/data-paths')
+const { __setStorageDirForTests } = await import('@kobato/server/infra/data-paths')
+const { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } = await import('@kobato/server/http/resources/serve-local-file')
 
 const root = mkdtempSync(join(tmpdir(), 'serve-stored-local-file-'))
 __setStorageDirForTests(root)

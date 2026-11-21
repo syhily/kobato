@@ -1,4 +1,4 @@
-import { makeToken } from '@kobato/auth/security.ts'
+import { makeToken } from '@kobato/auth/security'
 import { describe, expect, it } from 'vitest'
 
 // makeToken feeds like-tokens and CSRF tokens; the base64url alphabet keeps tokens URL-embeddable.

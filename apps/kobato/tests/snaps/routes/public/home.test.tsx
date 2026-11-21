@@ -1,8 +1,8 @@
-import type { ClientPostWithMetadata } from '@kobato/catalog/model.ts'
+import type { ClientPostWithMetadata } from '@kobato/catalog/model'
 
-import { makePost, makePostList, makeTag } from '@kobato/contracts/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { HomeLayoutBody } from '@kobato/web-public/ui/post/PostListViews.tsx'
+import { makePost, makePostList, makeTag } from '@kobato/contracts/tests/utils/catalog'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { HomeLayoutBody } from '@kobato/web-public/ui/post/PostListViews'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata {

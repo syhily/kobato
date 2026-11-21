@@ -1,7 +1,7 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { RESERVED_SLUGS } from '@kobato/server/infra/slug/reservation.ts'
-import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { SLUG_MAX } from '@kobato/utils/slug.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { RESERVED_SLUGS } from '@kobato/server/infra/slug/reservation'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve'
+import { SLUG_MAX } from '@kobato/utils/slug'
 import { describe, expect, it } from 'vitest'
 
 function expectSlugFailure(fn: () => unknown): DomainError {

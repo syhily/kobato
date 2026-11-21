@@ -2,13 +2,13 @@
 
 import { DndContext } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import {
   resolveSortableMove,
   SortableDragHandle,
   sortableIndexOf,
   useSortableRow,
-} from '@kobato/web-admin/ui/shared/sortable.tsx'
+} from '@kobato/web-admin/ui/shared/sortable'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

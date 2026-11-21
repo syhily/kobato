@@ -1,4 +1,4 @@
-import { signUnsubscribeId, verifyUnsubscribeSignature } from '@kobato/server/domains/newsletter/signing.ts'
+import { signUnsubscribeId, verifyUnsubscribeSignature } from '@kobato/server/domains/newsletter/signing'
 import { describe, expect, it } from 'vitest'
 
 describe('newsletter/signing', () => {

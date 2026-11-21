@@ -1,4 +1,4 @@
-import { blobColumns } from '@kobato/db/duckdb/access-events.ts'
+import { blobColumns } from '@kobato/db/duckdb/access-events'
 import { sql } from 'kysely'
 
 export const visitorsAggregate = sql<number>`COUNT(DISTINCT ${sql.ref(`access_events.${blobColumns.visitorHash}`)})`.as(

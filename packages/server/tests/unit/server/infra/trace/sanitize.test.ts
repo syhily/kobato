@@ -1,4 +1,4 @@
-import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@kobato/server/infra/trace/sanitize.ts'
+import { projectError, sanitizeSpanAttribute, sanitizeSpanAttributes } from '@kobato/server/infra/trace/sanitize'
 import { ORPCError } from '@orpc/server'
 import { describe, expect, it } from 'vitest'
 

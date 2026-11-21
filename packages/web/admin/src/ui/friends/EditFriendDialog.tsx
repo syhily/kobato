@@ -1,8 +1,8 @@
-import type { AdminFriendDto } from '@kobato/contracts/friends.ts'
+import type { AdminFriendDto } from '@kobato/contracts/friends'
 
-import { extractFriendHostSafe } from '@kobato/assets/images.ts'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Checkbox } from '@kobato/ui/components/checkbox.tsx'
+import { extractFriendHostSafe } from '@kobato/assets/images'
+import { Button } from '@kobato/ui/components/button'
+import { Checkbox } from '@kobato/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -10,13 +10,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow.tsx'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'

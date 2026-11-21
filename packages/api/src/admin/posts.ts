@@ -1,6 +1,6 @@
-import { revisionContract } from '@kobato/api/admin/revision.ts'
-import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/contracts/analytics.ts'
-import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base.ts'
+import { revisionContract } from '@kobato/api/admin/revision'
+import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/contracts/analytics'
+import { contentRestoreResultDto } from '@kobato/contracts/content-admin-base'
 import {
   adminPostsMySummaryOutputSchema,
   adminPostDetailDto,
@@ -11,8 +11,8 @@ import {
   listPostsOutputDto,
   listPostsSchema,
   upsertPostMetaSchema,
-} from '@kobato/contracts/posts.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/posts'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminPostsContract = {

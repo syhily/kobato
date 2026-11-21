@@ -1,11 +1,11 @@
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller.ts')
+const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller')
 
 const db = getTestDb()
 

@@ -1,16 +1,16 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
 
-import { findUserByEmail } from '@kobato/db/operations/user.ts'
-import { isPasskeySigninUser } from '@kobato/server/domains/auth/passkey/gate.ts'
-import { sendMagicLink } from '@kobato/server/domains/auth/services/magic-link.ts'
+import { findUserByEmail } from '@kobato/db/operations/user'
+import { isPasskeySigninUser } from '@kobato/server/domains/auth/passkey/gate'
+import { sendMagicLink } from '@kobato/server/domains/auth/services/magic-link'
 import {
   authFlowError,
   formFieldString,
   isMailLoginReady,
   type AuthFlowError,
   type SigninFlowContext,
-} from '@kobato/server/domains/auth/services/shared.ts'
-import { tryRateLimit, trySignInByEmailRateLimit } from '@kobato/server/infra/rate-limit.ts'
+} from '@kobato/server/domains/auth/services/shared'
+import { tryRateLimit, trySignInByEmailRateLimit } from '@kobato/server/infra/rate-limit'
 import { z } from 'zod'
 
 export type IdentifyResult =

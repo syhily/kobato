@@ -1,4 +1,4 @@
-import { injectWarmupChunks } from '@kobato/web-client/route-warmup/inject.ts'
+import { injectWarmupChunks } from '@kobato/web-client/route-warmup/inject'
 import { describe, expect, it } from 'vitest'
 
 const SENTINEL = '__ROUTE_WARMUP_CHUNKS__'

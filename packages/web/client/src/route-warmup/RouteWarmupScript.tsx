@@ -1,4 +1,4 @@
-import { injectWarmupChunks } from '@kobato/web-client/route-warmup/inject.ts'
+import { injectWarmupChunks } from '@kobato/web-client/route-warmup/inject'
 import compiledScript from 'virtual:route-warmup-script'
 
 interface RouteWarmupScriptProps {

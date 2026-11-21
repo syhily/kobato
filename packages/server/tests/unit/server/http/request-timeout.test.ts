@@ -1,6 +1,6 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout.ts'
+import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 

@@ -1,11 +1,11 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { DEFAULT_LOCALE } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW.ts'
-import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
+import { requestContext } from '@kobato/server/http/request-context'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 // @vitest-environment jsdom
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
-vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript.tsx', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
 // The framework-injected head/body components need the build manifest a
 // memory router lacks; keep everything else real.
@@ -28,8 +28,8 @@ vi.mock('react-router', async (importOriginal) => {
   }
 })
 
-const { Layout } = await import('@/root.tsx')
-const { default: handleRequest } = await import('@/entry.server.tsx')
+const { Layout } = await import('@/root')
+const { default: handleRequest } = await import('@/entry.server')
 
 function documentHtml(rootLoaderData: unknown): string {
   const routes: RouteObject[] = [

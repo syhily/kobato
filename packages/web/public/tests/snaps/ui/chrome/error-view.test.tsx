@@ -1,5 +1,5 @@
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { ErrorView } from '@kobato/web-public/ui/chrome/ErrorView.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { ErrorView } from '@kobato/web-public/ui/chrome/ErrorView'
 import { describe, expect, it } from 'vitest'
 
 function routeError(status: number, statusText: string) {

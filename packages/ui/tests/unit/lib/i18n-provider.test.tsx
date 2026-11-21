@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 
-import type { UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessages } from '@kobato/i18n/messages/ui/en-US'
 
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { render } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const logWarn = vi.hoisted(() => vi.fn())
 
-const loggerMod = await import('@kobato/ui/lib/logger.ts')
+const loggerMod = await import('@kobato/ui/lib/logger')
 vi.spyOn(loggerMod, 'getLogger').mockImplementation((() => ({
   debug: vi.fn(),
   info: vi.fn(),
@@ -22,8 +22,8 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { useI18n } = await import('@kobato/ui/lib/I18nProvider.tsx')
-const { wrapWithI18n } = await import('@kobato/ui/tests/utils/i18n-render.tsx')
+const { useI18n } = await import('@kobato/ui/lib/I18nProvider')
+const { wrapWithI18n } = await import('@kobato/ui/tests/utils/i18n-render')
 
 const MESSAGES = {
   ...uiMessagesZhCN,

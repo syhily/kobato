@@ -1,4 +1,4 @@
-import { computeDateRange, pickTimeUnit } from '@kobato/utils/date-range.ts'
+import { computeDateRange, pickTimeUnit } from '@kobato/utils/date-range'
 import { describe, expect, it } from 'vitest'
 
 const HOUR = 60 * 60

@@ -1,9 +1,9 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { idFromString } from '@kobato/utils/id.ts'
-import { AnalyticsDashboard, type AnalyticsDashboardData } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard.tsx'
-import { type AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { idFromString } from '@kobato/utils/id'
+import { AnalyticsDashboard, type AnalyticsDashboardData } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard'
+import { type AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { Link } from 'react-router'
 
 export function PostAnalyticsHeader({ post }: { post: AdminPostDto }) {

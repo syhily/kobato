@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge.tsx'
+import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge'
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

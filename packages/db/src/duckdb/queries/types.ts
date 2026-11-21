@@ -1,4 +1,4 @@
-import type { DateRange, PresetKey, TimeUnit } from '@kobato/utils/date-range.ts'
+import type { DateRange, PresetKey, TimeUnit } from '@kobato/utils/date-range'
 
 export const METRIC_TYPES = [
   'country',

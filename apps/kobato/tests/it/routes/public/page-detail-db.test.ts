@@ -1,9 +1,9 @@
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { lexicalBodyWith, lexicalHeading, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { regularSession } from '@kobato/server/tests/utils/session.ts'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { lexicalBodyWith, lexicalHeading, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { regularSession } from '@kobato/server/tests/utils/session'
+import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -50,7 +50,7 @@ async function seedAboutPage(): Promise<number> {
   return pageId
 }
 
-const pageRoute = await import('@/routes/public/page/detail.tsx')
+const pageRoute = await import('@/routes/public/page/detail')
 
 describe('routes/page.detail loader (DB-backed page)', () => {
   it('returns the saved body_html projection', async () => {

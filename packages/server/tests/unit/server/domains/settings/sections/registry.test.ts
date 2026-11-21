@@ -2,8 +2,8 @@ import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,
   validateSectionDefaults,
-} from '@kobato/server/domains/settings/sections/registry.ts'
-import { SETTINGS_SECTIONS } from '@kobato/settings/sections.ts'
+} from '@kobato/server/domains/settings/sections/registry'
+import { SETTINGS_SECTIONS } from '@kobato/settings/sections'
 import { describe, expect, it } from 'vitest'
 
 const CORRUPT_LIMITS_MESSAGE =

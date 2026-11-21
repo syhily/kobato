@@ -1,8 +1,8 @@
-import type { PageMetaRow } from '@kobato/db/types.ts'
-import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { PageMetaRow } from '@kobato/db/types'
+import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor'
 
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export interface PageMetaWriteInput extends UpsertMetaInputBase {
   showFriends?: boolean

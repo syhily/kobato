@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
-import type { ImageLibraryPickerProps } from '@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker.tsx'
+import type { AdminImageDto } from '@kobato/contracts/images'
+import type { ImageLibraryPickerProps } from '@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker'
 
 import { createHeadlessEditor } from '@kobato/inkling'
 import { KobatoImageNode } from '@kobato/inkling/host-cards'
-import { ImageLibraryCardPicker, imageLibraryPickDataset } from '@kobato/web-admin/ui/editor/image-library-pick.tsx'
+import { ImageLibraryCardPicker, imageLibraryPickDataset } from '@kobato/web-admin/ui/editor/image-library-pick'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'
 import { $getNodeByKey, $getRoot, type LexicalEditor } from 'lexical'
@@ -16,7 +16,7 @@ vi.mock('@lexical/react/LexicalComposerContext', () => ({
 }))
 
 const pickerProps: { current: ImageLibraryPickerProps | null } = { current: null }
-vi.mock('@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/editor/pickers/ImageLibraryPicker', () => ({
   ImageLibraryPicker: (props: ImageLibraryPickerProps) => {
     pickerProps.current = props
     return null

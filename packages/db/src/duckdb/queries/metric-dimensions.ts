@@ -1,8 +1,8 @@
-import type { BlobName } from '@kobato/db/duckdb/access-events.ts'
-import type { MetricType } from '@kobato/db/duckdb/queries/types.ts'
+import type { BlobName } from '@kobato/db/duckdb/access-events'
+import type { MetricType } from '@kobato/db/duckdb/queries/types'
 import type { RawBuilder } from 'kysely'
 
-import { blobColumns } from '@kobato/db/duckdb/access-events.ts'
+import { blobColumns } from '@kobato/db/duckdb/access-events'
 import { sql } from 'kysely'
 
 export interface EventsDimension {

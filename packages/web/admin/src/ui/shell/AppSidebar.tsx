@@ -1,11 +1,11 @@
-import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell.tsx'
+import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 
-import { Sidebar } from '@kobato/ui/components/sidebar.tsx'
-import { AppSidebarContent } from '@kobato/web-admin/ui/shell/AppSidebarContent.tsx'
-import { AppSidebarFooter } from '@kobato/web-admin/ui/shell/AppSidebarFooter.tsx'
-import { AppSidebarHeader } from '@kobato/web-admin/ui/shell/AppSidebarHeader.tsx'
-import { LazyNotificationsDrawer } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer.tsx'
-import { useUnreadNotificationCount } from '@kobato/web-public/ui/shared/notifications/use-notifications.ts'
+import { Sidebar } from '@kobato/ui/components/sidebar'
+import { AppSidebarContent } from '@kobato/web-admin/ui/shell/AppSidebarContent'
+import { AppSidebarFooter } from '@kobato/web-admin/ui/shell/AppSidebarFooter'
+import { AppSidebarHeader } from '@kobato/web-admin/ui/shell/AppSidebarHeader'
+import { LazyNotificationsDrawer } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer'
+import { useUnreadNotificationCount } from '@kobato/web-public/ui/shared/notifications/use-notifications'
 import { useState } from 'react'
 
 interface AppSidebarProps {

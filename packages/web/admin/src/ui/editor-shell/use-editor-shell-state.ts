@@ -1,14 +1,14 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type {
   EntityLike,
   PublishState,
   SidebarPublishStatus,
   UseEditorShellStateArgs,
   UseEditorShellStateOutput,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-types.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
-import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema.ts'
-import { useCreateDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts'
+import { EMPTY_LEXICAL_EDITOR_STATE } from '@kobato/inkling/headless/schema'
+import { useCreateDraft } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
@@ -16,10 +16,10 @@ import {
   deriveSidebarPublishStatus,
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived.ts'
-import { useEditorKeyboardShortcuts } from '@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts.ts'
-import { useEditorShellLayout } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-layout.ts'
-import { useEditorShellPersist } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-derived'
+import { useEditorKeyboardShortcuts } from '@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts'
+import { useEditorShellLayout } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-layout'
+import { useEditorShellPersist } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-persist'
 import { useCallback, useMemo, useState } from 'react'
 
 export function useEditorShellState<

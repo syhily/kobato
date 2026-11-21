@@ -1,11 +1,11 @@
-import { adminBackupContract } from '@kobato/api/admin/backup.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine.ts'
+import { adminBackupContract } from '@kobato/api/admin/backup'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
 import {
   beginStagingProgress,
   endStagingProgress,
   reportStagingProgress,
-} from '@kobato/server/domains/backup/restore-progress.ts'
+} from '@kobato/server/domains/backup/restore-progress'
 import {
   createManualBackup,
   deleteBackup,
@@ -14,19 +14,19 @@ import {
   isValidBackupKey,
   listBackups,
   resolveStoredEncryptionPassword,
-} from '@kobato/server/domains/backup/services/backup.ts'
+} from '@kobato/server/domains/backup/services/backup'
 import {
   BackupPasswordError,
   EncryptedBackupPasswordRequired,
   restoreFromStagedBackup,
   stageBackup,
-} from '@kobato/server/domains/backup/services/restore.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { tryBackupRestorePasswordRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { activeBackend } from '@kobato/server/infra/storage/registry.ts'
+} from '@kobato/server/domains/backup/services/restore'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { tryBackupRestorePasswordRateLimit } from '@kobato/server/infra/rate-limit'
+import { activeBackend } from '@kobato/server/infra/storage/registry'
 import { rmSync } from 'node:fs'
 
 const log = getLogger('backup.controller')

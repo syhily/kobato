@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { FontsSettings } from '@kobato/settings/types.ts'
+import type { FontsSettings } from '@kobato/settings/types'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -23,7 +23,7 @@ vi.mock('react-router', async () => {
 
 const setSlotMock = vi.hoisted(() => vi.fn())
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () => ({ admin: { fonts: { setSlot: setSlotMock } } }) as never,
 )
@@ -32,14 +32,14 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
+vi.mock('@kobato/web-client/api/orpc-query', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { type SlotState, slotsReducer, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots.ts'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { type SlotState, slotsReducer, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots'
 
 function makeFonts(slots: Partial<Pick<FontsSettings, 'global' | 'post' | 'code'>>): FontsSettings {
   return {

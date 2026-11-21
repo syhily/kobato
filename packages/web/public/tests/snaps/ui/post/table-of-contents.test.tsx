@@ -1,8 +1,8 @@
-import type { MarkdownHeading } from '@kobato/inkling/headless/toc.ts'
+import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'
-import { TocItems } from '@kobato/web-public/ui/post/TocItems.tsx'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
+import { TocItems } from '@kobato/web-public/ui/post/TocItems'
 import { describe, expect, it } from 'vitest'
 
 const headings: MarkdownHeading[] = [

@@ -1,10 +1,10 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatWallClockDateTime } from '@kobato/web-admin/ui/editor-shell/wall-clock.ts'
-import { diffBodies, DiffPanel } from '@kobato/web-admin/ui/editor/lexical-body-diff.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatWallClockDateTime } from '@kobato/web-admin/ui/editor-shell/wall-clock'
+import { diffBodies, DiffPanel } from '@kobato/web-admin/ui/editor/lexical-body-diff'
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 export interface DraftConflictDialogProps {

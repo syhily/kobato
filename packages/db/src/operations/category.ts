@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { CategoryRow, NewCategory } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { CategoryRow, NewCategory } from '@kobato/db/types'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { assembleWhere } from '@kobato/db/operations/admin-list.ts'
-import { category } from '@kobato/db/schema/taxonomy.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { assembleWhere } from '@kobato/db/operations/admin-list'
+import { category } from '@kobato/db/schema/taxonomy'
 import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 
 export async function listPublicCategoryRows(db: Database): Promise<CategoryRow[]> {

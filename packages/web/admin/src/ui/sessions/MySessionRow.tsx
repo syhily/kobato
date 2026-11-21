@@ -1,12 +1,12 @@
-import type { MySessionItem } from '@kobato/contracts/sessions.ts'
+import type { MySessionItem } from '@kobato/contracts/sessions'
 
-import { Badge } from '@kobato/ui/components/badge.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatLocalDate } from '@kobato/utils/site-date.ts'
-import { maskIp } from '@kobato/web-admin/ui/shared/mask.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatLocalDate } from '@kobato/utils/site-date'
+import { maskIp } from '@kobato/web-admin/ui/shared/mask'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { LogOutIcon, MonitorIcon } from 'lucide-react'
 
 interface MySessionRowProps {

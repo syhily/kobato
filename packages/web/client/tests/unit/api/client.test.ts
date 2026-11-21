@@ -37,13 +37,13 @@ describe('client/api/client', () => {
   })
 
   it('exports a defined orpc client', async () => {
-    const mod = await import('@kobato/web-client/api/client.ts')
+    const mod = await import('@kobato/web-client/api/client')
     expect(mod.orpc).toBeDefined()
     expect(mod.orpc).toEqual({ mocked: true })
   })
 
   it('setCsrfToken causes the link headers callback to include X-CSRF-Token', async () => {
-    const mod = await import('@kobato/web-client/api/client.ts')
+    const mod = await import('@kobato/web-client/api/client')
     mod.setCsrfToken('test-token')
     const headers = headersFn()
     expect(headers['X-CSRF-Token']).toBe('test-token')
@@ -52,7 +52,7 @@ describe('client/api/client', () => {
   it('RPCLink url falls back to localhost when globalThis.location is undefined', async () => {
     vi.stubGlobal('location', undefined)
     try {
-      await import('@kobato/web-client/api/client.ts')
+      await import('@kobato/web-client/api/client')
       expect(lastUrlFn.current?.()).toBe('http://localhost/rpc')
     } finally {
       vi.unstubAllGlobals()
@@ -63,7 +63,7 @@ describe('client/api/client', () => {
     vi.stubGlobal('location', { origin: 'https://example.com' } as Location)
     try {
       vi.resetModules()
-      await import('@kobato/web-client/api/client.ts')
+      await import('@kobato/web-client/api/client')
       expect(lastUrlFn.current?.()).toBe('https://example.com/rpc')
     } finally {
       vi.unstubAllGlobals()
@@ -76,7 +76,7 @@ describe('client/api/client — error handling', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     vi.resetModules()
-    await import('@kobato/web-client/api/client.ts')
+    await import('@kobato/web-client/api/client')
   })
 
   async function rejectThroughLink(error: unknown): Promise<unknown> {

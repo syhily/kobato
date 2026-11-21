@@ -1,15 +1,15 @@
-import type { DatabaseHandle } from '@kobato/db/database.ts'
-import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
-import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
-import type { AccessLogItem } from '@kobato/server/domains/analytics/services/batcher.ts'
+import type { DatabaseHandle } from '@kobato/db/database'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
+import type { AccessLogItem } from '@kobato/server/domains/analytics/services/batcher'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -21,8 +21,8 @@ import {
   flushAccessLog,
   pushAccessEvent,
   replayDeadLetterAccessLog,
-} from '@kobato/server/domains/analytics/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
+} from '@kobato/server/domains/analytics/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 
 let handle: DatabaseHandle
 

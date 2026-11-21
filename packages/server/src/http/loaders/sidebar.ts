@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { userSession } from '@kobato/server/domains/auth/primitives.ts'
-import { latestComments } from '@kobato/server/domains/comments/services/public-query.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { isSidebarWidgetEnabled } from '@kobato/settings/presentation.ts'
+import { userSession } from '@kobato/server/domains/auth/primitives'
+import { latestComments } from '@kobato/server/domains/comments/services/public-query'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { isSidebarWidgetEnabled } from '@kobato/settings/presentation'
 
 export async function loadSidebarData(db: Database, session: BlogSession, settings: BlogSettingsBundle | null) {
   const admin = userSession(session)?.role === 'admin'

@@ -1,4 +1,4 @@
-import { resolveSiteAsset } from '@kobato/server/domains/assets/services/routes.ts'
+import { resolveSiteAsset } from '@kobato/server/domains/assets/services/routes'
 import { Buffer } from 'node:buffer'
 
 export async function logoDark(): Promise<Buffer> {

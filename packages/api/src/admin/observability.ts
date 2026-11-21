@@ -5,7 +5,7 @@ import {
   observabilityStatusOutputSchema,
   observabilityTestConnectionInputSchema,
   observabilityTestConnectionOutputSchema,
-} from '@kobato/contracts/observability.ts'
+} from '@kobato/contracts/observability'
 import { oc } from '@orpc/contract'
 
 export const adminObservabilityContract = {

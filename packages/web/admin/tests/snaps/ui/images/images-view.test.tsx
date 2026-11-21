@@ -1,16 +1,16 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
-import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer.ts'
+import type { AdminImageDto } from '@kobato/contracts/images'
+import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-reducer'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { ImageDetailDialog } from '@kobato/web-admin/ui/images/ImageDetailDialog.tsx'
-import { ImagesFilterBar } from '@kobato/web-admin/ui/images/ImagesFilterBar.tsx'
-import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { ImageDetailDialog } from '@kobato/web-admin/ui/images/ImageDetailDialog'
+import { ImagesFilterBar } from '@kobato/web-admin/ui/images/ImagesFilterBar'
+import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView'
 import {
   buildJustifiedRows,
   JustifiedImageGrid,
   JustifiedImageGridSkeleton,
-} from '@kobato/web-admin/ui/images/JustifiedImageGrid.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+} from '@kobato/web-admin/ui/images/JustifiedImageGrid'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

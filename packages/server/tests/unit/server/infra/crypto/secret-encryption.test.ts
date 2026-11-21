@@ -9,7 +9,7 @@ function importModule(key: string | undefined) {
     vi.stubEnv('security__encryptionKey', key)
   }
   vi.resetModules()
-  return import('@kobato/server/infra/crypto/secret-encryption.ts')
+  return import('@kobato/server/infra/crypto/secret-encryption')
 }
 
 function clean() {

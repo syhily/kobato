@@ -11,7 +11,7 @@ import {
   type DuckDBType,
   type DuckDBValue,
 } from '@duckdb/node-api'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const ACCESS_EVENTS_DDL = `
 CREATE TABLE IF NOT EXISTS access_events (

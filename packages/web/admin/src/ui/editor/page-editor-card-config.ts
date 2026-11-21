@@ -1,9 +1,9 @@
 import type { CardConfig, LibraryImageItem } from '@kobato/inkling'
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
-import { toSiteOwnedImageSrc } from '@kobato/web-admin/ui/editor/image-insert-override.ts'
-import { makeRenderMath, resolveMathError } from '@kobato/web-admin/ui/editor/render-math.ts'
-import { orpc } from '@kobato/web-client/api/client.ts'
+import { toSiteOwnedImageSrc } from '@kobato/web-admin/ui/editor/image-insert-override'
+import { makeRenderMath, resolveMathError } from '@kobato/web-admin/ui/editor/render-math'
+import { orpc } from '@kobato/web-client/api/client'
 
 async function searchLibraryImages(query: string): Promise<LibraryImageItem[] | undefined> {
   const trimmed = query.trim()

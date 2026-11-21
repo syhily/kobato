@@ -4,7 +4,7 @@ import {
   getMemoryItem,
   setMemoryItem,
   wipeMemoryCache,
-} from '@kobato/server/infra/cache/memory-store.ts'
+} from '@kobato/server/infra/cache/memory-store'
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

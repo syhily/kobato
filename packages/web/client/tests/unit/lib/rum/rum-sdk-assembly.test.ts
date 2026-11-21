@@ -1,12 +1,12 @@
 import type { RumBeforeSend } from '@openobserve/browser-rum-slim'
 
-import { createRumEventPolicy } from '@kobato/web-client/lib/rum/rum-sanitizer.ts'
+import { createRumEventPolicy } from '@kobato/web-client/lib/rum/rum-sanitizer'
 import {
   makeErrorEvent,
   makeLongTaskEvent,
   makeResourceEvent,
   makeViewEvent,
-} from '@kobato/web-client/tests/utils/rum-events.ts'
+} from '@kobato/web-client/tests/utils/rum-events'
 import { createRequire } from 'node:module'
 import { describe, expect, it, vi } from 'vitest'
 

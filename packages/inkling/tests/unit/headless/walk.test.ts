@@ -1,12 +1,12 @@
-import type { LexicalNodeJson } from '@kobato/inkling-internal/headless/schema.ts'
+import type { LexicalNodeJson } from '@kobato/inkling-internal/headless/schema'
 
-import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling-internal/headless/walk.ts'
+import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling-internal/headless/walk'
 import {
   emptyLexicalBody,
   lexicalBodyWith,
   lexicalHeading,
   lexicalParagraph,
-} from '@kobato/inkling/tests/utils/lexical.ts'
+} from '@kobato/inkling/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 function quote(children: unknown[]) {

@@ -11,7 +11,7 @@ vi.mock('pino', () => ({
   })),
 }))
 
-import { getLogger, logger } from '@kobato/ui/lib/logger.ts'
+import { getLogger, logger } from '@kobato/ui/lib/logger'
 
 describe('client logger', () => {
   beforeEach(() => {

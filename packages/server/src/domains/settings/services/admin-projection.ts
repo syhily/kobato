@@ -1,10 +1,10 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types'
 import type { z } from 'zod'
 
-import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks.ts'
-import { messageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks'
+import { messageDescriptor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import {
   assetsLoaderShapeSchema,
   backupLoaderShapeSchema,
@@ -14,9 +14,9 @@ import {
   projectBackupForAdmin,
   projectCommentsForAdmin,
   projectMailForAdmin,
-} from '@kobato/settings/projection.ts'
-import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
+} from '@kobato/settings/projection'
+import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
 
 const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,

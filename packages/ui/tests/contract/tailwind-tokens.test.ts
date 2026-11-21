@@ -1,4 +1,4 @@
-import { __TOKENS_FOR_TESTS } from '@kobato/ui/lib/cn.ts'
+import { __TOKENS_FOR_TESTS } from '@kobato/ui/lib/cn'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'

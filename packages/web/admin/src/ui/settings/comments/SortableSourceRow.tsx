@@ -1,8 +1,8 @@
-import type { AvatarSource } from '@kobato/assets/avatar.ts'
+import type { AvatarSource } from '@kobato/assets/avatar'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { AVATAR_SOURCE_LABEL_IDS } from '@kobato/web-admin/ui/settings/comments/model.ts'
-import { SortableDragHandle, useSortableRow } from '@kobato/web-admin/ui/shared/sortable.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { AVATAR_SOURCE_LABEL_IDS } from '@kobato/web-admin/ui/settings/comments/model'
+import { SortableDragHandle, useSortableRow } from '@kobato/web-admin/ui/shared/sortable'
 
 export function SortableSourceRow({ source }: { source: AvatarSource }) {
   const { t } = useI18n()

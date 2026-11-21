@@ -1,5 +1,5 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { renderToHtml } from '@kobato/ui/tests/utils/render.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { renderToHtml } from '@kobato/ui/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('Select value label resolution', () => {

@@ -1,4 +1,4 @@
-import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@kobato/server/infra/sea/sea-natives.ts'
+import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@kobato/server/infra/sea/sea-natives'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

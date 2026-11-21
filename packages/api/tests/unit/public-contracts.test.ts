@@ -1,27 +1,27 @@
-import { accountContract } from '@kobato/api/account.ts'
-import { analyticsContract } from '@kobato/api/analytics.ts'
-import { avatarContract } from '@kobato/api/avatar.ts'
+import { accountContract } from '@kobato/api/account'
+import { analyticsContract } from '@kobato/api/analytics'
+import { avatarContract } from '@kobato/api/avatar'
 import {
   commentsAuthedContract,
   commentsContract,
   commentsPublicContract,
   commentsTokenContract,
-} from '@kobato/api/comments.ts'
+} from '@kobato/api/comments'
 import {
   contentBootstrapContract,
   contentCommentsContract,
   contentContract,
   contentDetailContract,
   contentListingsContract,
-} from '@kobato/api/content.ts'
-import { friendsContract } from '@kobato/api/friends.ts'
-import { githubContract } from '@kobato/api/github.ts'
-import { imagesContract } from '@kobato/api/images.ts'
-import { musicContract } from '@kobato/api/music.ts'
-import { newsletterContract } from '@kobato/api/newsletter.ts'
-import { notificationsContract } from '@kobato/api/notifications.ts'
-import { passkeyContract } from '@kobato/api/passkey.ts'
-import { webmentionsContract } from '@kobato/api/webmentions.ts'
+} from '@kobato/api/content'
+import { friendsContract } from '@kobato/api/friends'
+import { githubContract } from '@kobato/api/github'
+import { imagesContract } from '@kobato/api/images'
+import { musicContract } from '@kobato/api/music'
+import { newsletterContract } from '@kobato/api/newsletter'
+import { notificationsContract } from '@kobato/api/notifications'
+import { passkeyContract } from '@kobato/api/passkey'
+import { webmentionsContract } from '@kobato/api/webmentions'
 import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
@@ -33,7 +33,7 @@ import {
   analyticsQuerySchema,
   countersDto,
   viewsDto,
-} from '@kobato/contracts/analytics.ts'
+} from '@kobato/contracts/analytics'
 import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
@@ -58,7 +58,7 @@ import {
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
-} from '@kobato/contracts/comments.ts'
+} from '@kobato/contracts/comments'
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
@@ -77,17 +77,17 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
-} from '@kobato/contracts/content.ts'
-import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/contracts/friends.ts'
-import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/contracts/github.ts'
-import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/contracts/images.ts'
-import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/contracts/music.ts'
+} from '@kobato/contracts/content'
+import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/contracts/friends'
+import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/contracts/github'
+import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/contracts/images'
+import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/contracts/music'
 import {
   newsletterConfirmSchema,
   newsletterOkOutputSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '@kobato/contracts/newsletter.ts'
+} from '@kobato/contracts/newsletter'
 import {
   listNotificationsInput,
   listNotificationsOutput,
@@ -98,8 +98,8 @@ import {
   replyNotificationInput,
   replyNotificationOutput,
   unreadCountOutput,
-} from '@kobato/contracts/notifications.ts'
-import { successDto } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/notifications'
+import { successDto } from '@kobato/contracts/primitives'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -116,8 +116,8 @@ import {
   accountUpdateProfileOutputSchema,
   passkeyAuthBeginInputSchema,
   passkeyOptionsOutputSchema,
-} from '@kobato/contracts/users.ts'
-import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions.ts'
+} from '@kobato/contracts/users'
+import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/contracts/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 

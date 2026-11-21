@@ -1,7 +1,7 @@
-import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config'
 import type { Histogram, MetricData, PushMetricExporter, ResourceMetrics } from '@opentelemetry/sdk-metrics'
 
-import { buildMetricExporter } from '@kobato/server/infra/trace/runtime.ts'
+import { buildMetricExporter } from '@kobato/server/infra/trace/runtime'
 import { type ExportResult, ExportResultCode } from '@opentelemetry/core'
 import { AggregationTemporalityPreference, type OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
 import {

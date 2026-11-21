@@ -1,8 +1,8 @@
-import type { FilterOptionItem, FilterOptionRenderer } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { FilterOptionItem, FilterOptionRenderer } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { Input } from '@kobato/ui/components/input.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Input } from '@kobato/ui/components/input'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { SearchIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 

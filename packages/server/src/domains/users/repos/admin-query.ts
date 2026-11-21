@@ -1,11 +1,11 @@
-import type { LoginMethod } from '@kobato/contracts/users.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { LoginMethod } from '@kobato/contracts/users'
+import type { Database } from '@kobato/db/database'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { page } from '@kobato/db/schema/page.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { comment } from '@kobato/db/schema/comment'
+import { page } from '@kobato/db/schema/page'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
 import { and, count, desc, eq, inArray, isNull, max, or, sql } from 'drizzle-orm'
 
 export type UserRoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'

@@ -1,7 +1,7 @@
-import type { NotificationRow } from '@kobato/db/types.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { NotificationRow } from '@kobato/db/types'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 function warnLines() {
@@ -9,9 +9,9 @@ function warnLines() {
 }
 
 const { __resetNotificationMessageWarningsForTests, encodeNotificationDescriptor, resolveNotificationMessage } =
-  await import('@kobato/server/domains/notifications/message.ts')
-const { createServerTranslator } = await import('@kobato/server/infra/i18n.ts')
-const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales.ts')
+  await import('@kobato/server/domains/notifications/message')
+const { createServerTranslator } = await import('@kobato/server/infra/i18n')
+const { SUPPORTED_LOCALES } = await import('@kobato/i18n/locales')
 
 function row(overrides: Partial<NotificationRow>): NotificationRow {
   return {

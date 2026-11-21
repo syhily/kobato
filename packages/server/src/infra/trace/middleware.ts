@@ -1,10 +1,10 @@
-import type { Span } from '@kobato/server/infra/trace/facade.ts'
+import type { Span } from '@kobato/server/infra/trace/facade'
 import type { Context, MiddlewareHandler } from 'hono'
 
-import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
-import { addHttpServerActive, recordHttpServer } from '@kobato/server/infra/trace/metrics.ts'
-import { takeRoutePattern } from '@kobato/server/infra/trace/route-registry.ts'
-import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths.ts'
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade'
+import { addHttpServerActive, recordHttpServer } from '@kobato/server/infra/trace/metrics'
+import { takeRoutePattern } from '@kobato/server/infra/trace/route-registry'
+import { isSelfTelemetryPath } from '@kobato/server/infra/trace/self-telemetry-paths'
 import { routePath } from 'hono/route'
 
 const REACT_ROUTER_ROUTE = 'react_router'

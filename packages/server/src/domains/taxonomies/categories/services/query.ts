@@ -1,17 +1,17 @@
-import type { Category } from '@kobato/catalog/model.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { CategoryRow } from '@kobato/db/types.ts'
-import type { AdminCategoriesListResult } from '@kobato/server/domains/taxonomies/categories/projection.ts'
+import type { Category } from '@kobato/catalog/model'
+import type { Database } from '@kobato/db/database'
+import type { CategoryRow } from '@kobato/db/types'
+import type { AdminCategoriesListResult } from '@kobato/server/domains/taxonomies/categories/projection'
 
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
   listAdminCategoryRows,
-} from '@kobato/db/operations/category.ts'
-import { category as categoryTable } from '@kobato/db/schema/taxonomy.ts'
-import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance.ts'
-import { countPostsByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy.ts'
-import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection.ts'
+} from '@kobato/db/operations/category'
+import { category as categoryTable } from '@kobato/db/schema/taxonomy'
+import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
+import { countPostsByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
+import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection'
 import { asc, eq, inArray } from 'drizzle-orm'
 
 export async function listCategoriesForAdmin(

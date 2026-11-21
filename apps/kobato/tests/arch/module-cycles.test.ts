@@ -17,7 +17,7 @@
  * module both sides import — see `plugins/behaviour/selector-insertion` for
  * the reference shape.
  */
-import { REPO_PACKAGES } from '@tests/arch/workspace-packages.ts'
+import { REPO_PACKAGES } from '@tests/arch/workspace-packages'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'

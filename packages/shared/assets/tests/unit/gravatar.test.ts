@@ -1,4 +1,4 @@
-import { GRAVATAR_MIRROR_URLS, isAllowedMirrorUrl } from '@kobato/assets/gravatar.ts'
+import { GRAVATAR_MIRROR_URLS, isAllowedMirrorUrl } from '@kobato/assets/gravatar'
 import { describe, expect, it } from 'vitest'
 
 describe('assets: gravatar mirrors', () => {

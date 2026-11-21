@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 import type { SQL } from 'drizzle-orm'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { postSearchIndex } from '@kobato/db/schema/content.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { getCounter, through } from '@kobato/server/infra/cache/registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { postSearchIndex } from '@kobato/db/schema/content'
+import { post } from '@kobato/db/schema/post'
+import { getCounter, through } from '@kobato/server/infra/cache/registry'
+import { getLogger } from '@kobato/server/infra/logger'
 import { and, desc, eq, or, sql } from 'drizzle-orm'
 
 const corpusFields = [post.title, post.summary, sql`COALESCE(${postSearchIndex.plainText}, '')`]

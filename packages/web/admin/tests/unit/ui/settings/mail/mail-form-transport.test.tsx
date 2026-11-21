@@ -2,25 +2,25 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
-import type { MailLoaderShape } from '@kobato/settings/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection'
 
-import { projectMailForAdmin } from '@kobato/settings/projection.ts'
-import { mailDefaults } from '@kobato/settings/sections/mail.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { projectMailForAdmin } from '@kobato/settings/projection'
+import { mailDefaults } from '@kobato/settings/sections/mail'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

@@ -1,20 +1,20 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { setting } from '@kobato/db/schema/config.ts'
-import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks.ts'
+import { setting } from '@kobato/db/schema/config'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
+import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks'
 import {
   __clearSectionChangeHandlersForTests,
   registerSectionChangeHandler,
-} from '@kobato/server/domains/settings/services/section-changes.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { SECRET_FIELDS } from '@kobato/settings/secrets.ts'
-import { SECTION_REGISTRY } from '@kobato/settings/sections/registry.ts'
-import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/settings/services/section-changes'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { SECRET_FIELDS } from '@kobato/settings/secrets'
+import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

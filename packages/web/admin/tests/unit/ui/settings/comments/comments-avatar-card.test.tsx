@@ -2,28 +2,28 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, waitFor } from '@testing-library/react'
 
 function renderUi(ui: ReactElement, locale: AppLocale = 'zh-CN') {
   return render(wrapWithI18n(ui, { locale }))
 }
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { CommentsLoaderShape } from '@kobato/settings/projection.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { CommentsLoaderShape } from '@kobato/settings/projection'
 
-import { projectCommentsForAdmin } from '@kobato/settings/projection.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm.tsx'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context.tsx'
+import { projectCommentsForAdmin } from '@kobato/settings/projection'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm'
+import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
 const commit = vi.hoisted(() => vi.fn())
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

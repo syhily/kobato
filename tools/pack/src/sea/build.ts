@@ -1,14 +1,14 @@
-import { collectSeaAssets } from '@kobato/pack/sea/assets.ts'
-import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget.ts'
-import { fail, run } from '@kobato/pack/sea/exec.ts'
-import { runInjectStep } from '@kobato/pack/sea/inject.ts'
+import { collectSeaAssets } from '@kobato/pack/sea/assets'
+import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
+import { fail, run } from '@kobato/pack/sea/exec'
+import { runInjectStep } from '@kobato/pack/sea/inject'
 import {
   repoRoot,
   seaBinaryFileName,
   seaBinaryPath,
   seaBinarySha256Path,
   seaIntermediatesDir,
-} from '@kobato/pack/sea/paths.ts'
+} from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'

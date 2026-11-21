@@ -1,4 +1,4 @@
-import { flashCommentTarget } from '@kobato/web-client/lib/comment-flash.ts'
+import { flashCommentTarget } from '@kobato/web-client/lib/comment-flash'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 

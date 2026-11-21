@@ -1,4 +1,4 @@
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { isRecord } from '@kobato/utils/type-guards'
 import { useCallback, useSyncExternalStore } from 'react'
 
 export interface CommentGuestProfile {

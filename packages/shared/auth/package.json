@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
-    "react-intl": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -1,13 +1,13 @@
-import { image } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { image } from '@kobato/db/schema/media'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { resolveImageRef } = await import('@kobato/server/domains/images/services/resolve.ts')
+const { resolveImageRef } = await import('@kobato/server/domains/images/services/resolve')
 
 const db = getTestDb()
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

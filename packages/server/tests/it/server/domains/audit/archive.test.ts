@@ -1,7 +1,7 @@
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()
@@ -57,7 +57,7 @@ function commandInput(call: number): SentCommandInput {
 }
 
 const { archiveExpiredAuditLogs, cleanupExpiredArchives, deleteArchivedRows } =
-  await import('@kobato/server/domains/audit/services/archive.ts')
+  await import('@kobato/server/domains/audit/services/archive')
 
 describe('audit/archive', () => {
   beforeEach(async () => {

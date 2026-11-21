@@ -296,26 +296,22 @@ describe('i18n bundle boundary', () => {
       writeFileSync(
         leak,
         [
-          "import { uiMessagesFor } from '@kobato/i18n/catalog.ts'",
-          "import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'",
-          "import { createServerTranslator } from '@kobato/server/infra/i18n.ts'",
-          'export const send = () => import("@kobato/i18n/catalog.ts")',
+          "import { uiMessagesFor } from '@kobato/i18n/catalog'",
+          "import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'",
+          "import { createServerTranslator } from '@kobato/server/infra/i18n'",
+          'export const send = () => import("@kobato/i18n/catalog")',
         ].join('\n'),
       )
       writeFileSync(
         typesOnly,
-        ["import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'", 'export type Id = UiMessageId'].join(
+        ["import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'", 'export type Id = UiMessageId'].join(
           '\n',
         ),
       )
 
       const violations = collectI18nViolations([leak, typesOnly])
       expect(violations).toHaveLength(4)
-      for (const specifier of [
-        '@kobato/i18n/catalog.ts',
-        '@kobato/i18n/messages/ui/zh-CN.ts',
-        '@kobato/server/infra/i18n.ts',
-      ]) {
+      for (const specifier of ['@kobato/i18n/catalog', '@kobato/i18n/messages/ui/zh-CN', '@kobato/server/infra/i18n']) {
         expect(
           violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),
           `expected a violation naming leak.ts and '${specifier}'`,
@@ -357,7 +353,7 @@ describe('inkling label bundle boundary', () => {
 
     expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
     for (const locale of ['en-US', 'zh-CN', 'zh-HK', 'zh-TW']) {
-      expect(source).toContain(`import('@kobato/i18n/inkling-labels/${locale}.ts')`)
+      expect(source).toContain(`import('@kobato/i18n/inkling-labels/${locale}')`)
     }
   })
 
@@ -369,17 +365,17 @@ describe('inkling label bundle boundary', () => {
       writeFileSync(
         leak,
         [
-          "import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'",
-          "import { inklingLabelsFor } from '@kobato/i18n/inkling-labels.ts'",
+          "import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'",
+          "import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'",
           "import { kobatoInklingLabelsZhCN } from './i18n/inkling-labels/zh-CN'",
-          'export const load = () => import("@kobato/i18n/inkling-labels/zh-HK.ts")',
+          'export const load = () => import("@kobato/i18n/inkling-labels/zh-HK")',
           'export const label = () => [kobatoInklingLabelsZhTW, inklingLabelsFor, kobatoInklingLabelsZhCN]',
         ].join('\n'),
       )
       writeFileSync(
         typesOnly,
         [
-          "import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US.ts'",
+          "import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US'",
           'export type Key = KobatoInklingLabelKey',
         ].join('\n'),
       )
@@ -387,10 +383,10 @@ describe('inkling label bundle boundary', () => {
       const violations = collectServerOnlyImportViolations([leak, typesOnly], INKLING_LABEL_RULE)
       expect(violations).toHaveLength(4)
       for (const specifier of [
-        '@kobato/i18n/inkling-labels/zh-TW.ts',
-        '@kobato/i18n/inkling-labels.ts',
+        '@kobato/i18n/inkling-labels/zh-TW',
+        '@kobato/i18n/inkling-labels',
         './i18n/inkling-labels/zh-CN',
-        '@kobato/i18n/inkling-labels/zh-HK.ts',
+        '@kobato/i18n/inkling-labels/zh-HK',
       ]) {
         expect(
           violations.some((v) => v.includes('leak.ts') && v.includes(`'${specifier}'`)),

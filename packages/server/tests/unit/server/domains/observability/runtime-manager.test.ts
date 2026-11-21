@@ -1,40 +1,40 @@
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
 import {
   observabilityConnectionFingerprint,
   observabilityRuntimeFingerprint,
-} from '@kobato/server/domains/observability/config.ts'
+} from '@kobato/server/domains/observability/config'
 import {
   __resetObservabilityRuntimeForTests,
   getObservabilityRuntimeStatus,
   syncObservabilityRuntime,
-} from '@kobato/server/domains/observability/runtime-manager.ts'
+} from '@kobato/server/domains/observability/runtime-manager'
 import {
   __resetExportHealthForTests,
   activateExportHealth,
   deactivateExportHealth,
   recordExportOutcome,
-} from '@kobato/server/infra/trace/export-health.ts'
+} from '@kobato/server/infra/trace/export-health'
 import {
   TEST_BLOG_SETTINGS_BUNDLE,
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
-} from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The OTel runtime is a process-level boundary; observe without starting it.
 const runtimeMock = {
   startTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'startTraceRuntime')
     .mockImplementation(async () => ({ started: true, shutdown: vi.fn(), forceFlush: vi.fn() }) as never),
   stopTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'stopTraceRuntime')
     .mockImplementation(async () => {}),
 }
 
 const retentionMock = {
   syncObservabilityRetention: vi
-    .spyOn(await import('@kobato/server/domains/observability/retention.ts'), 'syncObservabilityRetention')
+    .spyOn(await import('@kobato/server/domains/observability/retention'), 'syncObservabilityRetention')
     .mockImplementation(async () => {}),
 }
 

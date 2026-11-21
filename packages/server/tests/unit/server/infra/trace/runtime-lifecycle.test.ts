@@ -1,26 +1,22 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ObservableGauge } from '@opentelemetry/api'
 import type { ELDHistogram } from 'node:perf_hooks'
 
-import {
-  __getLifecycleContainer,
-  registerShutdownHook,
-  unregisterShutdownHook,
-} from '@kobato/server/infra/lifecycle.ts'
+import { __getLifecycleContainer, registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import {
   __resetTraceFacadeForTests,
   counter,
   isTraceActive,
   uninstallTraceDelegate,
-} from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
+} from '@kobato/server/infra/trace/facade'
+import { METRIC } from '@kobato/server/infra/trace/metrics'
+import { isTraceRuntimeRunning, startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
 import {
   isSqliteQueryTraceSubscribed,
   startSqliteQueryTrace,
   stopSqliteQueryTrace,
-} from '@kobato/server/infra/trace/sqlite.ts'
-import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader.ts'
+} from '@kobato/server/infra/trace/sqlite'
+import { TestMetricReader, dataPointsOf } from '@kobato/test/in-memory-metric-reader'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

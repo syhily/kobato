@@ -1,4 +1,4 @@
-import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/contracts/github.ts'
+import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/contracts/github'
 import { oc } from '@orpc/contract'
 
 export const githubContract = {

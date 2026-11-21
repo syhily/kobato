@@ -1,18 +1,18 @@
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { Mock } from 'vitest'
 
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { passkeyCredential } from '@kobato/db/schema/passkey.ts'
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { user, verification } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { issueResetToken } from '@kobato/server/domains/auth/verification-tokens.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeSession } from '@kobato/server/tests/utils/session.ts'
-import { makeRouteContext } from '@tests/utils/context.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { passkeyCredential } from '@kobato/db/schema/passkey'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { user, verification } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { issueResetToken } from '@kobato/server/domains/auth/verification-tokens'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { makeRouteContext } from '@tests/utils/context'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,7 +21,7 @@ const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-reset-csrf-token'
 
-const { action } = await import('@/routes/auth/signin.tsx')
+const { action } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

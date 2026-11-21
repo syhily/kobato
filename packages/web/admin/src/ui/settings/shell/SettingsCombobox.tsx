@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
-import { Combobox } from '@kobato/ui/components/combobox.tsx'
-import { getLogger } from '@kobato/ui/lib/logger.ts'
-import { isSettingsSkipCommit } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
+import { Combobox } from '@kobato/ui/components/combobox'
+import { getLogger } from '@kobato/ui/lib/logger'
+import { isSettingsSkipCommit } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict'
 
 const log = getLogger('settings.combobox')
 

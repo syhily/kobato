@@ -1,10 +1,10 @@
-import type { CommentFormUser } from '@kobato/catalog/model.ts'
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentFormUser } from '@kobato/catalog/model'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
-import { Comments } from '@kobato/web-public/ui/comments/Comments.tsx'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
+import { Comments } from '@kobato/web-public/ui/comments/Comments'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: Comments form variants', () => {

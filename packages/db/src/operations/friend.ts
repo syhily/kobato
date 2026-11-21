@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { FriendRow, NewFriend } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { FriendRow, NewFriend } from '@kobato/db/types'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { applyPage, assembleWhere } from '@kobato/db/operations/admin-list.ts'
-import { friend } from '@kobato/db/schema/friend.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { applyPage, assembleWhere } from '@kobato/db/operations/admin-list'
+import { friend } from '@kobato/db/schema/friend'
 import { count, desc, eq, or, type SQL } from 'drizzle-orm'
 
 export async function listPublicFriendRows(db: Database): Promise<FriendRow[]> {

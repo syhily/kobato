@@ -4,7 +4,7 @@ import {
   commentEditorStateTextLength,
   EMPTY_COMMENT_EDITOR_STATE,
   safeValidateCommentEditorState,
-} from '@kobato/inkling-internal/headless/comment-schema.ts'
+} from '@kobato/inkling-internal/headless/comment-schema'
 import { describe, expect, it } from 'vitest'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {

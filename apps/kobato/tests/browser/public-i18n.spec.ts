@@ -1,6 +1,6 @@
-import { browserEnv } from '@kobato/browser/browser-env.ts'
-import { expect, test } from '@tests/browser/support/fixtures.ts'
-import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/journey.ts'
+import { browserEnv } from '@kobato/browser/browser-env'
+import { expect, test } from '@tests/browser/support/fixtures'
+import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/journey'
 
 const env = browserEnv()
 

@@ -1,4 +1,4 @@
-import { parseWebmentionEndpoint } from '@kobato/server/domains/webmentions/discover.ts'
+import { parseWebmentionEndpoint } from '@kobato/server/domains/webmentions/discover'
 import { describe, expect, it } from 'vitest'
 
 const FINAL = 'https://example.com/blog/post'

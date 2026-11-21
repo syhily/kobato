@@ -1,4 +1,4 @@
-import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/contracts/music.ts'
+import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/contracts/music'
 import { oc } from '@orpc/contract'
 
 export const musicContract = {

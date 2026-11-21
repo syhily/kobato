@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./*.css": "./src/*.css",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
   },
   "devDependencies": {
     "@kobato/assets": "workspace:*",

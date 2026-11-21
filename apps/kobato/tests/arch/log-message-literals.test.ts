@@ -2,7 +2,7 @@ import {
   scanLogMessages,
   scanSourceForLogMessages,
   type LogMessageAllowlistEntry,
-} from '@kobato/test/log-message-literals.ts'
+} from '@kobato/test/log-message-literals'
 import { describe, expect, it } from 'vitest'
 
 const ALLOWLIST: readonly LogMessageAllowlistEntry[] = [
@@ -40,7 +40,7 @@ describe('server log messages are static', () => {
 describe('tripwires', () => {
   it('flags an aliased getLogger call with an interpolated message', () => {
     const violations = scanFixture(`
-      import { getLogger } from '@kobato/server/infra/logger.ts'
+      import { getLogger } from '@kobato/server/infra/logger'
       const log = getLogger('alias')
       export function run(name: string) {
         log.info(\`hello \${name}\`)
@@ -52,7 +52,7 @@ describe('tripwires', () => {
 
   it('flags child/withScope chains and the root logger', () => {
     const violations = scanFixture(`
-      import { logger, root } from '@kobato/server/infra/logger.ts'
+      import { logger, root } from '@kobato/server/infra/logger'
       export function run(message: string) {
         logger.child({ requestId: 'x' }).warn(message)
         root.withScope('scope').error('a' + message)
@@ -64,7 +64,7 @@ describe('tripwires', () => {
 
   it('applies the raw Pino root (object, message) signature', () => {
     const violations = scanFixture(`
-      import { root } from '@kobato/server/infra/logger.ts'
+      import { root } from '@kobato/server/infra/logger'
       export function run(err: unknown, message: string, port: number, context: object) {
         root.warn({ err }, message)
         root.warn({ err }, 'static ok')
@@ -85,7 +85,7 @@ describe('tripwires', () => {
 
   it('applies the raw root signature through an import alias', () => {
     const violations = scanFixture(`
-      import { root as pinoRoot } from '@kobato/server/infra/logger.ts'
+      import { root as pinoRoot } from '@kobato/server/infra/logger'
       export function run(err: unknown, message: string) {
         pinoRoot.error({ err }, message)
       }
@@ -96,7 +96,7 @@ describe('tripwires', () => {
 
   it('flags Logger-typed properties and parameters', () => {
     const violations = scanFixture(`
-      import type { Logger } from '@kobato/server/infra/logger.ts'
+      import type { Logger } from '@kobato/server/infra/logger'
       interface Options { log: Logger }
       export function run(options: Options, log: Logger, message: string) {
         options.log.debug(message)
@@ -124,7 +124,7 @@ describe('tripwires', () => {
 
   it('accepts static messages, including an interpolation-free template', () => {
     const violations = scanFixture(`
-      import { getLogger } from '@kobato/server/infra/logger.ts'
+      import { getLogger } from '@kobato/server/infra/logger'
       const log = getLogger('static')
       export const options = { logMessage: 'Static option', rowThrewMessage: \`Static row\` }
       export function run() {
@@ -139,7 +139,7 @@ describe('tripwires', () => {
 
   it('flags privacy markers inside a static message', () => {
     const violations = scanFixture(`
-      import { getLogger } from '@kobato/server/infra/logger.ts'
+      import { getLogger } from '@kobato/server/infra/logger'
       const log = getLogger('markers')
       log.info('user {E}alice{/E}')
       log.warn('[REDACTED] header')

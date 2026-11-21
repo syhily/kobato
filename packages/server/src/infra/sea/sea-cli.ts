@@ -16,21 +16,21 @@ import {
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
-} from '@kobato/distribution/sea-assets.ts'
-import { parseConfigArg } from '@kobato/server/infra/config-arg.ts'
-import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback.ts'
+} from '@kobato/distribution/sea-assets'
+import { parseConfigArg } from '@kobato/server/infra/config-arg'
+import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback'
 import {
   collectDoctorReport,
   doctorOk,
   formatDoctorText,
   parseProbeIssues,
-} from '@kobato/server/infra/sea/doctor-report.ts'
-import { runIntlProbe } from '@kobato/server/infra/sea/intl-probe.ts'
-import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives.ts'
-import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch.ts'
-import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea/sea.ts'
-import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/sea/doctor-report'
+import { runIntlProbe } from '@kobato/server/infra/sea/intl-probe'
+import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea/sea'
+import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives'
+import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch'
+import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
 import { createWriteStream, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -276,7 +276,7 @@ async function main(args: ReadonlySet<string>): Promise<void> {
     await doctor(args.has('--json'))
   }
   if (args.has('--doctor-config-probe')) {
-    await import('@kobato/server/infra/config.ts')
+    await import('@kobato/server/infra/config')
   }
 }
 

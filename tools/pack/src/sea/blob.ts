@@ -1,4 +1,4 @@
-import { seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths.ts'
+import { seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths'
 import { writeFile } from 'node:fs/promises'
 
 export async function writeSeaConfig(assets: Map<string, string>, output: string) {

@@ -1,19 +1,19 @@
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { buildMyCommentFilterFields } from '@kobato/web-admin/ui/account/filter-fields.ts'
-import { buildAuditFilterFields, type AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields.tsx'
-import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { buildMyCommentFilterFields } from '@kobato/web-admin/ui/account/filter-fields'
+import { buildAuditFilterFields, type AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields'
+import { buildCommentFilterFields } from '@kobato/web-admin/ui/comments/filter-fields'
 import {
   DateSingleFilterEditor,
   formatDateInput,
   parseDateInput,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-single-editor.tsx'
-import { TextFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/editors.tsx'
-import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar.tsx'
-import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list.tsx'
-import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-single-editor'
+import { TextFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/editors'
+import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar'
+import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list'
+import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)

@@ -1,12 +1,12 @@
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/infra/db/job-run-recorder.ts', () => ({
+vi.mock('@kobato/server/infra/db/job-run-recorder', () => ({
   startJobRun: vi.fn(() => 42),
   finishJobRun: vi.fn(),
 }))
 
-import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
 import {
   MAX_TIMER_DELAY_MS,
   __resetSchedulerTaskStatesForTests,
@@ -14,7 +14,7 @@ import {
   getSchedulerTaskState,
   scheduleJob,
   stopAllScheduledJobs,
-} from '@kobato/server/infra/scheduler-utils.ts'
+} from '@kobato/server/infra/scheduler-utils'
 
 describe('infra/scheduler-utils — computeNextRun', () => {
   const timeZone = 'Asia/Shanghai'

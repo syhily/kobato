@@ -1,27 +1,27 @@
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { verification, user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { establishLoginSession, logout, userSession } from '@kobato/server/domains/auth/primitives.ts'
-import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@kobato/server/domains/auth/rbac.ts'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { verification, user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { establishLoginSession, logout, userSession } from '@kobato/server/domains/auth/primitives'
+import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@kobato/server/domains/auth/rbac'
 import {
   recordSessionLogin,
   findSessionMeta,
   revokeSessionById,
   recordSessionActivity,
-} from '@kobato/server/domains/auth/repo.ts'
-import { handleCredentialLogin } from '@kobato/server/domains/auth/services/credential.ts'
-import { handleOtpCancel } from '@kobato/server/domains/auth/services/otp.ts'
-import { listSessionsByUser, listAllSessions } from '@kobato/server/domains/auth/services/sessions.ts'
-import { revokeSessionWithGuard } from '@kobato/server/domains/auth/session-guard.ts'
-import { getRequestSession } from '@kobato/server/domains/auth/session-storage.ts'
+} from '@kobato/server/domains/auth/repo'
+import { handleCredentialLogin } from '@kobato/server/domains/auth/services/credential'
+import { handleOtpCancel } from '@kobato/server/domains/auth/services/otp'
+import { listSessionsByUser, listAllSessions } from '@kobato/server/domains/auth/services/sessions'
+import { revokeSessionWithGuard } from '@kobato/server/domains/auth/session-guard'
+import { getRequestSession } from '@kobato/server/domains/auth/session-storage'
 import {
   getSetupToken,
   invalidateSetupToken,
   verifySetupToken,
   isSetupTokenActive,
   __resetSetupTokenForTests,
-} from '@kobato/server/domains/auth/setup-token.ts'
+} from '@kobato/server/domains/auth/setup-token'
 import {
   issueOtpToken,
   issueResetToken,
@@ -32,10 +32,10 @@ import {
   purgeExpired,
   revokeTokensFor,
   verifyOtpToken,
-} from '@kobato/server/domains/auth/verification-tokens.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/auth/verification-tokens'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -501,7 +501,7 @@ describe('auth/primitives — establishLoginSession & logout', () => {
 
 describe('auth/primitives — resolveSessionContext', () => {
   it('returns a session with no user for a fresh anonymous request', async () => {
-    const { resolveSessionContext } = await import('@kobato/server/domains/auth/primitives.ts')
+    const { resolveSessionContext } = await import('@kobato/server/domains/auth/primitives')
     const result = await resolveSessionContext(db, new Request('http://localhost/'))
     expect(result.user).toBeUndefined()
   })

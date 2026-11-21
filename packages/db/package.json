@@ -9,15 +9,24 @@
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
-    "./database.ts": "./src/database.ts",
-    "./errors.ts": "./src/errors.ts",
-    "./like-escape.ts": "./src/like-escape.ts",
-    "./migrate.ts": "./src/migrate.ts",
-    "./target.ts": "./src/target.ts",
-    "./types.ts": "./src/types.ts",
-    "./duckdb/*": "./src/duckdb/*",
-    "./operations/*": "./src/operations/*",
-    "./schema/*": "./src/schema/*",
+    "./database": "./src/database.ts",
+    "./errors": "./src/errors.ts",
+    "./like-escape": "./src/like-escape.ts",
+    "./migrate": "./src/migrate.ts",
+    "./target": "./src/target.ts",
+    "./types": "./src/types.ts",
+    "./duckdb/*": [
+      "./src/duckdb/*.ts",
+      "./src/duckdb/*.tsx"
+    ],
+    "./operations/*": [
+      "./src/operations/*.ts",
+      "./src/operations/*.tsx"
+    ],
+    "./schema/*": [
+      "./src/schema/*.ts",
+      "./src/schema/*.tsx"
+    ],
     "./drizzle/*": "./drizzle/*"
   },
   "scripts": {

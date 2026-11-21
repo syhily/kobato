@@ -1,7 +1,7 @@
-import type { NewPostMeta, PostMetaRow } from '@kobato/db/types.ts'
+import type { NewPostMeta, PostMetaRow } from '@kobato/db/types'
 
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { makeMetaCrud } from '@kobato/server/domains/content/entities/meta-repo.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { makeMetaCrud } from '@kobato/server/domains/content/entities/meta-repo'
 
 const crud = makeMetaCrud<PostMetaRow, NewPostMeta>(postMetaTable)
 

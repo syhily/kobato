@@ -5,7 +5,7 @@ import {
   resetBackupEncryption,
   resolveStoredEncryptionPassword,
   wireBackupEncryption,
-} from '@kobato/server/domains/backup/services/backup.ts'
+} from '@kobato/server/domains/backup/services/backup'
 import { afterEach, describe, expect, it } from 'vitest'
 
 describe('services/backup — key validation', () => {

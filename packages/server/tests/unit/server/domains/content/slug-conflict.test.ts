@@ -1,5 +1,5 @@
-import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { describe, expect, it } from 'vitest'
 
 function uniqueViolation(failed: string): Error {

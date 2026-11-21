@@ -3,7 +3,7 @@ import {
   getServerPhase,
   setServerPhase,
   type ServerPhase,
-} from '@kobato/server/infra/lifecycle.ts'
+} from '@kobato/server/infra/lifecycle'
 import { afterEach, describe, expect, it } from 'vitest'
 
 function resetTo(phase: ServerPhase): void {

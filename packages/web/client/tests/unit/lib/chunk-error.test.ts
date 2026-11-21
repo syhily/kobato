@@ -1,4 +1,4 @@
-import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error.ts'
+import { isChunkLoadError } from '@kobato/web-client/lib/chunk-error'
 import { describe, expect, it } from 'vitest'
 
 describe('isChunkLoadError', () => {

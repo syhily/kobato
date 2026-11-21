@@ -1,8 +1,8 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { drawOpenGraph } from '@kobato/server/render/og/render'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { describe, expect, it, vi } from 'vitest'

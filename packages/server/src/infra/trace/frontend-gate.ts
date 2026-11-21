@@ -1,5 +1,5 @@
-import type { FrontendRumRelay } from '@kobato/server/infra/trace/config.ts'
-import type { FrontendRumBootstrap } from '@kobato/telemetry/rum.ts'
+import type { FrontendRumRelay } from '@kobato/server/infra/trace/config'
+import type { FrontendRumBootstrap } from '@kobato/telemetry/rum'
 
 interface GateEntry {
   token: object

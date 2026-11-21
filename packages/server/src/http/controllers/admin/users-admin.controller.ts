@@ -1,18 +1,18 @@
-import { adminUsersAdminContract } from '@kobato/api/admin/users.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service.ts'
-import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin.ts'
+import { adminUsersAdminContract } from '@kobato/api/admin/users'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { deleteAllCredentials } from '@kobato/server/domains/auth/passkey/service'
+import { resolveSiteOrigin } from '@kobato/server/domains/settings/site-origin'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
   muteUser,
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
-} from '@kobato/server/domains/users/services/admin.ts'
-import { implementAdmin, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base.ts'
-import { createServerTranslator } from '@kobato/server/infra/i18n.ts'
-import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/users/services/admin'
+import { implementAdmin, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@kobato/server/infra/rate-limit'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminUsersAdminContract)
 

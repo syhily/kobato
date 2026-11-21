@@ -1,4 +1,4 @@
-import { isUniqueConstraintError } from '@kobato/db/errors.ts'
+import { isUniqueConstraintError } from '@kobato/db/errors'
 import { describe, expect, it } from 'vitest'
 
 describe('db/errors — isUniqueConstraintError', () => {

@@ -1,9 +1,9 @@
-import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header.tsx'
+import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header'
 
-import { avatarImageUrl } from '@kobato/assets/avatar.ts'
-import { ROLE_LABEL_KEYS } from '@kobato/auth/roles.ts'
-import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar.tsx'
-import { Button } from '@kobato/ui/components/button.tsx'
+import { avatarImageUrl } from '@kobato/assets/avatar'
+import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
+import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
+import { Button } from '@kobato/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +11,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@kobato/ui/components/dropdown-menu.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout.ts'
-import { warmNotificationsDrawerChunk } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer.tsx'
-import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge.tsx'
+} from '@kobato/ui/components/dropdown-menu'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout'
+import { warmNotificationsDrawerChunk } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer'
+import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge'
 import { BellIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, SettingsIcon, UserIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

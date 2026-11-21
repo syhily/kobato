@@ -1,4 +1,4 @@
-import { Slugger } from '@kobato/utils/slug.ts'
+import { Slugger } from '@kobato/utils/slug'
 import { pinyin } from 'pinyin-pro'
 
 export function deriveSlug(text: string): string {

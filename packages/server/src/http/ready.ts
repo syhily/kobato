@@ -1,7 +1,7 @@
 import type { Context } from 'hono'
 
-import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine.ts'
-import { getServerPhase } from '@kobato/server/infra/lifecycle.ts'
+import { peekRestoreJobPhase } from '@kobato/server/domains/backup/restore-machine'
+import { getServerPhase } from '@kobato/server/infra/lifecycle'
 
 export function readyHandler(c: Context): Response {
   const phase = getServerPhase()

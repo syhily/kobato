@@ -1,12 +1,12 @@
-import type { ListingPostCardWithMetadata } from '@kobato/catalog/model.ts'
+import type { ListingPostCardWithMetadata } from '@kobato/catalog/model'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatDate } from '@kobato/utils/format.ts'
-import { localDateParts } from '@kobato/utils/site-date.ts'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context.tsx'
-import { postTitleClass } from '@kobato/web-public/ui/post/postChrome.ts'
-import { PostSquare } from '@kobato/web-public/ui/post/PostListViews.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatDate } from '@kobato/utils/format'
+import { localDateParts } from '@kobato/utils/site-date'
+import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { postTitleClass } from '@kobato/web-public/ui/post/postChrome'
+import { PostSquare } from '@kobato/web-public/ui/post/PostListViews'
 
 export interface ArchivesBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]

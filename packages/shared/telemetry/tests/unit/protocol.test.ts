@@ -1,13 +1,13 @@
-import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs.ts'
-import { isTraceMetricStreamName, TRACE_METRIC_NAMES, TRACE_METRIC_STREAM_PREFIXES } from '@kobato/telemetry/metrics.ts'
+import { TRACE_LOG_STREAM } from '@kobato/telemetry/logs'
+import { isTraceMetricStreamName, TRACE_METRIC_NAMES, TRACE_METRIC_STREAM_PREFIXES } from '@kobato/telemetry/metrics'
 import {
   RUM_PRIVACY_PIPELINE_DESCRIPTION,
   RUM_PRIVACY_PIPELINE_NAME,
   RUM_PRIVACY_VERSION_MARKER,
   RUM_PRIVACY_VRL_SHA256,
   RUM_STREAM_NAME,
-} from '@kobato/telemetry/pipeline.ts'
-import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN, frontendRumBootstrapSchema } from '@kobato/telemetry/rum.ts'
+} from '@kobato/telemetry/pipeline'
+import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN, frontendRumBootstrapSchema } from '@kobato/telemetry/rum'
 import { describe, expect, it } from 'vitest'
 
 describe('telemetry protocol vocabulary', () => {

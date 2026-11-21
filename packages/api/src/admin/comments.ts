@@ -13,8 +13,8 @@ import {
   adminCommentsPendingDashboardInput,
   adminPendingDashboardDto,
   ownCommentMutationDto,
-} from '@kobato/contracts/comments.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/comments'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 export const adminCommentsContract = {

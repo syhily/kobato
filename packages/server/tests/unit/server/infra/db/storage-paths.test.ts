@@ -1,5 +1,5 @@
-import { isInMemoryPath } from '@kobato/db/database.ts'
-import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
+import { isInMemoryPath } from '@kobato/db/database'
+import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths'
 import { describe, expect, it } from 'vitest'
 
 describe('storage path resolvers', () => {

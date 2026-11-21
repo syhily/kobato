@@ -1,5 +1,5 @@
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
-import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm.tsx'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: FriendApplyForm', () => {

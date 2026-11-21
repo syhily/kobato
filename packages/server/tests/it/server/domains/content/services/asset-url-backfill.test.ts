@@ -1,22 +1,17 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { setting } from '@kobato/db/schema/config.ts'
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { friend as friendTable } from '@kobato/db/schema/friend.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable } from '@kobato/db/schema/taxonomy.ts'
+import { setting } from '@kobato/db/schema/config'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { friend as friendTable } from '@kobato/db/schema/friend'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postTable } from '@kobato/db/schema/post'
+import { category as categoryTable } from '@kobato/db/schema/taxonomy'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
-} from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import {
-  emptyLexicalBody,
-  lexicalBodyWith,
-  lexicalImage,
-  lexicalParagraph,
-} from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/domains/content/services/asset-url-backfill'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

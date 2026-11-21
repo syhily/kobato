@@ -1,9 +1,9 @@
-import type { SiteDateParts } from '@kobato/utils/format.ts'
+import type { SiteDateParts } from '@kobato/utils/format'
 
 import { TZDate } from '@date-fns/tz'
-import { normalizeAppLocale } from '@kobato/i18n/locales.ts'
-import { dateFnsLocaleFor, formatRecentDate, siteDateParts } from '@kobato/utils/format.ts'
-import { createBoundedMap } from '@kobato/utils/memo.ts'
+import { normalizeAppLocale } from '@kobato/i18n/locales'
+import { dateFnsLocaleFor, formatRecentDate, siteDateParts } from '@kobato/utils/format'
+import { createBoundedMap } from '@kobato/utils/memo'
 import { format as formatZonedDate } from 'date-fns'
 
 export type FormatterLocale =

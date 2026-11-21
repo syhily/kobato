@@ -1,4 +1,4 @@
-import { formatLocalDate, formatShowDate, localDateParts } from '@kobato/utils/site-date.ts'
+import { formatLocalDate, formatShowDate, localDateParts } from '@kobato/utils/site-date'
 import { describe, expect, it } from 'vitest'
 
 const SETTINGS = {

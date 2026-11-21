@@ -1,12 +1,12 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { Database } from '@kobato/db/database'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 
-import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
+import { requireRole } from '@kobato/server/domains/auth/rbac'
 import { createContext } from 'react-router'
 
 export interface RequestContext {

@@ -9,7 +9,7 @@ import {
   analyticsQuerySchema,
   countersDto,
   viewsDto,
-} from '@kobato/contracts/analytics.ts'
+} from '@kobato/contracts/analytics'
 import { oc } from '@orpc/contract'
 
 export const analyticsContract = {

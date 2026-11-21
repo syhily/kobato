@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { useRumConsent } from '@kobato/web-client/hooks/use-rum-consent.ts'
+import { useRumConsent } from '@kobato/web-client/hooks/use-rum-consent'
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 

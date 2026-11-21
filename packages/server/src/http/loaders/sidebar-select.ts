@@ -1,11 +1,11 @@
-import type { ClientTag } from '@kobato/catalog/model.ts'
-import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { SidebarSettings } from '@kobato/settings/types.ts'
+import type { ClientTag } from '@kobato/catalog/model'
+import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { SidebarSettings } from '@kobato/settings/types'
 
-import { getSidebarWidgetCount } from '@kobato/settings/presentation.ts'
-import { sampleSize } from '@kobato/utils/sampling.ts'
-import { formatLocalDate } from '@kobato/utils/site-date.ts'
+import { getSidebarWidgetCount } from '@kobato/settings/presentation'
+import { sampleSize } from '@kobato/utils/sampling'
+import { formatLocalDate } from '@kobato/utils/site-date'
 
 export interface SidebarSeedInput {
   scope: string

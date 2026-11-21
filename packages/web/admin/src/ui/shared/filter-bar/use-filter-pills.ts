@@ -1,5 +1,5 @@
-import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
-import type { TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
+import type { TextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import type {
   FilterFieldSpec,
   FilterOptionItem,
@@ -7,17 +7,17 @@ import type {
   FilterQueryPatch,
   SearchFieldState,
   SearchFilterField,
-} from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   type DateFilterValue,
   parseDateFilter,
   parseSingleDateFilter,
   type SingleDateFilterValue,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import { filterPillsReducer } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
-import { parseTextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import { filterPillsReducer } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
+import { parseTextFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import { useQueries } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 

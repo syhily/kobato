@@ -3,7 +3,7 @@ import {
   newsletterOkOutputSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '@kobato/contracts/newsletter.ts'
+} from '@kobato/contracts/newsletter'
 import { oc } from '@orpc/contract'
 
 export const newsletterContract = {

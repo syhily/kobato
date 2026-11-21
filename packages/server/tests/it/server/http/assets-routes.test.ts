@@ -1,13 +1,13 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { BrandingObjectRef } from '@kobato/settings/types.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { BrandingObjectRef } from '@kobato/settings/types'
 
-import { getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 
-const { assetsRouter } = await import('@kobato/server/http/resources/assets.ts')
+const { assetsRouter } = await import('@kobato/server/http/resources/assets')
 
 async function requestAssets(path: string, init?: RequestInit): Promise<Response> {
   const db = getTestDb()

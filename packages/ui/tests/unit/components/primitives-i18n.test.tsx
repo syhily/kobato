@@ -7,21 +7,21 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog.tsx'
+import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog'
 import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationNext,
   PaginationPrevious,
-} from '@kobato/ui/components/pagination.tsx'
-import { Sheet, SheetContent, SheetTitle } from '@kobato/ui/components/sheet.tsx'
-import { SidebarProvider, SidebarTrigger } from '@kobato/ui/components/sidebar.tsx'
-import { Toaster } from '@kobato/ui/components/sonner.tsx'
-import { Table, TableBody, TableCell, TableRow } from '@kobato/ui/components/table.tsx'
-import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+} from '@kobato/ui/components/pagination'
+import { Sheet, SheetContent, SheetTitle } from '@kobato/ui/components/sheet'
+import { SidebarProvider, SidebarTrigger } from '@kobato/ui/components/sidebar'
+import { Toaster } from '@kobato/ui/components/sonner'
+import { Table, TableBody, TableCell, TableRow } from '@kobato/ui/components/table'
+import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 
 function render(node: ReactElement, locale: AppLocale) {
   return renderWithI18n(node, { locale })

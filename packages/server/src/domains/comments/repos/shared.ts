@@ -1,14 +1,14 @@
-import type { MyCommentsStatus } from '@kobato/contracts/comments.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityTarget, EntityType } from '@kobato/db/target.ts'
-import type { CommentAndUser } from '@kobato/server/domains/comments/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { AdminCommentStatus, CommentTextMatch, MyCommentsStatus } from '@kobato/contracts/comments'
+import type { Database } from '@kobato/db/database'
+import type { EntityTarget, EntityType } from '@kobato/db/target'
+import type { CommentAndUser } from '@kobato/server/domains/comments/types'
+import type { Assert, Equals } from '@kobato/utils/type-equals'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { page } from '@kobato/db/schema/page.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { comment } from '@kobato/db/schema/comment'
+import { page } from '@kobato/db/schema/page'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
 import { and, eq, gte, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
 export const commentWithUser = {
@@ -103,9 +103,9 @@ export interface CommentAuthor {
 export interface AdminListFilters {
   target?: EntityTarget
   userId?: number
-  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
+  status?: AdminCommentStatus
   q?: string
-  match?: 'contains' | 'does-not-contain'
+  match?: CommentTextMatch
   createdAfter?: Date
   createdBefore?: Date
 }

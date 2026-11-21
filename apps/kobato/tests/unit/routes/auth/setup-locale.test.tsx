@@ -2,13 +2,13 @@
 
 import type { ComponentProps } from 'react'
 
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-import AdminInstallRouteRaw from '@/routes/auth/setup/index.tsx'
+import AdminInstallRouteRaw from '@/routes/auth/setup/index'
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()

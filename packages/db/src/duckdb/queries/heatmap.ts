@@ -1,9 +1,9 @@
-import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates.ts'
-import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter.ts'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query.ts'
+import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
+import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'
+import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql } from 'kysely'
 
 export async function queryHeatmap(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<HeatmapCell[]> {

@@ -1,4 +1,4 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,7 +9,7 @@ describe('redirectsRouter', () => {
   })
 
   async function buildApp() {
-    const { redirectsRouter } = await import('@kobato/server/http/resources/redirects.ts')
+    const { redirectsRouter } = await import('@kobato/server/http/resources/redirects')
     const app = new Hono<Env>()
     app.route('/', redirectsRouter)
     return app

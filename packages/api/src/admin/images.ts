@@ -5,8 +5,8 @@ import {
   adminImageUploadInput,
   adminImagesListInput,
   listImagesOutputDto,
-} from '@kobato/contracts/images.ts'
-import { voidOutput } from '@kobato/contracts/primitives.ts'
+} from '@kobato/contracts/images'
+import { voidOutput } from '@kobato/contracts/primitives'
 import { oc } from '@orpc/contract'
 
 // Admin images RPC contract — author base on the server. `upload` carries a

@@ -1,16 +1,16 @@
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
-import type { O2Client } from '@kobato/server/domains/observability/o2-client.ts'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
+import type { O2Client } from '@kobato/server/domains/observability/o2-client'
 
-import { getObservabilityAssets, observabilityAssetFingerprint } from '@kobato/server/domains/observability/assets.ts'
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
-import { testObservabilityConnection } from '@kobato/server/domains/observability/connection.ts'
-import { O2ClientError } from '@kobato/server/domains/observability/o2-client.ts'
+import { getObservabilityAssets, observabilityAssetFingerprint } from '@kobato/server/domains/observability/assets'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
+import { testObservabilityConnection } from '@kobato/server/domains/observability/connection'
+import { O2ClientError } from '@kobato/server/domains/observability/o2-client'
 import {
   runObservabilityProvisioning,
   upgradeObservabilityProvisioningAtBoot,
-} from '@kobato/server/domains/observability/provision.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
+} from '@kobato/server/domains/observability/provision'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
 import { describe, expect, it, vi } from 'vitest'
 
 const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]

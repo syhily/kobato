@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 
-import type { LocaleChangeAnnouncement } from '@kobato/web-client/lib/locale-sync.ts'
+import type { LocaleChangeAnnouncement } from '@kobato/web-client/lib/locale-sync'
 
-import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
 import {
   SETTINGS_LOCALE_CHANNEL,
   createLocaleSyncOrigin,
   publishLocaleChange,
   subscribeLocaleChange,
-} from '@kobato/web-client/lib/locale-sync.ts'
+} from '@kobato/web-client/lib/locale-sync'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function collect() {

@@ -3,11 +3,11 @@ import {
   commentEditorStateSchema,
   EMPTY_COMMENT_EDITOR_STATE,
   type CommentEditorState,
-} from '@kobato/inkling/headless/comment-schema.ts'
-import { visitLexicalNodes } from '@kobato/inkling/headless/walk.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes.ts'
-import { downgradeLegacyCommentMath } from '@kobato/web-public/ui/comments/editor/comment-legacy-math.ts'
+} from '@kobato/inkling/headless/comment-schema'
+import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes'
+import { downgradeLegacyCommentMath } from '@kobato/web-public/ui/comments/editor/comment-legacy-math'
 // @vitest-environment jsdom
 // jsdom: the decorator cards (codeblock) serialize through @lexical/html,
 // which needs a DOM document even for a headless parse → toJSON round-trip.

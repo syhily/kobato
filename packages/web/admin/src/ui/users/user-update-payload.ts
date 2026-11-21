@@ -1,4 +1,4 @@
-import type { AdminUserUpdateInput } from '@kobato/contracts/users.ts'
+import type { AdminUserUpdateInput } from '@kobato/contracts/users'
 
 export type AdminUserUpdatePayload = Omit<AdminUserUpdateInput, 'id'>
 

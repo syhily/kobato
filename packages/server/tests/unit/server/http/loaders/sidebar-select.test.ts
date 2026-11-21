@@ -1,15 +1,11 @@
-import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { SidebarSettings } from '@kobato/settings/types.ts'
+import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { SidebarSettings } from '@kobato/settings/types'
 
-import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog.ts'
-import {
-  selectSidebarTags,
-  sidebarSelection,
-  sidebarSelectionSeed,
-} from '@kobato/server/http/loaders/sidebar-select.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog'
+import { selectSidebarTags, sidebarSelection, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 const SIDEBAR_SETTINGS = TEST_BLOG_SETTINGS_BUNDLE.sidebar!

@@ -1,6 +1,6 @@
-import { FALLBACK_MESSAGE_IDS, fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
+import { FALLBACK_MESSAGE_IDS, fallbackMessages } from '@kobato/i18n/fallback-messages'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { describe, expect, it } from 'vitest'
 
 describe('i18n/fallback-messages', () => {

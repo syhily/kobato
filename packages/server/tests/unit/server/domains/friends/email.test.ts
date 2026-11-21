@@ -1,15 +1,15 @@
-import type { FriendRow } from '@kobato/db/types.ts'
+import type { FriendRow } from '@kobato/db/types'
 
-import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 // The transport itself is covered by the notifications suite; this suite
 // pins the subject/element mapping through a capturing function spy.
 const sendAdminNotification = vi
-  .spyOn(await import('@kobato/server/infra/email/admin-notification.ts'), 'sendAdminNotification')
+  .spyOn(await import('@kobato/server/infra/email/admin-notification'), 'sendAdminNotification')
   .mockImplementation(async () => ({ ok: true }) as never)
-const { sendNewFriendApplication } = await import('@kobato/server/domains/friends/email.ts')
+const { sendNewFriendApplication } = await import('@kobato/server/domains/friends/email')
 
 afterAll(() => {
   sendAdminNotification.mockRestore()

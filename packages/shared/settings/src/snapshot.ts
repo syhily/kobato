@@ -1,4 +1,4 @@
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 type Storage = Readonly<{
   blogSettingsSnapshot: BlogSettingsBundle | null

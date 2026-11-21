@@ -1,12 +1,12 @@
-import type { Page } from '@kobato/catalog/model.ts'
-import type { AdminPageDto } from '@kobato/contracts/pages.ts'
-import type { NewPageMeta, PageMetaRow } from '@kobato/db/types.ts'
-import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor.ts'
+import type { Page } from '@kobato/catalog/model'
+import type { AdminPageDto } from '@kobato/contracts/pages'
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/types'
+import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
-import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
-import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
-import { isLive } from '@kobato/server/domains/content/schemas/live-gate.ts'
-import { toAdminPageDto, toCmsPage } from '@kobato/server/domains/pages/projection.ts'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
+import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
+import { toAdminPageDto, toCmsPage } from '@kobato/server/domains/pages/projection'
 import {
   findPageMetaById,
   findPageMetaBySlug,
@@ -15,10 +15,10 @@ import {
   restorePageMeta,
   softDeletePageMeta,
   updatePageMetaById,
-} from '@kobato/server/domains/pages/repo.ts'
-import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query.ts'
-import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+} from '@kobato/server/domains/pages/repo'
+import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query'
+import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 function pageOgTarget(meta: PageMetaRow) {
   return {

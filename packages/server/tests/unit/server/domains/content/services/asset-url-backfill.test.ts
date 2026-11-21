@@ -1,8 +1,8 @@
 import {
   rewriteAssetReference,
   rewriteLexicalBodyAssetUrls,
-} from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { lexicalBodyWith, lexicalImage } from '@kobato/server/tests/utils/lexical.ts'
+} from '@kobato/server/domains/content/services/asset-url-backfill'
+import { lexicalBodyWith, lexicalImage } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
 const CDN = 'https://cdn.example.com'

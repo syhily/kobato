@@ -1,20 +1,20 @@
-import type { DeviceEnvBeacon } from '@kobato/contracts/analytics.ts'
-import type { DatabaseHandle } from '@kobato/db/database.ts'
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { DeviceEnvBeacon } from '@kobato/contracts/analytics'
+import type { DatabaseHandle } from '@kobato/db/database'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   flushDeviceEnvBeacons,
   pushDeviceEnvBeacon,
   replayDeadLetterDeviceEnv,
   toDeviceEnvClientRow,
-} from '@kobato/server/domains/analytics/services/env-beacon.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
+} from '@kobato/server/domains/analytics/services/env-beacon'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

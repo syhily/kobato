@@ -1,9 +1,9 @@
-import type { SaveBodyOutput } from '@kobato/contracts/revision.ts'
-import type { EditorAdapterConfig } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
+import type { SaveBodyOutput } from '@kobato/contracts/revision'
+import type { EditorAdapterConfig } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter'
 
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
-import { makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter'
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 

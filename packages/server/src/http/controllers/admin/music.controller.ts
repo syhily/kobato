@@ -1,12 +1,12 @@
-import { adminMusicContract } from '@kobato/api/admin/music.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read.ts'
-import { searchMusic } from '@kobato/server/domains/music/services/search.ts'
-import { addMusic } from '@kobato/server/domains/music/services/write/add.ts'
-import { deleteMusic } from '@kobato/server/domains/music/services/write/delete.ts'
-import { updateMusicMetadata } from '@kobato/server/domains/music/services/write/metadata.ts'
-import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { adminMusicContract } from '@kobato/api/admin/music'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read'
+import { searchMusic } from '@kobato/server/domains/music/services/search'
+import { addMusic } from '@kobato/server/domains/music/services/write/add'
+import { deleteMusic } from '@kobato/server/domains/music/services/write/delete'
+import { updateMusicMetadata } from '@kobato/server/domains/music/services/write/metadata'
+import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthor(adminMusicContract)
 

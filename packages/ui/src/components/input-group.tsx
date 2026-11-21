@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Textarea } from '@kobato/ui/components/textarea.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { cva, type VariantProps } from '@kobato/ui/lib/cva.ts'
+import { Button } from '@kobato/ui/components/button'
+import { Input } from '@kobato/ui/components/input'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { cn } from '@kobato/ui/lib/cn'
+import { cva, type VariantProps } from '@kobato/ui/lib/cva'
 
 function InputGroup({ className, ...props }: ComponentProps<'fieldset'>) {
   return (

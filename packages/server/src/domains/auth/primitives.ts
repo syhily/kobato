@@ -1,11 +1,11 @@
-import type { Role } from '@kobato/auth/roles.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { SafeUser } from '@kobato/db/operations/user.ts'
+import type { Role } from '@kobato/auth/roles'
+import type { Database } from '@kobato/db/database'
+import type { SafeUser } from '@kobato/db/operations/user'
 
-import { findUserById, updateLastLogin } from '@kobato/db/operations/user.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { recordSessionActivity, recordSessionLogin } from '@kobato/server/domains/auth/repo.ts'
-import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions.ts'
+import { findUserById, updateLastLogin } from '@kobato/db/operations/user'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { recordSessionActivity, recordSessionLogin } from '@kobato/server/domains/auth/repo'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
 import {
   type BlogSession,
   buildSessionWithSid,
@@ -14,10 +14,10 @@ import {
   getRequestSession,
   resolveSessionMaxAge,
   type SessionUser,
-} from '@kobato/server/domains/auth/session-storage.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/auth/session-storage'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { idFromString } from '@kobato/utils/id'
 
 export interface SessionContext {
   session: BlogSession

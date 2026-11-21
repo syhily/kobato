@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { Setting } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { Setting } from '@kobato/db/types'
 
-import { setting } from '@kobato/db/schema/config.ts'
+import { setting } from '@kobato/db/schema/config'
 import { eq, like } from 'drizzle-orm'
 
 export function findSettingByScope(db: Database, scope: string): Setting | null {

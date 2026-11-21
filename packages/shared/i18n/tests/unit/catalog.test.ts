@@ -1,4 +1,3 @@
-import { catalogScopeForPathname, isPublicMessageKey, isWorkspacePath } from '@kobato/i18n/catalog-scope.ts'
 import {
   CatalogValidationError,
   assertCatalogsValid,
@@ -9,9 +8,10 @@ import {
   uiMessagesFor,
   uiMessagesForScope,
   type MessageCatalogSource,
-} from '@kobato/i18n/catalog.ts'
-import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales.ts'
-import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US.ts'
+} from '@kobato/i18n/catalog'
+import { catalogScopeForPathname, isPublicMessageKey, isWorkspacePath } from '@kobato/i18n/catalog-scope'
+import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
+import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import { gzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 

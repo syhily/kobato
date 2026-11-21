@@ -68,7 +68,7 @@ function collectCallSites(): { file: string; offenders: { line: number; reason: 
   const results: { file: string; offenders: { line: number; reason: string }[] }[] = []
   for (const file of files) {
     const source = readFileSync(file, 'utf8')
-    if (!source.includes('@kobato/ui/components/select.tsx')) {
+    if (!source.includes('@kobato/ui/components/select')) {
       continue
     }
     const stripped = stripComments(source)

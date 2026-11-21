@@ -1,4 +1,4 @@
-import type { apiContract } from '@kobato/api/contract.ts'
+import type { apiContract } from '@kobato/api/contract'
 import type { ContractRouterClient } from '@orpc/contract'
 
 import { createORPCClient } from '@orpc/client'

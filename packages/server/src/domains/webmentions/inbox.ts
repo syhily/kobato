@@ -1,20 +1,20 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionInboxRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionInboxRow } from '@kobato/db/types'
 
+import { upsertWebmentionVerificationFailure } from '@kobato/db/operations/webmention'
 import {
   clearWebmentionInbox,
   deleteWebmentionInbox,
   markWebmentionInboxRetry,
   pickDueWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox.ts'
-import { upsertWebmentionVerificationFailure } from '@kobato/db/operations/webmention.ts'
-import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
-import { receiveWebmention } from '@kobato/server/domains/webmentions/receive.ts'
-import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry.ts'
-import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/target.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/settings/getters.ts'
+} from '@kobato/db/operations/webmention-inbox'
+import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
+import { receiveWebmention } from '@kobato/server/domains/webmentions/receive'
+import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'
+import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/target'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/settings/getters'
 
 const log = getLogger('webmentions.inbox')
 

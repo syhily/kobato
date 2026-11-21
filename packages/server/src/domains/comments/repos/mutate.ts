@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { Comment, NewComment } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { Comment, NewComment } from '@kobato/db/types'
 
-import { comment } from '@kobato/db/schema/comment.ts'
+import { comment } from '@kobato/db/schema/comment'
 import { and, eq } from 'drizzle-orm'
 
 export function insertComment(db: Database, values: NewComment): Comment | null {

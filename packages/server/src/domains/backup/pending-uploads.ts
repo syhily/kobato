@@ -1,7 +1,7 @@
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { registerJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { registerJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
 import { randomBytes } from 'node:crypto'
 import { rmSync } from 'node:fs'
 

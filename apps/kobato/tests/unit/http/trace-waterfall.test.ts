@@ -1,16 +1,16 @@
-import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config.ts'
+import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace'
 import type { Context } from 'hono'
 
-import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace.ts'
-import { requestContext } from '@kobato/server/http/request-context.ts'
-import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade.ts'
-import { METRIC } from '@kobato/server/infra/trace/metrics.ts'
-import { devTraceRequestMiddleware } from '@kobato/server/infra/trace/middleware.ts'
-import { traceRouteMiddleware } from '@kobato/server/infra/trace/react-router.ts'
-import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test/in-memory-metric-reader.ts'
+import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace'
+import { requestContext } from '@kobato/server/http/request-context'
+import { __resetTraceFacadeForTests } from '@kobato/server/infra/trace/facade'
+import { METRIC } from '@kobato/server/infra/trace/metrics'
+import { devTraceRequestMiddleware } from '@kobato/server/infra/trace/middleware'
+import { traceRouteMiddleware } from '@kobato/server/infra/trace/react-router'
+import { startTraceRuntime, stopTraceRuntime } from '@kobato/server/infra/trace/runtime'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { TestMetricReader, dataPointsOf, pointValue } from '@kobato/test/in-memory-metric-reader'
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api'
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace'
 import { ORPCError, createRouterClient, os } from '@orpc/server'
@@ -63,7 +63,7 @@ const renderHarness = vi.hoisted(() => {
 vi.mock('react-dom/server', () => ({ renderToPipeableStream: renderHarness.render }))
 vi.mock('@react-router/node', () => ({ createReadableStreamFromReadable: (stream: unknown) => stream }))
 
-const { default: handleRequest } = await import('@/entry.server.tsx')
+const { default: handleRequest } = await import('@/entry.server')
 
 const CONFIG: ServerTraceRuntimeConfig = {
   endpoint: 'http://127.0.0.1:5080',

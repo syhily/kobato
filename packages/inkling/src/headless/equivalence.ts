@@ -1,8 +1,8 @@
-import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling-internal/headless/schema.ts'
+import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling-internal/headless/schema'
 
-import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling-internal/headless/artifacts.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling-internal/headless/artifacts'
+import { isRecord } from '@kobato/utils/type-guards'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 // Semantic equality for Lexical editor states — the save pipeline's no-op
 // short-circuit (`content/repos/mutate`) and the editor shell's dirty check.

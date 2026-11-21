@@ -1,6 +1,6 @@
-import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 type JsonObject = Record<string, unknown>
 

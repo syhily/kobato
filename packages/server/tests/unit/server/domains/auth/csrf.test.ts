@@ -1,4 +1,4 @@
-import type { BlogSession, BlogSessionData } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSession, BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 
 import {
   buildCsrfCookieHeader,
@@ -10,8 +10,8 @@ import {
   validateCsrfForAction,
   validateCsrfToken,
   CSRF_HEADER,
-} from '@kobato/server/domains/auth/csrf.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/auth/csrf'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { createSession } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

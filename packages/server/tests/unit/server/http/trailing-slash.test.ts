@@ -1,6 +1,6 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { trailingSlashNormaliser } from '@kobato/server/http/middlewares/trailing-slash.ts'
+import { trailingSlashNormaliser } from '@kobato/server/http/middlewares/trailing-slash'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
 

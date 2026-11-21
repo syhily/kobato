@@ -1,7 +1,8 @@
-import { idString, isoDateTime } from '@kobato/contracts/primitives.ts'
+import { idString, isoDateTime } from '@kobato/contracts/primitives'
 import { z } from 'zod'
 
-const metingSource = z.enum(['netease', 'tencent'])
+export const METING_SOURCES = ['netease', 'tencent'] as const
+const metingSource = z.enum(METING_SOURCES)
 export type MetingSource = z.infer<typeof metingSource>
 
 const adminMusicDto = z.object({
@@ -83,7 +84,7 @@ export const adminMusicListInput = z.object({
 export type AdminMusicListInput = z.infer<typeof adminMusicListInput>
 
 export const adminMusicSearchInput = z.object({
-  source: z.enum(['netease', 'tencent']).optional(),
+  source: metingSource.optional(),
   keyword: z.string(),
   limit: z.coerce.number().optional(),
   offset: z.coerce.number().int().nonnegative().optional(),
@@ -91,7 +92,7 @@ export const adminMusicSearchInput = z.object({
 export type AdminMusicSearchInput = z.infer<typeof adminMusicSearchInput>
 
 export const adminMusicAddInput = z.object({
-  source: z.enum(['netease', 'tencent']),
+  source: metingSource,
   sourceId: z.string().trim().min(1).max(64),
 })
 export type AdminMusicAddInput = z.infer<typeof adminMusicAddInput>

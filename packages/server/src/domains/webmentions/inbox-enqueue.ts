@@ -1,16 +1,16 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema.ts'
+import type { Database } from '@kobato/db/database'
+import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema'
 
 import {
   countQueuedWebmentionInbox,
   countQueuedWebmentionInboxBySourceHost,
   upsertWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox.ts'
-import { rescheduleWebmentionInbox } from '@kobato/server/domains/webmentions/inbox-scheduler.ts'
-import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target.ts'
-import { requireSourceKey } from '@kobato/server/domains/webmentions/verify.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+} from '@kobato/db/operations/webmention-inbox'
+import { rescheduleWebmentionInbox } from '@kobato/server/domains/webmentions/inbox-scheduler'
+import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target'
+import { requireSourceKey } from '@kobato/server/domains/webmentions/verify'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export const INBOX_MAX_QUEUED = 5000
 export const INBOX_MAX_QUEUED_PER_SOURCE_HOST = 50

@@ -1,7 +1,7 @@
-import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { createSession } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
@@ -26,7 +26,7 @@ function seedExemptPaths(exemptPaths: string[]): void {
 describe('csrfGuard middleware', () => {
   async function setupApp() {
     const { Hono } = await import('hono')
-    const { csrfGuard } = await import('@kobato/server/http/middlewares/csrf.ts')
+    const { csrfGuard } = await import('@kobato/server/http/middlewares/csrf')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set('requestContext', {

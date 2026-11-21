@@ -1,13 +1,13 @@
-import type { AdminPageDetailDto } from '@kobato/contracts/pages.ts'
-import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta.ts'
+import type { AdminPageDetailDto } from '@kobato/contracts/pages'
+import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta'
 
-import { MetaSidebar } from '@kobato/web-admin/ui/pages/MetaSidebar.tsx'
-import { PageEditorRoute } from '@kobato/web-admin/ui/pages/PageEditorRoute.tsx'
-import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { MetaSidebar } from '@kobato/web-admin/ui/pages/MetaSidebar'
+import { PageEditorRoute } from '@kobato/web-admin/ui/pages/PageEditorRoute'
+import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-admin/ui/editor/PageBodyEditor.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/editor/PageBodyEditor', () => ({
   PageBodyEditor: ({ header }: { header?: React.ReactNode }) => (
     <div data-testid="page-body-editor">
       {header}
@@ -16,7 +16,7 @@ vi.mock('@kobato/web-admin/ui/editor/PageBodyEditor.tsx', () => ({
   ),
 }))
 
-vi.mock('@kobato/web-admin/ui/shell/AdminShell.tsx', () => ({
+vi.mock('@kobato/web-admin/ui/shell/AdminShell', () => ({
   useAdminChrome: () => ({
     setFocused: () => {},
     setScrollTopLifted: () => {},

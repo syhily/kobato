@@ -1,15 +1,15 @@
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
-import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
-import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart.tsx'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context'
+import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()
 
 const captured = vi.hoisted(() => ({ inputs: [] as Record<string, unknown>[] }))
 
-const orpcQueryMod = await import('@kobato/web-client/api/orpc-query.ts')
+const orpcQueryMod = await import('@kobato/web-client/api/orpc-query')
 vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
   analytics: {
     views: {

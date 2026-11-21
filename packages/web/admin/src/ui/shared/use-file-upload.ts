@@ -1,8 +1,8 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 
-import { extractApiErrorMessage } from '@kobato/web-client/lib/api-error.ts'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+import { extractApiErrorMessage } from '@kobato/web-client/lib/api-error'
+import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'

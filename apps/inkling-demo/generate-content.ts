@@ -1,0 +1,194 @@
+import {
+  $createAudioNode,
+  $createBookmarkNode,
+  $createButtonNode,
+  $createCalloutNode,
+  $createCodeBlockNode,
+  $createFileNode,
+  $createFootnoteDefinitionNode,
+  $createFootnoteRefNode,
+  $createGalleryNode,
+  $createHeaderNode,
+  $createHorizontalRuleNode,
+  $createHtmlNode,
+  $createImageNode,
+  $createMathNode,
+  $createToggleNode,
+  $createVideoNode,
+  DEFAULT_NODES,
+} from '@kobato/inkling'
+import { musicPlayer } from '@kobato/inkling-demo/components/MusicPlayerCard'
+import { withDOM } from '@lexical/headless/dom'
+import { $createLinkNode } from '@lexical/link'
+import { $createListItemNode, $createListNode } from '@lexical/list'
+import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text'
+import { TableCellNode, TableNode, TableRowNode } from '@lexical/table'
+import { $createParagraphNode, $createTextNode, $getRoot, createEditor, type LexicalEditor } from 'lexical'
+import { writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const OUT_PATH = fileURLToPath(new URL('./content/content.json', import.meta.url))
+
+function updateEditor(editor: LexicalEditor, update: () => void): Promise<void> {
+  return new Promise((resolve) => {
+    editor.update(update, { onUpdate: () => resolve() })
+  })
+}
+
+const editor = createEditor({
+  namespace: 'gen',
+  nodes: [...DEFAULT_NODES, musicPlayer.node],
+  onError: (e) => {
+    throw e
+  },
+})
+
+await withDOM(() =>
+  updateEditor(editor, () => {
+    const root = $getRoot()
+
+    const h1 = $createHeadingNode('h1')
+    h1.append($createTextNode('Every feature, one document'))
+    root.append(h1)
+
+    const intro = $createParagraphNode()
+    const bold = $createTextNode('This document exercises the full surface: ')
+    bold.setFormat('bold')
+    const italic = $createTextNode('every card, ')
+    italic.setFormat('italic')
+    const code = $createTextNode('every plugin, ')
+    code.setFormat('code')
+    const highlight = $createTextNode('every shortcut')
+    highlight.setFormat('highlight')
+    intro.append(bold, italic, code, highlight, $createTextNode('.'))
+    root.append(intro)
+
+    const withLink = $createParagraphNode()
+    withLink.append(
+      $createTextNode('Inline link: '),
+      $createLinkNode('https://inkling.local/').append($createTextNode('the Inkling platform')),
+      $createTextNode(', a footnote ref'),
+    )
+    withLink.append($createFootnoteRefNode('1', 'demo-footnote-1'), $createTextNode(', and more below.'))
+    root.append(withLink)
+
+    const list = $createListNode('bullet')
+    for (const item of ['Slash menu (/)', 'Plus button (hover the left gutter)', 'Markdown shortcuts (##, ```, ---)']) {
+      const li = $createListItemNode()
+      li.append($createTextNode(item))
+      list.append(li)
+    }
+    root.append(list)
+
+    const quote = $createQuoteNode()
+    quote.append($createTextNode('Quote blocks cycle quote → aside → paragraph with the toolbar button.'))
+    root.append(quote)
+
+    root.append(
+      $createToggleNode({
+        heading: '<p>Toggle title — click to expand</p>',
+        content: '<p>Hidden toggle content with its own nested editor.</p>',
+      }),
+    )
+
+    root.append(
+      $createCalloutNode({ calloutEmoji: '💡', calloutText: '<p>Callouts carry an emoji and rich text.</p>' }),
+    )
+
+    root.append(
+      $createHeaderNode({
+        header: '<p>Header card</p>',
+        subheader: '<p>With a subheader, alignment and button options in settings.</p>',
+        buttonEnabled: true,
+        buttonText: 'Read more',
+        buttonUrl: 'https://inkling.local/',
+      }),
+    )
+
+    root.append(
+      $createImageNode({
+        src: '/inkling-editor-1.png',
+        width: 1480,
+        height: 486,
+        alt: 'Inkling editor, light theme',
+        caption: '<p>Image card with a caption editor.</p>',
+      }),
+    )
+
+    root.append(
+      $createGalleryNode({
+        images: [
+          { src: '/inkling-editor-1.png', width: 1480, height: 486 },
+          { src: '/inkling-editor-2.png', width: 1480, height: 486 },
+        ],
+        caption: '<p>Gallery card — drag images to reorder, drop more in.</p>',
+      }),
+    )
+
+    root.append($createVideoNode({}))
+    root.append($createAudioNode({}))
+    root.append($createFileNode({}))
+
+    root.append($createBookmarkNode({ url: 'https://inkling.local/' }))
+    root.append($createButtonNode({ buttonText: 'Button card', buttonUrl: 'https://inkling.local/' }))
+    root.append(
+      $createCodeBlockNode({
+        code: "import { createEditor } from 'lexical'\n\n// code blocks keep language + optional caption\nconst editor = createEditor()",
+        language: 'ts',
+        caption: '<p>main.ts</p>',
+      }),
+    )
+    root.append(
+      $createHtmlNode({
+        html: '<div style="padding: 12px; border: 1px solid currentColor;">HTML card renders raw markup in an editable sandbox.</div>',
+      }),
+    )
+    root.append($createMathNode({ tex: 'e^{i\\pi} + 1 = 0' }))
+    root.append($createHorizontalRuleNode())
+
+    const table = new TableNode()
+    const headerRow = new TableRowNode()
+    for (const label of ['Feature', 'Where', 'How to trigger']) {
+      const cell = new TableCellNode(1)
+      const p = $createParagraphNode()
+      p.append($createTextNode(label))
+      cell.append(p)
+      headerRow.append(cell)
+    }
+    table.append(headerRow)
+    for (const row of [
+      ['Slash menu', 'cards', 'Type /'],
+      ['Table', 'element family', 'Slash menu → Table'],
+    ]) {
+      const tableRow = new TableRowNode()
+      for (const text of row) {
+        const cell = new TableCellNode(0)
+        const p = $createParagraphNode()
+        p.append($createTextNode(text))
+        cell.append(p)
+        tableRow.append(cell)
+      }
+      table.append(tableRow)
+    }
+    root.append(table)
+
+    root.append(new musicPlayer.node({ src: '' }))
+
+    root.append(
+      $createFootnoteDefinitionNode({
+        targetKey: 'demo-footnote-1',
+        content: '<p>The demo footnote: refs renumber in citation order.</p>',
+      }),
+    )
+
+    root.append($createParagraphNode())
+  }),
+)
+
+const state = withDOM(() => editor.getEditorState().toJSON())
+const children = state.root.children.length
+if (!(children > 15)) {
+  throw new Error(`gen-demo-content: expected more than 15 root children, got ${children}`)
+}
+writeFileSync(OUT_PATH, `${JSON.stringify(state, null, 2)}\n`)
+process.stdout.write(`wrote ${OUT_PATH}\n`)

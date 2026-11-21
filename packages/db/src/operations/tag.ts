@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { NewTag, TagRow } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { NewTag, TagRow } from '@kobato/db/types'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { tag } from '@kobato/db/schema/taxonomy.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { tag } from '@kobato/db/schema/taxonomy'
 import { asc, count, eq, inArray, or, type SQL } from 'drizzle-orm'
 
 export interface AdminTagsListFilters {

@@ -1,8 +1,8 @@
-import type { AdminCategoryDto } from '@kobato/contracts/categories.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { CategoryRow } from '@kobato/db/types.ts'
-import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup.ts'
-import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection.ts'
+import type { AdminCategoryDto } from '@kobato/contracts/categories'
+import type { Database } from '@kobato/db/database'
+import type { CategoryRow } from '@kobato/db/types'
+import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup'
+import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection'
 
 import {
   deleteCategory as deleteCategoryRow,
@@ -12,23 +12,23 @@ import {
   listPublicCategoryRows,
   reorderCategories as reorderCategoryRows,
   updateCategory,
-} from '@kobato/db/operations/category.ts'
-import { invalidateContent } from '@kobato/server/domains/content/invalidate.ts'
-import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
-import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '@kobato/server/domains/posts/services/taxonomy.ts'
-import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection.ts'
-import { findCategoryBySlug } from '@kobato/server/domains/taxonomies/categories/services/query.ts'
+} from '@kobato/db/operations/category'
+import { invalidateContent } from '@kobato/server/domains/content/invalidate'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
+import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '@kobato/server/domains/posts/services/taxonomy'
+import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection'
+import { findCategoryBySlug } from '@kobato/server/domains/taxonomies/categories/services/query'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
   taxonomyNotFound,
-} from '@kobato/server/domains/taxonomies/shared.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { resolveSlug } from '@kobato/server/infra/slug/resolve.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/taxonomies/shared'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { resolveSlug } from '@kobato/server/infra/slug/resolve'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { idFromString } from '@kobato/utils/id'
 
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {
   return {

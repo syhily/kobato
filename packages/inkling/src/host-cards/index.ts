@@ -4,7 +4,7 @@
 // pick-seam glue. A load-bearing module entry, NOT a general barrel — extend it
 // only with new host-card assemblies.
 
-export { KobatoImageNode, isKobatoImageNode } from '@kobato/inkling-internal/host-cards/kobato-image-node.ts'
+export { KobatoImageNode, isKobatoImageNode } from '@kobato/inkling-internal/host-cards/kobato-image-node'
 export {
   BaseMusicPlayerNode,
   isMusicPlayerCardNode,
@@ -12,12 +12,12 @@ export {
   type MusicPlayerCardNode,
   MusicPlayerCardComponent,
   musicPlayerCard,
-} from '@kobato/inkling-internal/host-cards/music-player.tsx'
-export { BaseSolutionNode, solutionCard, SolutionCardView } from '@kobato/inkling-internal/host-cards/solution.tsx'
+} from '@kobato/inkling-internal/host-cards/music-player'
+export { BaseSolutionNode, solutionCard, SolutionCardView } from '@kobato/inkling-internal/host-cards/solution'
 export {
   BaseTwoColumnNode,
   twoColumnCard,
   TwoColumnCardView,
   TwoColumnPaneView,
-} from '@kobato/inkling-internal/host-cards/two-column.tsx'
-export { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches.ts'
+} from '@kobato/inkling-internal/host-cards/two-column'
+export { inklingHostCardMatches } from '@kobato/inkling-internal/host-cards/menu-matches'

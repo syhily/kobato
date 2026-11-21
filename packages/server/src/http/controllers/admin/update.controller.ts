@@ -1,8 +1,8 @@
-import { adminUpdateContract } from '@kobato/api/admin/update.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { getUpdateJobStatus } from '@kobato/server/domains/update/job.ts'
-import { applyUpdate, checkForUpdate } from '@kobato/server/domains/update/service.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
+import { adminUpdateContract } from '@kobato/api/admin/update'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { getUpdateJobStatus } from '@kobato/server/domains/update/job'
+import { applyUpdate, checkForUpdate } from '@kobato/server/domains/update/service'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
 
 const impl = implementAdmin(adminUpdateContract)
 

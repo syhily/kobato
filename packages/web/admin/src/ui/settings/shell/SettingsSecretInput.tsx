@@ -1,7 +1,7 @@
-import type { I18nValue } from '@kobato/ui/lib/I18nProvider.tsx'
+import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 import type { ComponentProps } from 'react'
 
-import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
+import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
 
 type SettingsInputProps = ComponentProps<typeof SettingsInput>
 

@@ -2,7 +2,7 @@ import {
   FORBIDDEN_BROWSER_TELEMETRY_MARKERS,
   SEA_BUNDLE_DEFINED_GLOBALS,
   scanBundleText,
-} from '@kobato/pack/sea/check-bundle.ts'
+} from '@kobato/pack/sea/check-bundle'
 import { describe, expect, it } from 'vitest'
 
 describe('scanBundleText: undefined build-time globals', () => {

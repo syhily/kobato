@@ -2,18 +2,18 @@ import {
   listWebmentionInbox,
   markWebmentionInboxRetry,
   upsertWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { webmention, webmentionInbox } from '@kobato/db/schema/webmention.ts'
-import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { htmlResponse, installFetch } from '@kobato/test/fetch.ts'
+} from '@kobato/db/operations/webmention-inbox'
+import { post } from '@kobato/db/schema/post'
+import { webmention, webmentionInbox } from '@kobato/db/schema/webmention'
+import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { htmlResponse, installFetch } from '@kobato/test/fetch'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const sendNewWebmention = vi
-  .spyOn(await import('@kobato/server/domains/webmentions/email.ts'), 'sendNewWebmention')
+  .spyOn(await import('@kobato/server/domains/webmentions/email'), 'sendNewWebmention')
   .mockImplementation(async () => ({ ok: true }) as never)
 
 const db = getTestDb()

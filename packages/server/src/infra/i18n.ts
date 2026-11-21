@@ -9,16 +9,16 @@
 // the English catalogs with an error log: `shared/` cannot log, so this
 // boundary owns the catch.
 
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { ServerMessageId, ServerMessages } from '@kobato/i18n/messages/server/en-US.ts'
-import type { UiMessageId, UiMessages } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { ServerMessageId, ServerMessages } from '@kobato/i18n/messages/server/en-US'
+import type { UiMessageId, UiMessages } from '@kobato/i18n/messages/ui/en-US'
 import type { ReactNode } from 'react'
 
-import { assertCatalogsValid, serverMessagesFor, uiMessagesFor } from '@kobato/i18n/catalog.ts'
-import { BASE_LOCALE } from '@kobato/i18n/locales.ts'
-import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US.ts'
-import { NODE_ENV } from '@kobato/server/infra/config.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { assertCatalogsValid, serverMessagesFor, uiMessagesFor } from '@kobato/i18n/catalog'
+import { BASE_LOCALE } from '@kobato/i18n/locales'
+import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US'
+import { NODE_ENV } from '@kobato/server/infra/config'
+import { getLogger } from '@kobato/server/infra/logger'
 import { createIntl, createIntlCache } from 'react-intl'
 
 const log = getLogger('i18n')

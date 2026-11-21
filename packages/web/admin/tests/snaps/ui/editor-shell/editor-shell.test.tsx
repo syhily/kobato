@@ -1,9 +1,9 @@
-import type { AdminRevisionDto } from '@kobato/contracts/revision.ts'
+import type { AdminRevisionDto } from '@kobato/contracts/revision'
 
-import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { RevisionHistoryDrawer } from '@kobato/web-admin/ui/editor-shell/RevisionsDrawer.tsx'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { RevisionHistoryDrawer } from '@kobato/web-admin/ui/editor-shell/RevisionsDrawer'
+import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

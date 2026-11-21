@@ -7,8 +7,8 @@ import {
   feedPassthroughElement,
   htmlToPlainText,
   isFeedVariantRender,
-} from '@kobato/inkling-internal/headless/cards/card-html.ts'
-import { SOLUTION_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
+} from '@kobato/inkling-internal/headless/cards/card-html'
+import { SOLUTION_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
 
 export const SOLUTION_CARD_PROPERTIES = [
   { name: 'content', default: '', urlType: 'html', wordCount: true },

@@ -1,5 +1,5 @@
-import type { RateLimitSettings } from '@kobato/settings/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { RateLimitSettings } from '@kobato/settings/types'
+import type { Assert, Equals } from '@kobato/utils/type-equals'
 
 export const rateLimitBounds = {
   windowSeconds: { min: 60, max: 60 * 60 * 24 },

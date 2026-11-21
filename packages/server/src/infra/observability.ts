@@ -1,4 +1,4 @@
-import { isPrivateIp } from '@kobato/auth/network.ts'
+import { isPrivateIp } from '@kobato/auth/network'
 
 export const OBSERVABILITY_ORGANIZATION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
 

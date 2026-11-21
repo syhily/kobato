@@ -1,16 +1,16 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
-import type { BlogSettingsBundle, SiteAssetBranding } from '@kobato/settings/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+import type { BlogSettingsBundle, SiteAssetBranding } from '@kobato/settings/types'
 import type { MetaDescriptor } from 'react-router'
 
-import { fallbackMessages } from '@kobato/i18n/fallback-messages.ts'
-import { isSupportedLocale, toOpenGraphLocale } from '@kobato/i18n/locales.ts'
-import { ogImagePathForSlug } from '@kobato/seo/og-image.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/presentation.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { joinUrl } from '@kobato/utils/urls.ts'
+import { fallbackMessages } from '@kobato/i18n/fallback-messages'
+import { isSupportedLocale, toOpenGraphLocale } from '@kobato/i18n/locales'
+import { ogImagePathForSlug } from '@kobato/seo/og-image'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/presentation'
+import { isRecord } from '@kobato/utils/type-guards'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { joinUrl } from '@kobato/utils/urls'
 
 export interface SeoI18n {
   locale: AppLocale

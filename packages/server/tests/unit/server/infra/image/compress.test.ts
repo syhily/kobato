@@ -1,4 +1,4 @@
-import { compressImage, imageWidth } from '@kobato/server/infra/image/compress.ts'
+import { compressImage, imageWidth } from '@kobato/server/infra/image/compress'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 

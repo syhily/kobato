@@ -1,19 +1,19 @@
-import { commentsAuthedContract } from '@kobato/api/comments.ts'
-import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments.ts'
-import { asCommentItemWire } from '@kobato/server/domains/comments/projection.ts'
+import { commentsAuthedContract } from '@kobato/api/comments'
+import { parseCommentEntity, serializeCommentEntity } from '@kobato/contracts/comments'
+import { asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
   countMyComments,
   listMyCommentEntities,
   loadMineCommentsPage,
-} from '@kobato/server/domains/comments/services/mine-comments.ts'
+} from '@kobato/server/domains/comments/services/mine-comments'
 import {
   cancelOwnCommentDeletion,
   editOwnComment,
   requestOwnCommentDeletion,
-} from '@kobato/server/domains/comments/services/moderate.ts'
-import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
-import { implementAuthed, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/comments/services/moderate'
+import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title'
+import { implementAuthed, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthed(commentsAuthedContract)
 

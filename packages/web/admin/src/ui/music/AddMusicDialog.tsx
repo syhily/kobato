@@ -1,6 +1,6 @@
-import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music.ts'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/contracts/music'
 
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -8,20 +8,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@kobato/ui/components/input-group.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys.ts'
-import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
-import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web-admin/ui/music/meting-search.ts'
-import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
-import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem.tsx'
-import { useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/ui/components/dialog'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@kobato/ui/components/input-group'
+import { Label } from '@kobato/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { Skeleton } from '@kobato/ui/components/skeleton'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel'
+import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web-admin/ui/music/meting-search'
+import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
+import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
+import { useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'

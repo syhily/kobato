@@ -1,10 +1,10 @@
-import type { CacheBucketId } from '@kobato/cache/types.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { JsonValue } from '@kobato/server/infra/json.ts'
+import type { CacheBucketId } from '@kobato/cache/types'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { JsonValue } from '@kobato/server/infra/json'
 import type { ZodType } from 'zod'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
-import { isTunableCacheBucket } from '@kobato/cache/types.ts'
+import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
+import { isTunableCacheBucket } from '@kobato/cache/types'
 import {
   bumpGeneration,
   getItemRawWithExpiry,
@@ -16,19 +16,19 @@ import {
   trashBucketSync,
   unlinkBucketEntriesSync,
   wipeCache as wipeFileCache,
-} from '@kobato/server/infra/cache/file-store.ts'
-import { createInflight } from '@kobato/server/infra/cache/inflight.ts'
+} from '@kobato/server/infra/cache/file-store'
+import { createInflight } from '@kobato/server/infra/cache/inflight'
 import {
   clearMemoryBucket,
   getMemoryItem,
   setMemoryItem,
   wipeMemoryCache,
-} from '@kobato/server/infra/cache/memory-store.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { withSpanAsync } from '@kobato/server/infra/trace/facade.ts'
-import { recordCacheLookup } from '@kobato/server/infra/trace/metrics.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/server/infra/cache/memory-store'
+import { getLogger } from '@kobato/server/infra/logger'
+import { withSpanAsync } from '@kobato/server/infra/trace/facade'
+import { recordCacheLookup } from '@kobato/server/infra/trace/metrics'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 

@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN.ts'
-import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW.ts'
-import { useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels.ts'
+import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
+import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'
+import { useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels'
 import { render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'

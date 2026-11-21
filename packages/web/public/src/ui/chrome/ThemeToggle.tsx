@@ -1,7 +1,7 @@
-import { Button } from '@kobato/ui/components/button.tsx'
-import { IconButtonContent } from '@kobato/ui/components/icon-button-content.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useTheme } from '@kobato/ui/lib/ThemeProvider.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { IconButtonContent } from '@kobato/ui/components/icon-button-content'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useTheme } from '@kobato/ui/lib/ThemeProvider'
 import { Moon, Sun } from 'lucide-react'
 
 interface ThemeToggleProps {

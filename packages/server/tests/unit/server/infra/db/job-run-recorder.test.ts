@@ -5,7 +5,7 @@ import {
   resetJobFailureNotifier,
   startJobRun,
   wireJobFailureNotifier,
-} from '@kobato/server/infra/db/job-run-recorder.ts'
+} from '@kobato/server/infra/db/job-run-recorder'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('infra/db/job-run-recorder — unwired', () => {

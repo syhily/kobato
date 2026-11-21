@@ -1,6 +1,6 @@
-import type { Logger } from '@kobato/server/infra/logger.ts'
+import type { Logger } from '@kobato/server/infra/logger'
 
-import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
+import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { describe, expect, it, vi } from 'vitest'
 
 function stubLog(): Logger {

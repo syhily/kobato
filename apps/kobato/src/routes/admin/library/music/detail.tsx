@@ -1,9 +1,9 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac.ts'
-import { getRequestContext } from '@kobato/server/http/request-context.ts'
-import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView.tsx'
+import { requireRole } from '@kobato/server/domains/auth/rbac'
+import { getRequestContext } from '@kobato/server/http/request-context'
+import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
 import { useNavigate } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/detail'
 

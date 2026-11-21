@@ -1,14 +1,14 @@
-import { queryExportRows } from '@kobato/db/duckdb/queries/export.ts'
-import { queryHeatmap } from '@kobato/db/duckdb/queries/heatmap.ts'
-import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
-import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime.ts'
-import { queryViews } from '@kobato/db/duckdb/queries/views.ts'
+import { queryExportRows } from '@kobato/db/duckdb/queries/export'
+import { queryHeatmap } from '@kobato/db/duckdb/queries/heatmap'
+import { queryMetric } from '@kobato/db/duckdb/queries/metric'
+import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime'
+import { queryViews } from '@kobato/db/duckdb/queries/views'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/db/tests/utils/analytics-db.ts'
+} from '@kobato/db/tests/utils/analytics-db'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const handle = await createTestAnalyticsDb()

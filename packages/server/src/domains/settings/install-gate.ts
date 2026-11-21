@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { hasAdmin } from '@kobato/db/operations/user.ts'
+import { hasAdmin } from '@kobato/db/operations/user'
 import { redirect } from 'react-router'
 
 export type InstallState = 'noAdmin' | 'installed'

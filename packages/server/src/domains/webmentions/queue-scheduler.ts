@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { Logger } from '@kobato/server/infra/logger.ts'
+import type { Database } from '@kobato/db/database'
+import type { Logger } from '@kobato/server/infra/logger'
 
-import { jobDb, registerJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { jobDb, registerJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
 
 export interface QueueSchedulerOptions {
   name: string

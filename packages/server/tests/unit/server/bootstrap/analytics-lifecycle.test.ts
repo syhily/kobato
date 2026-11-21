@@ -1,18 +1,18 @@
-import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events.ts'
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
+import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
 
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema.ts'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
+import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
   runAnalyticsMaintenance,
   snapshotAnalyticsTo,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAccessLog, pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAccessLog, pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

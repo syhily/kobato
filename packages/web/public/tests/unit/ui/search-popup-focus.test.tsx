@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { SearchIconButton } from '@kobato/web-public/ui/Search.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { SearchIconButton } from '@kobato/web-public/ui/Search'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'

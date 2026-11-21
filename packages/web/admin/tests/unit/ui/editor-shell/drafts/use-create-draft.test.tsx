@@ -1,4 +1,4 @@
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -8,7 +8,7 @@ const draftStore = vi.hoisted(() => ({
   remove: vi.fn<(key: string) => Promise<void>>(),
 }))
 
-const draftStoreMod = await import('@kobato/web-admin/ui/editor-shell/drafts/draft-store.ts')
+const draftStoreMod = await import('@kobato/web-admin/ui/editor-shell/drafts/draft-store')
 vi.spyOn(draftStoreMod, 'getDraft').mockImplementation(((key: string) => draftStore.get(key)) as never)
 vi.spyOn(draftStoreMod, 'setDraft').mockImplementation(((key: string, record: unknown) =>
   draftStore.set(key, record)) as never)
@@ -18,11 +18,11 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
-import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { useCreateDraft, type CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { useCreateDraft, type CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft'
 
 const config: CreateDraftConfig<LexicalEditorState> = {
   keyPrefix: 'cms-post-draft:new:',

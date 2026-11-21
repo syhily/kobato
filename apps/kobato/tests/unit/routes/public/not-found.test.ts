@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loader } from '@/routes/public/not-found.tsx'
+import { loader } from '@/routes/public/not-found'
 
 describe('route: public/not-found', () => {
   describe('loader', () => {

@@ -1,9 +1,9 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types.ts'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types'
 import type { Context } from 'hono'
 
-import { localizedHttpException } from '@kobato/server/http/localized-http-exception.ts'
-import { readBucket, tryKeyedRateLimit } from '@kobato/server/infra/rate-limit.ts'
+import { localizedHttpException } from '@kobato/server/http/localized-http-exception'
+import { readBucket, tryKeyedRateLimit } from '@kobato/server/infra/rate-limit'
 import { createMiddleware } from 'hono/factory'
 
 export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof RateLimitSettings) {

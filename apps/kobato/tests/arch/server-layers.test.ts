@@ -92,15 +92,15 @@ function offendersOf(entries: typeof scanned): string[] {
 
 const RENDER_DOMAIN_IMPORTS: Record<string, readonly string[]> = {
   'feed/generator.tsx': [
-    'domains/content/services/body-html.ts',
-    'domains/posts/services/feed.ts',
-    'domains/taxonomies/categories/services/query.ts',
-    'domains/taxonomies/tags/service.ts',
+    'domains/content/services/body-html',
+    'domains/posts/services/feed',
+    'domains/taxonomies/categories/services/query',
+    'domains/taxonomies/tags/service',
   ],
-  'og/assets.ts': ['domains/assets/services/routes.ts'],
-  'seo/listing-seo.ts': ['domains/content/urls.ts'],
-  'seo/sitemap.ts': ['domains/pages/services/public-query.ts', 'domains/posts/services/public-query.ts'],
-  'warmup/content-cache.ts': ['domains/content/render-warmup.ts'],
+  'og/assets.ts': ['domains/assets/services/routes'],
+  'seo/listing-seo.ts': ['domains/content/urls'],
+  'seo/sitemap.ts': ['domains/pages/services/public-query', 'domains/posts/services/public-query'],
+  'warmup/content-cache.ts': ['domains/content/render-warmup'],
 }
 
 const ALLOWED_CROSS_DOMAIN_IMPORTS: Record<string, readonly string[]> = {

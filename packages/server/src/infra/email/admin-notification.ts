@@ -1,11 +1,11 @@
-import type { SendResult } from '@kobato/server/infra/email/types.ts'
-import type { Logger } from '@kobato/server/infra/logger.ts'
+import type { SendResult } from '@kobato/server/infra/email/types'
+import type { Logger } from '@kobato/server/infra/logger'
 import type { ReactElement } from 'react'
 
-import { render } from '@kobato/server/infra/email/render.tsx'
-import { sendEmail } from '@kobato/server/infra/email/sender.ts'
-import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { render } from '@kobato/server/infra/email/render'
+import { sendEmail } from '@kobato/server/infra/email/sender'
+import { emailTranslator } from '@kobato/server/infra/email/translator'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 export async function sendAdminNotification({
   subject,

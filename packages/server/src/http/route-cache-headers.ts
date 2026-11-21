@@ -1,4 +1,4 @@
-import { cacheHeaders } from '@kobato/server/infra/http/headers.ts'
+import { cacheHeaders } from '@kobato/server/infra/http/headers'
 
 export const listingHeaders = cacheHeaders('listing')
 

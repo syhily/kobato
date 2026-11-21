@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { MetingSearchHit, SearchMusicOutput } from '@kobato/contracts/music.ts'
+import type { MetingSearchHit, SearchMusicOutput } from '@kobato/contracts/music'
 import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -11,7 +11,7 @@ const searchMock = vi.hoisted(() =>
   vi.fn<(input: { source?: string; keyword: string; limit?: number; offset?: number }) => Promise<SearchMusicOutput>>(),
 )
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
@@ -27,9 +27,9 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { dedupeSearchHits, useMetingMusicSearch } = await import('@kobato/web-admin/ui/music/use-meting-music-search.ts')
+const { dedupeSearchHits, useMetingMusicSearch } = await import('@kobato/web-admin/ui/music/use-meting-music-search')
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 
 function makeWrapper() {
   const queryClient = new QueryClient({

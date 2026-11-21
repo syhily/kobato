@@ -1,6 +1,6 @@
-import type { SanitizeStrategyConfig } from '@kobato/sanitize/config.ts'
+import type { SanitizeStrategyConfig } from '@kobato/sanitize/config'
 
-import { createPurifySanitizer } from '@kobato/sanitize/purify-core.ts'
+import { createPurifySanitizer } from '@kobato/sanitize/purify-core'
 import createDOMPurify from 'dompurify'
 
 // Browser engine for `sanitizeHtmlString`; vite's client environment aliases

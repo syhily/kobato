@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
-import type { LoginActionData } from '@kobato/web-admin/ui/auth/AdminCredentialsForm.tsx'
+import type { LoginActionData } from '@kobato/web-admin/ui/auth/AdminCredentialsForm'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm'
 import { act, render } from '@testing-library/react'
 import { useEffect, useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'

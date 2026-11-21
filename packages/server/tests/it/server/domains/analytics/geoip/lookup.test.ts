@@ -3,7 +3,7 @@ import {
   lookupCity,
   resetGeoReader,
   __setMaxmindDbPathForTests,
-} from '@kobato/server/domains/analytics/geoip/lookup.ts'
+} from '@kobato/server/domains/analytics/geoip/lookup'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'

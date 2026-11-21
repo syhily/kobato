@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Menu as BaseMenu } from '@base-ui/react/menu'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
 
 function DropdownMenu({ ...props }: ComponentProps<typeof BaseMenu.Root>) {

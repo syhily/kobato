@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-import type { ObservabilityStatusOutput } from '@kobato/contracts/observability.ts'
-import type { ObservabilitySettings } from '@kobato/settings/types.ts'
+import type { ObservabilityStatusOutput } from '@kobato/contracts/observability'
+import type { ObservabilitySettings } from '@kobato/settings/types'
 
-import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -19,7 +19,7 @@ const api = vi.hoisted(() => ({
 const commit = vi.hoisted(() => vi.fn())
 const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }))
 
-vi.mock('@kobato/web-client/api/orpc-query.ts', () => {
+vi.mock('@kobato/web-client/api/orpc-query', () => {
   const statusKey = ['test', 'observability', 'status'] as const
   return {
     orpcQuery: {
@@ -44,11 +44,11 @@ vi.mock('@kobato/web-client/api/orpc-query.ts', () => {
   }
 })
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation', () => ({
   useSettingsMutation: () => ({ commit, isPending: false, status: 'idle' }),
 }))
 
-import { ObservabilityForm } from '@kobato/web-admin/ui/settings/observability/ObservabilityForm.tsx'
+import { ObservabilityForm } from '@kobato/web-admin/ui/settings/observability/ObservabilityForm'
 
 const INITIAL: ObservabilitySettings = structuredClone(TEST_BLOG_SETTINGS_BUNDLE.observability!)
 

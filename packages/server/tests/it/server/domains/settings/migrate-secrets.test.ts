@@ -1,12 +1,12 @@
-import { findSettingByScope } from '@kobato/db/operations/setting.ts'
-import { setting } from '@kobato/db/schema/config.ts'
-import { serverConfig } from '@kobato/server/infra/config.ts'
-import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { findSettingByScope } from '@kobato/db/operations/setting'
+import { setting } from '@kobato/db/schema/config'
+import { serverConfig } from '@kobato/server/infra/config'
+import { encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { migrateSecretsEncryption } = await import('@kobato/server/domains/settings/services/migrate-secrets.ts')
+const { migrateSecretsEncryption } = await import('@kobato/server/domains/settings/services/migrate-secrets')
 
 const db = getTestDb()
 
@@ -58,7 +58,7 @@ describe('migrateSecretsEncryption', () => {
     const storage = (await readData('blog.assets')).storage as Record<string, unknown>
     expect(mail.smtpPass).toMatch(/^enc2:/)
     expect(storage.secretAccessKey).toMatch(/^enc2:/)
-    const { decryptIfNeeded } = await import('@kobato/server/infra/crypto/secret-encryption.ts')
+    const { decryptIfNeeded } = await import('@kobato/server/infra/crypto/secret-encryption')
     expect(decryptIfNeeded(mail.smtpPass as string)).toBe('plain-mail-key')
     expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('plain-s3-key')
   })

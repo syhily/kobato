@@ -1,9 +1,9 @@
-import type { Filters, MetricType } from '@kobato/contracts/analytics.ts'
-import type { DateRange, PresetKey, TimeUnit } from '@kobato/utils/date-range.ts'
+import type { Filters, MetricType } from '@kobato/contracts/analytics'
+import type { DateRange, PresetKey, TimeUnit } from '@kobato/utils/date-range'
 import type { z } from 'zod'
 
-import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/contracts/analytics.ts'
-import { PRESET_KEYS, computeDateRange, pickTimeUnit } from '@kobato/utils/date-range.ts'
+import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/contracts/analytics'
+import { PRESET_KEYS, computeDateRange, pickTimeUnit } from '@kobato/utils/date-range'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 

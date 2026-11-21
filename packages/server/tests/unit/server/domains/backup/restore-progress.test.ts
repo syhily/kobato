@@ -1,18 +1,18 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import {
   resetRestoreMachine,
   startRestoreJob,
   tryBeginRestore,
   wireRestoreMachine,
-} from '@kobato/server/domains/backup/restore-machine.ts'
+} from '@kobato/server/domains/backup/restore-machine'
 import {
   beginStagingProgress,
   endStagingProgress,
   peekRestoreProgress,
   reportStagingProgress,
   resetStagingProgress,
-} from '@kobato/server/domains/backup/restore-progress.ts'
+} from '@kobato/server/domains/backup/restore-progress'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function wireIdleMachine() {

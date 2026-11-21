@@ -1,23 +1,23 @@
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { saveBody } from '@kobato/server/domains/content/lifecycle.ts'
-import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup.ts'
-import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter.ts'
-import { createPage } from '@kobato/server/domains/pages/services/mutate.ts'
-import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter.ts'
-import { createPost, updatePostMeta } from '@kobato/server/domains/posts/services/mutate.ts'
-import { upsertAdminCategory } from '@kobato/server/domains/taxonomies/categories/services/mutate.ts'
-import { countEntryFiles } from '@kobato/server/infra/cache/file-store.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { saveBody } from '@kobato/server/domains/content/lifecycle'
+import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
+import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
+import { createPage } from '@kobato/server/domains/pages/services/mutate'
+import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
+import { createPost, updatePostMeta } from '@kobato/server/domains/posts/services/mutate'
+import { upsertAdminCategory } from '@kobato/server/domains/taxonomies/categories/services/mutate'
+import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
 import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const warmMock = vi.spyOn(await import('@kobato/server/domains/content/render-warmup.ts'), 'warmContentRenderCaches')
+const warmMock = vi.spyOn(await import('@kobato/server/domains/content/render-warmup'), 'warmContentRenderCaches')
 void warmContentRenderCaches
 
-import '@kobato/server/render/warmup/content-cache.ts'
+import '@kobato/server/render/warmup/content-cache'
 
 const db = getTestDb()
 

@@ -1,8 +1,8 @@
-import { comment } from '@kobato/db/schema/comment.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { metric } from '@kobato/db/schema/metric'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
 import {
   countAllComments,
   countAdminComments,
@@ -12,45 +12,45 @@ import {
   listMyComments,
   searchCommentAuthors,
   searchPages,
-} from '@kobato/server/domains/comments/repos/admin-query.ts'
+} from '@kobato/server/domains/comments/repos/admin-query'
 import {
   insertComment,
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@kobato/server/domains/comments/repos/mutate.ts'
+} from '@kobato/server/domains/comments/repos/mutate'
 import {
   countApprovedCommentsByUser,
   findParentCommentsByIds,
   recentCommentsForUserDedupe,
-} from '@kobato/server/domains/comments/repos/public-query/by-id.ts'
+} from '@kobato/server/domains/comments/repos/public-query/by-id'
 import {
   adminUserIds,
   commentsByIds,
   latestDistinctCommentIds,
   latestDistinctCommentIdsQuery,
   pendingComments,
-} from '@kobato/server/domains/comments/repos/public-query/digest.ts'
+} from '@kobato/server/domains/comments/repos/public-query/digest'
 import {
   countCommentsAndRoots,
   findChildComments,
   findCommentRootId,
   findRootComments,
-} from '@kobato/server/domains/comments/repos/public-query/threads.ts'
+} from '@kobato/server/domains/comments/repos/public-query/threads'
 import {
   adminPendingWhere,
   buildAdminListConditions,
   mineWhere,
   targetSlugTitleSubquery,
   whereTarget,
-} from '@kobato/server/domains/comments/repos/shared.ts'
-import { countAdminPendingDashboard } from '@kobato/server/domains/comments/services/admin-query.ts'
+} from '@kobato/server/domains/comments/repos/shared'
+import { countAdminPendingDashboard } from '@kobato/server/domains/comments/services/admin-query'
 import {
   countApprovedRepliesOfComment,
   findCommentsByIds,
   findCommentWithUserById,
-} from '@kobato/server/domains/comments/services/lookup.ts'
-import { countMyComments, listMyCommentEntities } from '@kobato/server/domains/comments/services/mine-comments.ts'
+} from '@kobato/server/domains/comments/services/lookup'
+import { countMyComments, listMyCommentEntities } from '@kobato/server/domains/comments/services/mine-comments'
 import {
   adminClearDeleteRequest,
   approveCommentById,
@@ -60,8 +60,8 @@ import {
   deleteCommentById,
   requestDeleteComment,
   softDeleteCommentById,
-} from '@kobato/server/domains/comments/services/moderate.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+} from '@kobato/server/domains/comments/services/moderate'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'

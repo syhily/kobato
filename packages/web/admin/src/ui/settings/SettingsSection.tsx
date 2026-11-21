@@ -1,6 +1,6 @@
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@kobato/ui/components/field.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { SettingsHintTooltip } from '@kobato/web-admin/ui/settings/SettingsHintTooltip.tsx'
+import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@kobato/ui/components/field'
+import { cn } from '@kobato/ui/lib/cn'
+import { SettingsHintTooltip } from '@kobato/web-admin/ui/settings/SettingsHintTooltip'
 import { type ReactNode, useId } from 'react'
 
 export interface SettingsControlProps {

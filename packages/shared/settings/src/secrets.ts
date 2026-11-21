@@ -1,9 +1,9 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types'
+import type { Assert, Equals } from '@kobato/utils/type-equals'
 
-import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface SecretFieldConfig {
   section: SettingsSection

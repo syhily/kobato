@@ -1,12 +1,12 @@
-import type { AdminPostDto } from '@kobato/contracts/posts.ts'
-import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields.ts'
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
+import type { AdminPostDto } from '@kobato/contracts/posts'
+import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
-import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog.ts'
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { PostsView } from '@kobato/web-admin/ui/posts/PostsView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminPost } from '@kobato/contracts/tests/utils/catalog'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { PostsView } from '@kobato/web-admin/ui/posts/PostsView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()
@@ -38,8 +38,8 @@ mocks.query = {
   refetch: vi.fn(),
 }
 
-const { buildPostFilterFields } = await import('@kobato/web-admin/ui/posts/filter-fields.ts')
-const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills.ts')
+const { buildPostFilterFields } = await import('@kobato/web-admin/ui/posts/filter-fields')
+const filterPillsMod = await import('@kobato/web-admin/ui/shared/filter-bar/use-filter-pills')
 vi.spyOn(filterPillsMod, 'useFilterPills').mockImplementation((() => ({
   filters: mocks.filters,
   hasFilters: mocks.filters.length > 0,

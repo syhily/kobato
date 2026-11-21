@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { Database } from '@kobato/db/database'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting.ts'
-import { DEFAULT_LOCALE, isKnownLocaleValue, normalizeAppLocale } from '@kobato/i18n/locales.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { generalSection } from '@kobato/settings/sections/general.ts'
-import { isRecord } from '@kobato/utils/type-guards.ts'
+import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { DEFAULT_LOCALE, isKnownLocaleValue, normalizeAppLocale } from '@kobato/i18n/locales'
+import { getLogger } from '@kobato/server/infra/logger'
+import { generalSection } from '@kobato/settings/sections/general'
+import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('settings.locale-migration')
 

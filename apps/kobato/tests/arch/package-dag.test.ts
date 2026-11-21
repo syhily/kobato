@@ -1,4 +1,4 @@
-import { REPO_PACKAGES } from '@tests/arch/workspace-packages.ts'
+import { REPO_PACKAGES } from '@tests/arch/workspace-packages'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
@@ -625,6 +625,24 @@ describe('package DAG', () => {
         exports: Record<string, string>
       }
       expect(manifest.exports, `${dir} must not expose every source file`).not.toHaveProperty('./*')
+    }
+  })
+
+  it('canonical test-helper owners expose their test trees through package exports', () => {
+    for (const dir of [
+      'packages/shared/settings',
+      'packages/shared/i18n',
+      'packages/shared/contracts',
+      'packages/server',
+      'packages/ui',
+      'packages/web/client',
+      'packages/web/admin',
+      'packages/inkling',
+    ]) {
+      const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as {
+        exports: Record<string, string>
+      }
+      expect(manifest.exports['./tests/*'], dir).toBe('./tests/*')
     }
   })
 

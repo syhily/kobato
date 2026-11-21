@@ -1,23 +1,23 @@
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { image } from '@kobato/db/schema/media.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { adminImagesRouter } from '@kobato/server/http/controllers/admin/images.controller.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { image } from '@kobato/db/schema/media'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { adminImagesRouter } from '@kobato/server/http/controllers/admin/images.controller'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The controller→service mapping stays observable; the services run for real.
-const adminMutate = await import('@kobato/server/domains/images/services/admin-mutate.ts')
-const uploadService = await import('@kobato/server/domains/images/services/upload.ts')
+const adminMutate = await import('@kobato/server/domains/images/services/admin-mutate')
+const uploadService = await import('@kobato/server/domains/images/services/upload')
 const recalculateImageThumbhash = vi.spyOn(adminMutate, 'recalculateImageThumbhash')
 const uploadImage = vi.spyOn(uploadService, 'uploadImage')
 

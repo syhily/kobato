@@ -1,5 +1,5 @@
-import type { AdminFontDto, FontSlot } from '@kobato/contracts/fonts.ts'
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { AdminFontDto, FontSlot } from '@kobato/contracts/fonts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import {
   closestCorners,
@@ -12,10 +12,10 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatBytes } from '@kobato/utils/format.ts'
+import { Button } from '@kobato/ui/components/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatBytes } from '@kobato/utils/format'
 import {
   isDragData,
   isSlotDropData,
@@ -26,20 +26,20 @@ import {
   type SlotDropData,
   slotItemId,
   type SlotItemDragData,
-} from '@kobato/web-admin/ui/fonts/dnd.ts'
-import { MAX_SLOT_FONTS, type SlotState, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots.ts'
-import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton.tsx'
-import { ConfirmDialog, type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
+} from '@kobato/web-admin/ui/fonts/dnd'
+import { MAX_SLOT_FONTS, type SlotState, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots'
+import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton'
+import { ConfirmDialog, type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import {
   SortableDragHandle,
   sortableIndexOf,
   useSortableRow,
   useSortableSensors,
-} from '@kobato/web-admin/ui/shared/sortable.tsx'
-import { orpc } from '@kobato/web-client/api/client.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error.ts'
+} from '@kobato/web-admin/ui/shared/sortable'
+import { orpc } from '@kobato/web-client/api/client'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'

@@ -2,10 +2,10 @@
 // Embedded native libraries extract into a FLAT `<cacheDir>/natives-<hash>/` dir.
 // Runs ahead of the server graph: never the env-validating logger or config facade.
 
-import type { Logger } from '@kobato/server/infra/logger.ts'
+import type { Logger } from '@kobato/server/infra/logger'
 
-import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets.ts'
-import { getEmbeddedAsset, isSea, resolveCacheDir } from '@kobato/server/infra/sea/sea.ts'
+import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@kobato/distribution/sea-assets'
+import { getEmbeddedAsset, isSea, resolveCacheDir } from '@kobato/server/infra/sea/sea'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

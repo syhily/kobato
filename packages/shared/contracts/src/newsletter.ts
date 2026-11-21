@@ -1,6 +1,6 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { honeypotField, okDto } from '@kobato/contracts/primitives.ts'
+import { honeypotField, okDto } from '@kobato/contracts/primitives'
 import { z } from 'zod'
 
 const newsletterValidationMessages = {

@@ -1,22 +1,22 @@
 import type { Readable } from 'node:stream'
 
-import { isInMemoryPath } from '@kobato/db/database.ts'
+import { isInMemoryPath } from '@kobato/db/database'
 import {
   BackupDecryptionError,
   createBackupDecipher,
   isEncryptedBackup,
-} from '@kobato/server/domains/backup/services/crypto.ts'
-import { isTarArchive, listTarEntriesInFile } from '@kobato/server/domains/backup/services/tar.ts'
+} from '@kobato/server/domains/backup/services/crypto'
+import { isTarArchive, listTarEntriesInFile } from '@kobato/server/domains/backup/services/tar'
 import {
   ConfigFileError,
   CONFIG_FILE_NAME,
   parseRestorableConfigJson,
   resolveConfigFilePath,
-} from '@kobato/server/infra/config.ts'
-import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/infra/config'
+import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 import { createReadStream, createWriteStream, rmSync, statSync } from 'node:fs'
 import {
   chmod,

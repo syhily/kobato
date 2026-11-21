@@ -18,9 +18,9 @@ vi.mock('@hono/node-server', async () => {
   }
 })
 
-vi.mock('@kobato/server/infra/hono/build-runtime.ts', async () => {
-  const actual = await vi.importActual<typeof import('@kobato/server/infra/hono/build-runtime.ts')>(
-    '@kobato/server/infra/hono/build-runtime.ts',
+vi.mock('@kobato/server/infra/hono/build-runtime', async () => {
+  const actual = await vi.importActual<typeof import('@kobato/server/infra/hono/build-runtime')>(
+    '@kobato/server/infra/hono/build-runtime',
   )
   return {
     ...actual,
@@ -36,7 +36,7 @@ vi.mock('@kobato/server/infra/hono/build-runtime.ts', async () => {
   }
 })
 
-vi.mock('@kobato/server/infra/hono/dev-server-ref.ts', () => ({
+vi.mock('@kobato/server/infra/hono/dev-server-ref', () => ({
   getViteDevServer: getViteDevServerMock,
 }))
 
@@ -48,7 +48,7 @@ vi.mock('react-router', async () => {
   }
 })
 
-const { createHonoServer } = await import('@kobato/server/infra/hono/node.ts')
+const { createHonoServer } = await import('@kobato/server/infra/hono/node')
 
 describe('hono node server / createHonoServer', () => {
   beforeEach(() => {

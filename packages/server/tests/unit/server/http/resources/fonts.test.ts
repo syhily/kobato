@@ -1,10 +1,10 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf.ts'
-import { FONT_DIR } from '@kobato/server/infra/data-paths.ts'
-import { resetFontCache } from '@kobato/server/render/canvas-fonts.ts'
-import { adminSession, adminUser } from '@kobato/server/tests/utils/session.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { FONT_DIR } from '@kobato/server/infra/data-paths'
+import { resetFontCache } from '@kobato/server/render/canvas-fonts'
+import { adminSession, adminUser } from '@kobato/server/tests/utils/session'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -43,7 +43,7 @@ afterAll(() => {
 })
 
 async function makeRouter() {
-  const { fontsRouter } = await import('@kobato/server/http/resources/fonts.ts')
+  const { fontsRouter } = await import('@kobato/server/http/resources/fonts')
   return fontsRouter
 }
 
@@ -66,7 +66,7 @@ describe('fontsRouter', () => {
     const { app, csrf } = createApp()
     app.route('/', await makeRouter())
     writeFileSync(OG_FONT_PATH, REAL_TTF)
-    const { ensureCanvasFont } = await import('@kobato/server/render/canvas-fonts.ts')
+    const { ensureCanvasFont } = await import('@kobato/server/render/canvas-fonts')
 
     const first = await ensureCanvasFont('og')
     expect(first?.family).toBe('OPPO Sans')

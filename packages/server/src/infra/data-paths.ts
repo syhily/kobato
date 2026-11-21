@@ -1,4 +1,4 @@
-import { serverConfig } from '@kobato/server/infra/config.ts'
+import { serverConfig } from '@kobato/server/infra/config'
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 

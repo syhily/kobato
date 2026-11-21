@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
+import type { Database } from '@kobato/db/database'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RequestContext } from '@kobato/server/http/request-context'
 
-import { user as userTable } from '@kobato/db/schema/user.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { user as userTable } from '@kobato/db/schema/user'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -23,12 +23,12 @@ const mockStartRestoreJob = vi.fn()
 const mockWithRestoreClaim = vi.fn()
 const mockRecordAuditEvent = vi.fn()
 
-vi.mock('@kobato/server/domains/auth/setup-token.ts', () => ({
+vi.mock('@kobato/server/domains/auth/setup-token', () => ({
   isSetupTokenActive: (...args: unknown[]) => mockIsSetupTokenActive(...args),
 }))
 
-vi.mock('@kobato/server/domains/auth/csrf.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/auth/csrf.ts')>()
+vi.mock('@kobato/server/domains/auth/csrf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/domains/auth/csrf')>()
   return {
     ...actual,
     validateCsrfToken: (...args: unknown[]) => mockValidateCsrfToken(...args),
@@ -36,12 +36,12 @@ vi.mock('@kobato/server/domains/auth/csrf.ts', async (importOriginal) => {
   }
 })
 
-vi.mock('@kobato/server/http/middlewares/rate-limit.ts', () => ({
+vi.mock('@kobato/server/http/middlewares/rate-limit', () => ({
   rateLimitByIp: vi.fn(() => async (_c: unknown, next: () => unknown) => next()),
 }))
 
-vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore.ts')>()
+vi.mock('@kobato/server/domains/backup/services/restore', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore')>()
   return {
     ...actual,
     stageBackup: (...args: unknown[]) => mockStageBackup(...args),
@@ -53,7 +53,7 @@ vi.mock('@kobato/server/domains/backup/services/restore.ts', async (importOrigin
   }
 })
 
-vi.mock('@kobato/server/domains/backup/restore-machine.ts', () => ({
+vi.mock('@kobato/server/domains/backup/restore-machine', () => ({
   startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
   withRestoreClaim: (...args: unknown[]) => mockWithRestoreClaim(...args),
   wireRestoreMachine: () => undefined,
@@ -61,11 +61,11 @@ vi.mock('@kobato/server/domains/backup/restore-machine.ts', () => ({
   consumeRestoreJobReport: () => ({ phase: 'idle', error: null }),
 }))
 
-vi.mock('@kobato/server/domains/audit/services/record.ts', () => ({
+vi.mock('@kobato/server/domains/audit/services/record', () => ({
   recordAuditEvent: (...args: unknown[]) => mockRecordAuditEvent(...args),
 }))
 
-import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage.ts'
+import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 
 import { createSession } from 'react-router'
 
@@ -97,7 +97,7 @@ function makeRc(session: ReturnType<typeof makeSession>): RequestContext {
 }
 
 async function buildApp(session: ReturnType<typeof makeSession>) {
-  const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+  const { backupRouter } = await import('@kobato/server/http/resources/backup')
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
     c.set('requestContext', makeRc(session))
@@ -117,7 +117,7 @@ async function buildAdminApp() {
 }
 
 async function makePasswordRequiredError(dir: string): Promise<Error> {
-  const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
+  const restoreModule = await import('@kobato/server/domains/backup/services/restore')
   const uploadPath = join(dir, 'upload.bin')
   writeFileSync(uploadPath, 'raw-encrypted-bytes')
   return new restoreModule.EncryptedBackupPasswordRequired(dir, uploadPath)
@@ -159,7 +159,7 @@ describe('/api/admin/backup/upload-restore', () => {
 
   it('returns 403 when CSRF token is missing or invalid', async () => {
     mockValidateCsrfToken.mockReturnValue(false)
-    const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+    const { backupRouter } = await import('@kobato/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
@@ -189,7 +189,7 @@ describe('/api/admin/backup/upload-restore', () => {
 
   it('returns 400 and never claims the slot when the staged backup fails the content check', async () => {
     mockAssertStagedBackupContainsAdmin.mockRejectedValueOnce(new Error('file is not a database'))
-    const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+    const { backupRouter } = await import('@kobato/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
@@ -227,7 +227,7 @@ describe('/api/admin/backup/upload-restore', () => {
       content: null,
       analytics: '/tmp/fake-staged/analytics.duckdb',
     })
-    const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+    const { backupRouter } = await import('@kobato/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
@@ -257,7 +257,7 @@ describe('/api/admin/backup/upload-restore', () => {
   })
 
   it('accepts upload when CSRF token is valid', async () => {
-    const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+    const { backupRouter } = await import('@kobato/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
@@ -289,7 +289,7 @@ describe('/api/admin/backup/upload-restore', () => {
 
   it('returns 409 when a restore is already running', async () => {
     mockWithRestoreClaim.mockResolvedValueOnce('busy')
-    const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+    const { backupRouter } = await import('@kobato/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
@@ -338,9 +338,9 @@ describe('/api/admin/backup/upload-restore', () => {
     expect(mockWithRestoreClaim).not.toHaveBeenCalled()
 
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads.ts')
+      await import('@kobato/server/domains/backup/pending-uploads')
     try {
-      const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
+      const restoreModule = await import('@kobato/server/domains/backup/services/restore')
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
           source.on('error', () => {})
@@ -418,7 +418,7 @@ describe('/api/admin/backup/upload-restore', () => {
     const body = (await res.json()) as { encrypted: boolean; token: string }
 
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads.ts')
+      await import('@kobato/server/domains/backup/pending-uploads')
     try {
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
@@ -457,7 +457,7 @@ describe('/api/admin/backup/upload-restore', () => {
     const body = (await res.json()) as { encrypted: boolean; token: string }
 
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads.ts')
+      await import('@kobato/server/domains/backup/pending-uploads')
     try {
       mockStageBackup.mockImplementationOnce(async (source: unknown) => {
         if (source instanceof Readable) {
@@ -490,7 +490,7 @@ describe('/api/admin/backup/upload-restore', () => {
   it('rejects a decrypt call whose token expired past the 10-minute TTL as 410', async () => {
     const app = await buildAdminApp()
     const { parkEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads.ts')
+      await import('@kobato/server/domains/backup/pending-uploads')
     vi.useFakeTimers()
     try {
       const dir = join(tmpdir(), 'kobato-restore-expired-token')

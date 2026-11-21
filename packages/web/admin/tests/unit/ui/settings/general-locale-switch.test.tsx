@@ -1,11 +1,11 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SiteIdentitySettings } from '@kobato/settings/types'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
-import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm'
+import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
+import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel'
 // @vitest-environment happy-dom
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,7 +14,7 @@ const commit = vi.hoisted(() => vi.fn())
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
 
-const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation.ts')
+const settingsMutation = await import('@kobato/web-admin/ui/settings/use-settings-mutation')
 vi.spyOn(settingsMutation, 'useSettingsMutation').mockImplementation(() => ({
   commit,
   isPending: false,

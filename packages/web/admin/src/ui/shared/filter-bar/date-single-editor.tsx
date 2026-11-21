@@ -1,20 +1,20 @@
-import { Calendar } from '@kobato/ui/components/calendar.tsx'
+import { Calendar } from '@kobato/ui/components/calendar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kobato/ui/components/dropdown-menu.tsx'
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/ui/components/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   SINGLE_DATE_FILTER_OPERATOR_LABEL_IDS,
   SINGLE_DATE_FILTER_OPERATORS,
   type SingleDateFilterOperator,
   type SingleDateFilterValue,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { CalendarIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 

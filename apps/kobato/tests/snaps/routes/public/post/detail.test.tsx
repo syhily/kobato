@@ -1,10 +1,10 @@
-import { toDetailPostShell } from '@kobato/catalog/projection.ts'
-import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog.ts'
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { prerenderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { toDetailPostShell } from '@kobato/catalog/projection'
+import { makePost, makeTag } from '@kobato/contracts/tests/utils/catalog'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { prerenderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import PostDetailRoute from '@/routes/public/post/detail.tsx'
+import PostDetailRoute from '@/routes/public/post/detail'
 
 describe('snapshot: routes/public/post/detail', () => {
   it('renders the post detail route', async () => {

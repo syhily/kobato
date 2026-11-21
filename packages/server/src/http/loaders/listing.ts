@@ -1,14 +1,14 @@
-import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/catalog/listing.ts'
-import type { ListingPostCard } from '@kobato/catalog/model.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { FeedLinkOptions } from '@kobato/seo/meta.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/catalog/listing'
+import type { ListingPostCard } from '@kobato/catalog/model'
+import type { Database } from '@kobato/db/database'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { FeedLinkOptions } from '@kobato/seo/meta'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { getClientPostsWithMetadata } from '@kobato/server/domains/posts/services/public-query.ts'
-import { parseListingPage, redirectListingOverflow } from '@kobato/server/http/loaders/pagination.ts'
-import { listingSeo } from '@kobato/server/render/seo/listing-seo.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { getClientPostsWithMetadata } from '@kobato/server/domains/posts/services/public-query'
+import { parseListingPage, redirectListingOverflow } from '@kobato/server/http/loaders/pagination'
+import { listingSeo } from '@kobato/server/render/seo/listing-seo'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 export interface ListingMetadataFlags {
   likes?: boolean

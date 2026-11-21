@@ -1,8 +1,8 @@
 import {
   SettingsFlushProvider,
   useSettingsFlushContext,
-} from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { renderToHtml } from '@kobato/web-client/tests/utils/render.tsx'
+} from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
+import { renderToHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useSettingsFlushContext>) => void }) {
@@ -117,10 +117,7 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
     captured!.registerFlush('fonts', () => {
       throw new Error('boom')
     })
-    const logWarn = vi.spyOn(
-      await import('@kobato/ui/lib/logger.ts').then((m) => m.getLogger('settings.flush')),
-      'warn',
-    )
+    const logWarn = vi.spyOn(await import('@kobato/ui/lib/logger').then((m) => m.getLogger('settings.flush')), 'warn')
     await expect(captured!.flushAllAndWait()).resolves.toBe(false)
     logWarn.mockRestore()
   })

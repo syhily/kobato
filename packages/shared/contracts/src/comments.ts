@@ -1,6 +1,6 @@
-import { honeypotField, idString, isoDateTime, successDto } from '@kobato/contracts/primitives.ts'
-import { commentEditorStateSchema, type CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
+import { honeypotField, idString, isoDateTime, successDto } from '@kobato/contracts/primitives'
+import { commentEditorStateSchema, type CommentEditorState } from '@kobato/inkling/headless/comment-schema'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema'
 import { z } from 'zod'
 
 const adminPendingItemDto = z.object({
@@ -253,14 +253,20 @@ export type AdminCommentIdInput = z.infer<typeof adminCommentIdInput>
 export const adminCommentEditInput = z.object({ commentId: z.string(), body: commentEditorStateSchema })
 export type AdminCommentEditInput = z.infer<typeof adminCommentEditInput>
 
+export const ADMIN_COMMENT_STATUSES = ['all', 'pending', 'approved', 'deleteRequested'] as const
+export type AdminCommentStatus = (typeof ADMIN_COMMENT_STATUSES)[number]
+
+export const COMMENT_TEXT_MATCHES = ['contains', 'does-not-contain'] as const
+export type CommentTextMatch = (typeof COMMENT_TEXT_MATCHES)[number]
+
 export const adminCommentsLoadAllInput = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),
   pageKey: z.string().optional(),
   userId: z.string().optional(),
-  status: z.enum(['all', 'pending', 'approved', 'deleteRequested']).optional(),
+  status: z.enum(ADMIN_COMMENT_STATUSES).optional(),
   q: z.string().trim().max(200).optional(),
-  match: z.enum(['contains', 'does-not-contain']).optional(),
+  match: z.enum(COMMENT_TEXT_MATCHES).optional(),
   createdAfter: z.iso.datetime().optional(),
   createdBefore: z.iso.datetime().optional(),
 })

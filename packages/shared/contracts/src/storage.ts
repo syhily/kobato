@@ -3,7 +3,7 @@ import {
   STORAGE_URL_TEMPLATE_MESSAGE,
   isSafeStorageEndpoint,
   isSafeStorageUrlTemplate,
-} from '@kobato/settings/sections/assets.ts'
+} from '@kobato/settings/sections/assets'
 import { z } from 'zod'
 
 export const STORAGE_MIGRATION_IN_FLIGHT_PHASES = ['copying', 'switching', 'catching-up'] as const

@@ -1,13 +1,13 @@
-import type { MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
+import type { MetricGroup, MetricRow, MetricType } from '@kobato/contracts/analytics'
 
-import { METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
-import { Card } from '@kobato/ui/components/card.tsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { METRIC_TYPE_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels.ts'
-import { MetricList } from '@kobato/web-admin/ui/analytics/MetricList.tsx'
-import { type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
+import { METRIC_GROUP_TABS } from '@kobato/contracts/analytics'
+import { Card } from '@kobato/ui/components/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { METRIC_TYPE_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels'
+import { MetricList } from '@kobato/web-admin/ui/analytics/MetricList'
+import { type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 
 export interface MetricsGroupProps {
   group: MetricGroup

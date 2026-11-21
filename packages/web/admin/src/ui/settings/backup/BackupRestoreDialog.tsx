@@ -7,8 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@kobato/ui/components/alert-dialog.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+} from '@kobato/ui/components/alert-dialog'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Loader2Icon } from 'lucide-react'
 
 type RestorePhase = 'confirm' | 'waiting'

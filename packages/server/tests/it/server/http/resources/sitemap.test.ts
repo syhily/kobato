@@ -1,20 +1,20 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store.ts'
-import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
-import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { post as postTable } from '@kobato/db/schema/post'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store'
+import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
+import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry.ts'), 'through')
+const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry'), 'through')
 void throughSpy
 
 const db = getTestDb()
@@ -42,7 +42,7 @@ function createTestApp() {
 }
 
 async function makeApp() {
-  const { sitemapRouter } = await import('@kobato/server/http/resources/sitemap.ts')
+  const { sitemapRouter } = await import('@kobato/server/http/resources/sitemap')
   const app = createTestApp()
   app.route('/', sitemapRouter)
   return app

@@ -1,22 +1,22 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { setting } from '@kobato/db/schema/config.ts'
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { image } from '@kobato/db/schema/media.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { storageMigration } from '@kobato/db/schema/storage-migration.ts'
-import { flipBrandingDrivers } from '@kobato/server/domains/assets/services/storage.ts'
-import { backfillStorageAssetUrls } from '@kobato/server/domains/content/services/asset-url-backfill.ts'
-import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { lexicalBodyWith, lexicalImage } from '@kobato/server/tests/utils/lexical.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { setting } from '@kobato/db/schema/config'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { image } from '@kobato/db/schema/media'
+import { post as postTable } from '@kobato/db/schema/post'
+import { storageMigration } from '@kobato/db/schema/storage-migration'
+import { flipBrandingDrivers } from '@kobato/server/domains/assets/services/storage'
+import { backfillStorageAssetUrls } from '@kobato/server/domains/content/services/asset-url-backfill'
+import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { lexicalBodyWith, lexicalImage } from '@kobato/server/tests/utils/lexical'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -52,7 +52,7 @@ const {
   resumeStorageMigration,
   startStorageMigration,
   wireS3Migration,
-} = await import('@kobato/server/domains/storage/s3-migration.ts')
+} = await import('@kobato/server/domains/storage/s3-migration')
 
 const db = getTestDb()
 

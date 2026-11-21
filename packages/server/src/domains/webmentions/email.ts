@@ -1,10 +1,10 @@
-import type { WebmentionRow } from '@kobato/db/types.ts'
-import type { AdminNotificationRow } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import type { SendResult } from '@kobato/server/infra/email/types.ts'
+import type { WebmentionRow } from '@kobato/db/types'
+import type { AdminNotificationRow } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
+import type { SendResult } from '@kobato/server/infra/email/types'
 
-import { sendAdminNotification } from '@kobato/server/infra/email/admin-notification.ts'
-import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail.tsx'
-import { emailTranslator } from '@kobato/server/infra/email/translator.ts'
+import { sendAdminNotification } from '@kobato/server/infra/email/admin-notification'
+import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
+import { emailTranslator } from '@kobato/server/infra/email/translator'
 import { createElement } from 'react'
 
 export async function sendNewWebmention(

@@ -1,8 +1,8 @@
-import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database.ts'
+import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database'
 
-import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/db/duckdb/access-events.ts'
-import { ANALYTICS_TABLES } from '@kobato/db/duckdb/schema.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/db/duckdb/access-events'
+import { ANALYTICS_TABLES } from '@kobato/db/duckdb/schema'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { stat } from 'node:fs/promises'
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {

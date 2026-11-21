@@ -1,12 +1,12 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageTable } from '@kobato/db/schema/page.ts'
-import { post as postTable } from '@kobato/db/schema/post.ts'
-import { drawOpenGraph } from '@kobato/server/render/og/render.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageTable } from '@kobato/db/schema/page'
+import { post as postTable } from '@kobato/db/schema/post'
+import { drawOpenGraph } from '@kobato/server/render/og/render'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import sharp from 'sharp'
@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
 
-const drawSpy = vi.spyOn(await import('@kobato/server/render/og/render.ts'), 'drawOpenGraph')
+const drawSpy = vi.spyOn(await import('@kobato/server/render/og/render'), 'drawOpenGraph')
 void drawOpenGraph
 
 const coverDataUri = `data:image/png;base64,${(
@@ -81,7 +81,7 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
   return pageId
 }
 
-import { imagesRouter } from '@kobato/server/http/resources/images.ts'
+import { imagesRouter } from '@kobato/server/http/resources/images'
 
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {

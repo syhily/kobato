@@ -1,6 +1,6 @@
 import { EDITOR_BASE_NODES } from '@kobato/inkling'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { excludeBaseNodes } from '@kobato/web-client/editor/base-node-filter.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { excludeBaseNodes } from '@kobato/web-client/editor/base-node-filter'
 import { describe, expect, it } from 'vitest'
 
 type Entry = { getType?: () => string; replace?: { getType?: () => string } }

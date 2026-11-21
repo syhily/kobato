@@ -1,6 +1,6 @@
-import type { ObservabilityProvisionSummary } from '@kobato/contracts/observability.ts'
+import type { ObservabilityProvisionSummary } from '@kobato/contracts/observability'
 
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 
 export function ObservabilityProvisionSummaryLines({ summary }: { summary: ObservabilityProvisionSummary }) {
   const { t } = useI18n()

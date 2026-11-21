@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
-import { ComboboxContent, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox.tsx'
-import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCombobox.tsx'
+import { ComboboxContent, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox'
+import { renderWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCombobox'
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

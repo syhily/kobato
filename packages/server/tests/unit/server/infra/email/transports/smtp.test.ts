@@ -12,9 +12,9 @@ vi.mock('nodemailer', () => ({
   default: { createTransport: createTransportMock },
 }))
 
-import type { SmtpConfig } from '@kobato/server/infra/email/transports/smtp.ts'
+import type { SmtpConfig } from '@kobato/server/infra/email/transports/smtp'
 
-import { SmtpTransport } from '@kobato/server/infra/email/transports/smtp.ts'
+import { SmtpTransport } from '@kobato/server/infra/email/transports/smtp'
 
 const baseConfig: SmtpConfig = {
   enabled: true,

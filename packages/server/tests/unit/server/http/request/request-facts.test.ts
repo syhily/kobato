@@ -1,4 +1,4 @@
-import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts'
 import { describe, expect, it } from 'vitest'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/

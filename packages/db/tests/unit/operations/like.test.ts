@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -84,7 +84,7 @@ import {
   metricsByOwnerIds,
   purgeOldLikeTokens,
   recordLikeAndCount,
-} from '@kobato/db/operations/like.ts'
+} from '@kobato/db/operations/like'
 
 describe('like operations', () => {
   beforeEach(() => {

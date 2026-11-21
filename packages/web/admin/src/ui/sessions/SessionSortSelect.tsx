@@ -1,8 +1,8 @@
-import type { SessionSortDirection, SessionSortOption, SessionSortState } from '@kobato/web-admin/ui/sessions/sort.ts'
+import type { SessionSortDirection, SessionSortOption, SessionSortState } from '@kobato/web-admin/ui/sessions/sort'
 
-import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
 import { useState } from 'react'
 

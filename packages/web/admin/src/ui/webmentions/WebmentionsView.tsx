@@ -1,8 +1,8 @@
-import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage.tsx'
-import { WebmentionInboxView } from '@kobato/web-admin/ui/webmentions/WebmentionInboxView.tsx'
-import { WebmentionOutboxView } from '@kobato/web-admin/ui/webmentions/WebmentionOutboxView.tsx'
+import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
+import { WebmentionInboxView } from '@kobato/web-admin/ui/webmentions/WebmentionInboxView'
+import { WebmentionOutboxView } from '@kobato/web-admin/ui/webmentions/WebmentionOutboxView'
 
 export type WebmentionTab = 'inbox' | 'outbox'
 

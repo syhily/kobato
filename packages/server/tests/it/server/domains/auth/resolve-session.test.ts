@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage.ts'
+import type { Database } from '@kobato/db/database'
+import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 
-import { session as sessionTable } from '@kobato/db/schema/session.ts'
-import { user as userTable } from '@kobato/db/schema/user.ts'
-import { resolveSessionContext } from '@kobato/server/domains/auth/primitives.ts'
-import { buildSessionWithSid, commitSession } from '@kobato/server/domains/auth/session-storage.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { session as sessionTable } from '@kobato/db/schema/session'
+import { user as userTable } from '@kobato/db/schema/user'
+import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
+import { buildSessionWithSid, commitSession } from '@kobato/server/domains/auth/session-storage'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 

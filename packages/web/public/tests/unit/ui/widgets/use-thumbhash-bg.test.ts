@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const VALID_THUMBHASH_A = 'cucFBwBdaXiMlnV7h/h3toZnxfXGTF8M'
@@ -36,7 +36,7 @@ describe('client/hooks/useThumbhashBackground — initial-return gating', () => 
 
 describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
   it('the shared decoder is deterministic for a given thumbhash', async () => {
-    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash.ts')
+    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     const b = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     expect(a).toBe(b)
@@ -44,7 +44,7 @@ describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
   })
 
   it('the shared decoder produces distinct output for distinct thumbhashes', async () => {
-    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash.ts')
+    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     const b = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_B))
     expect(a).not.toBe(b)
@@ -53,11 +53,11 @@ describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
 
 describe('client/hooks/useThumbhashBackground — decode-failure fallback', () => {
   afterEach(() => {
-    vi.doUnmock('@kobato/utils/thumbhash.ts')
+    vi.doUnmock('@kobato/utils/thumbhash')
   })
 
   it('a throwing decoder does not propagate from the hook (returns undefined)', async () => {
-    vi.doMock('@kobato/utils/thumbhash.ts', () => ({
+    vi.doMock('@kobato/utils/thumbhash', () => ({
       thumbHashToDataURL: vi.fn(() => {
         throw new Error('decode exploded')
       }),
@@ -80,7 +80,7 @@ describe('client/hooks/useThumbhashBackground — input transitions', () => {
 })
 
 async function importModule() {
-  return import('@kobato/web-public/ui/widgets/use-thumbhash-bg.ts')
+  return import('@kobato/web-public/ui/widgets/use-thumbhash-bg')
 }
 
 function decodeBase64(value: string): Uint8Array {

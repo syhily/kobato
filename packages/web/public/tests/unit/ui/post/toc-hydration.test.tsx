@@ -1,5 +1,5 @@
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
 // @vitest-environment happy-dom
 import { Writable } from 'node:stream'
 import { hydrateRoot } from 'react-dom/client'

@@ -1,7 +1,7 @@
-import type { DomainErrorWire } from '@kobato/server/infra/http/errors.ts'
+import type { DomainErrorWire } from '@kobato/server/infra/http/errors'
 import type { Metadata, Sharp } from 'sharp'
 
-import { rgbaToThumbHash } from '@kobato/utils/thumbhash.ts'
+import { rgbaToThumbHash } from '@kobato/utils/thumbhash'
 import { parentPort, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
 

@@ -1,11 +1,11 @@
-import type { Logger } from '@kobato/server/infra/logger.ts'
+import type { Logger } from '@kobato/server/infra/logger'
 
 import { createElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { fireAndForgetNotify, sendAdminNotification } = await import('@kobato/server/infra/email/admin-notification.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { fireAndForgetNotify, sendAdminNotification } = await import('@kobato/server/infra/email/admin-notification')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 interface MailFixture {
   enabled: boolean

@@ -4,8 +4,8 @@ import {
   entityPermalink,
   searchRootPath,
   trimSiteSuffix,
-} from '@kobato/server/domains/content/urls.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/content/urls'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { describe, expect, it } from 'vitest'
 
 describe('server/domains/content/urls — canonicalPostPath', () => {

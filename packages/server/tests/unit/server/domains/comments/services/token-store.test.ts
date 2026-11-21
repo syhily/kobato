@@ -1,9 +1,9 @@
 import type {
   CommentTokenCookie,
   CommentTokenCookieEntry,
-} from '@kobato/server/domains/comments/services/comment-token.ts'
+} from '@kobato/server/domains/comments/services/comment-token'
 
-import { appendCommentToken } from '@kobato/server/domains/comments/services/token-store.ts'
+import { appendCommentToken } from '@kobato/server/domains/comments/services/token-store'
 import { describe, expect, it } from 'vitest'
 
 const TTL_SECONDS = 3600

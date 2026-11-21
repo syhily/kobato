@@ -1,6 +1,6 @@
-import type { Span } from '@kobato/server/infra/trace/facade.ts'
+import type { Span } from '@kobato/server/infra/trace/facade'
 
-import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade.ts'
+import { isTraceActive, runInSpan, startSpan } from '@kobato/server/infra/trace/facade'
 
 export type OrpcTraceTransport = 'http' | 'in_process'
 

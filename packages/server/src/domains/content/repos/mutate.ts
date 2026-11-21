@@ -1,19 +1,19 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentRow, NewContent } from '@kobato/db/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { ContentRow, NewContent } from '@kobato/db/types'
 import type {
   ContentType,
   PublishLatestInput,
   PublishLatestResult,
   SaveDraftInput,
   SaveDraftResult,
-} from '@kobato/server/domains/content/schemas/revision.ts'
+} from '@kobato/server/domains/content/schemas/revision'
 
-import { content as contentTable } from '@kobato/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence.ts'
-import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence'
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { and, desc, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'

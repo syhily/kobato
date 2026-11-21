@@ -1,24 +1,24 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
-import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store.ts'
-import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store.ts'
-import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
+import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store'
+import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
+import { resetCacheCounterMemo } from '@kobato/server/infra/cache/registry'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { HTTPException } from 'hono/http-exception'
 import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry.ts'), 'through')
+const throughSpy = vi.spyOn(await import('@kobato/server/infra/cache/registry'), 'through')
 // The renderer has its own real-canvas coverage; here it is replaced with a
 // cheap real PNG so the route + cache semantics stay fast to exercise.
 const PNG = await sharp({ create: { width: 8, height: 8, channels: 3, background: { r: 1, g: 2, b: 3 } } })
   .png()
   .toBuffer()
 const renderCalendarSpy = vi
-  .spyOn(await import('@kobato/server/render/calendar/render.ts'), 'renderCalendar')
+  .spyOn(await import('@kobato/server/render/calendar/render'), 'renderCalendar')
   .mockImplementation(async () => PNG)
 
 function options(
@@ -41,7 +41,7 @@ function options(
 }
 
 async function importServeCalendar() {
-  return (await import('@kobato/server/http/resources/calendar.ts')).serveCalendar
+  return (await import('@kobato/server/http/resources/calendar')).serveCalendar
 }
 
 describe('serveCalendar', () => {

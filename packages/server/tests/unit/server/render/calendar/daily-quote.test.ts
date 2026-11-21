@@ -1,8 +1,8 @@
-import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/settings/types.ts'
+import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/settings/types'
 
-import { getDailyQuote, pickForDate } from '@kobato/server/render/calendar/daily-quote.ts'
-import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { getDailyQuote, pickForDate } from '@kobato/server/render/calendar/daily-quote'
+import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { parseISO } from 'date-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -1,17 +1,17 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { Env } from '@kobato/server/http/hono-env'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushDeviceEnvBeacons } from '@kobato/server/domains/analytics/services/env-beacon.ts'
-import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushDeviceEnvBeacons } from '@kobato/server/domains/analytics/services/env-beacon'
+import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 

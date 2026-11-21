@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { SettingsCheckbox } from '@kobato/web-admin/ui/settings/shell/SettingsCheckbox.tsx'
+import { SettingsCheckbox } from '@kobato/web-admin/ui/settings/shell/SettingsCheckbox'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

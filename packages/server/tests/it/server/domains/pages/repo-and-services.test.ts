@@ -1,26 +1,26 @@
-import { content } from '@kobato/db/schema/content.ts'
-import { page as pageMetaTable } from '@kobato/db/schema/page.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { emptyLexicalBody, stubMusicResolver } from '@kobato/server/tests/utils/lexical.ts'
-import { adminUser } from '@kobato/server/tests/utils/session.ts'
+import { content } from '@kobato/db/schema/content'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { user } from '@kobato/db/schema/user'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { emptyLexicalBody, stubMusicResolver } from '@kobato/server/tests/utils/lexical'
+import { adminUser } from '@kobato/server/tests/utils/session'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const findPageMetaBySlugForUpdate = vi.spyOn(
-  await import('@kobato/server/domains/pages/repo.ts'),
+  await import('@kobato/server/domains/pages/repo'),
   'findPageMetaBySlugForUpdate',
 )
 
-const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings.ts')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings.ts')
+const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
-const repo = await import('@kobato/server/domains/pages/repo.ts')
-const publicQuery = await import('@kobato/server/domains/pages/services/public-query.ts')
-const mutate = await import('@kobato/server/domains/pages/services/mutate.ts')
-const adminQuery = await import('@kobato/server/domains/pages/services/admin-query.ts')
-const lifecycle = await import('@kobato/server/domains/content/lifecycle.ts')
-const { pageLifecycleAdapter } = await import('@kobato/server/domains/pages/services/lifecycle-adapter.ts')
+const repo = await import('@kobato/server/domains/pages/repo')
+const publicQuery = await import('@kobato/server/domains/pages/services/public-query')
+const mutate = await import('@kobato/server/domains/pages/services/mutate')
+const adminQuery = await import('@kobato/server/domains/pages/services/admin-query')
+const lifecycle = await import('@kobato/server/domains/content/lifecycle')
+const { pageLifecycleAdapter } = await import('@kobato/server/domains/pages/services/lifecycle-adapter')
 
 const db = getTestDb()
 

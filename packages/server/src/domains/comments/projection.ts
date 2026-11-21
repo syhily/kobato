@@ -1,15 +1,15 @@
 // Drizzle types bigint ids and Date timestamps, which JSON.stringify mangles;
 // the DTOs declare the wire shape (string ids, ISO timestamps).
 
-import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments.ts'
-import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared.ts'
-import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types.ts'
-import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
+import type { AdminCommentWire, CommentItemWire, LatestComment } from '@kobato/contracts/comments'
+import type { PendingCommentRow } from '@kobato/server/domains/comments/repos/shared'
+import type { AdminComment, CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'
+import type { Assert, Equals } from '@kobato/utils/type-equals'
 import type { z } from 'zod'
 
-import { commentBaseDto } from '@kobato/contracts/comments.ts'
-import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
-import { entityPermalink, trimSiteSuffix } from '@kobato/server/domains/content/urls.ts'
+import { commentBaseDto } from '@kobato/contracts/comments'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
+import { entityPermalink, trimSiteSuffix } from '@kobato/server/domains/content/urls'
 
 type _publicWireKeyParity = Assert<
   Equals<keyof z.infer<typeof commentBaseDto>, keyof Omit<CommentAndUser, 'ua' | 'ip' | 'email'>>

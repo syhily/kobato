@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 type BaseNodeEntry = { getType?: () => string; replace?: { getType?: () => string } }
 

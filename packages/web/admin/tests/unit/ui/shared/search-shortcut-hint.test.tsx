@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { SearchShortcutHint } from '@kobato/web-admin/ui/shared/SearchShortcutHint'
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'

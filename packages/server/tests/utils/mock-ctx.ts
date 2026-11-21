@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { HandlerContext } from '@kobato/server/http/orpc-base.ts'
-import type { AppLocalization } from '@kobato/settings/app-localization.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { Database } from '@kobato/db/database'
+import type { HandlerContext } from '@kobato/server/http/orpc-base'
+import type { AppLocalization } from '@kobato/settings/app-localization'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { extractRequestFacts } from '@kobato/server/http/request/request-facts.ts'
-import { createLazyAppSnapshot } from '@kobato/settings/app-localization.ts'
+import { extractRequestFacts } from '@kobato/server/http/request/request-facts'
+import { createLazyAppSnapshot } from '@kobato/settings/app-localization'
 
 export interface MockCtxOptions {
   userId?: string

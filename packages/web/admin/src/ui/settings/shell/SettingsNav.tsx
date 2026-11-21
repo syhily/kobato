@@ -1,11 +1,11 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { SettingsNavGroup } from '@kobato/web-admin/ui/settings/display.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { SettingsNavGroup } from '@kobato/web-admin/ui/settings/display'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { NAV_GROUP_LABEL_KEYS } from '@kobato/web-admin/ui/settings/display.ts'
-import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy.tsx'
-import { useSettingsSearch } from '@kobato/web-admin/ui/settings/shell/use-settings-search.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { NAV_GROUP_LABEL_KEYS } from '@kobato/web-admin/ui/settings/display'
+import { useScrollSpyContext, useScrollSpyNav } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy'
+import { useSettingsSearch } from '@kobato/web-admin/ui/settings/shell/use-settings-search'
 import {
   Activity,
   Archive,

@@ -1,4 +1,4 @@
-import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
+import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import {
   asKey,
   childrenListClass,
@@ -12,7 +12,7 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-} from '@kobato/web-public/ui/comments/comment-item/presentation.ts'
+} from '@kobato/web-public/ui/comments/comment-item/presentation'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('ui/public/comments/comment-item/presentation', () => {

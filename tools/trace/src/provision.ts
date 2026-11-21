@@ -1,6 +1,6 @@
-import type { O2Context, StreamInfo } from '@kobato/trace/lib.ts'
+import type { O2Context, StreamInfo } from '@kobato/trace/lib'
 
-import { isRelevantTraceStream, listStreams, RETENTION_DAYS, setRetention } from '@kobato/trace/lib.ts'
+import { isRelevantTraceStream, listStreams, RETENTION_DAYS, setRetention } from '@kobato/trace/lib'
 
 export interface RetentionReport {
   applied: number

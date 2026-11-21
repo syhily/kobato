@@ -1,17 +1,17 @@
-import { adminUsersCrudContract } from '@kobato/api/admin/users.ts'
-import { splitMergePatch } from '@kobato/contracts/merge-patch.ts'
-import { restoreUserById, updateUserById } from '@kobato/db/operations/user.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate.ts'
+import { adminUsersCrudContract } from '@kobato/api/admin/users'
+import { splitMergePatch } from '@kobato/contracts/merge-patch'
+import { restoreUserById, updateUserById } from '@kobato/db/operations/user'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import {
   countUsers,
   fetchAdminUserDto,
   listUsersForAdmin,
   softDeleteUserWithGuard,
   toAdminUserDto,
-} from '@kobato/server/domains/users/services/admin.ts'
-import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/users/services/admin'
+import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminUsersCrudContract)
 

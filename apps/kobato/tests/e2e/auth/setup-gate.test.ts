@@ -1,4 +1,4 @@
-import { E2eClient, e2eEnv, loginAdmin } from '@kobato/harness/http.ts'
+import { E2eClient, e2eEnv, loginAdmin } from '@kobato/harness/http'
 import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()

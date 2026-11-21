@@ -1,9 +1,9 @@
-import { adminFontsContract } from '@kobato/api/admin/fonts.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate.ts'
-import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services/read.ts'
-import { implementAdmin } from '@kobato/server/http/orpc-base.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+import { adminFontsContract } from '@kobato/api/admin/fonts'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
+import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
+import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { idFromString } from '@kobato/utils/id'
 
 // `upload` lives in a separate Hono resource route (`fonts-package.ts`):
 // (`fonts-package.ts`): 60 MiB sources exceed the oRPC bridge's body limit.

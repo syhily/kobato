@@ -1,10 +1,10 @@
-import type { AdminUserDto } from '@kobato/contracts/users.ts'
-import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters.ts'
+import type { AdminUserDto } from '@kobato/contracts/users'
+import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters'
 
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog.ts'
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { UsersView } from '@kobato/web-admin/ui/users/UsersView.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const controller = vi.hoisted((): { filters: UsersFilters } => ({
@@ -17,8 +17,8 @@ const controller = vi.hoisted((): { filters: UsersFilters } => ({
   },
 }))
 
-vi.mock('@kobato/web-admin/ui/users/use-users-filters.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-admin/ui/users/use-users-filters.ts')>()
+vi.mock('@kobato/web-admin/ui/users/use-users-filters', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-admin/ui/users/use-users-filters')>()
   return {
     ...actual,
     useUsersFilters: () => ({
@@ -43,7 +43,7 @@ queryMocks.infinite = {
   fetchNextPage: vi.fn(),
 }
 
-vi.mock('@kobato/ui/lib/use-debounced-search.ts', () => ({
+vi.mock('@kobato/ui/lib/use-debounced-search', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 

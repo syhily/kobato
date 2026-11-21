@@ -1,20 +1,20 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@kobato/ui/components/dropdown-menu.tsx'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
-import { AlbumCard } from '@kobato/web-admin/ui/music/AlbumCard.tsx'
-import { MusicLibraryHero } from '@kobato/web-admin/ui/music/MusicLibraryHero.tsx'
-import { useMusicPlayerActions } from '@kobato/web-admin/ui/music/player/music-player-context.tsx'
-import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/ui/components/dropdown-menu'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { AlbumCard } from '@kobato/web-admin/ui/music/AlbumCard'
+import { MusicLibraryHero } from '@kobato/web-admin/ui/music/MusicLibraryHero'
+import { useMusicPlayerActions } from '@kobato/web-admin/ui/music/player/music-player-context'
+import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import {
   ArrowDownAZ,
   ArrowUpAZ,

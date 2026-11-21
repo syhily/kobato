@@ -1,4 +1,4 @@
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('trace')
 

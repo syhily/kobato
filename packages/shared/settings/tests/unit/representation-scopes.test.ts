@@ -1,13 +1,13 @@
-import type { SettingsSection } from '@kobato/settings/sections.ts'
-import type { BlogSettingsBundle } from '@kobato/settings/types.ts'
+import type { SettingsSection } from '@kobato/settings/sections'
+import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import {
   REPRESENTATION_SCOPES,
   REPRESENTATION_SECTION_DEPS,
   representationRevisionsFor,
-} from '@kobato/settings/representation-scopes.ts'
-import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/settings/representation-scopes'
+import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -124,7 +124,7 @@ describe('settings/representation-scopes — dependency table', () => {
     expect(structurallyEqual).toEqual(first)
 
     vi.resetModules()
-    const { representationRevisionsFor: fresh } = await import('@kobato/settings/representation-scopes.ts')
+    const { representationRevisionsFor: fresh } = await import('@kobato/settings/representation-scopes')
     expect(fresh(TEST_BLOG_SETTINGS_BUNDLE)).toEqual(first)
   })
 

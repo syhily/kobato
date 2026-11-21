@@ -1,8 +1,8 @@
 import type { AnyContractProcedure } from '@orpc/contract'
 
-import { apiContract } from '@kobato/api/contract.ts'
-import { likesContract } from '@kobato/api/likes.ts'
-import { likeDecreaseInput, likeIncreaseInput, likeIncreaseOutput, likeValidateInput } from '@kobato/contracts/likes.ts'
+import { apiContract } from '@kobato/api/contract'
+import { likesContract } from '@kobato/api/likes'
+import { likeDecreaseInput, likeIncreaseInput, likeIncreaseOutput, likeValidateInput } from '@kobato/contracts/likes'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 

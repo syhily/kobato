@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
-import { Popup } from '@kobato/web-public/ui/widgets/Popup.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { Popup } from '@kobato/web-public/ui/widgets/Popup'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'

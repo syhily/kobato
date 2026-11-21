@@ -1,5 +1,5 @@
-import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
-import { callE2eRpc } from '@kobato/harness/rpc.ts'
+import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http'
+import { callE2eRpc } from '@kobato/harness/rpc'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
 import { describe, expect, it } from 'vitest'
 

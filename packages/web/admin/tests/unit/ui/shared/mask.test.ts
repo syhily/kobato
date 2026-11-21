@@ -1,4 +1,4 @@
-import { maskIp, maskUa } from '@kobato/web-admin/ui/shared/mask.ts'
+import { maskIp, maskUa } from '@kobato/web-admin/ui/shared/mask'
 import { describe, expect, it } from 'vitest'
 
 describe('maskIp', () => {

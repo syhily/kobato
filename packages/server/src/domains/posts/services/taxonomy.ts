@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { postTag } from '@kobato/db/schema/post-tag.ts'
-import { post as postMetaTable } from '@kobato/db/schema/post.ts'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy.ts'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate.ts'
-import { buildPublicPostsWhere } from '@kobato/server/domains/posts/repos/shared.ts'
+import { post as postMetaTable } from '@kobato/db/schema/post'
+import { postTag } from '@kobato/db/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
+import { buildPublicPostsWhere } from '@kobato/server/domains/posts/repos/shared'
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 export async function listPostTitlesByTaxonomy(db: Database, name: string): Promise<string[]> {

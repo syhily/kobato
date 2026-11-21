@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { EntityType } from '@kobato/db/target.ts'
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
+import type { Database } from '@kobato/db/database'
+import type { EntityType } from '@kobato/db/target'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { likeEscape } from '@kobato/db/like-escape.ts'
-import { comment } from '@kobato/db/schema/comment.ts'
-import { listMyComments } from '@kobato/server/domains/comments/repos/admin-query.ts'
-import { findParentCommentsByIds } from '@kobato/server/domains/comments/repos/public-query/by-id.ts'
+import { likeEscape } from '@kobato/db/like-escape'
+import { comment } from '@kobato/db/schema/comment'
+import { listMyComments } from '@kobato/server/domains/comments/repos/admin-query'
+import { findParentCommentsByIds } from '@kobato/server/domains/comments/repos/public-query/by-id'
 import {
   mineSoftDeleteCutoff,
   mineVisibleClause,
@@ -14,9 +14,9 @@ import {
   MY_COMMENT_ENTITY_LIMIT,
   type MyCommentEntity,
   type MyCommentsFilters,
-} from '@kobato/server/domains/comments/repos/shared.ts'
-import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title.ts'
-import { entityPermalink } from '@kobato/server/domains/content/urls.ts'
+} from '@kobato/server/domains/comments/repos/shared'
+import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title'
+import { entityPermalink } from '@kobato/server/domains/content/urls'
 import { and, count, eq, sql } from 'drizzle-orm'
 
 export interface MineCommentItem {

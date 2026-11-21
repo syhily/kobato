@@ -1,18 +1,18 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend.ts'
+import type { Database } from '@kobato/db/database'
+import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { findBackupByTimestamp, insertBackup } from '@kobato/db/operations/backup.ts'
+import { findBackupByTimestamp, insertBackup } from '@kobato/db/operations/backup'
 import {
   cleanupOldBackups,
   createBackup,
   deleteBackup,
   getBackupStream,
   isValidBackupStoragePath,
-} from '@kobato/server/domains/backup/services/backup.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+} from '@kobato/server/domains/backup/services/backup'
+import { DomainError } from '@kobato/server/infra/http/errors'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

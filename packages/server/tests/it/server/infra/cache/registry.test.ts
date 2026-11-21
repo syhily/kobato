@@ -1,6 +1,6 @@
-import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { AppLocale } from '@kobato/i18n/locales'
 
-import { APP_VERSION } from '@kobato/distribution/app.ts'
+import { APP_VERSION } from '@kobato/distribution/app'
 import {
   __resetCacheCountersForTests,
   bumpCounter,
@@ -9,11 +9,11 @@ import {
   get,
   getCounter,
   through,
-} from '@kobato/server/infra/cache/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { representationRevisionsFor } from '@kobato/settings/representation-scopes.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/infra/cache/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { representationRevisionsFor } from '@kobato/settings/representation-scopes'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()
@@ -180,7 +180,7 @@ describe('cache registry (integration)', () => {
 
     const { writeFileSync } = await import('node:fs')
     const path = await import('node:path')
-    const { resolveCacheRoot } = await import('@kobato/server/infra/cache/file-store.ts')
+    const { resolveCacheRoot } = await import('@kobato/server/infra/cache/file-store')
     writeFileSync(path.join(resolveCacheRoot(), 'searchResult', '_generation'), '9')
     __resetCacheCountersForTests()
 

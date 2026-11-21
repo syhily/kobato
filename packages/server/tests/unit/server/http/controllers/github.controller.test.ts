@@ -1,9 +1,9 @@
-import { githubRouter } from '@kobato/server/http/controllers/github.controller.ts'
-import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
+import { githubRouter } from '@kobato/server/http/controllers/github.controller'
+import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
+import { installFetch, jsonResponse } from '@kobato/test/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const dnsSeam = async () => [{ address: '203.0.113.10', family: 4 }]

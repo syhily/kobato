@@ -1,5 +1,5 @@
-import { vitestTestBase } from '@kobato/test/vitest.base.ts'
-import { testDefine } from '@kobato/test/vitest.define.ts'
+import { vitestTestBase } from '@kobato/test/vitest.base'
+import { testDefine } from '@kobato/test/vitest.define'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
 import svgr from 'vite-plugin-svgr'
@@ -19,7 +19,7 @@ export default defineConfig({
     name: 'demo-unit',
     pool: 'vmThreads',
     environment: 'jsdom',
-    setupFiles: ['@kobato/test/setup/unit.ts'],
+    setupFiles: ['@kobato/test/setup/unit'],
     include: ['apps/inkling-demo/tests/unit/**/*.test.{ts,tsx}'],
   },
 })

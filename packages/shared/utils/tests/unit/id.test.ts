@@ -1,4 +1,4 @@
-import { idStr } from '@kobato/utils/id.ts'
+import { idStr } from '@kobato/utils/id'
 import { describe, expect, it } from 'vitest'
 
 describe('utils/id — idStr', () => {

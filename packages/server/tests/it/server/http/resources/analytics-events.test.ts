@@ -1,22 +1,22 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
-import type { SessionUser } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
-import type { RequestContext } from '@kobato/server/http/request-context.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { Env } from '@kobato/server/http/hono-env'
+import type { RequestContext } from '@kobato/server/http/request-context'
 
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { __getRealtimeConnectionCountForTests } from '@kobato/server/domains/analytics/services/realtime-connections.ts'
-import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { __getRealtimeConnectionCountForTests } from '@kobato/server/domains/analytics/services/realtime-connections'
+import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { makeRequestContext as makeBaseRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+} from '@kobato/server/tests/utils/analytics-db'
+import { makeRequestContext as makeBaseRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { createSession } from 'react-router'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'

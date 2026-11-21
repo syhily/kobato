@@ -1,12 +1,12 @@
-import type { AdminCommentsResult } from '@kobato/server/domains/comments/types.ts'
+import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema.ts'
-import { loadAllComments } from '@kobato/server/domains/comments/services/admin-query.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { metric } from '@kobato/db/schema/metric'
+import { post } from '@kobato/db/schema/post'
+import { user } from '@kobato/db/schema/user'
+import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
+import { loadAllComments } from '@kobato/server/domains/comments/services/admin-query'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

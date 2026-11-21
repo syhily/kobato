@@ -1,17 +1,12 @@
-import '@kobato/test/setup/unit.ts'
-import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query.ts'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import '@kobato/test/setup/unit'
+import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, vi } from 'vitest'
 
-vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation.ts', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
+vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation', async () => {
+  const { settingsMutationMock } = await import('@kobato/web-admin/tests/utils/settings-mutation-mock')
+  return { useSettingsMutation: settingsMutationMock }
+})
 
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 

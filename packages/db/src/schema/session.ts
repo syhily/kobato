@@ -1,4 +1,4 @@
-import { user } from '@kobato/db/schema/user.ts'
+import { user } from '@kobato/db/schema/user'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const session = sqliteTable(

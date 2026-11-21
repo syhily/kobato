@@ -1,9 +1,9 @@
-import type { ContentRow } from '@kobato/db/types.ts'
+import type { ContentRow } from '@kobato/db/types'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
-const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-read.ts')
+const { readHeadings, readRevisionProjection } = await import('@kobato/server/domains/content/projection-read')
 
 function revisionRow(overrides: Partial<ContentRow>): ContentRow {
   return { body: [], bodyHtml: null, bodyHtmlFeed: null, imageSources: [], headings: [], ...overrides } as ContentRow

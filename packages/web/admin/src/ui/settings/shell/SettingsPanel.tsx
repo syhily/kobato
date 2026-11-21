@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
+import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
 
 interface SettingsPanelProps {
   children: ReactNode

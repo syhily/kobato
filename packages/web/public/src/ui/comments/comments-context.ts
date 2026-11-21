@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments.ts'
+import type { CommentItemWire as CommentItemType } from '@kobato/contracts/comments'
 
 import { createContext, use } from 'react'
 

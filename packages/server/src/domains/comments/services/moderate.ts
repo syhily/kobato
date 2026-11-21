@@ -1,31 +1,28 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema.ts'
-import type { AuditContext } from '@kobato/server/domains/audit/types.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
+import type { Database } from '@kobato/db/database'
+import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
+import type { AuditContext } from '@kobato/server/domains/audit/types'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { comment } from '@kobato/db/schema/comment.ts'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record.ts'
-import { isCommentOwner } from '@kobato/server/domains/auth/rbac.ts'
-import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge.ts'
-import { findCommentWithUserAndTarget } from '@kobato/server/domains/comments/repos/admin-query.ts'
+import { comment } from '@kobato/db/schema/comment'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { isCommentOwner } from '@kobato/server/domains/auth/rbac'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
+import { findCommentWithUserAndTarget } from '@kobato/server/domains/comments/repos/admin-query'
 import {
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@kobato/server/domains/comments/repos/mutate.ts'
-import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize.ts'
-import { sendApprovedComment, sendNewComment } from '@kobato/server/domains/comments/services/email.ts'
-import {
-  countApprovedRepliesOfComment,
-  findCommentWithUserById,
-} from '@kobato/server/domains/comments/services/lookup.ts'
-import { decideOwnEdit } from '@kobato/server/domains/comments/services/policy.ts'
-import { asCommentTarget } from '@kobato/server/domains/comments/services/shared.ts'
-import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { idFromString } from '@kobato/utils/id.ts'
+} from '@kobato/server/domains/comments/repos/mutate'
+import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
+import { sendApprovedComment, sendNewComment } from '@kobato/server/domains/comments/services/email'
+import { countApprovedRepliesOfComment, findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup'
+import { decideOwnEdit } from '@kobato/server/domains/comments/services/policy'
+import { asCommentTarget } from '@kobato/server/domains/comments/services/shared'
+import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { idFromString } from '@kobato/utils/id'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
 const adminLog = getLogger('comments.admin')

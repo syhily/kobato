@@ -1,4 +1,4 @@
-import type * as LockModule from '@kobato/web-client/lib/viewport-zoom-lock.ts'
+import type * as LockModule from '@kobato/web-client/lib/viewport-zoom-lock'
 
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -27,7 +27,7 @@ beforeEach(() => {
 })
 
 async function freshLock(): Promise<typeof LockModule> {
-  return import('@kobato/web-client/lib/viewport-zoom-lock.ts')
+  return import('@kobato/web-client/lib/viewport-zoom-lock')
 }
 
 describe('viewport-zoom-lock', () => {

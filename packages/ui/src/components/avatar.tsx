@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 
 import { Avatar as BaseAvatar } from '@base-ui/react/avatar'
-import { cn } from '@kobato/ui/lib/cn.ts'
+import { cn } from '@kobato/ui/lib/cn'
 import { useState } from 'react'
 
 type AvatarLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error'

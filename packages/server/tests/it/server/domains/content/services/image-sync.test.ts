@@ -1,16 +1,11 @@
-import { image as imageTable } from '@kobato/db/schema/media.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import {
-  emptyLexicalBody,
-  lexicalBodyWith,
-  lexicalImage,
-  lexicalParagraph,
-} from '@kobato/server/tests/utils/lexical.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { image as imageTable } from '@kobato/db/schema/media'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { syncLibraryImageBlocks } = await import('@kobato/server/domains/content/services/image-sync.ts')
+const { syncLibraryImageBlocks } = await import('@kobato/server/domains/content/services/image-sync')
 
 const db = getTestDb()
 

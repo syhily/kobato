@@ -6,8 +6,8 @@ import {
   requireBatcher,
   resetAllBatchers,
   settleAllBatchers,
-} from '@kobato/server/infra/db/batcher-registry.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+} from '@kobato/server/infra/db/batcher-registry'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const handle = { db: {}, client: {}, path: ':memory:', inMemory: true, closed: false } as never

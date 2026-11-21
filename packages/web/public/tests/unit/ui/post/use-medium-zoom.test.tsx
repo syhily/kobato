@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { useMediumZoom } from '@kobato/web-public/ui/post/use-medium-zoom.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { useMediumZoom } from '@kobato/web-public/ui/post/use-medium-zoom'
 import { act, renderHook as renderDomHook } from '@testing-library/react'
 import { createRef, type RefObject } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

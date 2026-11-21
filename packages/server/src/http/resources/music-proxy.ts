@@ -1,14 +1,15 @@
-import type { MetingSource } from '@kobato/contracts/music.ts'
-import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { MetingSource } from '@kobato/contracts/music'
+import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types'
+import type { Env } from '@kobato/server/http/hono-env'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
-import { getProvider } from '@kobato/server/domains/music/providers/registry.ts'
-import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { safeFetch } from '@kobato/server/infra/safe-fetch.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+import { METING_SOURCES } from '@kobato/contracts/music'
+import { getProvider } from '@kobato/server/domains/music/providers/registry'
+import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { safeFetch } from '@kobato/server/infra/safe-fetch'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Hono } from 'hono'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {
@@ -16,7 +17,7 @@ const SOURCE_REFERERS: Record<MetingSource, string> = {
   tencent: 'https://y.qq.com/',
 }
 
-const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
+const VALID_SOURCES: ReadonlySet<string> = new Set<string>(METING_SOURCES)
 
 const MAX_PROXY_BYTES = 50 * 1024 * 1024
 

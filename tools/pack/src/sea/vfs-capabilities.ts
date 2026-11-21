@@ -4,8 +4,8 @@
 // Standalone CLI: `node tools/pack/src/sea/vfs-capabilities.ts [nodeBinary]`
 // (default process.execPath). Exits non-zero on any failed assertion.
 
-import { fail, tryRun } from '@kobato/pack/sea/exec.ts'
-import { repoRoot, SEA_SENTINEL_FUSE } from '@kobato/pack/sea/paths.ts'
+import { fail, tryRun } from '@kobato/pack/sea/exec'
+import { repoRoot, SEA_SENTINEL_FUSE } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

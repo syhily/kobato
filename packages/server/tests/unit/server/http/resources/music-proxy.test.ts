@@ -1,10 +1,10 @@
-import type { MusicProvider } from '@kobato/server/domains/music/providers/types.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { MusicProvider } from '@kobato/server/domains/music/providers/types'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { __setProviderForTests } from '@kobato/server/domains/music/providers/registry.ts'
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch.ts'
-import { adminSession, emptySession, regularSession } from '@kobato/server/tests/utils/session.ts'
+import { __setProviderForTests } from '@kobato/server/domains/music/providers/registry'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
+import { adminSession, emptySession, regularSession } from '@kobato/server/tests/utils/session'
 import { Hono } from 'hono'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -81,7 +81,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, co
       })),
     )
 
-    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy.ts')
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
     const app = createTestApp(adminSession())
     app.route('/', router)
 
@@ -98,7 +98,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, co
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy.ts')
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
     const app = createTestApp(adminSession())
     app.route('/', router)
 
@@ -121,7 +121,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, co
       })),
     )
 
-    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy.ts')
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
     const app = createTestApp(adminSession())
     app.route('/', router)
 
@@ -131,8 +131,19 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, co
     expect(res.headers.get('content-disposition')).toBe('attachment')
   })
 
+  it('rejects an unknown source parameter with a 400 JSON error', async () => {
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
+    const app = createTestApp(adminSession())
+    app.route('/', router)
+
+    const res = await app.request(`/admin/music/proxy/${route}?source=spotify&sourceId=123`)
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: { message: 'Invalid source' } })
+    expect(getTrack).not.toHaveBeenCalled()
+  })
+
   it('rejects anonymous callers with a 401 JSON error', async () => {
-    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy.ts')
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
     const app = createTestApp(emptySession())
     app.route('/', router)
 
@@ -149,7 +160,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, co
   })
 
   it('rejects under-privileged callers with a 403 JSON error', async () => {
-    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy.ts')
+    const { musicProxyRouter: router } = await import('@kobato/server/http/resources/music-proxy')
     const app = createTestApp(regularSession())
     app.route('/', router)
 

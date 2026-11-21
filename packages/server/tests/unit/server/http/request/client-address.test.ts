@@ -1,4 +1,4 @@
-import { getClientAddress } from '@kobato/server/http/request/client-address.ts'
+import { getClientAddress } from '@kobato/server/http/request/client-address'
 import { describe, expect, it } from 'vitest'
 
 function buildRequest(headers: Record<string, string> = {}): Request {

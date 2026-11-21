@@ -1,7 +1,7 @@
-import type { AdminImageDto, UploadKind } from '@kobato/contracts/images.ts'
-import type { LockedAspect } from '@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas.tsx'
+import type { AdminImageDto, UploadKind } from '@kobato/contracts/images'
+import type { LockedAspect } from '@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas'
 
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,17 +9,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { Label } from '@kobato/ui/components/label.tsx'
-import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { formatBytes } from '@kobato/utils/format.ts'
-import { orpc } from '@kobato/web-client/api/client.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
+import { formatBytes } from '@kobato/utils/format'
+import { orpc } from '@kobato/web-client/api/client'
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import { Suspense, type SubmitEventHandler, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
 const ImageEditorCanvas = lazy(() =>
-  import('@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas.tsx').then((m) => ({
+  import('@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas').then((m) => ({
     default: m.ImageEditorCanvas,
   })),
 )

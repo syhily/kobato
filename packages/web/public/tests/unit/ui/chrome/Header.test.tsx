@@ -1,7 +1,7 @@
-import type { NavigationItem } from '@kobato/settings/types.ts'
+import type { NavigationItem } from '@kobato/settings/types'
 
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { Header } from '@kobato/web-public/ui/chrome/Header.tsx'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { Header } from '@kobato/web-public/ui/chrome/Header'
 import { describe, expect, it } from 'vitest'
 
 describe('security / tabnabbing — Header external nav links', () => {

@@ -20,9 +20,9 @@ const {
   setRestartRefreshSettings,
   restartServer,
   handleUnhandledRejection,
-} = await import('@kobato/server/infra/lifecycle.ts')
+} = await import('@kobato/server/infra/lifecycle')
 const { __logCaptureForTests: logCapture, __clearLogCaptureForTests: clearLogCapture } =
-  await import('@kobato/server/infra/logger.ts')
+  await import('@kobato/server/infra/logger')
 
 describe('lifecycle', () => {
   beforeEach(() => {

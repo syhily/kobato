@@ -1,10 +1,10 @@
-import type { SiteIdentitySettings } from '@kobato/settings/types.ts'
+import type { SiteIdentitySettings } from '@kobato/settings/types'
 
-import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales.ts'
-import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox.tsx'
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { I18N_SETTINGS_ENABLED } from '@kobato/web-admin/ui/settings/feature-flags.ts'
+import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
+import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { I18N_SETTINGS_ENABLED } from '@kobato/web-admin/ui/settings/feature-flags'
 import {
   DEFAULT_TIME_FORMAT_PATTERN,
   generalFormSchema,
@@ -13,17 +13,17 @@ import {
   toFormValues,
   type GeneralFormValues,
   type TimeZoneItem,
-} from '@kobato/web-admin/ui/settings/general/form-schema.ts'
-import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection.tsx'
-import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup.tsx'
-import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent.tsx'
-import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCombobox.tsx'
-import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'
-import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput.tsx'
-import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect.tsx'
-import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card.tsx'
-import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch.ts'
-import { useLocaleSyncPublish } from '@kobato/web-public/ui/lib/LocaleSyncProvider.tsx'
+} from '@kobato/web-admin/ui/settings/general/form-schema'
+import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
+import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
+import { SettingsCombobox } from '@kobato/web-admin/ui/settings/shell/SettingsCombobox'
+import { useSettingsFlushContext } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
+import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
+import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect'
+import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
+import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch'
+import { useLocaleSyncPublish } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
 import { useEffect, useMemo, useRef } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
 

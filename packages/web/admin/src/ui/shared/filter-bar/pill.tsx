@@ -1,24 +1,24 @@
-import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer.ts'
-import type { FilterFieldSpec, SearchFieldState } from '@kobato/web-admin/ui/shared/filter-bar/types.ts'
+import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
+import type { FilterFieldSpec, SearchFieldState } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   dateFilterLabel,
   parseDateFilter,
   parseSingleDateFilter,
   singleDateFilterLabel,
-} from '@kobato/web-admin/ui/shared/filter-bar/date-filter.ts'
-import { DateSingleFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/date-single-editor.tsx'
+} from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
+import { DateSingleFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/date-single-editor'
 import {
   DateRangeEditor,
   FreetextEditor,
   OptionsValueEditor,
   SearchComboboxEditor,
   TextFilterEditor,
-} from '@kobato/web-admin/ui/shared/filter-bar/editors.tsx'
-import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter.ts'
+} from '@kobato/web-admin/ui/shared/filter-bar/editors'
+import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
 import { XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 

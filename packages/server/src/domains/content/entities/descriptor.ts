@@ -1,10 +1,10 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { Database } from '@kobato/db/database.ts'
-import type { ContentRow } from '@kobato/db/types.ts'
-import type { LexicalEditorState } from '@kobato/inkling/headless/schema.ts'
-import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac.ts'
-import type { ContentType } from '@kobato/server/domains/content/schemas/revision.ts'
-import type { AdminListEngagement } from '@kobato/server/domains/content/services/admin-list.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { Database } from '@kobato/db/database'
+import type { ContentRow } from '@kobato/db/types'
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
+import type { ContentType } from '@kobato/server/domains/content/schemas/revision'
+import type { AdminListEngagement } from '@kobato/server/domains/content/services/admin-list'
 
 export interface MetaRowBase {
   id: number

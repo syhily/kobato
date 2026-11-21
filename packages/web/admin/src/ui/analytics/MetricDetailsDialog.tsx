@@ -1,9 +1,9 @@
-import type { MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
+import type { MetricRow, MetricType } from '@kobato/contracts/analytics'
 
-import { Button } from '@kobato/ui/components/button.tsx'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { MetricRows } from '@kobato/web-admin/ui/analytics/MetricRows.tsx'
+import { Button } from '@kobato/ui/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { MetricRows } from '@kobato/web-admin/ui/analytics/MetricRows'
 import { Maximize2Icon } from 'lucide-react'
 
 export interface MetricDetailsDialogProps {

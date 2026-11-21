@@ -11,7 +11,7 @@ import {
   setItemRaw,
   statBucket,
   wipeCache,
-} from '@kobato/server/infra/cache/file-store.ts'
+} from '@kobato/server/infra/cache/file-store'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'

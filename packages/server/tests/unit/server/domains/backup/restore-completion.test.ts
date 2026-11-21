@@ -1,14 +1,14 @@
-import type { RestoreCompletionDeps } from '@kobato/server/domains/backup/restore-completion.ts'
+import type { RestoreCompletionDeps } from '@kobato/server/domains/backup/restore-completion'
 
-import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths.ts'
+import { __setEnginePathsForTests } from '@kobato/server/infra/db/paths'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const lifecycleModule = await import('@kobato/server/infra/lifecycle.ts')
-const jobRegistryModule = await import('@kobato/server/infra/job-registry.ts')
-const restoreModule = await import('@kobato/server/domains/backup/services/restore.ts')
+const lifecycleModule = await import('@kobato/server/infra/lifecycle')
+const jobRegistryModule = await import('@kobato/server/infra/job-registry')
+const restoreModule = await import('@kobato/server/domains/backup/services/restore')
 
 // The restart boundary rebinds the whole process; it is observed, not run.
 const restartServer = vi.spyOn(lifecycleModule, 'restartServer').mockResolvedValue(undefined as never)
@@ -19,7 +19,7 @@ const scheduleRegisteredJob = vi.spyOn(jobRegistryModule, 'scheduleRegisteredJob
 const rollbackPreRestoreFiles = vi.spyOn(restoreModule, 'rollbackPreRestoreFiles')
 const cleanupPreRestoreFiles = vi.spyOn(restoreModule, 'cleanupPreRestoreFiles')
 
-const { createRestoreCompletion } = await import('@kobato/server/domains/backup/restore-completion.ts')
+const { createRestoreCompletion } = await import('@kobato/server/domains/backup/restore-completion')
 
 let enginePaths: { database: string; analytics: string }
 

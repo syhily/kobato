@@ -6,7 +6,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const logWarn = vi.hoisted(() => vi.fn())
 
-const loggerMod = await import('@kobato/ui/lib/logger.ts')
+const loggerMod = await import('@kobato/ui/lib/logger')
 vi.spyOn(loggerMod, 'getLogger').mockImplementation((() => ({
   debug: vi.fn(),
   info: vi.fn(),
@@ -20,9 +20,9 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-const { SettingsPanel } = await import('@kobato/web-admin/ui/settings/shell/SettingsPanel.tsx')
+const { SettingsPanel } = await import('@kobato/web-admin/ui/settings/shell/SettingsPanel')
 const { SettingsFlushProvider, useSettingsFlushContext } =
-  await import('@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx')
+  await import('@kobato/web-admin/ui/settings/shell/SettingsFlushProvider')
 
 function deferred() {
   let resolve!: () => void

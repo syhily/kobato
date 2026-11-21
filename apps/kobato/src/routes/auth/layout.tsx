@@ -1,8 +1,8 @@
-import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback.tsx'
-import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css.ts'
+import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
+import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css'
 import { Outlet } from 'react-router'
 
-import type { RouteHandle } from '@/root.tsx'
+import type { RouteHandle } from '@/root'
 
 import '@/styles/admin.css'
 

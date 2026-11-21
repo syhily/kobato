@@ -7,8 +7,8 @@ import {
   feedPassthroughElement,
   htmlToPlainText,
   isFeedVariantRender,
-} from '@kobato/inkling-internal/headless/cards/card-html.ts'
-import { TWO_COLUMN_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist.ts'
+} from '@kobato/inkling-internal/headless/cards/card-html'
+import { TWO_COLUMN_NODE_TYPE } from '@kobato/inkling-internal/headless/node-whitelist'
 
 export const TWO_COLUMN_CARD_PROPERTIES = [
   { name: 'left', default: '', urlType: 'html', wordCount: true },

@@ -1,4 +1,4 @@
-import { useImageLoaded } from '@kobato/web-public/ui/widgets/use-image-loaded.ts'
+import { useImageLoaded } from '@kobato/web-public/ui/widgets/use-image-loaded'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 

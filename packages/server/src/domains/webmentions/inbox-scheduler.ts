@@ -1,7 +1,7 @@
-import { findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox.ts'
-import { runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox.ts'
-import { makeQueueScheduler } from '@kobato/server/domains/webmentions/queue-scheduler.ts'
-import { nudgeRegisteredJob } from '@kobato/server/infra/job-registry.ts'
+import { findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox'
+import { runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox'
+import { makeQueueScheduler } from '@kobato/server/domains/webmentions/queue-scheduler'
+import { nudgeRegisteredJob } from '@kobato/server/infra/job-registry'
 
 const queue = makeQueueScheduler({
   name: 'webmentions.inbox',

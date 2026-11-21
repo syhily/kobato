@@ -1,5 +1,5 @@
-import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
-import { useIsActiveLink } from '@kobato/web-admin/ui/shell/use-is-active-link.ts'
+import { renderHook } from '@kobato/ui/tests/utils/hook'
+import { useIsActiveLink } from '@kobato/web-admin/ui/shell/use-is-active-link'
 import { describe, expect, it } from 'vitest'
 
 describe('ui/admin/shell/use-is-active-link', () => {

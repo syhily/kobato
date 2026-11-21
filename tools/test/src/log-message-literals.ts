@@ -292,7 +292,7 @@ function collectPinoRootNames(program: AstNode): Set<string> {
       continue
     }
     const source = statement.source
-    if (!isNode(source) || source.value !== '@kobato/server/infra/logger.ts') {
+    if (!isNode(source) || source.value !== '@kobato/server/infra/logger') {
       continue
     }
     const specifiers = statement.specifiers

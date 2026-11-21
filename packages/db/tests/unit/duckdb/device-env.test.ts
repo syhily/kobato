@@ -1,13 +1,13 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
-import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/db/duckdb/device-env.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database.ts'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import {
   DEVICE_ENV_CLIENT_DDL,
   DEVICE_ENV_SERVER_DDL,
   appendDeviceEnvClientRows,
   appendDeviceEnvServerRows,
-} from '@kobato/db/duckdb/device-env.ts'
+} from '@kobato/db/duckdb/device-env'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

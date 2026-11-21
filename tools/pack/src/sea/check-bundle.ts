@@ -1,4 +1,4 @@
-import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths.ts'
+import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths'
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import { pathToFileURL } from 'node:url'

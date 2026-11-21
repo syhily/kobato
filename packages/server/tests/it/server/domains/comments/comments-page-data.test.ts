@@ -1,14 +1,14 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { seedMetric } from '@kobato/server/tests/utils/db.ts'
-import { regularSession } from '@kobato/server/tests/utils/session.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
+import { seedMetric } from '@kobato/server/tests/utils/db'
+import { regularSession } from '@kobato/server/tests/utils/session'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const commentShared = await import('@kobato/server/domains/comments/services/shared.ts')
-const commentPublicQuery = await import('@kobato/server/domains/comments/services/public-query.ts')
-const likes = await import('@kobato/server/domains/comments/services/likes.ts')
-const sidebar = await import('@kobato/server/http/loaders/sidebar.ts')
+const commentShared = await import('@kobato/server/domains/comments/services/shared')
+const commentPublicQuery = await import('@kobato/server/domains/comments/services/public-query')
+const likes = await import('@kobato/server/domains/comments/services/likes')
+const sidebar = await import('@kobato/server/http/loaders/sidebar')
 
 // Loader composition is pinned through spies so delay injection can prove
 // parallelism; the underlying services are covered by their own suites.
@@ -21,7 +21,7 @@ const commentThreadFingerprint = vi
 const queryLikes = vi.spyOn(likes, 'queryLikes')
 vi.spyOn(likes, 'startLikeTokenSweep')
 const loadSidebarData = vi.spyOn(sidebar, 'loadSidebarData')
-const { loadCommentsAndItems, loadDetailPageCritical } = await import('@kobato/server/http/loaders/comments.ts')
+const { loadCommentsAndItems, loadDetailPageCritical } = await import('@kobato/server/http/loaders/comments')
 
 afterAll(() => {
   vi.restoreAllMocks()

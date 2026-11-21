@@ -1,25 +1,25 @@
-import { auditLog } from '@kobato/db/schema/config.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
+import { auditLog } from '@kobato/db/schema/config'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   archiveExpiredAuditLogs,
   cleanupExpiredArchives,
   runArchiveJob,
-} from '@kobato/server/domains/audit/services/archive.ts'
-import { flushAuditLog, pushAuditEvent } from '@kobato/server/domains/audit/services/batcher.ts'
+} from '@kobato/server/domains/audit/services/archive'
+import { flushAuditLog, pushAuditEvent } from '@kobato/server/domains/audit/services/batcher'
 import {
   buildAuditLogWhere,
   countAuditLogs,
   listAuditLogs,
   fetchAuditLogActorMap,
   fetchAuditLogActors,
-} from '@kobato/server/domains/audit/services/query.ts'
-import { recordAuditEvent } from '@kobato/server/domains/audit/services/record.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry.ts'
-import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/audit/services/query'
+import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
+import { stopAllScheduledJobs } from '@kobato/server/infra/scheduler-utils'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const db = getTestDb()

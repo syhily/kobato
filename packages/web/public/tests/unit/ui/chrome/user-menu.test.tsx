@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 
-import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header.tsx'
+import type { HeaderCurrentUser } from '@kobato/web-public/ui/chrome/Header'
 
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout.ts')
-const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout.ts'), 'useLogout')
+const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout')
+const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout'), 'useLogout')
 void realUseLogout
 useLogoutSpy.mockImplementation((() => vi.fn()) as never)
 
@@ -16,7 +16,7 @@ afterAll(() => {
   useLogoutSpy.mockRestore()
 })
 
-const { UserMenu } = await import('@kobato/web-public/ui/chrome/UserMenu.tsx')
+const { UserMenu } = await import('@kobato/web-public/ui/chrome/UserMenu')
 
 const currentUser: HeaderCurrentUser = {
   id: '1',

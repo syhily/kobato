@@ -6,9 +6,9 @@ import {
   isSvgSlot,
   putBrandingObject,
   s3KeyForSlot,
-} from '@kobato/server/domains/assets/services/storage.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
+} from '@kobato/server/domains/assets/services/storage'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mem = makeMemoryBackend()

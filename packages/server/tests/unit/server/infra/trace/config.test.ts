@@ -1,12 +1,12 @@
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import {
   deriveOtlpUrls,
   formatTraceDiagnostic,
   logTraceDiagnostics,
   resolveTraceConfig,
   type TraceRuntimeSettings,
-} from '@kobato/server/infra/trace/config.ts'
-import { frontendRumBootstrapSchema } from '@kobato/telemetry/rum.ts'
+} from '@kobato/server/infra/trace/config'
+import { frontendRumBootstrapSchema } from '@kobato/telemetry/rum'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const BASE: TraceRuntimeSettings = {

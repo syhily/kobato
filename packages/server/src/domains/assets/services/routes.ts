@@ -6,10 +6,10 @@ import {
   DEFAULT_SVG,
   DEFAULT_SVG_ETAG,
   type SvgSlot,
-} from '@kobato/server/assets/defaults.ts'
-import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@kobato/server/domains/assets/services/storage.ts'
-import { NODE_ENV } from '@kobato/server/infra/config.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
+} from '@kobato/server/assets/defaults'
+import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@kobato/server/domains/assets/services/storage'
+import { NODE_ENV } from '@kobato/server/infra/config'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 
 interface SvgRoute {
   kind: 'svg'

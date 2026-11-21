@@ -1,7 +1,7 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import PagesRoute from '@/routes/admin/pages/index.tsx'
+import PagesRoute from '@/routes/admin/pages/index'
 
 describe('snapshot: routes/admin/pages/index', () => {
   it('renders the pages index route', () => {

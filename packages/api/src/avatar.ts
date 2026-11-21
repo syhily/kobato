@@ -1,4 +1,4 @@
-import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/contracts/comments.ts'
+import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/contracts/comments'
 import { oc } from '@orpc/contract'
 
 export const avatarContract = {

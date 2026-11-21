@@ -1,10 +1,10 @@
-import type { AnalyticsOverviewData, MetricRow, MetricType } from '@kobato/contracts/analytics.ts'
-import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query.ts'
+import type { AnalyticsOverviewData, MetricRow, MetricType } from '@kobato/contracts/analytics'
+import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
-import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics.ts'
-import { queryCounters } from '@kobato/db/duckdb/queries/counters.ts'
-import { queryMetric } from '@kobato/db/duckdb/queries/metric.ts'
+import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@kobato/contracts/analytics'
+import { queryCounters } from '@kobato/db/duckdb/queries/counters'
+import { queryMetric } from '@kobato/db/duckdb/queries/metric'
 
 /**
  * views series and the heatmap are deliberately absent — SSR buckets would be

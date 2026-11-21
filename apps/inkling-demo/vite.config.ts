@@ -9,7 +9,11 @@ const require = createRequire(import.meta.url)
 
 export default defineConfig({
   plugins: [react({ compiler: true }), tailwindcss(), svgr()],
+  optimizeDeps: {
+    noDiscovery: true,
+  },
   resolve: {
+    tsconfigPaths: true,
     alias: {
       '@kobato/inkling-demo': resolve(import.meta.dirname, '.'),
       '@kobato/inkling/headless$': resolve(import.meta.dirname, '../../packages/inkling/src/headless/index.ts'),

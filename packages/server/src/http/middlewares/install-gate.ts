@@ -1,8 +1,8 @@
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { getInstallState } from '@kobato/server/domains/settings/install-gate.ts'
-import { errorJsonResponse } from '@kobato/server/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { getInstallState } from '@kobato/server/domains/settings/install-gate'
+import { errorJsonResponse } from '@kobato/server/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
 import { createMiddleware } from 'hono/factory'
 
 const log = getLogger('install.gate')

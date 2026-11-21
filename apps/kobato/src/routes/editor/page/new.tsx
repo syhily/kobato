@@ -1,8 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell'
 import { useNavigate } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('admin')
 

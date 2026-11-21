@@ -1,12 +1,12 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { cn } from '@kobato/ui/lib/cn.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const meta = titleMeta('meta.title.admin.analytics')
 

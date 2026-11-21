@@ -1,7 +1,7 @@
-import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/assets/asset-url.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure } from '@kobato/server/infra/http/errors.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/assets/asset-url'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 export function getPublicBaseUrl(): string | null {
   const assets = requireBlogSettingsSection('assets')

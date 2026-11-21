@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel.ts'
+import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel'
 import { render, screen } from '@testing-library/react'
 import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,13 +1,13 @@
-import type { BlogSession } from '@kobato/server/domains/auth/session-storage.ts'
-import type { Env } from '@kobato/server/http/hono-env.ts'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
+import type { Env } from '@kobato/server/http/hono-env'
 
-import { insertBackup } from '@kobato/db/operations/backup.ts'
-import { onErrorHandler } from '@kobato/server/http/errors.ts'
-import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage.ts'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
-import { adminSession } from '@kobato/server/tests/utils/session.ts'
+import { insertBackup } from '@kobato/db/operations/backup'
+import { onErrorHandler } from '@kobato/server/http/errors'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { adminSession } from '@kobato/server/tests/utils/session'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -29,7 +29,7 @@ afterEach(() => {
 })
 
 async function buildApp(session: BlogSession = adminSession()) {
-  const { backupRouter } = await import('@kobato/server/http/resources/backup.ts')
+  const { backupRouter } = await import('@kobato/server/http/resources/backup')
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
     c.set('requestContext', makeRequestContext({ session, db }))

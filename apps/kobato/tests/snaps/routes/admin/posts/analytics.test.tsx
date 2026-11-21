@@ -1,8 +1,8 @@
-import { asRoute } from '@kobato/test/route-test-utils.tsx'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { asRoute } from '@kobato/test/route-test-utils'
+import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
-import PostsAnalyticsRoute from '@/routes/admin/posts/analytics.tsx'
+import PostsAnalyticsRoute from '@/routes/admin/posts/analytics'
 
 describe('snapshot: routes/admin/posts/analytics', () => {
   it('renders the post analytics route', () => {

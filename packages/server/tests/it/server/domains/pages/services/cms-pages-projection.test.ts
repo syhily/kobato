@@ -1,10 +1,10 @@
-import type { ContentRow, PageMetaRow } from '@kobato/db/types.ts'
+import type { ContentRow, PageMetaRow } from '@kobato/db/types'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'
 
-const { toCmsPage } = await import('@kobato/server/domains/pages/projection.ts')
-const { toAdminRevisionDto } = await import('@kobato/server/domains/content/projection.ts')
+const { toCmsPage } = await import('@kobato/server/domains/pages/projection')
+const { toAdminRevisionDto } = await import('@kobato/server/domains/content/projection')
 
 function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')

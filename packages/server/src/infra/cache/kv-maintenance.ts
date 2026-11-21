@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database.ts'
+import type { Database } from '@kobato/db/database'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry.ts'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { session } from '@kobato/db/schema/session.ts'
-import { sweepBucket } from '@kobato/server/infra/cache/file-store.ts'
-import { jobDb, registerJob } from '@kobato/server/infra/job-registry.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
+import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { session } from '@kobato/db/schema/session'
+import { sweepBucket } from '@kobato/server/infra/cache/file-store'
+import { jobDb, registerJob } from '@kobato/server/infra/job-registry'
+import { getLogger } from '@kobato/server/infra/logger'
 import { lt } from 'drizzle-orm'
 
 const log = getLogger('kv.maintenance')

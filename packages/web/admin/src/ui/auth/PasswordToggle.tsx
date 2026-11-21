@@ -1,4 +1,4 @@
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 
 export function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {

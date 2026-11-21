@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
-import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
+import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-const { NavNotifications } = await import('@kobato/web-admin/ui/shell/NavNotifications.tsx')
+const { NavNotifications } = await import('@kobato/web-admin/ui/shell/NavNotifications')
 
 describe('ui/admin/shell/NavNotifications', () => {
   it('renders the unread badge from the prop and hides it at zero', () => {

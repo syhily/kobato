@@ -1,4 +1,4 @@
-import { RESTORE_TEMP_PREFIX, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore.ts'
+import { RESTORE_TEMP_PREFIX, sweepStaleRestoreDirs } from '@kobato/server/domains/backup/services/restore'
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

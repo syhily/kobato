@@ -1,4 +1,4 @@
-import { Button } from '@kobato/ui/components/button.tsx'
+import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@kobato/ui/components/dialog.tsx'
-import { Input } from '@kobato/ui/components/input.tsx'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload.ts'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query.ts'
+} from '@kobato/ui/components/dialog'
+import { Input } from '@kobato/ui/components/input'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

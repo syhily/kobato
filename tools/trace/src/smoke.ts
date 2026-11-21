@@ -11,17 +11,17 @@
 // Everything is synthetic and loopback-only. Ordinary `pnpm test` never runs
 // this file; it requires Docker and Playwright.
 
-import type { O2Context, TraceState } from '@kobato/trace/lib.ts'
+import type { O2Context, TraceState } from '@kobato/trace/lib'
 import type { BrowserContext, Page } from '@playwright/test'
 
-import { bootDevServer, stopDevServer, writeDevConfig, type DevServer } from '@kobato/harness/dev-instance.ts'
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http.ts'
-import { pickFreePort, sleep } from '@kobato/harness/process.ts'
-import { callE2eRpc } from '@kobato/harness/rpc.ts'
-import { seedInstalledInstance } from '@kobato/harness/seed.ts'
-import { TRACE_METRIC_STREAMS } from '@kobato/telemetry/metrics.ts'
-import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline.ts'
-import { lexicalBodyWith, lexicalParagraph } from '@kobato/trace/lexical-fixtures.ts'
+import { bootDevServer, stopDevServer, writeDevConfig, type DevServer } from '@kobato/harness/dev-instance'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/harness/http'
+import { pickFreePort, sleep } from '@kobato/harness/process'
+import { callE2eRpc } from '@kobato/harness/rpc'
+import { seedInstalledInstance } from '@kobato/harness/seed'
+import { TRACE_METRIC_STREAMS } from '@kobato/telemetry/metrics'
+import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/telemetry/pipeline'
+import { lexicalBodyWith, lexicalParagraph } from '@kobato/trace/lexical-fixtures'
 import {
   buildState,
   docker,
@@ -45,9 +45,9 @@ import {
   stopOpenObserve,
   waitForOpenObserve,
   warn,
-} from '@kobato/trace/lib.ts'
-import { applyRetention } from '@kobato/trace/provision.ts'
-import { unsafeCast } from '@kobato/utils/unsafe-cast.ts'
+} from '@kobato/trace/lib'
+import { applyRetention } from '@kobato/trace/provision'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { chromium } from '@playwright/test'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'node:crypto'

@@ -1,12 +1,12 @@
-import type { CommentFormUser } from '@kobato/catalog/model.ts'
-import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@kobato/contracts/comments.ts'
+import type { CommentFormUser } from '@kobato/catalog/model'
+import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@kobato/contracts/comments'
 
-import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
-import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf.tsx'
-import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem.tsx'
-import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm.tsx'
-import { Comments } from '@kobato/web-public/ui/comments/Comments.tsx'
+import { makeComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf'
+import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem'
+import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
+import { Comments } from '@kobato/web-public/ui/comments/Comments'
 import { describe, expect, it } from 'vitest'
 
 const aliceComment: Partial<CommentItemType> = {

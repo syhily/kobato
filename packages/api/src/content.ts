@@ -16,7 +16,7 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
-} from '@kobato/contracts/content.ts'
+} from '@kobato/contracts/content'
 import { oc } from '@orpc/contract'
 
 export const contentBootstrapContract = {

@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@kobato/ui/components/card.tsx'
-import { AdminPagination } from '@kobato/web-admin/ui/shared/list/AdminPagination.tsx'
+import { Card, CardContent } from '@kobato/ui/components/card'
+import { AdminPagination } from '@kobato/web-admin/ui/shared/list/AdminPagination'
 import { type ReactNode } from 'react'
 
 function AdminListPageRoot({ children }: { children: ReactNode }) {

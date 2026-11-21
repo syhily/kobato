@@ -1,10 +1,10 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context.ts'
-import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView.tsx'
-import { parseCommentFiltersFromSearchParams } from '@kobato/web-admin/ui/comments/use-comments-controller.ts'
+import { guardOnlyLoader } from '@kobato/server/http/request-context'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
+import { parseCommentFiltersFromSearchParams } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import { useOutletContext, useSearchParams } from 'react-router'
 
-import { titleMeta } from '@/seo/title-meta.ts'
+import { titleMeta } from '@/seo/title-meta'
 
 export const loader = guardOnlyLoader('admin')
 

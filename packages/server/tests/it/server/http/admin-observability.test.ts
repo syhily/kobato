@@ -1,34 +1,34 @@
-import type { Database } from '@kobato/db/database.ts'
-import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config.ts'
+import type { Database } from '@kobato/db/database'
+import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
-import { auditLog, setting } from '@kobato/db/schema/config.ts'
-import { user as userTable } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config.ts'
+import { auditLog, setting } from '@kobato/db/schema/config'
+import { user as userTable } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'
 import {
   __resetObservabilityRuntimeForTests,
   syncObservabilityRuntime,
-} from '@kobato/server/domains/observability/runtime-manager.ts'
-import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate.ts'
-import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow.ts'
-import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx.ts'
-import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call.ts'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters.ts'
-import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/domains/observability/runtime-manager'
+import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
+import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'
+import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { callRpc, parseRpcJson } from '@kobato/server/tests/utils/rpc-call'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The OTel runtime is a process-level boundary; observe without starting it.
 const runtimeMock = {
   startTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'startTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'startTraceRuntime')
     .mockImplementation(async () => ({ shutdown: async () => {} }) as never),
   stopTraceRuntime: vi
-    .spyOn(await import('@kobato/server/infra/trace/runtime.ts'), 'stopTraceRuntime')
+    .spyOn(await import('@kobato/server/infra/trace/runtime'), 'stopTraceRuntime')
     .mockImplementation(async () => {}),
 }
 

@@ -2,8 +2,8 @@ import {
   rateLimitBucketMessages,
   rateLimitBucketSchema,
   upgradeLegacyRateLimitBuckets,
-} from '@kobato/settings/rate-limit-bucket.ts'
-import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults.ts'
+} from '@kobato/settings/rate-limit-bucket'
+import { rateLimitBounds } from '@kobato/settings/rate-limit-defaults'
 import { describe, expect, it } from 'vitest'
 
 describe('settings/rate-limit-bucket', () => {

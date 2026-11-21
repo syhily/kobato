@@ -2,7 +2,7 @@
 // for text resources (warmup/client manifests, migration SQL). Under SEA
 // (`useVfs`) the asset is a plain file in the mounted VFS — same read.
 
-import { seaAssetPath } from '@kobato/server/infra/sea/sea.ts'
+import { seaAssetPath } from '@kobato/server/infra/sea/sea'
 import { existsSync, readFileSync } from 'node:fs'
 
 export function readAssetTextOrDisk(key: string, diskPath: string): string | null {

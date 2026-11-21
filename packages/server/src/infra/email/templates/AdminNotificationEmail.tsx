@@ -1,10 +1,10 @@
-import type { ServerTranslator } from '@kobato/server/infra/i18n.ts'
+import type { ServerTranslator } from '@kobato/server/infra/i18n'
 
-import { Hr, Link, Text } from '@kobato/server/infra/email/render.tsx'
-import { RawEmailHtml } from '@kobato/server/infra/email/safe-html.tsx'
-import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLayout.tsx'
-import { light } from '@kobato/server/infra/email/templates/styles/tokens.ts'
-import { requireBlogSettingsSection } from '@kobato/settings/getters.ts'
+import { Hr, Link, Text } from '@kobato/server/infra/email/render'
+import { RawEmailHtml } from '@kobato/server/infra/email/safe-html'
+import { EmailLayout } from '@kobato/server/infra/email/templates/layout/EmailLayout'
+import { light } from '@kobato/server/infra/email/templates/styles/tokens'
+import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 

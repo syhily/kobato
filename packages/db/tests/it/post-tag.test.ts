@@ -1,7 +1,7 @@
-import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag.ts'
-import { post } from '@kobato/db/schema/post.ts'
-import { tag } from '@kobato/db/schema/taxonomy.ts'
-import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db.ts'
+import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag'
+import { post } from '@kobato/db/schema/post'
+import { tag } from '@kobato/db/schema/taxonomy'
+import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { describe, expect, it, beforeEach } from 'vitest'
 
 const db = getTestDb()

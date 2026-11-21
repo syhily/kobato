@@ -1,13 +1,13 @@
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision.ts'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/contracts/revision'
 
-import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical.ts'
+import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
 import {
   planBodySave,
   planCreatePublishedAt,
   planDraftSave,
   planPublish,
   verdictBodySave,
-} from '@kobato/web-admin/ui/editor-shell/editor-shell-persist-plan.ts'
+} from '@kobato/web-admin/ui/editor-shell/editor-shell-persist-plan'
 import { describe, expect, it } from 'vitest'
 
 function paraBody(text: string) {

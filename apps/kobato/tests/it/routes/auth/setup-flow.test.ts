@@ -1,17 +1,17 @@
-import { setting } from '@kobato/db/schema/config.ts'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
-import { user } from '@kobato/db/schema/user.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { emptySession } from '@kobato/server/tests/utils/session.ts'
-import { makeRouteContext } from '@tests/utils/context.ts'
+import { setting } from '@kobato/db/schema/config'
+import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { user } from '@kobato/db/schema/user'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { emptySession } from '@kobato/server/tests/utils/session'
+import { makeRouteContext } from '@tests/utils/context'
 import { eq, sql } from 'drizzle-orm'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/http/request-context.ts', async () => {
-  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock.ts')
+vi.mock('@kobato/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock')
   return createRequestContextMockModule()
 })
 
@@ -19,8 +19,8 @@ const db = getTestDb()
 
 const CSRF_TOKEN = 'setup-flow-csrf-token'
 
-const mockContext = await import('@kobato/server/http/request-context.ts')
-const { action, loader } = await import('@/routes/auth/setup/index.tsx')
+const mockContext = await import('@kobato/server/http/request-context')
+const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeAll(() => {
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
@@ -33,7 +33,7 @@ beforeAll(() => {
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
-  const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit.ts')
+  const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit')
   __resetRateLimitsForTests()
 })
 
@@ -145,7 +145,7 @@ describe('integration: /admin/setup full install flow', () => {
       expect(scopes.has(scope)).toBe(true)
     }
 
-    const { getBlogSettingsBundleSync } = await import('@kobato/settings/getters.ts')
+    const { getBlogSettingsBundleSync } = await import('@kobato/settings/getters')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.locale).toBe('en-US')
 

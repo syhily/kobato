@@ -16,7 +16,7 @@ import {
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
-} from '@kobato/distribution/sea-assets.ts'
+} from '@kobato/distribution/sea-assets'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -181,7 +181,7 @@ describe('contract: SEA embedded-asset keys', () => {
     const source = readSource('packages/server/src/domains/observability/assets.ts')
     expect(source).toContain('readAssetTextOrDisk')
     expect(source).not.toContain('getEmbeddedAsset')
-    expect(source).not.toContain("from '@kobato/server/infra/sea/sea.ts'")
+    expect(source).not.toContain("from '@kobato/server/infra/sea/sea'")
   })
 
   it('sea-natives no longer defines the manifest keys locally', () => {
@@ -189,7 +189,7 @@ describe('contract: SEA embedded-asset keys', () => {
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_MANIFEST_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SMOKE_WORKER_BUNDLE_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+NATIVE_ASSET_PREFIX\s*=/)
-    expect(source).toMatch(/import\s*\{[^}]*SEA_MANIFEST_KEY[^}]*\}\s*from\s*'@kobato\/distribution\/sea-assets\.ts'/)
+    expect(source).toMatch(/import\s*\{[^}]*SEA_MANIFEST_KEY[^}]*\}\s*from\s*'@kobato\/distribution\/sea-assets'/)
   })
 
   it('pins the asset codec union in the shared module', () => {
@@ -206,7 +206,7 @@ describe('contract: SEA embedded-asset keys', () => {
       const source = readSource(file)
       expect(source, `${file} must reference SeaAssetCodec`).toContain('SeaAssetCodec')
       expect(source, `${file} must import SeaAssetCodec from the distribution SEA assets module`).toMatch(
-        /import\s*\{[^}]*type SeaAssetCodec[^}]*\}\s*from\s*'@kobato\/distribution\/sea-assets\.ts'/,
+        /import\s*\{[^}]*type SeaAssetCodec[^}]*\}\s*from\s*'@kobato\/distribution\/sea-assets'/,
       )
     }
   })

@@ -1,8 +1,8 @@
-import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog.ts'
-import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { I18nProvider } from '@kobato/ui/lib/I18nProvider.tsx'
-import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable.tsx'
+import { makeAdminUser } from '@kobato/contracts/tests/utils/catalog'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
+import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
 // @vitest-environment jsdom
 /**
  * `formatShowDate` is RELATIVE ("today" / "yesterday"), so a render-time

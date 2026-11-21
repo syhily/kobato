@@ -7,7 +7,7 @@ import {
   type CommentsActionsContextValue,
   type CommentsIdentityContextValue,
   type CommentsReplySlotContextValue,
-} from '@kobato/web-public/ui/comments/comments-context.ts'
+} from '@kobato/web-public/ui/comments/comments-context'
 
 export interface LeafContextOverrides {
   identity?: Partial<CommentsIdentityContextValue>

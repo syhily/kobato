@@ -1,4 +1,4 @@
-import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/contracts/mail.ts'
+import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/contracts/mail'
 import { oc } from '@orpc/contract'
 
 export const adminMailContract = {

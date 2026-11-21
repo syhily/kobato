@@ -1,7 +1,7 @@
-import { uiMessagesFor } from '@kobato/i18n/catalog.ts'
-import { SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField.tsx'
-import { renderInRouter } from '@kobato/web-client/tests/utils/render.tsx'
+import { uiMessagesFor } from '@kobato/i18n/catalog'
+import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { ContentLanguageField } from '@kobato/web-admin/ui/editor-meta/ContentLanguageField'
+import { renderInRouter } from '@kobato/web-client/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 function render(value: string, locale: (typeof SUPPORTED_LOCALES)[number]): string {

@@ -1,9 +1,9 @@
-import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { MAX_PASSWORD_LENGTH } from '@kobato/auth/security.ts'
-import { newPasswordSchema } from '@kobato/contracts/users.ts'
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema.ts'
+import { MAX_PASSWORD_LENGTH } from '@kobato/auth/security'
+import { newPasswordSchema } from '@kobato/contracts/users'
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema'
 import { z } from 'zod'
 
 export const authValidationMessages = {

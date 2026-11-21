@@ -1,11 +1,11 @@
-import type { ProcessImageInput, ProcessedImage } from '@kobato/server/infra/image/process-worker.ts'
-import type { ImageOperation } from '@kobato/server/infra/trace/sanitize.ts'
+import type { ProcessImageInput, ProcessedImage } from '@kobato/server/infra/image/process-worker'
+import type { ImageOperation } from '@kobato/server/infra/trace/sanitize'
 
-import { domainErrorFromWire } from '@kobato/server/infra/http/errors.ts'
-import { getProcessPool } from '@kobato/server/infra/image/process-pool.ts'
-import { processImageInWorker, WorkerDomainError } from '@kobato/server/infra/image/process-worker.ts'
-import { startSpan } from '@kobato/server/infra/trace/facade.ts'
-import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics.ts'
+import { domainErrorFromWire } from '@kobato/server/infra/http/errors'
+import { getProcessPool } from '@kobato/server/infra/image/process-pool'
+import { processImageInWorker, WorkerDomainError } from '@kobato/server/infra/image/process-worker'
+import { startSpan } from '@kobato/server/infra/trace/facade'
+import { imageSizeBucket, recordImageExecution, recordImageQueue } from '@kobato/server/infra/trace/metrics'
 
 export async function processImageBuffer(
   input: ProcessImageInput,

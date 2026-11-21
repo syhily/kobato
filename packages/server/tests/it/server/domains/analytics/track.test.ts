@@ -1,26 +1,22 @@
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database.ts'
-import type { EntityTarget } from '@kobato/db/target.ts'
-import type { TrackPageViewOptions } from '@kobato/server/domains/analytics/track.ts'
-import type { RequestFacts } from '@kobato/server/infra/http/request-facts.ts'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { EntityTarget } from '@kobato/db/target'
+import type { TrackPageViewOptions } from '@kobato/server/domains/analytics/track'
+import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
-import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric.ts'
-import { metric } from '@kobato/db/schema/metric.ts'
+import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric'
+import { metric } from '@kobato/db/schema/metric'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
-} from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle.ts'
-import { flushAccessLog } from '@kobato/server/domains/analytics/services/batcher.ts'
-import { flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher.ts'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry.ts'
-import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger.ts'
-import {
-  clearAccessEvents,
-  closeTestAnalyticsDb,
-  createTestAnalyticsDb,
-} from '@kobato/server/tests/utils/analytics-db.ts'
-import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
-import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings.ts'
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { flushAccessLog } from '@kobato/server/domains/analytics/services/batcher'
+import { flushPageViews } from '@kobato/server/domains/analytics/services/pv-batcher'
+import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
+import { clearAccessEvents, closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -28,7 +24,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { flushTrackedEvents, trackPageView } = await import('@kobato/server/domains/analytics/track.ts')
+const { flushTrackedEvents, trackPageView } = await import('@kobato/server/domains/analytics/track')
 
 async function track(
   facts: RequestFacts,

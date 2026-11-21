@@ -1,4 +1,4 @@
-import { log, readState, stateFilePath, stopOpenObserve, warn } from '@kobato/trace/lib.ts'
+import { log, readState, stateFilePath, stopOpenObserve, warn } from '@kobato/trace/lib'
 import { rm } from 'node:fs/promises'
 
 const removeVolumes = process.argv.includes('--volumes') || process.argv.includes('--purge')

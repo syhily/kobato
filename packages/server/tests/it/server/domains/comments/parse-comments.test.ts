@@ -1,9 +1,9 @@
-import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types.ts'
+import type { CommentAndUser, CommentItem } from '@kobato/server/domains/comments/types'
 
-import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
+import { makeCommentBody } from '@kobato/contracts/tests/utils/catalog'
 import { describe, expect, it } from 'vitest'
 
-const { parseComments, MAX_THREAD_CHILDREN } = await import('@kobato/server/domains/comments/services/public-query.ts')
+const { parseComments, MAX_THREAD_CHILDREN } = await import('@kobato/server/domains/comments/services/public-query')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {
   const { id, ...rest } = overrides

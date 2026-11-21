@@ -1,4 +1,4 @@
-import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist.ts'
+import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist'
 
 export const ARTICLE_COMPOSER_NODE_TYPES: readonly string[] = FULL_EDITOR_NODE_TYPES
 

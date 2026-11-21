@@ -1,6 +1,6 @@
-import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { BackupFileDto } from '@kobato/contracts/backup.ts'
-import type { Database } from '@kobato/db/database.ts'
+import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error'
+import type { BackupFileDto } from '@kobato/contracts/backup'
+import type { Database } from '@kobato/db/database'
 import type { Readable } from 'node:stream'
 
 import {
@@ -11,16 +11,16 @@ import {
   insertBackupIfMissing,
   listBackupRows,
   listBackupStoragePaths,
-} from '@kobato/db/operations/backup.ts'
-import { vacuumDatabaseInto } from '@kobato/db/operations/maintenance.ts'
-import { createBackupCipher } from '@kobato/server/domains/backup/services/crypto.ts'
-import { createTarReadStream } from '@kobato/server/domains/backup/services/tar.ts'
-import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@kobato/server/infra/config.ts'
-import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder.ts'
-import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors.ts'
-import { getLogger } from '@kobato/server/infra/logger.ts'
-import { activeBackend, allBackends, backendFor } from '@kobato/server/infra/storage/registry.ts'
+} from '@kobato/db/operations/backup'
+import { vacuumDatabaseInto } from '@kobato/db/operations/maintenance'
+import { createBackupCipher } from '@kobato/server/domains/backup/services/crypto'
+import { createTarReadStream } from '@kobato/server/domains/backup/services/tar'
+import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@kobato/server/infra/config'
+import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
+import { descriptorFor, rawMessageDescriptor } from '@kobato/server/infra/http/error-descriptor'
+import { ActionFailure, DomainError } from '@kobato/server/infra/http/errors'
+import { getLogger } from '@kobato/server/infra/logger'
+import { activeBackend, allBackends, backendFor } from '@kobato/server/infra/storage/registry'
 import { randomBytes } from 'node:crypto'
 import { chmodSync, statSync } from 'node:fs'
 import { copyFile, unlink } from 'node:fs/promises'

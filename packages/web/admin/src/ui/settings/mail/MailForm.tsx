@@ -1,11 +1,11 @@
-import type { MailLoaderShape } from '@kobato/settings/projection.ts'
+import type { MailLoaderShape } from '@kobato/settings/projection'
 
-import { MailgunConfigCard } from '@kobato/web-admin/ui/settings/mail/MailgunConfigCard.tsx'
-import { MailTestCard } from '@kobato/web-admin/ui/settings/mail/MailTestCard.tsx'
-import { MailToggleCard } from '@kobato/web-admin/ui/settings/mail/MailToggleCard.tsx'
-import { ProviderSelectCard } from '@kobato/web-admin/ui/settings/mail/ProviderSelectCard.tsx'
-import { SenderFieldCard } from '@kobato/web-admin/ui/settings/mail/SenderFieldCard.tsx'
-import { SmtpConfigCard } from '@kobato/web-admin/ui/settings/mail/SmtpConfigCard.tsx'
+import { MailgunConfigCard } from '@kobato/web-admin/ui/settings/mail/MailgunConfigCard'
+import { MailTestCard } from '@kobato/web-admin/ui/settings/mail/MailTestCard'
+import { MailToggleCard } from '@kobato/web-admin/ui/settings/mail/MailToggleCard'
+import { ProviderSelectCard } from '@kobato/web-admin/ui/settings/mail/ProviderSelectCard'
+import { SenderFieldCard } from '@kobato/web-admin/ui/settings/mail/SenderFieldCard'
+import { SmtpConfigCard } from '@kobato/web-admin/ui/settings/mail/SmtpConfigCard'
 import { useState } from 'react'
 
 interface MailFormProps {

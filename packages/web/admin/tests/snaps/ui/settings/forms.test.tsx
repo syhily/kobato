@@ -1,4 +1,4 @@
-import type { AdminCacheStatsDto } from '@kobato/contracts/cache.ts'
+import type { AdminCacheStatsDto } from '@kobato/contracts/cache'
 import type {
   CacheSettings,
   FontsSettings,
@@ -6,14 +6,14 @@ import type {
   NavigationSettings,
   SecuritySettings,
   SocialItem,
-} from '@kobato/settings/types.ts'
+} from '@kobato/settings/types'
 
-import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView.tsx'
-import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm.tsx'
-import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor.tsx'
-import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm.tsx'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render.tsx'
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView'
+import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm'
+import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor'
+import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const cacheQueryMocks = mockTanstackQuery()
@@ -38,7 +38,7 @@ vi.mock('react-router', async () => {
   }
 })
 
-const apiClientMod = await import('@kobato/web-client/api/client.ts')
+const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({

@@ -1,6 +1,6 @@
-import { canonicalContentLanguage } from '@kobato/i18n/content-language.ts'
-import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
-import { DomainError } from '@kobato/server/infra/http/errors.ts'
+import { canonicalContentLanguage } from '@kobato/i18n/content-language'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 
 export function resolveContentLanguage(value: string | null | undefined): string | null | undefined {
   if (value === undefined || value === null || value.trim() === '') {

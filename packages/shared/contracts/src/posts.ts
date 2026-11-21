@@ -1,6 +1,6 @@
-import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/contracts/content-admin-base.ts'
-import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives.ts'
-import { adminRevisionDto } from '@kobato/contracts/revision.ts'
+import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/contracts/content-admin-base'
+import { idString, isoDateTime, safeBoolean } from '@kobato/contracts/primitives'
+import { adminRevisionDto } from '@kobato/contracts/revision'
 import { z } from 'zod'
 
 export const adminPostIdInput = z.object({ id: z.string().min(1) })
