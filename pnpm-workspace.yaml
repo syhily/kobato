@@ -9,7 +9,7 @@ packages:
 # entries as "catalog:" — taze updates this table (catalogs are first-class
 # taze targets), so version bumps happen in exactly one place.
 catalog:
-  '@aws-sdk/client-s3': ^3.1172.0
+  '@aws-sdk/client-s3': ^3.1175.0
   '@base-ui/react': ^1.9.0
   '@bufbuild/protobuf': ^2.17.0
   '@chenglou/pretext': ^1.0.0
@@ -25,10 +25,10 @@ catalog:
   '@dnd-kit/modifiers': ^9.0.0
   '@dnd-kit/sortable': ^10.0.0
   '@dnd-kit/utilities': ^3.2.2
-  '@duckdb/node-api': ^2.0.0-r.1
+  '@duckdb/node-api': ^2.0.1-r.1
   '@emoji-mart/data': ^1.2.1
   '@formatjs/icu-messageformat-parser': ^3.5.23
-  '@hono/node-server': ^2.1.9
+  '@hono/node-server': ^2.1.11
   '@hono/vite-dev-server': ^0.26.1
   '@lexical/clipboard': ^0.53.0
   '@lexical/headless': ^0.53.0
@@ -73,7 +73,7 @@ catalog:
   '@tailwindcss/node': ^4.3.5
   '@tailwindcss/oxide': ^4.3.5
   '@tailwindcss/vite': ^4.3.5
-  '@tanstack/react-query': ^5.108.1
+  '@tanstack/react-query': ^5.108.2
   '@testing-library/dom': ^10.4.2
   '@testing-library/jest-dom': ^8.0.0
   '@testing-library/react': ^16.3.3
@@ -114,7 +114,7 @@ catalog:
   kysely: ^0.29.9
   lexical: ^0.53.0
   lint-staged: ^17.6.1
-  lucide-react: ^1.76.0
+  lucide-react: ^1.77.0
   lunar-typescript: ^1.8.7
   markdown-it: ^15.0.3
   markdown-it-footnote: ^4.0.0
@@ -125,7 +125,7 @@ catalog:
   medium-zoom: ^1.1.2
   motion: ^14.14.0
   node-device-detector: ^2.2.9
-  nodemailer: ^10.6.0
+  nodemailer: ^10.6.1
   oxc-transform-react: ^0.158.0
   oxfmt: ^0.79.0
   oxlint: ^1.94.0
@@ -150,7 +150,7 @@ catalog:
   tailwindcss: ^4.3.5
   taze: ^21.3.0
   typescript: ^7.0.2
-  undici: ^8.12.4
+  undici: ^8.13.1
   vite: ^8.3.8
   vite-node: ^6.0.0
   vite-plugin-svgr: ^5.2.0

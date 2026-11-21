@@ -1,19 +1,12 @@
 import { defineConfig } from 'taze'
 
 export default defineConfig({
-  // Fetch latest package info from registry without cache.
   force: true,
-  // Apply updates to package.json automatically (non-interactive).
   write: true,
-  // Run package manager install after writing.
   install: true,
-  // Update the range prefix (e.g. ^) when the new version justifies it.
   update: true,
-  // Include the latest versions.
   mode: 'latest',
-  // Only process the workspace root package.json.
-  recursive: false,
-  // Consider all dependency categories.
+  recursive: true,
   depFields: {
     overrides: true,
     dependencies: true,
@@ -21,7 +14,6 @@ export default defineConfig({
     peerDependencies: true,
     optionalDependencies: true,
   },
-  // Keep @types/node within the current major line (26.x).
   packageMode: {
     '@types/node': 'minor',
     'drizzle-kit': 'next',
