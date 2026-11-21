@@ -33,7 +33,7 @@ All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single wor
 - Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; test trees stay in their own package except the canonical shared fixtures — cross-package `@kobato/<owner>/tests/utils/<name>` imports (settings blog-settings, i18n translator, contracts content, inkling lexical, web-client render) are the sanctioned seam, pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - Inkling internals: `@kobato/inkling-internal/...`, private to `packages/inkling/` plus its one white-box parity test. Public consumers use `@kobato/inkling`, `/headless*`, `/host-cards`, or `/styles/*`; the demo uses `@kobato/inkling-demo/...`.
 
-No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, import-scanner test fixtures, and the root Vitest config's inline-project definition imports. Other build-time configs import through package specifiers. `apps/kobato/tests/arch/package-dag.test.ts` enforces the table, alias confinement, and the no-relative rule.
+No relative specifiers in source or tests. Exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, and import-scanner test fixtures. Other build-time configs import through package specifiers. The root Vitest config discovers per-package test projects by directory globs (`apps|packages|tools/*/tests/**/vitest*.config.ts`, e2e negated) and imports only the cross-family project definitions from `@kobato/test/projects/*`. `apps/kobato/tests/arch/package-dag.test.ts` enforces the table, alias confinement, and the no-relative rule.
 
 ## Layering
 

@@ -1,6 +1,6 @@
 # Server test conventions
 
-- **`tests/unit/`** (`server-unit` + `server-iso-unit`) — pure server logic, no database. One inline-project config per tree: the shared half excludes the files scanned by `@kobato/test/mock-files.ts` (`vi.mock(` holders) and `@kobato/test/shared-unsafe-files.ts`; both lists run under `isolate: true` in the iso half.
+- **`tests/unit/`** (`server-unit` + `server-iso-unit`) — pure server logic, no database. Sibling project configs `vitest.config.ts` / `vitest.iso.config.ts` per tree, discovered by the root glob: the shared half excludes the files scanned by `@kobato/test/mock-files.ts` (`vi.mock(` holders) and `@kobato/test/shared-unsafe-files.ts`; both lists run under `isolate: true` in the iso half. `tests/it/` follows the same pair shape.
 - Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach into `tools/test` by upward path.
 - **`tests/it/`** (`server-it` + `server-iso-it`) — integration tests needing a real database, mirroring `src/`: `packages/server/src/domains/posts/services/search-query.ts` → `packages/server/tests/it/server/domains/posts/services/search-query.test.ts`.
 - Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket.

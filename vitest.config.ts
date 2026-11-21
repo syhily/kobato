@@ -4,43 +4,31 @@ import webSnapsProject from '@kobato/test/projects/web-snaps'
 import { webUnitProjects } from '@kobato/test/projects/web-unit'
 import { defineConfig } from 'vitest/config'
 
-import { appItProjects } from './apps/kobato/tests/it/vitest.config'
-import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config'
-import { inklingUnitProjects } from './packages/inkling/tests/vitest.config'
-import { serverItProjects } from './packages/server/tests/it/vitest.config'
-import { serverUnitProjects } from './packages/server/tests/unit/vitest.config'
-
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
   test: {
     silent: 'passed-only',
-    // Explicit list — apps/kobato/tests/e2e needs a live SEA-booted instance
-    // (it is driven by `pnpm run sea:e2e`) and must never join the default
+    // Directory discovery: each package test tree owns its config files and
+    // joins the run by its location (`vitest.config.ts` plus the
+    // `vitest.<name>.config.ts` convention for sibling halves like the iso
+    // projects and duckdb). apps/kobato/tests/e2e needs a live SEA-booted
+    // instance (driven by `pnpm run sea:e2e`) and must never join the default
     // run. File-based projects do not inherit this config's test options —
-    // each spreads @kobato/test/vitest.base.ts instead (only inline projects
-    // extend it).
+    // each spreads @kobato/test/vitest.base.ts itself; the four cross-family
+    // aggregates (shared-*, web-*) have no single owner tree, so they stay
+    // inline imports from @kobato/test/projects (the shared and web
+    // umbrellas are deliberately not packages with test trees).
     projects: [
       sharedUnitProject,
       sharedSnapsProject,
-      'packages/api/tests/unit/vitest.config.ts',
-      'packages/db/tests/unit/vitest.config.ts',
-      'packages/db/tests/it/vitest.config.ts',
-      ...serverUnitProjects,
-      ...serverItProjects,
-      'packages/ui/tests/unit/vitest.config.ts',
-      'packages/ui/tests/snaps/vitest.config.ts',
-      ...webUnitProjects,
       webSnapsProject,
-      'apps/inkling-demo/tests/vitest.config.ts',
-      ...inklingUnitProjects,
-      'tools/trace/tests/unit/vitest.config.ts',
-      'tools/pack/tests/unit/vitest.config.ts',
-      ...appUnitProjects,
-      ...appItProjects,
-      'apps/kobato/tests/snaps/vitest.config.ts',
-      'apps/kobato/tests/vitest.duckdb.config.ts',
+      ...webUnitProjects,
+      'apps/*/tests/**/vitest*.config.ts',
+      '!apps/kobato/tests/e2e/**',
+      'packages/*/tests/**/vitest*.config.ts',
+      'tools/*/tests/**/vitest*.config.ts',
     ],
     coverage: {
       provider: 'v8',

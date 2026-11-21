@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import svgr from 'vite-plugin-svgr'
-import { configDefaults } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 const TESTS_ROOT = 'packages/inkling/tests'
@@ -24,44 +24,23 @@ const INCLUDE = [
   `${TESTS_ROOT}/nodes-base/**/*.test.{js,jsx,ts,tsx}`,
 ]
 
-export const inklingUnitProjects = [
-  {
-    plugins: [svgr(), react({ compiler: true })],
-    resolve: { tsconfigPaths: true },
-    define: testDefine,
-    test: {
-      ...vitestTestBase,
-      name: 'inkling-unit',
-      pool: 'vmThreads',
-      environment: 'jsdom',
-      setupFiles: [SETUP_FILE],
-      server: {
-        deps: {
-          inline: ['@testing-library/jest-dom'],
-        },
+export default defineConfig({
+  root: REPO_ROOT,
+  plugins: [svgr(), react({ compiler: true })],
+  resolve: { tsconfigPaths: true },
+  define: testDefine,
+  test: {
+    ...vitestTestBase,
+    name: 'inkling-unit',
+    pool: 'vmThreads',
+    environment: 'jsdom',
+    setupFiles: [SETUP_FILE],
+    server: {
+      deps: {
+        inline: ['@testing-library/jest-dom'],
       },
-      include: INCLUDE,
-      exclude: [...configDefaults.exclude, ...MOCK_FILES],
     },
+    include: INCLUDE,
+    exclude: [...configDefaults.exclude, ...MOCK_FILES],
   },
-  {
-    plugins: [svgr(), react({ compiler: true })],
-    resolve: { tsconfigPaths: true },
-    define: testDefine,
-    test: {
-      ...vitestTestBase,
-      name: 'inkling-iso-unit',
-      isolate: true,
-      pool: 'vmThreads',
-      environment: 'jsdom',
-      setupFiles: [SETUP_FILE],
-      server: {
-        deps: {
-          inline: ['@testing-library/jest-dom'],
-        },
-      },
-      include: [...MOCK_FILES],
-      exclude: [...configDefaults.exclude],
-    },
-  },
-]
+})
