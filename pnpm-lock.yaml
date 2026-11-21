@@ -218,9 +218,6 @@ catalogs:
     '@duckdb/node-api':
       specifier: ^2.0.1-r.1
       version: 2.0.1-r.1
-    '@emoji-mart/data':
-      specifier: ^1.2.1
-      version: 1.2.1
     '@formatjs/icu-messageformat-parser':
       specifier: ^3.5.23
       version: 3.5.23
@@ -428,9 +425,9 @@ catalogs:
     drizzle-orm:
       specifier: 1.0.0-rc.6
       version: 1.0.0-rc.6
-    emoji-mart:
-      specifier: ^5.6.0
-      version: 5.6.0
+    emoji-picker-react:
+      specifier: ^5.1.4
+      version: 5.1.4
     fake-indexeddb:
       specifier: ^6.2.8
       version: 6.2.8
@@ -985,9 +982,6 @@ importers:
       '@codemirror/view':
         specifier: ^6.43.15
         version: 6.43.15
-      '@emoji-mart/data':
-        specifier: 'catalog:'
-        version: 1.2.1
       '@kobato/assets':
         specifier: workspace:*
         version: link:../shared/assets
@@ -1081,9 +1075,9 @@ importers:
       dompurify:
         specifier: 'catalog:'
         version: 3.4.18
-      emoji-mart:
+      emoji-picker-react:
         specifier: 'catalog:'
-        version: 5.6.0
+        version: 5.1.4(react@19.3.1)
       fast-average-color:
         specifier: 'catalog:'
         version: 9.6.0
@@ -2454,9 +2448,6 @@ packages:
 
   '@emnapi/wasi-threads@2.2.0':
     resolution: {integrity: sha512-JP7OYH38Q7+pyTAe14raZHLQIK7BDKbdwji+Xi3pcd/6QkJYQH3SX4wu6EplGrGJWRepoNzedfm0G3B9Z4e9Rw==}
-
-  '@emoji-mart/data@1.2.1':
-    resolution: {integrity: sha512-no2pQMWiBy6gpBEiqGeU77/bFejDqUTRY7KX+0+iur13op3bqUsXdnwoZs6Xb1zbv0gAj5VvS1PWoUUckSr5Dw==}
 
   '@exodus/bytes@1.16.0':
     resolution: {integrity: sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA==}
@@ -5010,8 +5001,11 @@ packages:
   elkjs@0.10.2:
     resolution: {integrity: sha512-Yx3ORtbAFrXelYkAy2g0eYyVY8QG0XEmGdQXmy0eithKKjbWRfl3Xe884lfkszfBF6UKyIy4LwfcZ3AZc8oxFw==}
 
-  emoji-mart@5.6.0:
-    resolution: {integrity: sha512-eJp3QRe79pjwa+duv+n7+5YsNhRcMl812EcFVwrnRvYKoNPoQb5qxU8DG6Bgwji0akHdp6D4Ln6tYLG58MFSow==}
+  emoji-picker-react@5.1.4:
+    resolution: {integrity: sha512-kWBAgDCFPcRJrINeRE7/o7VAVNc0Yeg1n7gMHSvJ54qffidCV8Jdmeb9iEHkx1CtClzhnutCax8bQFDTHAbyTg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: '>=16.8'
 
   enhanced-resolve@5.27.0:
     resolution: {integrity: sha512-Do6BB2xzlcc/odFg+XEYyneAx4T/WfywO71yw9ePS2tVfRsf7JVR4mUeELadIeHzixkzbG5DpluiEFPi2WGfYQ==}
@@ -5991,6 +5985,9 @@ packages:
     resolution: {integrity: sha512-imjLsVHgPuWhvpU3P+zOekvMYqnel7QmKsFC4Sn0fCuAvaaalBsxwKEsrU8Ko5BdFnZA6Go/8a0RzahS634UgA==}
     engines: {node: '>=20'}
 
+  shipstyles@1.0.0:
+    resolution: {integrity: sha512-1AcihfXo/mSxqeOdoKqq/5TNv+vSH0dBYPFq88PUX5FBkK5pRmY5TP9SuMNio85PQ+euUI67+KpSVk1cUVDCgA==}
+
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
@@ -6912,8 +6909,6 @@ snapshots:
     dependencies:
       tslib: 2.9.1
     optional: true
-
-  '@emoji-mart/data@1.2.1': {}
 
   '@exodus/bytes@1.16.0': {}
 
@@ -9111,7 +9106,10 @@ snapshots:
 
   elkjs@0.10.2: {}
 
-  emoji-mart@5.6.0: {}
+  emoji-picker-react@5.1.4(react@19.3.1):
+    dependencies:
+      react: 19.3.1
+      shipstyles: 1.0.0
 
   enhanced-resolve@5.27.0:
     dependencies:
@@ -9965,6 +9963,8 @@ snapshots:
       '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
+
+  shipstyles@1.0.0: {}
 
   signal-exit@4.1.0: {}
 

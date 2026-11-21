@@ -140,8 +140,8 @@ language reloads once every dirty settings card has been saved (see the flush fl
 `toLocale*()` calls, hardcoded locale literals, and plain/template literals containing Han characters (interpolated
 templates included — `第 ${n} 页` is still copy). Scope is the whole production tree (`src/**`). The allowlist is exact
 — file, rule and (where applicable) snippet, each with a written reason — and covers only non-copy data and protocol
-values (locale identity tables, the pinyin transliteration map, Inkling glyphs and the emoji-mart locale id, developer
-invariants, third-party/widget protocol parameters).
+values (locale identity tables, the pinyin transliteration map, Inkling glyphs and the emoji-picker-react dataset ids,
+developer invariants, third-party/widget protocol parameters).
 
 **Release instrumentation.** `kobato --smoke-intl` (`src/server/infra/intl-probe.ts`) proves the executable's bundled
 ICU data: `supportedLocalesOf` on every Intl constructor used, plus real formatter output (`formatDuration` included)

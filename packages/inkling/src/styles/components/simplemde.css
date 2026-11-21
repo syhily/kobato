@@ -75,7 +75,7 @@
     position: absolute;
     top: 6px;
     left: 4px;
-    font-family: var(--font-family);
+    font-family: var(--font-sans);
     font-size: 9px;
     line-height: 9px;
   }

@@ -308,7 +308,7 @@ describe('normalizeInitialEditorState', () => {
   })
 })
 
-function PrefsProbe({ onValue }: { onValue: (value: { wordCountLanguage?: string }) => void }) {
+function PrefsProbe({ onValue }: { onValue: (value: { wordCountLanguage?: string; emojiLocale?: string }) => void }) {
   const prefs = React.useContext(InklingUiPrefsContext)
   onValue(prefs)
   return null
@@ -316,7 +316,7 @@ function PrefsProbe({ onValue }: { onValue: (value: { wordCountLanguage?: string
 
 describe('InklingComposer — word-count language seam', () => {
   it('publishes the host UI locale into the UI-prefs context', () => {
-    const seen: { wordCountLanguage?: string }[] = []
+    const seen: { wordCountLanguage?: string; emojiLocale?: string }[] = []
     render(
       <InklingComposer wordCountLanguage="zh-CN">
         <PrefsProbe onValue={(value) => seen.push(value)} />
@@ -328,7 +328,7 @@ describe('InklingComposer — word-count language seam', () => {
   })
 
   it('leaves the context language unset when the host names none', () => {
-    const seen: { wordCountLanguage?: string }[] = []
+    const seen: { wordCountLanguage?: string; emojiLocale?: string }[] = []
     render(
       <InklingComposer>
         <PrefsProbe onValue={(value) => seen.push(value)} />
@@ -337,5 +337,31 @@ describe('InklingComposer — word-count language seam', () => {
     )
 
     expect(seen.at(-1)?.wordCountLanguage).toBeUndefined()
+  })
+})
+
+describe('InklingComposer — emoji locale seam', () => {
+  it('publishes the host emoji locale into the UI-prefs context', () => {
+    const seen: { wordCountLanguage?: string; emojiLocale?: string }[] = []
+    render(
+      <InklingComposer emojiLocale="zh-hant">
+        <PrefsProbe onValue={(value) => seen.push(value)} />
+        <EditorTree />
+      </InklingComposer>,
+    )
+
+    expect(seen.at(-1)?.emojiLocale).toBe('zh-hant')
+  })
+
+  it('leaves the context emoji locale unset when the host names none', () => {
+    const seen: { wordCountLanguage?: string; emojiLocale?: string }[] = []
+    render(
+      <InklingComposer>
+        <PrefsProbe onValue={(value) => seen.push(value)} />
+        <EditorTree />
+      </InklingComposer>,
+    )
+
+    expect(seen.at(-1)?.emojiLocale).toBeUndefined()
   })
 })

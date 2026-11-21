@@ -1,6 +1,7 @@
 import type { TextNode } from 'lexical'
 
 import Portal from '@kobato/inkling-internal/components/ui/Portal'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import useTypeaheadTriggerMatch from '@kobato/inkling-internal/hooks/useTypeaheadTriggerMatch'
 import {
   $insertSelectedEmoji,
@@ -14,13 +15,11 @@ import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTy
 import React from 'react'
 
 class EmojiOption extends MenuOption {
-  id: string
-  skins: EmojiSearchResult['skins']
+  emoji: EmojiSearchResult
 
   constructor(emoji: EmojiSearchResult) {
-    super(emoji.id)
-    this.id = emoji.id
-    this.skins = emoji.skins
+    super(emoji.unified)
+    this.emoji = emoji
   }
 }
 
@@ -29,15 +28,16 @@ interface EmojiMenuItemProps {
   isSelected: boolean
   onClick: (event: React.MouseEvent) => void
   onMouseEnter: () => void
-  emoji: EmojiOption
+  option: EmojiOption
 }
 
-const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoji }: EmojiMenuItemProps) {
+const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, option }: EmojiMenuItemProps) {
+  const { emoji, names } = option.emoji
   const attachRef = React.useCallback(
     (element: HTMLLIElement | null) => {
-      emoji.setRefElement(element)
+      option.setRefElement(element)
     },
-    [emoji],
+    [option],
   )
   return (
     <li
@@ -51,8 +51,8 @@ const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, emoj
       onClick={onClick}
       onMouseEnter={onMouseEnter}
     >
-      <span className="font-serif text-lg">{emoji.skins[0].native}</span>
-      <span className="truncate">{emoji.id}</span>
+      <span className="font-serif text-lg">{emoji}</span>
+      <span className="truncate">{names[names.length - 1]}</span>
     </li>
   )
 }
@@ -87,15 +87,15 @@ function renderEmojiMenu(
         data-testid="emoji-menu"
         style={getPositionStyles()}
       >
-        {searchResults.map((emoji, index) => (
+        {searchResults.map((option, index) => (
           <EmojiMenuItem
-            key={emoji.id}
-            emoji={emoji}
+            key={option.emoji.unified}
+            option={option}
             index={index}
             isSelected={selectedIndex === index}
             onClick={(event) => {
               setHighlightedIndex(index)
-              selectOptionAndCleanUp(emoji)
+              selectOptionAndCleanUp(option)
               event.stopPropagation()
               event.preventDefault()
             }}
@@ -111,6 +111,7 @@ function renderEmojiMenu(
 
 export function EmojiPickerPlugin() {
   const [editor] = useLexicalComposerContext()
+  const { emojiLocale } = React.useContext(InklingUiPrefsContext)
   const [queryString, setQueryString] = React.useState<string | null>(null)
   const [fetchedResults, setSearchResults] = React.useState<EmojiOption[] | null>(null)
   const searchResults = queryString ? fetchedResults : null
@@ -125,8 +126,9 @@ export function EmojiPickerPlugin() {
     return registerEmojiExactMatchCompletion(editor, {
       getQuery: () => queryRef.current,
       onCommit: () => trackEvent('Emoji Inserted', { method: 'completed' }),
+      locale: emojiLocale,
     })
-  }, [editor])
+  }, [editor, emojiLocale])
 
   const latestQueryRef = React.useRef<string | null>(null)
   React.useEffect(() => {
@@ -136,7 +138,7 @@ export function EmojiPickerPlugin() {
     const query = queryString
     latestQueryRef.current = query
 
-    void searchEmojis(query)
+    void searchEmojis(query, emojiLocale)
       .then((emojis) => {
         if (latestQueryRef.current !== query) {
           return
@@ -148,12 +150,12 @@ export function EmojiPickerPlugin() {
           setSearchResults(null)
         }
       })
-  }, [queryString])
+  }, [queryString, emojiLocale])
 
   const onEmojiSelect = React.useCallback(
     (selectedOption: EmojiOption, nodeToRemove: TextNode | null, closeMenu: () => void) => {
       editor.update(() => {
-        const committed = $insertSelectedEmoji(selectedOption, nodeToRemove)
+        const committed = $insertSelectedEmoji(selectedOption.emoji, nodeToRemove)
         if (!committed) {
           return
         }

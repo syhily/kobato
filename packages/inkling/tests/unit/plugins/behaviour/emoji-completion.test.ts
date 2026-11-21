@@ -23,7 +23,7 @@ import {
 } from 'lexical'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
-const taco: EmojiSearchResult = { id: 'taco', skins: [{ native: '🌮' }] }
+const taco: EmojiSearchResult = { unified: '1f32e', emoji: '🌮', names: ['mexican', 'taco'], addedIn: '1' }
 
 function createTestEditor() {
   return createEditor({
@@ -99,7 +99,7 @@ describe('ensureEmojiSearchReady', () => {
     ensureEmojiSearchReady()
     ensureEmojiSearchReady()
     const results = await searchEmojis('taco')
-    expect(results[0]?.id).toBe('taco')
+    expect(results[0]?.unified).toBe('1f32e')
   })
 })
 
@@ -114,17 +114,17 @@ describe('searchEmojis query policy', () => {
     const frown = await searchEmojis('(')
     const dashFrown = await searchEmojis('-(')
 
-    expect(smile[0]?.id).toBe('smile')
-    expect(dashSmile[0]?.id).toBe('smile')
-    expect(frown[0]?.id).toBe('frowning')
-    expect(dashFrown[0]?.id).toBe('frowning')
+    expect(smile[0]?.unified).toBe('1f600')
+    expect(dashSmile[0]?.unified).toBe('1f600')
+    expect(frown[0]?.unified).toBe('1f615')
+    expect(dashFrown[0]?.unified).toBe('1f615')
   })
 
   it('passes plain queries through to the index untouched', async () => {
     const results = await searchEmojis('taco')
     expect(results).toHaveLength(1)
-    expect(results[0]?.id).toBe('taco')
-    expect(results[0]?.skins[0]?.native).toBe('🌮')
+    expect(results[0]?.unified).toBe('1f32e')
+    expect(results[0]?.emoji).toBe('🌮')
   })
 })
 
@@ -140,7 +140,7 @@ describe('registerEmojiExactMatchCompletion', () => {
     return event
   }
 
-  it('completes an exact `:shortcode:` match and prevents the closing colon', async () => {
+  it('completes an exact `:name:` match and prevents the closing colon', async () => {
     const editor = createTestEditor()
     const onCommit = vi.fn<(result: EmojiCommitResult) => void>()
     const cleanup = registerEmojiExactMatchCompletion(editor, { getQuery: () => 'smile', onCommit })
@@ -148,9 +148,9 @@ describe('registerEmojiExactMatchCompletion', () => {
 
     const event = await dispatchColon(editor)
 
-    expect(rootText(editor)).toBe('😄')
+    expect(rootText(editor)).toBe('😀')
     expect(onCommit).toHaveBeenCalledTimes(1)
-    expect(onCommit).toHaveBeenCalledWith({ id: 'smile', native: '😄' })
+    expect(onCommit).toHaveBeenCalledWith({ unified: '1f600', emoji: '😀' })
     expect(event.defaultPrevented).toBe(true)
 
     cleanup()
@@ -238,20 +238,20 @@ describe('$insertEmojiCompletion', () => {
 
     let committed: EmojiCommitResult | null = null
     await drainEnqueuedUpdates(editor, () => {
-      committed = $insertEmojiCompletion(taco)
+      committed = $insertEmojiCompletion(taco, 'taco')
     })
 
-    expect(committed).toEqual({ id: 'taco', native: '🌮' })
+    expect(committed).toEqual({ unified: '1f32e', emoji: '🌮' })
     expect(rootText(editor)).toBe('🌮')
     expect(emojiNodeFormat(editor, '🌮')).toEqual(['bold'])
   })
 
-  it('deletes exactly id.length + 1 characters (the query and its leading colon)', async () => {
+  it('deletes exactly query.length + 1 characters (the query and its leading colon)', async () => {
     const editor = createTestEditor()
     await buildParagraph(editor, [{ text: 'say :taco' }], { segment: 0, offset: 9 })
 
     await drainEnqueuedUpdates(editor, () => {
-      $insertEmojiCompletion(taco)
+      $insertEmojiCompletion(taco, 'taco')
     })
 
     expect(rootText(editor)).toBe('say 🌮')
@@ -272,7 +272,7 @@ describe('$insertEmojiCompletion', () => {
 
     let committed: EmojiCommitResult | null = null
     editor.read(() => {
-      committed = $insertEmojiCompletion(taco)
+      committed = $insertEmojiCompletion(taco, 'taco')
     })
 
     expect(committed).toBeNull()
@@ -298,7 +298,7 @@ describe('$insertSelectedEmoji', () => {
       committed = $insertSelectedEmoji(taco, queryNode)
     })
 
-    expect(committed).toEqual({ id: 'taco', native: '🌮' })
+    expect(committed).toEqual({ unified: '1f32e', emoji: '🌮' })
     expect(rootText(editor)).toBe('hello 🌮')
     expect(emojiNodeFormat(editor, '🌮')).toEqual(['bold'])
   })
@@ -312,7 +312,7 @@ describe('$insertSelectedEmoji', () => {
       committed = $insertSelectedEmoji(taco, null)
     })
 
-    expect(committed).toEqual({ id: 'taco', native: '🌮' })
+    expect(committed).toEqual({ unified: '1f32e', emoji: '🌮' })
     expect(rootText(editor)).toBe('hi 🌮')
     expect(emojiNodeFormat(editor, '🌮')).toEqual([])
   })
@@ -335,7 +335,7 @@ describe('$insertSelectedEmoji', () => {
       committed = $insertSelectedEmoji(taco, split[1])
     })
 
-    expect(committed).toEqual({ id: 'taco', native: '🌮' })
+    expect(committed).toEqual({ unified: '1f32e', emoji: '🌮' })
     expect(rootText(editor)).toBe('🌮')
     expect(emojiNodeFormat(editor, '🌮')).toEqual([])
   })
@@ -358,7 +358,7 @@ describe('$insertSelectedEmoji', () => {
       committed = $insertSelectedEmoji(taco, split[1])
     })
 
-    expect(committed).toEqual({ id: 'taco', native: '🌮' })
+    expect(committed).toEqual({ unified: '1f32e', emoji: '🌮' })
     expect(rootText(editor)).toBe('note: 🌮')
   })
 })

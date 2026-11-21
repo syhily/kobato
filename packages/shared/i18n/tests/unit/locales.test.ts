@@ -5,6 +5,7 @@ import {
   isKnownLocaleValue,
   isSupportedLocale,
   normalizeAppLocale,
+  toEmojiLocale,
   toOpenGraphLocale,
   type AppLocale,
 } from '@kobato/i18n/locales'
@@ -52,6 +53,14 @@ describe('i18n/locales', () => {
 
   it('maps Open Graph locales to the underscore spelling', () => {
     expect(SUPPORTED_LOCALES.map((locale) => toOpenGraphLocale(locale))).toEqual(['en_US', 'zh_HK', 'zh_TW', 'zh_CN'])
+  })
+
+  it('maps every locale onto an emoji-picker-react dataset id', () => {
+    expect(toEmojiLocale('en-US')).toBe('en')
+    expect(toEmojiLocale('zh-CN')).toBe('zh')
+    expect(toEmojiLocale('zh-TW')).toBe('zh-hant')
+    // zh-HK has no Cantonese dataset; Traditional Chinese is the documented fallback.
+    expect(toEmojiLocale('zh-HK')).toBe('zh-hant')
   })
 
   it('labels each locale in its own language', () => {

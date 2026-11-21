@@ -1,3 +1,5 @@
+import type { EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-datasets'
+
 import { DEFAULT_LABELS, type InklingLabels } from '@kobato/inkling-internal/labels/inkling-labels'
 import React from 'react'
 
@@ -9,6 +11,7 @@ export interface InklingUiPrefsContextValue {
   codeEditor?: 'rich' | 'plain'
 
   wordCountLanguage?: string
+  emojiLocale?: EmojiLocale
   labels: InklingLabels
 }
 

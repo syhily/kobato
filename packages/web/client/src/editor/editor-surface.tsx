@@ -6,6 +6,7 @@ import type {
   SerializedEditorState,
 } from '@kobato/inkling'
 
+import { toEmojiLocale } from '@kobato/i18n/locales'
 import { InklingComposer } from '@kobato/inkling'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useTheme } from '@kobato/ui/lib/ThemeProvider'
@@ -51,7 +52,7 @@ export function useEditorSurface<TBody extends SerializedEditorState>({
 
 export interface EditorSurfaceComposerProps extends Omit<
   InklingComposerProps,
-  'labels' | 'darkMode' | 'nodes' | 'wordCountLanguage'
+  'labels' | 'darkMode' | 'nodes' | 'wordCountLanguage' | 'emojiLocale'
 > {
   nodes: NonNullable<InklingComposerProps['nodes']>
   labels?: InklingLabelsInput
@@ -64,7 +65,13 @@ export function EditorSurfaceComposer({ labels: explicitLabels, ...props }: Edit
   const labels = explicitLabels ?? payloadLabels
   const { children, ...composerProps } = props
   return (
-    <InklingComposer {...composerProps} labels={labels} wordCountLanguage={locale} darkMode={resolvedTheme === 'dark'}>
+    <InklingComposer
+      {...composerProps}
+      labels={labels}
+      wordCountLanguage={locale}
+      emojiLocale={toEmojiLocale(locale)}
+      darkMode={resolvedTheme === 'dark'}
+    >
       {children}
     </InklingComposer>
   )

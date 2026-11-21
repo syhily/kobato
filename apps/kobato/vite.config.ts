@@ -14,16 +14,15 @@ import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 
 export default defineConfig(({ command }) => ({
-  ssr:
-    command === 'serve'
-      ? {
-          noExternal: ['emoji-mart'],
-        }
-      : {
+  ...(command === 'build'
+    ? {
+        ssr: {
           noExternal: true,
           target: 'node',
           external: ['sharp', '@napi-rs/canvas', '@duckdb/node-api'],
         },
+      }
+    : {}),
   environments: {
     client: {
       build: {

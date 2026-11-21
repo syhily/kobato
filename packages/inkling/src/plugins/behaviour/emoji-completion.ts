@@ -1,3 +1,5 @@
+import type { EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-datasets'
+
 import {
   $createTextNode,
   $getSelection,
@@ -9,22 +11,20 @@ import {
   type TextNode,
 } from 'lexical'
 
-export interface EmojiSkin {
-  native: string
-}
-
 export interface EmojiSearchResult {
-  id: string
-  skins: readonly [EmojiSkin, ...EmojiSkin[]]
+  unified: string
+  emoji: string
+  names: readonly string[]
+  addedIn: string
 }
 
 export interface EmojiCommitResult {
-  id: string
-  native: string
+  unified: string
+  emoji: string
 }
 
 export interface EmojiSearchIndexChunk {
-  searchEmojiMartIndex: (query: string) => Promise<unknown>
+  searchEmojiDataset: (query: string, locale?: EmojiLocale) => Promise<readonly EmojiSearchResult[]>
 }
 
 export type LoadEmojiSearchIndex = () => Promise<EmojiSearchIndexChunk>
@@ -49,37 +49,17 @@ const EMOTICON_SEARCH_ALIASES: Record<string, string> = {
   '-(': 'frown',
 }
 
-function isEmojiSearchResult(value: unknown): value is EmojiSearchResult {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    typeof value.id === 'string' &&
-    'skins' in value &&
-    Array.isArray(value.skins) &&
-    value.skins.length > 0 &&
-    value.skins.every(
-      (skin: unknown) =>
-        typeof skin === 'object' && skin !== null && 'native' in skin && typeof skin.native === 'string',
-    )
-  )
+async function searchEmojiIndex(query: string, locale?: EmojiLocale): Promise<EmojiSearchResult[]> {
+  const { searchEmojiDataset } = await loadEmojiSearchIndex()
+  return [...(await searchEmojiDataset(query, locale))]
 }
 
-async function searchEmojiIndex(query: string): Promise<EmojiSearchResult[]> {
-  const { searchEmojiMartIndex } = await loadEmojiSearchIndex()
-  const results: unknown = await searchEmojiMartIndex(query)
-  if (!Array.isArray(results)) {
-    return []
-  }
-  return results.filter(isEmojiSearchResult)
-}
-
-export async function searchEmojis(query: string): Promise<EmojiSearchResult[]> {
+export async function searchEmojis(query: string, locale?: EmojiLocale): Promise<EmojiSearchResult[]> {
   const alias = EMOTICON_SEARCH_ALIASES[query]
-  return searchEmojiIndex(alias ?? query)
+  return searchEmojiIndex(alias ?? query, locale)
 }
 
-export function $insertEmojiCompletion(emoji: EmojiSearchResult): EmojiCommitResult | null {
+export function $insertEmojiCompletion(emoji: EmojiSearchResult, query: string): EmojiCommitResult | null {
   const selection = $getSelection()
 
   if (!$isRangeSelection(selection)) {
@@ -91,12 +71,11 @@ export function $insertEmojiCompletion(emoji: EmojiSearchResult): EmojiCommitRes
     return null
   }
 
-  const native = emoji.skins[0].native
-  const shortcodeLength = emoji.id.length + 1
-  const textNode = currentNode.spliceText(selection.anchor.offset - shortcodeLength, shortcodeLength, native, true)
+  const shortcodeLength = query.length + 1
+  const textNode = currentNode.spliceText(selection.anchor.offset - shortcodeLength, shortcodeLength, emoji.emoji, true)
   textNode.setFormat(selection.format)
 
-  return { id: emoji.id, native }
+  return { unified: emoji.unified, emoji: emoji.emoji }
 }
 
 export function $insertSelectedEmoji(
@@ -121,13 +100,12 @@ export function $insertSelectedEmoji(
     }
   }
 
-  const native = emoji.skins[0].native
-  const emojiNode = $createTextNode(native)
+  const emojiNode = $createTextNode(emoji.emoji)
   emojiNode.setFormat(selection.format)
 
   selection.insertNodes([emojiNode])
 
-  return { id: emoji.id, native }
+  return { unified: emoji.unified, emoji: emoji.emoji }
 }
 
 function $caretHasCodeFormat(): boolean {
@@ -142,11 +120,12 @@ function $caretHasCodeFormat(): boolean {
 export interface RegisterEmojiExactMatchCompletionOptions {
   getQuery: () => string | null
   onCommit?: (result: EmojiCommitResult) => void
+  locale?: EmojiLocale
 }
 
 export function registerEmojiExactMatchCompletion(
   editor: LexicalEditor,
-  { getQuery, onCommit }: RegisterEmojiExactMatchCompletionOptions,
+  { getQuery, onCommit, locale }: RegisterEmojiExactMatchCompletionOptions,
 ) {
   return editor.registerCommand(
     KEY_DOWN_COMMAND,
@@ -159,15 +138,17 @@ export function registerEmojiExactMatchCompletion(
         return false
       }
       void (async () => {
-        const emojis = await searchEmojiIndex(query)
-        if (emojis.length === 0) {
+        const emojis = await searchEmojiIndex(query, locale)
+        const match = emojis[0]
+        if (!match) {
           return
         }
-        if (emojis[0].id !== query) {
+        const normalizedQuery = query.toLowerCase()
+        if (!match.names.some((name) => name.toLowerCase() === normalizedQuery)) {
           return
         }
         editor.update(() => {
-          const committed = $insertEmojiCompletion(emojis[0])
+          const committed = $insertEmojiCompletion(match, query)
           if (committed) {
             onCommit?.(committed)
           }

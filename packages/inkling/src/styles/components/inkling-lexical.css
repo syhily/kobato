@@ -56,11 +56,17 @@
     background: var(--grey-900);
   }
 
-  em-emoji-picker {
-    --rgb-accent: 48, 207, 67;
-    --rgb-background: 35, 41, 47;
-    --rgb-color: 221, 225, 229;
-    --rgb-input: 57, 64, 71;
+  .epr-structural-root {
+    --epr-bg-color: var(--color-grey-950);
+    --epr-text-color: var(--color-grey-300);
+    --epr-highlight-color: var(--color-green);
+    --epr-hover-bg-color: var(--color-grey-900);
+    --epr-hover-bg-color-reduced-opacity: color-mix(in srgb, var(--color-grey-900) 97%, transparent);
+    --epr-focus-bg-color: var(--color-grey-900);
+    --epr-search-input-bg-color: var(--color-grey-900);
+    --epr-search-input-bg-color-active: var(--color-grey-900);
+    --epr-category-icon-active-color: var(--color-green);
+    --epr-category-label-bg-color: color-mix(in srgb, var(--color-grey-950) 90%, transparent);
   }
 }
 
@@ -80,31 +86,20 @@
   color: var(--grey-500);
 }
 
-em-emoji-picker {
-  --font-family:
+/* The picker mounts as real DOM inside the portal's .inkling-lexical scope; emoji-picker-react is
+   mounted with cssLayer="inkling", so these layered overrides win over its injected tokens. */
+.inkling-lexical .epr-structural-root {
+  --epr-font-family:
     Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-  --border-radius: 5px;
-  --font-size: 13px;
-  --rgb-accent: 57, 64, 71;
-  --rgb-color: 174, 183, 193;
-  --em-rgb-accent: (255, 0, 0);
-  --shadow: 0 0 1px rgba(0, 0, 0, 0.05), 0 5px 18px rgba(0, 0, 0, 0.08);
-
-  height: 325px;
-}
-
-em-emoji-picker #nav button[aria-selected] svg {
-  fill: red;
-}
-
-em-emoji-picker .search input[type='search'] {
-  border-radius: 5px;
-}
-
-.search input,
-.search button {
-  font-size: 20px !important;
+  --epr-picker-border-radius: 0.6rem;
+  --epr-search-input-border-radius: 0.4rem;
+  --epr-text-color: var(--color-grey-500);
+  --epr-highlight-color: var(--color-grey-900);
+  --epr-hover-bg-color: var(--color-grey-100);
+  --epr-hover-bg-color-reduced-opacity: color-mix(in srgb, var(--color-grey-100) 50%, transparent);
+  --epr-focus-bg-color: var(--color-grey-100);
+  --epr-category-icon-active-color: var(--color-grey-900);
 }
 
 .inkling-lexical .js-embed-placeholder {

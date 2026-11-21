@@ -63,6 +63,7 @@ describe('client/editor/EditorSurfaceComposer — host constants', () => {
     renderComposer()
     expect(composerProps.current?.labels).toBe(inklingLabelsFor('zh-CN'))
     expect(composerProps.current?.wordCountLanguage).toBe('zh-CN')
+    expect(composerProps.current?.emojiLocale).toBe('zh')
     expect(composerProps.current?.darkMode).toBe(false)
   })
 
@@ -70,6 +71,12 @@ describe('client/editor/EditorSurfaceComposer — host constants', () => {
     renderComposer({}, 'en-US')
     expect(composerProps.current?.labels).toBe(inklingLabelsFor('en-US'))
     expect(composerProps.current?.wordCountLanguage).toBe('en-US')
+    expect(composerProps.current?.emojiLocale).toBe('en')
+
+    renderComposer({}, 'zh-HK')
+    expect(composerProps.current?.wordCountLanguage).toBe('zh-HK')
+    // zh-HK has no Cantonese emoji dataset; Traditional Chinese is the documented fallback.
+    expect(composerProps.current?.emojiLocale).toBe('zh-hant')
   })
 
   it('forwards the surface child exactly once', () => {

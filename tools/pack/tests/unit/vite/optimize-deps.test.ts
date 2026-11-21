@@ -16,7 +16,11 @@ describe('appOptimizeDeps', () => {
       '@kobato/ui > pino',
       '@kobato/web-public > motion/react',
       '@kobato/web-admin > lexical',
-      '@kobato/inkling > emoji-mart',
+      '@kobato/inkling > emoji-picker-react',
+      '@kobato/inkling > emoji-picker-react/data',
+      '@kobato/inkling > emoji-picker-react/data/emojis-en',
+      '@kobato/inkling > emoji-picker-react/data/emojis-zh',
+      '@kobato/inkling > emoji-picker-react/data/emojis-zh-hant',
       '@kobato/server > katex',
     ]) {
       expect(include).toContain(hint)

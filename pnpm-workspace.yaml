@@ -23,7 +23,6 @@ catalog:
   '@dnd-kit/sortable': ^10.0.0
   '@dnd-kit/utilities': ^3.2.2
   '@duckdb/node-api': ^2.0.1-r.1
-  '@emoji-mart/data': ^1.2.1
   '@formatjs/icu-messageformat-parser': ^3.5.23
   '@hono/node-server': ^2.1.11
   '@hono/vite-dev-server': ^0.26.1
@@ -96,7 +95,7 @@ catalog:
   dompurify: ^3.4.18
   drizzle-kit: 1.0.0-rc.6
   drizzle-orm: 1.0.0-rc.6
-  emoji-mart: ^5.6.0
+  emoji-picker-react: ^5.1.4
   fake-indexeddb: ^6.2.8
   fast-average-color: ^9.6.0
   feed: ^6.0.0

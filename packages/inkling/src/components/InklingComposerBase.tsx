@@ -3,6 +3,7 @@ import type {
   FileUploader,
   FileUploaderInput,
 } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
+import type { EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-datasets'
 
 import { buildInklingRootExtension } from '@kobato/inkling-internal/components/inkling-root-extension'
 import { ComposerHandlesProvider } from '@kobato/inkling-internal/context/ComposerHandlesProvider'
@@ -47,6 +48,7 @@ export interface InklingComposerProps {
 
   codeEditor?: 'rich' | 'plain'
   wordCountLanguage?: string
+  emojiLocale?: EmojiLocale
   labels?: InklingLabelsInput
   multiplayerEndpoint?: string
   multiplayerDebug?: boolean
@@ -68,6 +70,7 @@ const InklingComposerBase = ({
   isEmojiEnabled,
   codeEditor,
   wordCountLanguage,
+  emojiLocale,
   labels,
   multiplayerEndpoint,
   multiplayerDebug = true,
@@ -125,10 +128,11 @@ const InklingComposerBase = ({
       codeEditor,
 
       wordCountLanguage,
+      emojiLocale,
 
       labels: resolveLabels(labels),
     }),
-    [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, wordCountLanguage, labels],
+    [darkMode, isTKEnabled, isEmojiEnabled, codeEditor, wordCountLanguage, emojiLocale, labels],
   )
 
   return (

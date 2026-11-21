@@ -180,8 +180,9 @@ reverse.
   in `src/shared-exports.ts` — add shared names there, never in the barrel. Headless bypasses `shared-exports`; the
   barrel never re-exports headless conversion modules (jsdom stays out of the client graph,
   `tests/unit/html/jsdom-import-guard.test.ts`). `version` reads `__APP_VERSION__`.
-- Lazy runtimes keep the island chunk free of them: emoji-mart, markdown-it, CodeMirror, yjs/y-websocket
-  (`fast-average-color` stays eager).
+- Lazy runtimes keep the island chunk free of them: emoji-picker-react (datasets ride lazy chunks via
+  `src/plugins/behaviour/emoji-datasets.ts`), markdown-it, CodeMirror, yjs/y-websocket (`fast-average-color` stays
+  eager).
 - `InklingComposer`'s `nodes` prop is OPTIONAL (defaults `DEFAULT_NODES`) while `InklingComposerBase` requires it;
   `MarkdownShortcutPlugin` defaults to the card-free `MINIMAL_TRANSFORMERS`.
 - Base node classes never reuse DOM global names (`Base*Node`). React Compiler runs on the layer.

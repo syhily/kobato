@@ -1,4 +1,8 @@
+import type { EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-search-index'
+
 import EmojiPickerPortal from '@kobato/inkling-internal/components/ui/EmojiPickerPortal'
+import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
+import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
@@ -75,5 +79,30 @@ describe('EmojiPickerPortal', () => {
 
     expect(pickerPropsSpy).toHaveBeenCalled()
     expect(pickerPropsSpy.mock.calls.at(-1)?.[0]).not.toHaveProperty('togglePortal')
+  })
+
+  it('hands the adapter a dataset loader for the context locale and none without one', () => {
+    function ComposerPrefs({ emojiLocale, children }: { emojiLocale: EmojiLocale; children: React.ReactNode }) {
+      const value = React.useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, emojiLocale }), [emojiLocale])
+      return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
+    }
+    const renderPortal = (emojiLocale?: EmojiLocale) => {
+      const positionRef = createAnchor({ top: 300, left: 400 })
+      render(
+        emojiLocale === undefined ? (
+          <EmojiPickerPortal onEmojiClick={() => {}} positionRef={positionRef} />
+        ) : (
+          <ComposerPrefs emojiLocale={emojiLocale}>
+            <EmojiPickerPortal onEmojiClick={() => {}} positionRef={positionRef} />
+          </ComposerPrefs>
+        ),
+      )
+    }
+
+    renderPortal('zh')
+    expect(typeof pickerPropsSpy.mock.calls.at(-1)?.[0].emojiData).toBe('function')
+
+    renderPortal()
+    expect(pickerPropsSpy.mock.calls.at(-1)?.[0].emojiData).toBeUndefined()
   })
 })

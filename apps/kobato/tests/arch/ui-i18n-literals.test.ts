@@ -132,7 +132,8 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/inkling/src/components/ui/LibrarySelector.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/inkling/src/plugins/TKPlugin.tsx', rules: ['jsx-text'], text: 'TK' },
-  { path: 'packages/inkling/src/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'en' },
+  { path: 'packages/inkling/src/plugins/behaviour/emoji-search-index.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/inkling/src/components/ui/EmojiPickerPortal.tsx', rules: ['hardcoded-locale'], text: 'zh' },
   {
     path: 'packages/server/src/domains/auth/primitives.ts',
     rules: ['domain-error'],
@@ -233,6 +234,7 @@ describe('production sources', () => {
         'packages/inkling/src/components/ui/LibrarySelector.tsx',
         'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx',
         'packages/inkling/src/plugins/TKPlugin.tsx',
+        'packages/inkling/src/plugins/behaviour/emoji-search-index.ts',
         'packages/inkling/src/components/ui/EmojiPickerPortal.tsx',
         'packages/server/src/domains/auth/primitives.ts',
         'packages/server/src/domains/settings/services/admin-projection.ts',
