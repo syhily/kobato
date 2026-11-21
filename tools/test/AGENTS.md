@@ -53,6 +53,7 @@ before any `vi.useFakeTimers()` (a fake-Date-derived `TZDate` silently falls bac
 - **DuckDB**: per-run sidecar files in the `duckdb` project; DB-owned handles close directly after their awaited writes,
   while server suites settle or reset batchers before closing adopted handles. Setups reset the analytics query executor
   to `null` after each test.
-- The base setups restore real timers after every test, preventing one file from freezing a later file in the same
-  worker. Tests install fake timers in `beforeEach`, never at module scope.
+- Every direct setup entry owns an `afterEach` that calls `vi.useRealTimers()`; under `isolate: false`, an imported base
+  setup is cached and cannot be the sole cleanup owner. Tests install fake timers in `beforeEach`, never at module
+  scope.
 - Tests that write tables call `clearAllTables(db)` in `beforeEach`.

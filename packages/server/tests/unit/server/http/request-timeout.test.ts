@@ -32,7 +32,7 @@ describe('requestTimeout', () => {
     expect(capturedSignal!.aborted).toBe(false)
   })
 
-  it('cancels the combined signal when timeout fires', { timeout: 30_000 }, async () => {
+  it('cancels the combined signal when timeout fires', async () => {
     const app = new Hono<Env>()
     app.use(requestTimeout(50))
 

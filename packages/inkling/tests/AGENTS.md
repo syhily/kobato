@@ -4,9 +4,9 @@
   mirroring `packages/inkling/src`. `vitest.config.ts` and `vitest.iso.config.ts` are sibling project configs discovered
   by the root glob: `inkling-unit` excludes the files scanned by `@kobato/test/mock-files.ts`, and those module-level
   `vi.mock(` holders run isolated in `inkling-iso-unit`. Run `pnpm test:inkling`.
-- `tests/setup.ts` wraps `@kobato/test/setup/unit.ts` (jest-dom, cleanup, timer restore) plus the inkling-only jsdom
-  fallbacks — the shared `installWebStreamGlobals()` web-stream shim, then DOMParser, ResizeObserver,
-  IntersectionObserver, and the in-memory `localStorage`.
+- `tests/setup.ts` wraps `@kobato/test/setup/unit.ts` (jest-dom, cleanup), directly owns the shared-worker timer
+  restore, and adds the inkling-only jsdom fallbacks — the shared `installWebStreamGlobals()` web-stream shim, then
+  DOMParser, ResizeObserver, IntersectionObserver, and the in-memory `localStorage`.
 - Layout: `tests/unit/...` mirrors `src/` for `*.test.*` files; `tests/utils/` holds HELPERS ONLY (`test-editor.ts`,
   `render-live.ts`, fixtures) and never a `*.test.ts`. Tree-specific helpers sit beside their tree
   (`tests/nodes-base/test-helpers.ts`), never in a nested `test-utils/` directory or an `index.ts` barrel.
