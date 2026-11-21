@@ -7,4 +7,5 @@ export const SHARED_UNSAFE_TEST_FILES: readonly string[] = [
   'packages/server/tests/unit/server/render/og/render.test.ts',
   'packages/server/tests/unit/server/http/errors.test.ts',
   'packages/server/tests/it/server/infra/cache/kv-maintenance.test.ts',
+  'packages/server/tests/it/server/domains/settings/general-cache-invalidation.test.ts',
 ]
