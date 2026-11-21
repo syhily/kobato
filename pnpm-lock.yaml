@@ -273,8 +273,8 @@ catalogs:
       specifier: ^7.1.0
       version: 7.1.0
     '@napi-rs/canvas':
-      specifier: ^1.1.1
-      version: 1.1.1
+      specifier: ^1.2.0
+      version: 1.2.0
     '@number-flow/react':
       specifier: ^0.6.2
       version: 0.6.2
@@ -519,8 +519,8 @@ catalogs:
       specifier: ^1.94.0
       version: 1.94.0
     oxlint-tsgolint:
-      specifier: ^7.0.2007
-      version: 7.0.2007
+      specifier: ^7.0.2008
+      version: 7.0.2008
     pino:
       specifier: ^10.4.0
       version: 10.4.0
@@ -611,7 +611,7 @@ importers:
         version: 2.0.1-r.1
       '@napi-rs/canvas':
         specifier: 'catalog:'
-        version: 1.1.1
+        version: 1.2.0
       sharp:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.6)
@@ -648,10 +648,10 @@ importers:
         version: 0.79.0
       oxlint:
         specifier: 'catalog:'
-        version: 1.94.0(oxlint-tsgolint@7.0.2007)
+        version: 1.94.0(oxlint-tsgolint@7.0.2008)
       oxlint-tsgolint:
         specifier: 'catalog:'
-        version: 7.0.2007
+        version: 7.0.2008
       taze:
         specifier: 'catalog:'
         version: 21.3.0
@@ -663,7 +663,7 @@ importers:
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -723,7 +723,7 @@ importers:
         version: 6.3.0(oxc-transform-react@0.158.0)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       lexical:
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -750,10 +750,7 @@ importers:
         version: 5.2.0(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-      yjs:
-        specifier: 'catalog:'
-        version: 13.6.33
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   apps/kobato:
     devDependencies:
@@ -822,7 +819,7 @@ importers:
         version: link:../../packages/web/public
       '@napi-rs/canvas':
         specifier: 'catalog:'
-        version: 1.1.1
+        version: 1.2.0
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
@@ -882,7 +879,7 @@ importers:
         version: 4.13.19
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       lucide-react:
         specifier: 'catalog:'
         version: 1.77.0(@types/react@19.3.0)(react@19.3.1)
@@ -909,7 +906,7 @@ importers:
         version: 5.2.0(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -927,7 +924,7 @@ importers:
         version: 1.16.4(@opentelemetry/api@1.10.0)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/db:
     devDependencies:
@@ -963,7 +960,7 @@ importers:
         version: 0.29.9
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/inkling:
     devDependencies:
@@ -1095,7 +1092,7 @@ importers:
         version: 7.2.0
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       lexical:
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -1140,7 +1137,7 @@ importers:
         version: 5.2.0(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       y-websocket:
         specifier: 'catalog:'
         version: 3.1.0(yjs@13.6.33)
@@ -1233,7 +1230,7 @@ importers:
         version: 7.1.0
       '@napi-rs/canvas':
         specifier: 'catalog:'
-        version: 1.1.1
+        version: 1.2.0
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
@@ -1359,7 +1356,7 @@ importers:
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1368,7 +1365,7 @@ importers:
     devDependencies:
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/auth:
     devDependencies:
@@ -1377,7 +1374,7 @@ importers:
         version: link:../i18n
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/cache:
     devDependencies:
@@ -1389,7 +1386,7 @@ importers:
         version: link:../utils
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/catalog:
     devDependencies:
@@ -1401,7 +1398,7 @@ importers:
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/contracts:
     devDependencies:
@@ -1434,7 +1431,7 @@ importers:
         version: 26.6.6
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1446,7 +1443,7 @@ importers:
         version: 26.6.6
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/i18n:
     devDependencies:
@@ -1461,7 +1458,7 @@ importers:
         version: 12.2.0(@types/react@19.3.0)(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/sanitize:
     devDependencies:
@@ -1473,10 +1470,10 @@ importers:
         version: 3.4.18
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/seo:
     devDependencies:
@@ -1494,7 +1491,7 @@ importers:
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/shared/settings:
     devDependencies:
@@ -1515,7 +1512,7 @@ importers:
         version: link:../utils
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1527,7 +1524,7 @@ importers:
         version: link:../settings
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1548,7 +1545,7 @@ importers:
         version: 0.35.5(@types/node@26.6.6)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1620,7 +1617,7 @@ importers:
         version: 4.3.5
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/web/admin:
     devDependencies:
@@ -1731,7 +1728,7 @@ importers:
         version: 8.0.4
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       lexical:
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -1761,7 +1758,7 @@ importers:
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1827,7 +1824,7 @@ importers:
         version: 21.0.4
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -1839,7 +1836,7 @@ importers:
         version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   packages/web/public:
     devDependencies:
@@ -1902,7 +1899,7 @@ importers:
         version: 21.0.4
       jsdom:
         specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.1.1)
+        version: 31.0.1(@napi-rs/canvas@1.2.0)
       lucide-react:
         specifier: 'catalog:'
         version: 1.77.0(@types/react@19.3.0)(react@19.3.1)
@@ -1932,7 +1929,7 @@ importers:
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   tools/browser:
     devDependencies:
@@ -2031,7 +2028,7 @@ importers:
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2073,7 +2070,7 @@ importers:
         version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2131,7 +2128,7 @@ importers:
         version: 6.0.0(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -2976,79 +2973,79 @@ packages:
     resolution: {integrity: sha512-tOXoITRIPLQdUPf9JEU5ZRsFjO1guKba7kkhoUnZUsDGpS6gX3xcJLQBQgeW4nXL6Ko0LACdbL1aAGY5sgPMmg==}
     engines: {node: '>=22'}
 
-  '@napi-rs/canvas-android-arm64@1.1.1':
-    resolution: {integrity: sha512-rSEp3y+/YXw6TxSx4/NHSAFxumZrkMoXy2WiVqpKGT8oF5GHOUDzTKj45e5cvzophX4iFaxwKs3+/gNkJ7FmzQ==}
+  '@napi-rs/canvas-android-arm64@1.2.0':
+    resolution: {integrity: sha512-Ya2Db4BrwM5WnQtdmA2iOw5O2yZ9vcd5fuX9GjlkQ3k87iWzDUxnijVz11IJrF8c+xBxUHzEgENXmA1yPdnZ2g==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [android]
 
-  '@napi-rs/canvas-darwin-arm64@1.1.1':
-    resolution: {integrity: sha512-NrPTZWpu0ywOGdp9JBDi46gABUzDJK6IzlP7cOEwaAuVVFM8KRakUWk12RK3YQ/Ea5FrNVTWUFTmkXVk4RfHqg==}
+  '@napi-rs/canvas-darwin-arm64@1.2.0':
+    resolution: {integrity: sha512-7Rq4h2J4Y+JKqxaH9Zf0PGOY3asTeAbcG51MkQNaUTB7ushbhuEgY54CWRww5WK8v8VYB8epv4bLF0GI8IPlxQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@napi-rs/canvas-darwin-x64@1.1.1':
-    resolution: {integrity: sha512-p3DOT8VBfu8cR3SVBUs6cEzJmzwOUQkNfo1S4nKLgeKDsSlvn2oZsRaa9m0lfMccn1WbwtgKCEpJXmHhp++Zrg==}
+  '@napi-rs/canvas-darwin-x64@1.2.0':
+    resolution: {integrity: sha512-LHeqXtEFqO1DDnKRWSvy7C+kXQTciKvZzShVZd0aTnvVwWskpbj9hwWc8lwTpjm6GsgS7oEKCNARj8xLI1qcww==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@napi-rs/canvas-linux-arm-gnueabihf@1.1.1':
-    resolution: {integrity: sha512-YWGJfMa8TtEhsHd/kDiyBFwT/dAbRQiXwsm0tDev4H5cJiyOk08CC83JihrwnUsePGjIvxC8/8g/zqKKuqjpQA==}
+  '@napi-rs/canvas-linux-arm-gnueabihf@1.2.0':
+    resolution: {integrity: sha512-er2hS9KLBWSFMyz6UCAAM5gYfFfCAkLXXdPnFJ8SL8clNa+hx5ooC5iREYKuaFxIfhsE86OHiiee3HjIuvtz5w==}
     engines: {node: '>= 10'}
     cpu: [arm]
     os: [linux]
 
-  '@napi-rs/canvas-linux-arm64-gnu@1.1.1':
-    resolution: {integrity: sha512-q1HBkNmB9mc6SF6uSz2492qSgsB46MqS+n3bPbPCE0kUXmWAPkH9vDADeawbhepQYn8RhlV2V/P5u6nykFXbuQ==}
+  '@napi-rs/canvas-linux-arm64-gnu@1.2.0':
+    resolution: {integrity: sha512-wwfgI/DQOXjpQ+uLDV7R2Wh6O0lLvWRWz3mZND58csTH9fTn6+H2bfWBIu37Bcg8cjJLPE5BKjqK/a7WOYeqxA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@napi-rs/canvas-linux-arm64-musl@1.1.1':
-    resolution: {integrity: sha512-aF4RkTp2T45fERFPCIqbxeKVhvhHuXeyyk5/jdJ+N0tGLZy4NvMkIrBWt6GOCmAQ7H0G3M/O03hAsc4Li52q4A==}
+  '@napi-rs/canvas-linux-arm64-musl@1.2.0':
+    resolution: {integrity: sha512-ftJFcPZIAer2xHMQ0BXfGTVqE2AB5tl3+dm913YunKnsG+lcS91pFKNaeM5yvp7kbTLPlMxkMpi+RKXOXEwljw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@napi-rs/canvas-linux-riscv64-gnu@1.1.1':
-    resolution: {integrity: sha512-rCU4Xo5h0AQFEaa9dNr7Kxbk4gke9Uyi/I6ZXuBGYPSNWxYmWRS6DkrxaSKUJyCgA7c8l6lZBYfx/FtbJo3fMA==}
+  '@napi-rs/canvas-linux-riscv64-gnu@1.2.0':
+    resolution: {integrity: sha512-NFfXv9E3IuzHi3RK3KhBbjO4bCdS8PvZkUzVvkTWBCLnVw4ndNNHUCK46/lcOMcnuKg8qxQsK5X7Uwp/SPGA0g==}
     engines: {node: '>= 10'}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@napi-rs/canvas-linux-x64-gnu@1.1.1':
-    resolution: {integrity: sha512-7bZfDI9lxKqj9wJRHiSQBimCRanxDGHYE7TugnOmFJ9ScpgFSsLHFQtOH9wvmbQvBwv5nBuDBGJlG0+7iGkN+w==}
+  '@napi-rs/canvas-linux-x64-gnu@1.2.0':
+    resolution: {integrity: sha512-+RsdhlUA8hRoktgA5JG1XR7skZ6PCVjNfodnqDnBV1eTX7dgVBYHK7O7yKdQGac/45B5t8ufgyceQEq3Rfk6JA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@napi-rs/canvas-linux-x64-musl@1.1.1':
-    resolution: {integrity: sha512-xaFof2p0aO7C7ziMCLeueve09PVEKYCebljLTL3nyxoaRsYpEnBrUBP1aVpfD1Nk464dc7/wPV23fkHdOBie2g==}
+  '@napi-rs/canvas-linux-x64-musl@1.2.0':
+    resolution: {integrity: sha512-G7O6pLdb+waaiRfCVKNRymqFNulfU4tfyRKvWmOWt7Vh/VltHLvU4+oWGMMKzWehMrxLnvmeLSNkWWpzMZAy+w==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@napi-rs/canvas-win32-arm64-msvc@1.1.1':
-    resolution: {integrity: sha512-wOLX/WRwWr0xGj2hnDf/t3tZfPlzzL9rGPsO1UnYSuNbRzwas/hC8JXnuhaEs8eCw+J+W4zxOJiVF4RxkvcMfw==}
+  '@napi-rs/canvas-win32-arm64-msvc@1.2.0':
+    resolution: {integrity: sha512-8xB9DHYScFsEukONZKfc45bTYJUAfEqL6daUxo3YqWrUC9YMfU6N2Zx3HCJTq0LwhnjjRXScZbasaaxviaA4uQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@napi-rs/canvas-win32-x64-msvc@1.1.1':
-    resolution: {integrity: sha512-6Ge1AF1SVO+Ypjaw9IPcApm95krR3GQ32HgVqlIckbN/WqUlWYS0hnb8ZIdu3e0IbutbJgd8D2qSeb2/Cdpbdw==}
+  '@napi-rs/canvas-win32-x64-msvc@1.2.0':
+    resolution: {integrity: sha512-GJ0DLyiTvLw5xNtdUJ0ncRuuT4Yv9zNXnrrvfvKr1/M08mbvtFVLoKiwQAaWixEcTsCh0U94/nMxkJTLH7ZMfw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
 
-  '@napi-rs/canvas@1.1.1':
-    resolution: {integrity: sha512-UyNspnx0rXclATMOBXiWgy1xtWUSUDm4UOO6+YO8xzyVKaZRpvK+SlJSCtRoSI9J/mEqklJiPYtroN1B+hgLXg==}
+  '@napi-rs/canvas@1.2.0':
+    resolution: {integrity: sha512-6LpJr0U9BH/Iz5/z2EherYStmsjyRwmCp8wwYg0QfEnib/ip19fyJd1Y1OFbn8DbyIQKCCpSqgY1trXkIbLdEg==}
     engines: {node: '>= 10'}
 
   '@napi-rs/wasm-runtime@1.2.6':
@@ -3466,33 +3463,33 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@oxlint-tsgolint/darwin-arm64@7.0.2007':
-    resolution: {integrity: sha512-bjNxPFyu1wNK74epHzXrtVLrj7oEuB8jQvJZDSia2d5EZ/0YgnyhI37E9U530IUZlNCqlTWjko1iT3CKAYF9+A==}
+  '@oxlint-tsgolint/darwin-arm64@7.0.2008':
+    resolution: {integrity: sha512-RXcQ439KXqspwHtw39825cyFmvrkOa1AA2CnqFNNG0pVJB0FdhpfQZsDLjRc/3Mt/uEG0MWOG50Hl09J2Ra9UA==}
     cpu: [arm64]
     os: [darwin]
 
-  '@oxlint-tsgolint/darwin-x64@7.0.2007':
-    resolution: {integrity: sha512-dCd7mzk2FeTaU46LLeXy5mQyEFICaPqlew/LpehNzEuL86D0jTYlwZHbibRqdRrvkSNgq1szz/7014FIHgyV1g==}
+  '@oxlint-tsgolint/darwin-x64@7.0.2008':
+    resolution: {integrity: sha512-4FpkHVDF1I4W0Owgsff8rDdf/XVcI9aoqflqyh3JiMCg7zCzWNkB0hfKMNjMDYDAeK/k1CNawAb7Y7mYGr/Xhg==}
     cpu: [x64]
     os: [darwin]
 
-  '@oxlint-tsgolint/linux-arm64@7.0.2007':
-    resolution: {integrity: sha512-qb0XUQXuTmQ8H++zsx/tQitG0/fU3BE16KGp1qXExeDgRzEc7WIlCuN1i+rmA40lty9gQs+x3a73BFODVhTZqA==}
+  '@oxlint-tsgolint/linux-arm64@7.0.2008':
+    resolution: {integrity: sha512-CmheyZowc+sbXlZ2ksFrbqR6Mnu+HHheZZKTP3FpDBe64eCp6DzSrjcR2VHRj6mC2UKF1ZO0J8Z1e9Bgji4kKw==}
     cpu: [arm64]
     os: [linux]
 
-  '@oxlint-tsgolint/linux-x64@7.0.2007':
-    resolution: {integrity: sha512-75vx0067HSgxq/HEZzlHwqhcujn3bshg43fVLTx604jZdZZMQfPVCcxTh2RTEShP7ACT1PRty6vboZlWh5RtEA==}
+  '@oxlint-tsgolint/linux-x64@7.0.2008':
+    resolution: {integrity: sha512-7by4bup5rF9q7i19G6zPDXgywBi3tFB6jGzefoc/BfleNS0Q/eleYpD2SDLmsXzN2hFpDrfAskx7H0WnUtKbtQ==}
     cpu: [x64]
     os: [linux]
 
-  '@oxlint-tsgolint/win32-arm64@7.0.2007':
-    resolution: {integrity: sha512-6zl7I+BvScfOPtnPtSEP5JA+z8NkDPGd47YnQChL5lLF/Dzs7Rasr1G+q0zGlQcP8OEgW43hW4QlUTXxPfD13Q==}
+  '@oxlint-tsgolint/win32-arm64@7.0.2008':
+    resolution: {integrity: sha512-u12UqT/xG64vXclqfe3/7I4j2mWSMZmXsMRBxbgmGfHaEfZUEzxl1QCNyx3TDM5OfsWWKH4dAHJtDRxTAiYA7A==}
     cpu: [arm64]
     os: [win32]
 
-  '@oxlint-tsgolint/win32-x64@7.0.2007':
-    resolution: {integrity: sha512-VptFHYhBm0SIWCUkx89hmTrKVOQsDg0iB1YE3EBlvRRtCHGUd3pU1kMxPBg1wOd83ZMmIn7zB6maBROtpmrP5g==}
+  '@oxlint-tsgolint/win32-x64@7.0.2008':
+    resolution: {integrity: sha512-Vjev4Ns8rdGa4Tb85ZsBkei0reLa77j3FNJsCKPo2gi5oTPK5O2eN42sim2ewoorgx7JQ3+49YuUKa1d6UKHPw==}
     cpu: [x64]
     os: [win32]
 
@@ -5205,8 +5202,8 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
-  js-tokens@10.0.0:
-    resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
+  js-tokens@10.0.1:
+    resolution: {integrity: sha512-XMt+uh+yEs6srFvEb/pEe4IMvbtoXVdNxF7lZFU+I9sdWI641L97L+gXQMTGm1x3RjPUVizNVjHueclXr0U7sw==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -5698,8 +5695,8 @@ packages:
       vite-plus:
         optional: true
 
-  oxlint-tsgolint@7.0.2007:
-    resolution: {integrity: sha512-i8X2qf6VVqFzoNVP34joMKuZpO6T2uXMOgKJaSPFc6p+E3FTnbIGPRbI8K4ZApmtDTMu2CIeGfpzeK1zzGwfnA==}
+  oxlint-tsgolint@7.0.2008:
+    resolution: {integrity: sha512-QuRK+gdriCwpOs+1PGq6/aImEEEK+EClNptdVtI0y4bDOhJ0uH/v3noz+yPKe+DYOTdkej75/5f3ouOGP5EGrQ==}
     hasBin: true
 
   oxlint@1.94.0:
@@ -7436,52 +7433,52 @@ snapshots:
     dependencies:
       maxmind: 5.1.0
 
-  '@napi-rs/canvas-android-arm64@1.1.1':
+  '@napi-rs/canvas-android-arm64@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-darwin-arm64@1.1.1':
+  '@napi-rs/canvas-darwin-arm64@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-darwin-x64@1.1.1':
+  '@napi-rs/canvas-darwin-x64@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-arm-gnueabihf@1.1.1':
+  '@napi-rs/canvas-linux-arm-gnueabihf@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-arm64-gnu@1.1.1':
+  '@napi-rs/canvas-linux-arm64-gnu@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-arm64-musl@1.1.1':
+  '@napi-rs/canvas-linux-arm64-musl@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-riscv64-gnu@1.1.1':
+  '@napi-rs/canvas-linux-riscv64-gnu@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-x64-gnu@1.1.1':
+  '@napi-rs/canvas-linux-x64-gnu@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-linux-x64-musl@1.1.1':
+  '@napi-rs/canvas-linux-x64-musl@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-win32-arm64-msvc@1.1.1':
+  '@napi-rs/canvas-win32-arm64-msvc@1.2.0':
     optional: true
 
-  '@napi-rs/canvas-win32-x64-msvc@1.1.1':
+  '@napi-rs/canvas-win32-x64-msvc@1.2.0':
     optional: true
 
-  '@napi-rs/canvas@1.1.1':
+  '@napi-rs/canvas@1.2.0':
     optionalDependencies:
-      '@napi-rs/canvas-android-arm64': 1.1.1
-      '@napi-rs/canvas-darwin-arm64': 1.1.1
-      '@napi-rs/canvas-darwin-x64': 1.1.1
-      '@napi-rs/canvas-linux-arm-gnueabihf': 1.1.1
-      '@napi-rs/canvas-linux-arm64-gnu': 1.1.1
-      '@napi-rs/canvas-linux-arm64-musl': 1.1.1
-      '@napi-rs/canvas-linux-riscv64-gnu': 1.1.1
-      '@napi-rs/canvas-linux-x64-gnu': 1.1.1
-      '@napi-rs/canvas-linux-x64-musl': 1.1.1
-      '@napi-rs/canvas-win32-arm64-msvc': 1.1.1
-      '@napi-rs/canvas-win32-x64-msvc': 1.1.1
+      '@napi-rs/canvas-android-arm64': 1.2.0
+      '@napi-rs/canvas-darwin-arm64': 1.2.0
+      '@napi-rs/canvas-darwin-x64': 1.2.0
+      '@napi-rs/canvas-linux-arm-gnueabihf': 1.2.0
+      '@napi-rs/canvas-linux-arm64-gnu': 1.2.0
+      '@napi-rs/canvas-linux-arm64-musl': 1.2.0
+      '@napi-rs/canvas-linux-riscv64-gnu': 1.2.0
+      '@napi-rs/canvas-linux-x64-gnu': 1.2.0
+      '@napi-rs/canvas-linux-x64-musl': 1.2.0
+      '@napi-rs/canvas-win32-arm64-msvc': 1.2.0
+      '@napi-rs/canvas-win32-x64-msvc': 1.2.0
 
   '@napi-rs/wasm-runtime@1.2.6(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)':
     dependencies:
@@ -7815,22 +7812,22 @@ snapshots:
   '@oxfmt/binding-win32-x64-msvc@0.79.0':
     optional: true
 
-  '@oxlint-tsgolint/darwin-arm64@7.0.2007':
+  '@oxlint-tsgolint/darwin-arm64@7.0.2008':
     optional: true
 
-  '@oxlint-tsgolint/darwin-x64@7.0.2007':
+  '@oxlint-tsgolint/darwin-x64@7.0.2008':
     optional: true
 
-  '@oxlint-tsgolint/linux-arm64@7.0.2007':
+  '@oxlint-tsgolint/linux-arm64@7.0.2008':
     optional: true
 
-  '@oxlint-tsgolint/linux-x64@7.0.2007':
+  '@oxlint-tsgolint/linux-x64@7.0.2008':
     optional: true
 
-  '@oxlint-tsgolint/win32-arm64@7.0.2007':
+  '@oxlint-tsgolint/win32-arm64@7.0.2008':
     optional: true
 
-  '@oxlint-tsgolint/win32-x64@7.0.2007':
+  '@oxlint-tsgolint/win32-x64@7.0.2008':
     optional: true
 
   '@oxlint/binding-android-arm-eabi@1.94.0':
@@ -8391,7 +8388,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      vitest: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   '@testing-library/react@16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
@@ -8770,7 +8767,7 @@ snapshots:
       obug: 3.0.0
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      vitest: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@2.1.1': {}
 
@@ -8817,7 +8814,7 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       estree-walker: 3.0.3
-      js-tokens: 10.0.0
+      js-tokens: 10.0.1
 
   atomic-sleep@1.0.0: {}
 
@@ -9280,7 +9277,7 @@ snapshots:
 
   jiti@2.7.0: {}
 
-  js-tokens@10.0.0: {}
+  js-tokens@10.0.1: {}
 
   js-tokens@4.0.0: {}
 
@@ -9288,7 +9285,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@31.0.1(@napi-rs/canvas@1.1.1):
+  jsdom@31.0.1(@napi-rs/canvas@1.2.0):
     dependencies:
       '@exodus/bytes': 1.16.0
       bcp-47: 2.1.2
@@ -9309,7 +9306,7 @@ snapshots:
       whatwg-url: 17.3.0
       xml-name-validator: 5.0.0
     optionalDependencies:
-      '@napi-rs/canvas': 1.1.1
+      '@napi-rs/canvas': 1.2.0
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -9649,16 +9646,16 @@ snapshots:
       '@oxfmt/binding-win32-ia32-msvc': 0.79.0
       '@oxfmt/binding-win32-x64-msvc': 0.79.0
 
-  oxlint-tsgolint@7.0.2007:
+  oxlint-tsgolint@7.0.2008:
     optionalDependencies:
-      '@oxlint-tsgolint/darwin-arm64': 7.0.2007
-      '@oxlint-tsgolint/darwin-x64': 7.0.2007
-      '@oxlint-tsgolint/linux-arm64': 7.0.2007
-      '@oxlint-tsgolint/linux-x64': 7.0.2007
-      '@oxlint-tsgolint/win32-arm64': 7.0.2007
-      '@oxlint-tsgolint/win32-x64': 7.0.2007
+      '@oxlint-tsgolint/darwin-arm64': 7.0.2008
+      '@oxlint-tsgolint/darwin-x64': 7.0.2008
+      '@oxlint-tsgolint/linux-arm64': 7.0.2008
+      '@oxlint-tsgolint/linux-x64': 7.0.2008
+      '@oxlint-tsgolint/win32-arm64': 7.0.2008
+      '@oxlint-tsgolint/win32-x64': 7.0.2008
 
-  oxlint@1.94.0(oxlint-tsgolint@7.0.2007):
+  oxlint@1.94.0(oxlint-tsgolint@7.0.2008):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.94.0
       '@oxlint/binding-android-arm64': 1.94.0
@@ -9679,7 +9676,7 @@ snapshots:
       '@oxlint/binding-win32-arm64-msvc': 1.94.0
       '@oxlint/binding-win32-ia32-msvc': 1.94.0
       '@oxlint/binding-win32-x64-msvc': 1.94.0
-      oxlint-tsgolint: 7.0.2007
+      oxlint-tsgolint: 7.0.2008
 
   p-map@7.1.1: {}
 
@@ -10256,7 +10253,7 @@ snapshots:
       terser: 5.51.4
       yaml: 2.9.1
 
-  vitest@5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.1.1))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)):
+  vitest@5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/mocker': 5.1.1(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -10277,7 +10274,7 @@ snapshots:
       '@types/node': 26.6.6
       '@vitest/coverage-v8': 5.1.1(vitest@5.1.1)
       happy-dom: 21.0.4
-      jsdom: 31.0.1(@napi-rs/canvas@1.1.1)
+      jsdom: 31.0.1(@napi-rs/canvas@1.2.0)
     transitivePeerDependencies:
       - msw
 

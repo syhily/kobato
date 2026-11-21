@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 const SOURCE_ROOTS = [
   { packageRoot: 'apps/kobato', sourceRoot: 'apps/kobato/src' },
-  { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo' },
+  { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo/src' },
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
   { packageRoot: 'packages/web/admin', sourceRoot: 'packages/web/admin/src' },
   { packageRoot: 'packages/web/public', sourceRoot: 'packages/web/public/src' },
@@ -67,7 +67,7 @@ describe('Tailwind source ownership', () => {
       expect.arrayContaining([
         'apps/kobato/src/styles/public.css',
         'apps/kobato/src/styles/admin.css',
-        'apps/inkling-demo/styles/public.css',
+        'apps/inkling-demo/src/styles/public.css',
         'packages/ui/src/styles/ui.css',
         'packages/web/public/src/styles/public.css',
         'packages/web/public/src/styles/admin-subset.css',
@@ -125,7 +125,7 @@ describe('Tailwind source ownership', () => {
     const entries = [
       'apps/kobato/src/styles/admin.css',
       'apps/kobato/src/styles/public.css',
-      'apps/inkling-demo/styles/public.css',
+      'apps/inkling-demo/src/styles/public.css',
     ]
     for (const file of entries) {
       const source = readFileSync(resolve(REPO_ROOT, file), 'utf8')

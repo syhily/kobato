@@ -48,6 +48,10 @@ export function processWorkerEntryPlugin(): Plugin {
             },
           },
         },
+        // This isolated build (configFile: false) has no tsconfig resolver,
+        // and product packages never self-link (pinned by package-dag), so
+        // exports resolution cannot cover the worker's `@kobato/server`
+        // self-imports — these aliases are the only resolution layer here.
         resolve: {
           alias: {
             '@kobato/server': resolve(REPO_ROOT, 'packages/server/src'),

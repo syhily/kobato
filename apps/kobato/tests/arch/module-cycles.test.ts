@@ -113,7 +113,9 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
     )
   }
   if (specifier.startsWith('@kobato/inkling-demo/')) {
-    return resolveFile(resolve(join(REPO_ROOT, 'apps/inkling-demo'), specifier.slice('@kobato/inkling-demo/'.length)))
+    return resolveFile(
+      resolve(join(REPO_ROOT, 'apps/inkling-demo/src'), specifier.slice('@kobato/inkling-demo/'.length)),
+    )
   }
   if (specifier.startsWith('@kobato/')) {
     const packageName = specifier.split('/').slice(0, 2).join('/')

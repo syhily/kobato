@@ -17,7 +17,7 @@
     // that packages/inkling tests import — the file itself is imported by
     // nobody, so it must be named here (the rest of apps/inkling-demo/ stays
     // out of the program).
-    "apps/inkling-demo/types/vite-env.d.ts"
+    "apps/inkling-demo/src/types/vite-env.d.ts"
   ],
   "compilerOptions": {
     "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"]

@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./*"
+    "./*": "./src/*"
   },
   "scripts": {
-    "generate:content": "vite-node --config vite.config.ts generate-content.ts",
+    "generate:content": "vite-node --config vite.config.ts src/generate-content.ts",
     "type": "tsc -p tsconfig.json"
   },
   "devDependencies": {
@@ -37,7 +37,6 @@
     "vite": "catalog:",
     "vite-node": "catalog:",
     "vite-plugin-svgr": "catalog:",
-    "vitest": "catalog:",
-    "yjs": "catalog:"
+    "vitest": "catalog:"
   }
 }

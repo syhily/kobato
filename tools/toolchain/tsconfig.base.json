@@ -17,7 +17,7 @@
     "paths": {
       "@/*": ["../../apps/kobato/src/*"],
       "@tests/*": ["../../apps/kobato/tests/*"],
-      "@kobato/inkling-demo/*": ["../../apps/inkling-demo/*"],
+      "@kobato/inkling-demo/*": ["../../apps/inkling-demo/src/*"],
       "@kobato/inkling": ["../../packages/inkling/src/index.ts"],
       "@kobato/inkling/headless": ["../../packages/inkling/src/headless/index.ts"],
       "@kobato/inkling/headless/*": ["../../packages/inkling/src/headless/*"],

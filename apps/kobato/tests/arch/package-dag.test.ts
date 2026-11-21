@@ -151,6 +151,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
+  '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-public'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
   '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling'],
@@ -532,7 +533,7 @@ describe('package DAG', () => {
     const required: Record<string, string[]> = {
       '@/*': ['../../apps/kobato/src/*'],
       '@tests/*': ['../../apps/kobato/tests/*'],
-      '@kobato/inkling-demo/*': ['../../apps/inkling-demo/*'],
+      '@kobato/inkling-demo/*': ['../../apps/inkling-demo/src/*'],
       '@kobato/inkling-internal/*': ['../../packages/inkling/src/*'],
       '@kobato/inkling/tests/*': ['../../packages/inkling/tests/*'],
     }

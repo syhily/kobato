@@ -193,9 +193,6 @@ export default defineConfig(({ command }) => ({
   ] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
-    alias: {
-      '@': resolve(projectRoot, 'src'),
-    },
   },
   optimizeDeps: {
     // Pin every dep reachable from the client route graph so the FIRST

@@ -21,13 +21,13 @@ const ENTRIES = {
   root: 'packages/ui/src/styles/ui.css',
   admin: 'apps/kobato/src/styles/admin.css',
   public: 'apps/kobato/src/styles/public.css',
-  demo: 'apps/inkling-demo/styles/public.css',
+  demo: 'apps/inkling-demo/src/styles/public.css',
   inkling: 'packages/inkling/src/styles/index.css',
 } as const
 
 const SOURCE_ROOTS = [
   'apps/kobato/src',
-  'apps/inkling-demo',
+  'apps/inkling-demo/src',
   'packages/ui/src',
   'packages/web/admin/src',
   'packages/web/client/src',
@@ -180,7 +180,7 @@ describe('Tailwind compile contract', () => {
         'packages/web/public/src/ui',
       ],
       demo: [
-        'apps/inkling-demo/**/*.{ts,tsx}',
+        'apps/inkling-demo/src/**/*.{ts,tsx}',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/public/src/ui',

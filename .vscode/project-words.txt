@@ -221,6 +221,7 @@ nuid
 opencc
 opendal
 opengraph
+openobserve
 oppo
 opposans
 opposerif
@@ -353,6 +354,7 @@ ultrahtml
 unconfigured
 undici
 unlayered
+unovis
 unpic
 unpooled
 unrecognised
