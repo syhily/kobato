@@ -10,8 +10,8 @@ if (globalThis.ReadableStream === undefined) {
   globalThis.WritableStream = WritableStream as unknown as typeof globalThis.WritableStream
   globalThis.TransformStream = TransformStream as unknown as typeof globalThis.TransformStream
 }
-if (typeof globalThis.DOMParser !== 'function' && typeof window !== 'undefined' && window.DOMParser) {
-  globalThis.DOMParser = window.DOMParser as unknown as typeof globalThis.DOMParser
+if (typeof globalThis.DOMParser !== 'function' && globalThis.window?.DOMParser) {
+  globalThis.DOMParser = globalThis.window.DOMParser as unknown as typeof globalThis.DOMParser
 }
 
 // jsdom does not implement ResizeObserver, but several components depend on it.

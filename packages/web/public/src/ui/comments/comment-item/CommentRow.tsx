@@ -44,7 +44,7 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
   // during SSR or hydration (server snapshot is null), so the `active` class
   // can never mismatch the streamed HTML.
   const flashedId = useSyncExternalStore(subscribeCommentFlash, getCommentFlashSnapshot, getCommentFlashServerSnapshot)
-  const isFlashed = flashedId !== null && flashedId === String(comment.id)
+  const isFlashed = flashedId !== null && flashedId === comment.id
   return (
     <li
       id={`user-comment-${comment.id}`}
