@@ -144,6 +144,7 @@ jobs:
       - name: Remove assets from older releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           CURRENT_TAG: ${{ github.ref_name }}
         run: |
           current_created_at="$(gh release view "$CURRENT_TAG" --json createdAt --jq .createdAt)"
