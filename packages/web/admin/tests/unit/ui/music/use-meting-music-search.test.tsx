@@ -29,7 +29,7 @@ afterAll(() => {
 
 const { dedupeSearchHits, useMetingMusicSearch } = await import('@kobato/web-admin/ui/music/use-meting-music-search.ts')
 
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 
 function makeWrapper() {
   const queryClient = new QueryClient({

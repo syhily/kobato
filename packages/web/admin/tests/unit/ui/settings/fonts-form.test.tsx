@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react'
 
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {

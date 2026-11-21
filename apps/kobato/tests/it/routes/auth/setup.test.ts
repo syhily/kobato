@@ -1,9 +1,9 @@
 import { oneTimeToken } from '@kobato/db/schema/one-time-token.ts'
 import { user } from '@kobato/db/schema/user.ts'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { makeSession } from '@kobato/server/tests/utils/session.ts'
 import { makeRouteContext } from '@tests/utils/context.ts'
-import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { makeSession } from '@tests/utils/session.ts'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/server/http/request-context.ts', async () => {

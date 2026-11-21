@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
+import type { AdminImageDto, UploadKind } from '@kobato/contracts/images.ts'
 import type { LockedAspect } from '@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas.tsx'
 
 import { Button } from '@kobato/ui/components/button.tsx'
@@ -23,8 +23,6 @@ const ImageEditorCanvas = lazy(() =>
     default: m.ImageEditorCanvas,
   })),
 )
-
-export type UploadKind = { kind: 'generic' } | { kind: 'category'; slug: string } | { kind: 'friend'; host: string }
 
 export interface UploadImageDialogProps {
   open: boolean

@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/web-public/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import {
   readProfile,
   useCommentGuest,

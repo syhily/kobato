@@ -6,6 +6,7 @@ import { defineConfig } from 'vitest/config'
 
 import { appItProjects } from './apps/kobato/tests/it/vitest.config.ts'
 import { appUnitProjects } from './apps/kobato/tests/unit/vitest.config.ts'
+import { inklingUnitProjects } from './packages/inkling/tests/vitest.config.ts'
 import { serverItProjects } from './packages/server/tests/it/vitest.config.ts'
 import { serverUnitProjects } from './packages/server/tests/unit/vitest.config.ts'
 
@@ -17,9 +18,9 @@ export default defineConfig({
     silent: 'passed-only',
     // Explicit list — apps/kobato/tests/e2e needs a live SEA-booted instance
     // (it is driven by `pnpm run sea:e2e`) and must never join the default
-    // run; packages/inkling brings its own project config. File-based
-    // projects do not inherit this config's test options — each spreads
-    // @kobato/test/vitest.base.ts instead (only inline projects extend it).
+    // run. File-based projects do not inherit this config's test options —
+    // each spreads @kobato/test/vitest.base.ts instead (only inline projects
+    // extend it).
     projects: [
       sharedUnitProject,
       sharedSnapsProject,
@@ -32,7 +33,8 @@ export default defineConfig({
       'packages/ui/tests/snaps/vitest.config.ts',
       ...webUnitProjects,
       webSnapsProject,
-      'packages/inkling/tests/vitest.config.ts',
+      'apps/inkling-demo/tests/vitest.config.ts',
+      ...inklingUnitProjects,
       'tools/trace/tests/unit/vitest.config.ts',
       'tools/pack/tests/unit/vitest.config.ts',
       ...appUnitProjects,
@@ -44,12 +46,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: [
-        'packages/*/src/**',
-        'packages/shared/*/src/**',
-        'packages/web/admin/src/**',
-        'packages/web/client/src/**',
-        'packages/web/public/src/**',
-        'apps/kobato/src/**',
+        'packages/*/src/**/*.{ts,tsx}',
+        'packages/shared/*/src/**/*.{ts,tsx}',
+        'packages/web/admin/src/**/*.{ts,tsx}',
+        'packages/web/client/src/**/*.{ts,tsx}',
+        'packages/web/public/src/**/*.{ts,tsx}',
+        'apps/kobato/src/**/*.{ts,tsx}',
       ],
       exclude: [
         'packages/*/src/**/*.d.ts',

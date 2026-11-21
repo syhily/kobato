@@ -34,7 +34,7 @@
 
 - Compose with children and slots, not boolean prop matrices; React 19: no `forwardRef` on new components.
 - Raw HTML uses `dangerouslySetInnerHTML` on the host element — no generic wrapper. Conditional classNames go through `cn()`.
-- Icons: named imports from `lucide-react` only. Interface copy is a UI message id resolved through `useI18n()` (tests rendering `@kobato/ui/components` primitives directly must mount `I18nProvider`, `@kobato/web-admin/tests/utils/i18n-render.tsx`).
+- Icons: named imports from `lucide-react` only. Interface copy is a UI message id resolved through `useI18n()` (tests rendering `@kobato/ui/components` primitives directly must mount `I18nProvider`, `@kobato/ui/tests/utils/i18n-render.tsx`).
 - Animation is Motion Only: the `@kobato/ui/components/lazy-motion` facade with constants from `@kobato/web-client/lib/motion` (root `AGENTS.md` holds the full rule).
 - Use `<Image />` from `@kobato/web-public/ui/widgets/Image` for transformed remote images.
 - **Shiki is SSR-only** — never import `shiki`/`@shikijs/*` here (Oniguruma `.wasm` violates the strict CSP); highlighted code arrives pre-rendered.

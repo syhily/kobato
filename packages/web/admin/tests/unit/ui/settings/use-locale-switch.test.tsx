@@ -2,7 +2,7 @@
 
 import type { SettingsChangeVerdict } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
 
-import { renderHookWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { SETTINGS_SKIP_COMMIT } from '@kobato/web-admin/ui/settings/shell/settings-change-verdict.ts'
 import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch.ts'
 import { act } from '@testing-library/react'

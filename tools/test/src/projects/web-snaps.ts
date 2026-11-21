@@ -17,11 +17,7 @@ export default defineConfig({
     name: 'web-snaps',
     pool: 'vmThreads',
     environment: 'happy-dom',
-    include: [
-      'packages/web/admin/tests/snaps/**/*.test.{ts,tsx}',
-      'packages/web/client/tests/snaps/**/*.test.{ts,tsx}',
-      'packages/web/public/tests/snaps/**/*.test.{ts,tsx}',
-    ],
+    include: ['packages/web/*/tests/snaps/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude],
     setupFiles: [path.resolve(REPO_ROOT, 'packages/web/admin/tests/utils/setup/snaps.ts')],
   },

@@ -1,10 +1,10 @@
-import type { TimeUnit } from '@kobato/contracts/analytics.ts'
+import type { TimeUnit } from '@kobato/utils/date-range.ts'
 
-import { pickTimeUnit } from '@kobato/contracts/analytics.ts'
 import { Skeleton } from '@kobato/ui/components/skeleton.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
 import { useHydrated } from '@kobato/ui/lib/use-hydrated.ts'
+import { pickTimeUnit } from '@kobato/utils/date-range.ts'
 import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context.tsx'
 import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState.tsx'
 import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query.ts'

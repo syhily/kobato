@@ -3,8 +3,8 @@
 import type { ComponentProps } from 'react'
 
 import { asRoute } from '@kobato/test/route-test-utils.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { wrapWithI18n } from '@tests/utils/i18n-render.tsx'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 

@@ -1,6 +1,6 @@
 # App test conventions
 
-Test trees for the deployable app, plus the cross-package architecture guards and the two live-instance suites. Vitest trees import app source through `@/...` and helpers through `@tests/...` (React Router's `./+types/*` stays relative). The Playwright tree is the one runner-level exception: its config/support imports stay relative because Playwright loads them before any tsconfig-path resolver.
+Test trees for the deployable app, plus the cross-package architecture guards and the two live-instance suites. Vitest trees import app source through `@/...` and helpers through `@tests/...` — except the canonical product helpers imported cross-package: DB/session/mail/request-context from `@kobato/server/tests/utils/`, i18n render from `@kobato/ui/tests/utils/i18n-render.tsx` (React Router's `./+types/*` stays relative). The Playwright tree is the one runner-level exception: its config/support imports stay relative because Playwright loads them before any tsconfig-path resolver.
 
 - **`tests/{unit,it,snaps}/`** — route-module tests mirroring `apps/kobato/src/routes/`. `tests/unit/` and `tests/it/` each export two inline projects from one config: `app-unit`/`app-iso-unit` and `app-it`/`app-iso-it`. The shared half excludes the files scanned by `@kobato/test/mock-files.ts` (module-level `vi.mock(` holders), which run under `isolate: true` in the iso half; `app-snaps` stays a single project.
 - **`tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message literals); runs inside `app-unit`.

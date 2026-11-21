@@ -1,4 +1,3 @@
-import { duckdbTestFilesUnder } from '@kobato/test/duckdb-files.ts'
 import { mockIsolatedTestFiles } from '@kobato/test/mock-files.ts'
 import { vitestTestBase } from '@kobato/test/vitest.base.ts'
 import { testDefine } from '@kobato/test/vitest.define.ts'
@@ -9,7 +8,6 @@ import { configDefaults } from 'vitest/config'
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
 const TESTS_UNIT_ROOT = 'apps/kobato/tests/unit'
 const MOCK_FILES = mockIsolatedTestFiles(path.resolve(import.meta.dirname), REPO_ROOT)
-const DUCKDB_FILES = duckdbTestFilesUnder('apps/kobato/tests').map((file) => `${TESTS_UNIT_ROOT}/${file}`)
 const SETUP_FILE = path.resolve(import.meta.dirname, '../utils/setup/unit.ts')
 
 export const appUnitProjects = [
@@ -19,7 +17,7 @@ export const appUnitProjects = [
       ...vitestTestBase,
       name: 'app-unit',
       include: [`${TESTS_UNIT_ROOT}/**/*.test.{ts,tsx}`, 'apps/kobato/tests/arch/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude, ...DUCKDB_FILES, ...MOCK_FILES],
+      exclude: [...configDefaults.exclude, ...MOCK_FILES],
       setupFiles: [SETUP_FILE],
     },
   },

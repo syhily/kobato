@@ -4,7 +4,7 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US.ts'
 import type { ReactNode } from 'react'
 
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 
 import { makeAdminComment } from '@kobato/contracts/tests/utils/catalog.ts'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'

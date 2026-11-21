@@ -1,7 +1,7 @@
-import type { DateRange, PresetKey } from '@kobato/contracts/analytics.ts'
+import type { DateRange, PresetKey } from '@kobato/utils/date-range.ts'
 
-import { PRESET_KEYS, computeDateRange } from '@kobato/contracts/analytics.ts'
-import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
+import { PRESET_KEYS, computeDateRange } from '@kobato/utils/date-range.ts'
 import { buildAnalyticsInput, useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

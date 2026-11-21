@@ -1,21 +1,23 @@
+import {
+  $createAudioNode,
+  $createBookmarkNode,
+  $createButtonNode,
+  $createCalloutNode,
+  $createCodeBlockNode,
+  $createFileNode,
+  $createFootnoteDefinitionNode,
+  $createFootnoteRefNode,
+  $createGalleryNode,
+  $createHeaderNode,
+  $createHorizontalRuleNode,
+  $createHtmlNode,
+  $createImageNode,
+  $createMathNode,
+  $createToggleNode,
+  $createVideoNode,
+  DEFAULT_NODES,
+} from '@kobato/inkling'
 import { musicPlayer } from '@kobato/inkling-demo/components/MusicPlayerCard'
-import { $createAudioNode } from '@kobato/inkling-internal/nodes/AudioNode'
-import { $createBookmarkNode } from '@kobato/inkling-internal/nodes/BookmarkNode'
-import { $createButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
-import { $createCalloutNode } from '@kobato/inkling-internal/nodes/CalloutNode'
-import { $createCodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
-import DEFAULT_NODES from '@kobato/inkling-internal/nodes/DefaultNodes'
-import { $createFileNode } from '@kobato/inkling-internal/nodes/FileNode'
-import { $createFootnoteRefNode } from '@kobato/inkling-internal/nodes/footnote/FootnoteRefNode'
-import { $createFootnoteDefinitionNode } from '@kobato/inkling-internal/nodes/FootnoteDefinitionNode'
-import { $createGalleryNode } from '@kobato/inkling-internal/nodes/GalleryNode'
-import { $createHeaderNode } from '@kobato/inkling-internal/nodes/HeaderNode'
-import { $createHorizontalRuleNode } from '@kobato/inkling-internal/nodes/HorizontalRuleNode'
-import { $createHtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
-import { $createImageNode } from '@kobato/inkling-internal/nodes/ImageNode'
-import { $createMathNode } from '@kobato/inkling-internal/nodes/MathNode'
-import { $createToggleNode } from '@kobato/inkling-internal/nodes/ToggleNode'
-import { $createVideoNode } from '@kobato/inkling-internal/nodes/VideoNode'
 import { updateEditor } from '@kobato/inkling/tests/utils/test-editor'
 import { $createLinkNode } from '@lexical/link'
 import { $createListItemNode, $createListNode } from '@lexical/list'

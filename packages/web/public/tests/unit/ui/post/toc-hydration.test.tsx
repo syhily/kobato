@@ -1,4 +1,4 @@
-import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents.tsx'
 // @vitest-environment happy-dom
 import { Writable } from 'node:stream'

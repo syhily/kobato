@@ -25,6 +25,4 @@ export function duckdbTestFilesUnder(
 ): string[] {
   const prefix = `${testsRoot}/`
   return DUCKDB_TEST_FILES.filter((file) => file.startsWith(prefix))
-    .map((file) => file.slice(prefix.length))
-    .map((file) => file.replace(/^(it|unit)\//, ''))
 }

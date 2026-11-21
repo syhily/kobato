@@ -4,7 +4,7 @@ import type { AdminUserDto } from '@kobato/contracts/users.ts'
 import type { ReactElement, ReactNode } from 'react'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

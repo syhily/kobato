@@ -49,7 +49,7 @@ import {
   TwoColumnCardView,
   TwoColumnPaneView,
 } from '@kobato/inkling/host-cards'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { MusicCardPicker, musicPickMeta } from '@kobato/web-admin/ui/editor/music-card-picker.tsx'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { act, render } from '@testing-library/react'

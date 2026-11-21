@@ -5,16 +5,22 @@
   "type": "module",
   "devDependencies": {
     "@kobato/inkling": "workspace:*",
+    "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/web-public": "workspace:*",
+    "@lexical/link": "catalog:",
     "@lexical/list": "catalog:",
     "@lexical/react": "catalog:",
+    "@lexical/rich-text": "catalog:",
+    "@lexical/table": "catalog:",
     "@tailwindcss/vite": "catalog:",
+    "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "jsdom": "catalog:",
     "lexical": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -22,6 +28,7 @@
     "tailwindcss": "catalog:",
     "vite": "catalog:",
     "vite-plugin-svgr": "catalog:",
+    "vitest": "catalog:",
     "yjs": "catalog:"
   }
 }

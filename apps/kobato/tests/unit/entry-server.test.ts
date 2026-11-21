@@ -1,5 +1,5 @@
 import { requestContext } from '@kobato/server/http/request-context.ts'
-import { makeRequestContext } from '@tests/utils/request-context.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const renderToPipeableStreamMock = vi.hoisted(() =>

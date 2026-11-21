@@ -1,68 +1,11 @@
 import type { AdminPostDto } from '@kobato/contracts/posts.ts'
+import type { DateRange, PresetKey } from '@kobato/utils/date-range.ts'
 
 import { safeBoolean } from '@kobato/contracts/primitives.ts'
+import { PRESET_KEYS, TIME_UNITS } from '@kobato/utils/date-range.ts'
 import { z } from 'zod'
 
-export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30d', 'last-90d', 'last-365d'] as const
-
-export type PresetKey = (typeof PRESET_KEYS)[number]
-
 export const PRESET_KEY_VALUES = [...PRESET_KEYS] as [PresetKey, ...PresetKey[]]
-
-export interface DateRange {
-  /** Unix seconds, inclusive. */
-  startAt: number
-  /** Unix seconds, exclusive. */
-  endAt: number
-}
-
-const HOUR = 60 * 60
-const DAY = 24 * HOUR
-
-function startOfLocalDay(d: Date): Date {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-
-export function computeDateRange(preset: PresetKey, now: Date = new Date()): DateRange {
-  const nowSec = Math.floor(now.getTime() / 1000)
-  switch (preset) {
-    case 'last-1h':
-      return { startAt: nowSec - HOUR, endAt: nowSec }
-    case 'today': {
-      const startOfDay = Math.floor(startOfLocalDay(now).getTime() / 1000)
-      return { startAt: startOfDay, endAt: nowSec }
-    }
-    case 'yesterday': {
-      const start = startOfLocalDay(now).getTime() / 1000 - DAY
-      const end = start + DAY
-      return { startAt: start, endAt: end }
-    }
-    case 'last-7d':
-      return { startAt: nowSec - 7 * DAY, endAt: nowSec }
-    case 'last-30d':
-      return { startAt: nowSec - 30 * DAY, endAt: nowSec }
-    case 'last-90d':
-      return { startAt: nowSec - 90 * DAY, endAt: nowSec }
-    case 'last-365d':
-      return { startAt: nowSec - 365 * DAY, endAt: nowSec }
-  }
-}
-
-export const TIME_UNITS = ['minute', 'hour', 'day'] as const
-export type TimeUnit = (typeof TIME_UNITS)[number]
-
-export function pickTimeUnit(range: DateRange): TimeUnit {
-  const span = range.endAt - range.startAt
-  if (span <= HOUR) {
-    return 'minute'
-  }
-  if (span <= DAY) {
-    return 'hour'
-  }
-  return 'day'
-}
 
 export const METRIC_TYPES = [
   'country',

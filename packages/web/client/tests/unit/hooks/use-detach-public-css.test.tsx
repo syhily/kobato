@@ -1,5 +1,5 @@
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css.ts'
-import { renderHook } from '@kobato/web-client/tests/utils/hook.tsx'
 import { describe, expect, it } from 'vitest'
 
 describe('useDetachPublicCss', () => {

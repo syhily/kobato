@@ -1,10 +1,10 @@
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
+import type { AdminImageDto, UploadKind } from '@kobato/contracts/images.ts'
 
 import { Button } from '@kobato/ui/components/button.tsx'
 import { Label } from '@kobato/ui/components/label.tsx'
 import { cn } from '@kobato/ui/lib/cn.ts'
 import { useI18n } from '@kobato/ui/lib/I18nProvider.tsx'
-import { UploadImageDialog, type UploadKind } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx'
+import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog.tsx'
 import { useErroredSrc } from '@kobato/web-admin/ui/shared/image-edit/use-errored-src.ts'
 import { ImageOffIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

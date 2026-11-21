@@ -1,4 +1,4 @@
-import { renderHook } from '@kobato/web-public/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const VALID_THUMBHASH_A = 'cucFBwBdaXiMlnV7h/h3toZnxfXGTF8M'

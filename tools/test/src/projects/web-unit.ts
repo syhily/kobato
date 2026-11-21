@@ -17,11 +17,7 @@ export const webUnitProjects = [
       pool: 'vmThreads',
       environment: 'happy-dom',
       setupFiles: [SETUP_FILE],
-      include: [
-        'packages/web/admin/tests/unit/**/*.test.{ts,tsx}',
-        'packages/web/client/tests/unit/**/*.test.{ts,tsx}',
-        'packages/web/public/tests/unit/**/*.test.{ts,tsx}',
-      ],
+      include: ['packages/web/*/tests/unit/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude, TIME_LABELS_TEST],
     },
   },

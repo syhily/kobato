@@ -10,7 +10,7 @@ import { configDefaults } from 'vitest/config'
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
 const TESTS_IT_ROOT = 'packages/server/tests/it'
 const MOCK_FILES = mockIsolatedTestFiles(path.resolve(import.meta.dirname), REPO_ROOT)
-const DUCKDB_FILES = duckdbTestFilesUnder('packages/server/tests').map((file) => `${TESTS_IT_ROOT}/${file}`)
+const DUCKDB_FILES = duckdbTestFilesUnder('packages/server/tests')
 const SHARED_UNSAFE_FILES = SHARED_UNSAFE_TEST_FILES.filter((file) => file.startsWith(`${TESTS_IT_ROOT}/`))
 const SETUP_FILE = path.resolve(import.meta.dirname, '../utils/setup/it.ts')
 

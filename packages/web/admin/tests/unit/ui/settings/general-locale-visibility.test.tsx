@@ -1,6 +1,6 @@
 import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES } from '@kobato/i18n/locales.ts'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { I18N_SETTINGS_ENABLED } from '@kobato/web-admin/ui/settings/feature-flags.ts'
 import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm.tsx'
 import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider.tsx'

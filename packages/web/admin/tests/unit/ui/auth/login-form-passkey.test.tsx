@@ -31,7 +31,7 @@ vi.mock('@simplewebauthn/browser', () => ({
   WebAuthnAbortService: { cancelCeremony: mocks.cancelCeremony },
 }))
 
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 
 function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
   const routes = [

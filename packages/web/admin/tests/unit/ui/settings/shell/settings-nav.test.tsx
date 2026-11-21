@@ -4,7 +4,7 @@ import type { AppLocale } from '@kobato/i18n/locales.ts'
 import type { SettingsSection } from '@kobato/settings/sections.ts'
 
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n.ts'
-import { renderWithI18n, wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { SECTION_DISPLAY } from '@kobato/web-admin/ui/settings/display.ts'
 import { SettingsNav } from '@kobato/web-admin/ui/settings/shell/SettingsNav.tsx'
 import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/SettingsSearchInput.tsx'

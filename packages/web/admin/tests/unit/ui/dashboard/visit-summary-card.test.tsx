@@ -3,7 +3,7 @@
 import type { ViewsDto } from '@kobato/contracts/analytics.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard.tsx'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'

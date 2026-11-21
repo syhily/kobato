@@ -10,7 +10,7 @@ import { configDefaults } from 'vitest/config'
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url))
 const TESTS_IT_ROOT = 'apps/kobato/tests/it'
 const MOCK_FILES = mockIsolatedTestFiles(path.resolve(import.meta.dirname), REPO_ROOT)
-const DUCKDB_FILES = duckdbTestFilesUnder('apps/kobato/tests').map((file) => `${TESTS_IT_ROOT}/${file}`)
+const DUCKDB_FILES = duckdbTestFilesUnder('apps/kobato/tests')
 const SETUP_FILE = path.resolve(import.meta.dirname, '../utils/setup/it.ts')
 
 export const appItProjects = [

@@ -15,9 +15,7 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'shared-unit',
-    include: [
-      'packages/shared/{utils,i18n,cache,auth,catalog,settings,assets,sanitize,contracts,telemetry,distribution,seo}/tests/unit/**/*.test.{ts,tsx}',
-    ],
+    include: ['packages/shared/*/tests/unit/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude],
     setupFiles: [path.resolve(REPO_ROOT, 'packages/shared/settings/tests/utils/setup/unit.ts')],
   },

@@ -21,7 +21,7 @@ afterAll(() => {
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema.ts'
 import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical.ts'
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel.ts'
-import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import { useCreateDraft, type CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft.ts'
 
 const config: CreateDraftConfig<LexicalEditorState> = {

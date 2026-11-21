@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from 'react'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { act, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 

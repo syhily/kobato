@@ -1,4 +1,5 @@
-import type { TimeUnit, ViewsPoint } from '@kobato/contracts/analytics.ts'
+import type { ViewsPoint } from '@kobato/contracts/analytics.ts'
+import type { TimeUnit } from '@kobato/utils/date-range.ts'
 
 import { escapeHtml } from '@kobato/sanitize/escape-html.ts'
 import { cn } from '@kobato/ui/lib/cn.ts'

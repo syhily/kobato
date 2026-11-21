@@ -34,7 +34,7 @@ vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))
 
-import { wrapWithI18n } from '@kobato/web-public/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 
 const PERMALINK = '/posts/hello'
 const TOKENS_KEY = 'like-tokens'

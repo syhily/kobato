@@ -1,14 +1,10 @@
+import type { DateRange } from '@kobato/utils/date-range.ts'
 import type { RawBuilder } from 'kysely'
 
 import { index1Of } from '@kobato/db/duckdb/access-events.ts'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions.ts'
-import {
-  METRIC_TYPES,
-  computeDateRange,
-  type AnalyticsRangeInput,
-  type DateRange,
-  type ResolvedAnalyticsQuery,
-} from '@kobato/db/duckdb/queries/types.ts'
+import { METRIC_TYPES, type AnalyticsRangeInput, type ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types.ts'
+import { computeDateRange } from '@kobato/utils/date-range.ts'
 import { sql } from 'kysely'
 
 export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<boolean> {

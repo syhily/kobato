@@ -27,6 +27,8 @@ export const uploadImageMetadataSchema = z.discriminatedUnion('kind', [
 ])
 
 export type UploadImageMetadata = z.infer<typeof uploadImageMetadataSchema>
+type WithoutUploadNote<T> = T extends unknown ? Omit<T, 'note'> : never
+export type UploadKind = WithoutUploadNote<UploadImageMetadata>
 
 export const adminImagesListInput = z.object({
   q: z.string().optional(),

@@ -38,7 +38,7 @@ vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
 
 import { toast } from 'sonner'
 const toastMock = vi.mocked(toast)
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { type SlotState, slotsReducer, useFontSlotsController } from '@kobato/web-admin/ui/fonts/font-slots.ts'
 
 function makeFonts(slots: Partial<Pick<FontsSettings, 'global' | 'post' | 'code'>>): FontsSettings {

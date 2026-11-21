@@ -3,7 +3,7 @@
 import type { ReactElement } from 'react'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 function renderUi(ui: ReactElement) {

@@ -37,6 +37,3 @@ export const page = sqliteTable(
     index('idx_page_author_id').on(table.authorId),
   ],
 )
-
-export type PageMetaRow = typeof page.$inferSelect
-export type NewPageMeta = typeof page.$inferInsert

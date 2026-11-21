@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { renderHookWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { renderHookWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

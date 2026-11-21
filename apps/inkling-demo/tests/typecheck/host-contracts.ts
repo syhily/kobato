@@ -1,4 +1,4 @@
-import type { BookmarkEmbedOptions, BookmarkEmbedResponse, SnippetItem } from '@kobato/inkling-internal/index'
+import type { BookmarkEmbedOptions, BookmarkEmbedResponse, SnippetItem } from '@kobato/inkling'
 
 import { useSnippets } from '@kobato/inkling-demo/hooks/use-snippets'
 import { fetchEmbed } from '@kobato/inkling-demo/utils/fetchEmbed'

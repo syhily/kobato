@@ -1,7 +1,7 @@
 import type { RequestContext } from '@kobato/server/http/request-context.ts'
 
-import { makeRequestContext } from '@tests/utils/request-context.ts'
-import { emptySession } from '@tests/utils/session.ts'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context.ts'
+import { emptySession } from '@kobato/server/tests/utils/session.ts'
 import { vi } from 'vitest'
 
 export async function createRequestContextMockModule() {

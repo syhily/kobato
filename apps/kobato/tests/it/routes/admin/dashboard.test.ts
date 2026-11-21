@@ -6,16 +6,16 @@ import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
 } from '@kobato/server/bootstrap/analytics-lifecycle.ts'
-import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
 import {
   clearAccessEvents,
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@tests/utils/analytics-db.ts'
+} from '@kobato/server/tests/utils/analytics-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { adminSession, authorSession } from '@kobato/server/tests/utils/session.ts'
+import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines.ts'
 import { makeLoaderArgs } from '@tests/utils/context.ts'
-import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { adminSession, authorSession } from '@tests/utils/session.ts'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from 'react'
 
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render as rtlRender } from '@testing-library/react'
 import { useState } from 'react'

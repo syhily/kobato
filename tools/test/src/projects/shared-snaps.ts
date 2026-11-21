@@ -15,9 +15,7 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'shared-snaps',
-    include: [
-      'packages/shared/{utils,i18n,cache,auth,catalog,settings,assets,sanitize,contracts,telemetry,distribution,seo}/tests/snaps/**/*.test.{ts,tsx}',
-    ],
+    include: ['packages/shared/*/tests/snaps/**/*.test.{ts,tsx}'],
     setupFiles: [path.resolve(REPO_ROOT, 'packages/shared/settings/tests/utils/setup/snaps.ts')],
   },
 })

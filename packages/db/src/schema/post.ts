@@ -53,6 +53,3 @@ export const post = sqliteTable(
     index('idx_post_author_id').on(table.authorId),
   ],
 )
-
-export type PostMetaRow = typeof post.$inferSelect
-export type NewPostMeta = typeof post.$inferInsert

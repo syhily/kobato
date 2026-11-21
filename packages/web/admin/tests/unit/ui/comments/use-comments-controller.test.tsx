@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 import { makeAdminComment, makeCommentBody } from '@kobato/contracts/tests/utils/catalog.ts'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n.ts'
-import { renderHook } from '@kobato/web-admin/tests/utils/hook.tsx'
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import {
   type CommentFilterFieldKey,
   buildCommentFilterFields,

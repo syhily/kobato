@@ -1,10 +1,9 @@
 import type { Database } from '@kobato/db/database.ts'
+import type { EntityType } from '@kobato/db/target.ts'
 
 import { findSlugRegistryBySlugForUpdate } from '@kobato/db/operations/slug-registry.ts'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor.ts'
 import { DomainError } from '@kobato/server/infra/http/errors.ts'
-
-export type EntityType = 'post' | 'page'
 
 export const RESERVED_SLUGS = new Set<string>([
   'posts',

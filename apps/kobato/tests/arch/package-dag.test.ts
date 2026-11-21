@@ -391,7 +391,7 @@ describe('package DAG', () => {
       }
 
       for (const target of actual) {
-        if (target !== pkg.name && target !== '@kobato/inkling-demo' && !declared.has(target)) {
+        if (target !== pkg.name && !declared.has(target)) {
           missing.push(`${pkg.dir} imports ${target} without declaring it`)
         }
       }
@@ -567,10 +567,10 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('the demo alias stays in the playground and its inkling host-contract tests', () => {
+  it('the demo alias stays in the playground', () => {
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
-      if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/tests/')) {
+      if (file.startsWith('apps/inkling-demo/')) {
         continue
       }
       for (const specifier of importSpecifiers(readSource(file))) {

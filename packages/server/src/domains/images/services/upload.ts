@@ -1,5 +1,5 @@
 import type { ErrorMessageDescriptor } from '@kobato/contracts/api-error.ts'
-import type { AdminImageDto } from '@kobato/contracts/images.ts'
+import type { AdminImageDto, UploadKind } from '@kobato/contracts/images.ts'
 import type { Database } from '@kobato/db/database.ts'
 import type { ImageRow } from '@kobato/db/types.ts'
 
@@ -24,8 +24,6 @@ async function deleteObjectUnlessClaimed(db: Database, backend: ActiveBackend, o
     await Promise.allSettled([backend.delete(objectKey)])
   }
 }
-
-export type UploadKind = { kind: 'generic' } | { kind: 'category'; slug: string } | { kind: 'friend'; host: string }
 
 export interface UploadImageInputs {
   kind: UploadKind

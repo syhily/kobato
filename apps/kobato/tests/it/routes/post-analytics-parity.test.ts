@@ -13,10 +13,10 @@ import {
   closeTestAnalyticsDb,
   createTestAnalyticsDb,
   seedAccessEvents,
-} from '@tests/utils/analytics-db.ts'
+} from '@kobato/server/tests/utils/analytics-db.ts'
+import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db.ts'
+import { authorSession } from '@kobato/server/tests/utils/session.ts'
 import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context.ts'
-import { clearAllTables, getTestDb } from '@tests/utils/integration-db.ts'
-import { authorSession } from '@tests/utils/session.ts'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))

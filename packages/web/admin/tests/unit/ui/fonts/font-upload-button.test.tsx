@@ -31,7 +31,7 @@ vi.mock('@kobato/web-client/api/orpc-query.ts', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { FontUploadButton } from '@kobato/web-admin/ui/fonts/FontUploadButton.tsx'
 
 function makeWrapper() {

@@ -1,5 +1,5 @@
-import type { TimeUnit } from '@kobato/contracts/analytics.ts'
 import type { AppLocale } from '@kobato/i18n/locales.ts'
+import type { TimeUnit } from '@kobato/utils/date-range.ts'
 
 import { formatDate, formatDateTime } from '@kobato/utils/format.ts'
 

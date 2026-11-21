@@ -3,7 +3,7 @@
 import type { UpdateCheckResult, UpdateJobStatus } from '@kobato/contracts/update.ts'
 
 import { installFetch, jsonResponse } from '@kobato/test/fetch.ts'
-import { renderWithI18n, wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

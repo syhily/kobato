@@ -16,13 +16,7 @@ import type {
 } from '@kobato/db/duckdb/queries/types.ts'
 import type { Assert, Equals } from '@kobato/utils/type-equals.ts'
 
-import {
-  METRIC_TYPES as WIRE_METRIC_TYPES,
-  PRESET_KEYS as WIRE_PRESET_KEYS,
-  TIME_UNITS as WIRE_TIME_UNITS,
-  computeDateRange as wireComputeDateRange,
-  pickTimeUnit as wirePickTimeUnit,
-} from '@kobato/contracts/analytics.ts'
+import { METRIC_TYPES as WIRE_METRIC_TYPES } from '@kobato/contracts/analytics.ts'
 import {
   JOB_RUN_STATUSES as WIRE_JOB_RUN_STATUSES,
   JOB_RUN_TRIGGERS as WIRE_JOB_RUN_TRIGGERS,
@@ -40,13 +34,7 @@ import {
   WEBMENTION_TYPES as WIRE_TYPES,
   WEBMENTION_VERIFY_STATUSES as WIRE_VERIFY_STATUSES,
 } from '@kobato/contracts/webmentions.ts'
-import {
-  METRIC_TYPES,
-  PRESET_KEYS,
-  TIME_UNITS,
-  computeDateRange,
-  pickTimeUnit,
-} from '@kobato/db/duckdb/queries/types.ts'
+import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types.ts'
 import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/schema/job-run.ts'
 import { NOTIFICATION_KINDS } from '@kobato/db/schema/notification.ts'
 import {
@@ -87,22 +75,8 @@ describe('db ↔ contracts wire parity', () => {
     ])
   })
 
-  it('analytics query vocabulary matches the wire schema enums', () => {
-    expect([...PRESET_KEYS]).toEqual([...WIRE_PRESET_KEYS])
-    expect([...TIME_UNITS]).toEqual([...WIRE_TIME_UNITS])
+  it('analytics metric vocabulary matches the wire schema enum', () => {
     expect([...METRIC_TYPES]).toEqual([...WIRE_METRIC_TYPES])
-  })
-
-  it('analytics time primitives behave identically to the wire twins', () => {
-    const now = new Date('2026-11-18T15:42:11Z')
-    for (const preset of PRESET_KEYS) {
-      expect(computeDateRange(preset, now)).toEqual(wireComputeDateRange(preset, now))
-    }
-
-    for (const span of [0, 1, 3600, 3601, 86_399, 86_400, 86_401, 30 * 86_400]) {
-      const range = { startAt: 0, endAt: span }
-      expect(pickTimeUnit(range)).toBe(wirePickTimeUnit(range))
-    }
   })
 })
 

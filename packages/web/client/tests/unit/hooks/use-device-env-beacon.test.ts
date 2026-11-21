@@ -1,10 +1,10 @@
+import { renderHook } from '@kobato/ui/tests/utils/hook.tsx'
 import {
   __resetDeviceEnvBeaconForTests,
   extractAnalyticsEventId,
   sendDeviceEnvBeacon,
   useDeviceEnvBeacon,
 } from '@kobato/web-client/hooks/use-device-env-beacon.ts'
-import { renderHook } from '@kobato/web-client/tests/utils/hook.tsx'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const EVENT_ID = '00000000-0000-4000-8000-0000000000e1'

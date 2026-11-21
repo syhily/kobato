@@ -1,15 +1,9 @@
-import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
-import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web'
-import { afterEach } from 'vitest'
+import '@kobato/test/setup/unit.ts'
+import { installWebStreamGlobals } from '@kobato/test/web-streams.ts'
 
-// The project runs on the vmThreads pool: each file gets a fresh VM context
-// that does not inherit Node's web-stream globals.
-if (globalThis.ReadableStream === undefined) {
-  globalThis.ReadableStream = ReadableStream as unknown as typeof globalThis.ReadableStream
-  globalThis.WritableStream = WritableStream as unknown as typeof globalThis.WritableStream
-  globalThis.TransformStream = TransformStream as unknown as typeof globalThis.TransformStream
-}
+installWebStreamGlobals()
+
+// jsdom does not hoist DOMParser onto the VM context's globalThis.
 if (typeof globalThis.DOMParser !== 'function' && globalThis.window?.DOMParser) {
   globalThis.DOMParser = globalThis.window.DOMParser as unknown as typeof globalThis.DOMParser
 }
@@ -62,7 +56,3 @@ if (typeof globalThis.localStorage?.setItem !== 'function') {
     writable: true,
   })
 }
-
-afterEach(() => {
-  cleanup()
-})

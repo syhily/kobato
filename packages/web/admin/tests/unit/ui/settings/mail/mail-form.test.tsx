@@ -1,7 +1,7 @@
 import type { MailLoaderShape } from '@kobato/settings/projection.ts'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query.ts'
-import { wrapWithI18n } from '@kobato/web-admin/tests/utils/i18n-render.tsx'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render.tsx'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
