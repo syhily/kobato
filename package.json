@@ -67,13 +67,12 @@
     "zod": "catalog:"
   },
   "lint-staged": {
-    "{apps,packages,tools,scripts}/**/*.{ts,tsx}": [
-      "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
-      "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
-    ],
     "*.{ts,tsx}": [
       "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern",
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
+    ],
+    "*.{md,json}": [
+      "oxfmt -c oxfmt.config.ts --write"
     ]
   },
   "devEngines": {

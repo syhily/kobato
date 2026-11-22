@@ -6,7 +6,9 @@ per-package contracts live in each package's `AGENTS.md`, and the graph itself i
 [apps/kobato/tests/arch/package-dag.test.ts](../apps/kobato/tests/arch/package-dag.test.ts).
 
 For the external-consumer story (which RPC groups carry a stability guarantee, deployment topologies), see
-[ADR-0009](adr/0009-optional-headless-frontends.md).
+[ADR-0009](adr/0009-optional-headless-frontends.md). For the transport boundary inside the perimeter — which operations
+are oRPC procedures and which stay Hono resources — see
+[ADR-0010](adr/0010-first-party-json-orpc-and-http-resources.md).
 
 ## The dependency graph
 
@@ -100,7 +102,7 @@ How to read it:
 
 - Every arrow is also the enforcement: the declared-allowlist, the per-file import scan, and the web direction are all
   pinned in `apps/kobato/tests/arch/` (`package-dag`, `web-direction`, `server-layers`, `admin-feature-graph`,
-  `server-public-surface`, `module-cycles`).
+  `server-public-surface`, `module-cycles`, `api-resource-surface`, `persistence-ownership`).
 - An edge into the shared umbrella means "depends on the leaves it declares" — each package declares exactly the leaves
   it imports, never the whole set. `@kobato/i18n`, `@kobato/distribution`, `@kobato/assets`, and `@kobato/sanitize` have
   no leaf dependencies of their own.
@@ -128,7 +130,7 @@ constrained by the package DAG:
 | React Router 8                                      | The app's routes and `meta` export; runtime use across the web leaves (`Link`, hooks) and the server's SSR perimeter (`createSsrCaller`); its `MetaDescriptor` type shapes catalog's SEO/listing models and through them the listing wire DTOs |
 | Lexical                                             | `@kobato/inkling` — the editor owns the Lexical runtime; consumers reach it through inkling's entry surfaces                                                                                                                                   |
 | Drizzle + `node:sqlite`                             | `@kobato/db` — content DB schema, rows, migrations                                                                                                                                                                                             |
-| DuckDB (`@duckdb/node-api`) + Kysely (compile-only) | The engine handle and dashboard queries in `@kobato/db`; Kysely is the compile-only SQL builder for analytics queries (db and the server's analytics services, executed through the db seam)                                                   |
+| DuckDB (`@duckdb/node-api`) + Kysely (compile-only) | The opaque engine handle, native connections, Kysely query types, and every analytics statement in `@kobato/db`; server only orchestrates lifecycle, batching, and telemetry through db capabilities                                           |
 
 ## Package responsibilities
 
@@ -140,7 +142,7 @@ Product packages (`apps/` + `packages/`) — every one has a package-root `AGENT
 | `apps/inkling-demo`  | Standalone Inkling playground (`pnpm demo`); not part of the product build.                                                                                                                                                                                                                                                     |
 | `@kobato/api`        | The API SDK — wire Zod schemas + DTOs (`contracts/`), oRPC procedure metadata grouped by audience (`rpc/{public,account,admin}/`), the three group composition roots + `contract.ts`, and the React-free client factories (`createKobatoClient` and the headless `createKobatoPublicClient`) + wire-error decoding (`client/`). |
 | `@kobato/server`     | The backend — six one-way source roots (`bootstrap/`, `infra/`, `domains/`, `http/`, `render/`, `assets/`): business domains, the oRPC + Hono perimeter, SSR output products (HTML, feeds, OG, SEO), sessions, jobs, backup.                                                                                                    |
-| `@kobato/db`         | Persistence — the SQLite content database (node:sqlite + Drizzle: schema, row types, queries, migrations) and the DuckDB analytics sidecar's persistence layer (DDL, appends, dashboard queries).                                                                                                                               |
+| `@kobato/db`         | Persistence — every SQLite/Drizzle query and transaction, all native connections and SQL, plus the DuckDB analytics sidecar. Callers pass opaque `Database`/`AnalyticsHandle` tokens to semantic operations; unwrap seams and native engine anatomies stay db-internal.                                                         |
 | `@kobato/ui`         | The design system — tokens, base styles, shadcn/Base UI primitives, icons, theme/i18n providers, generic presentation hooks, the music-player family.                                                                                                                                                                           |
 | `@kobato/inkling`    | The Lexical rich-text editor — React runtime and host cards; the document model ships React-free under `/headless`.                                                                                                                                                                                                             |
 | `@kobato/web-admin`  | The admin frontend leaf — admin components, domain controllers, the page-editor composition.                                                                                                                                                                                                                                    |
@@ -250,6 +252,12 @@ packages/api/src/
   (`redirect`/`error`/`success`) onto React Router `redirect`/`data` and forwards `Set-Cookie` from the in-process
   `responseHeaders`; cookies travel as real headers on both the in-process and the HTTP `/rpc` transport, never inside
   the JSON payload.
+
+- **First-party JSON operations are oRPC-only.** Hono `http/resources/` is limited to registered multipart uploads,
+  streaming downloads/restores, SSE, feeds/images/fonts/storage, health probes, and external protocol endpoints such as
+  Webmention and RUM intake. `apps/kobato/tests/arch/api-resource-surface.test.ts` pins the exact resource paths and
+  rejects retired JSON routes and new unregistered `/api` literals in server HTTP and web production code. Multipart
+  upload and streaming are transport reasons to stay on Hono, not a reason to add an ordinary JSON mutation there.
 
 ## Adding an endpoint
 
