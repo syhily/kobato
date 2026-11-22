@@ -14,7 +14,9 @@ migrations. The whole deployment is one process — content lives in an embedded
 embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
 
 > **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the folder-scoped docs covering the import boundaries, the
-> four-layer `packages/server/src/` graph, the install contract, and the API permission matrix.
+> four-layer `packages/server/src/` graph, the install contract, and the API permission matrix. For the one-page
+> workspace map — every package, its responsibility, and the dependency graph — see
+> [Workspace architecture](docs/architecture.md).
 
 Manuals: [Configuration](docs/manual/Configuration.md) · [Deployment](docs/manual/Deployment.md)
 
