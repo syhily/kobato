@@ -1,6 +1,7 @@
 import type { BackupFileDto } from '@kobato/api/contracts/backup'
 import type { BackupLoaderShape } from '@kobato/settings/projection'
 
+import { apiErrorDescriptorKey } from '@kobato/api/client/error'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { BackupEncryptionCard } from '@kobato/web-admin/ui/settings/backup/BackupEncryptionCard'
@@ -16,7 +17,6 @@ import {
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { orpc } from '@kobato/web-client/api/client'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { apiErrorDescriptorKey } from '@kobato/web-client/lib/api-error'
 import { onMutationError, toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'

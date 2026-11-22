@@ -57,9 +57,12 @@ consumer.
 - The browser calls `/rpc/*` same-origin through `@kobato/web-client`'s `ContractRouterClient`.
 - The built-in frontend's SSR calls the same `apiRouter` in process through `createSsrCaller` — a performance seam, not
   a privilege: identical contract, inputs, outputs, and errors, with no HTTP hop.
-- An external frontend calls `/rpc/*` from its server through an oRPC HTTP client typed by the same `@kobato/api`
-  contract tree, and depends on the workspace packages (`@kobato/api` — whose `contracts/` layer carries the wire Zod
-  schemas — and the shared leaves).
+- An external frontend calls `/rpc/*` from its server through `createKobatoClient` — the React-free transport factory
+  exported by `@kobato/api/client/create-client`, typed by the same `@kobato/api` contract tree and taking the full RPC
+  URL (`https://host/rpc`) — and depends on the workspace packages (`@kobato/api` — whose `contracts/` layer carries the
+  wire Zod schemas — and the shared leaves). No consumer assembles an oRPC link by hand; the factory keeps every caller
+  on the same transport as the built-in browser client, and the public-contract stability semantics of §2 are unchanged
+  by which transport invokes them.
 
 No SDK packages ship to npm. Consumers consume the workspace source — publishing packages is a separate decision, taken
 only when a consumer that cannot live inside the workspace actually exists.

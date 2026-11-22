@@ -8,9 +8,10 @@ pnpm monorepo with four top-level roots; nothing else is created at the root:
   `inkling-demo` (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server` (backend domains, HTTP, SSR, infra), `@kobato/db` (SQLite
   node:sqlite/Drizzle + DuckDB persistence), `@kobato/api` (the API SDK: `src/contracts/` wire Zod schemas + DTOs,
-  `src/rpc/` oRPC procedure metadata), `@kobato/ui` (design system), `@kobato/inkling` (Lexical editor: React runtime,
-  React-free `/headless/` document model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`,
-  `web-admin`), and nine isomorphic React-free leaves under `packages/shared/*`.
+  `src/rpc/` oRPC procedure metadata, `src/client/` the React-free client transport factory + wire error decoding),
+  `@kobato/ui` (design system), `@kobato/inkling` (Lexical editor: React runtime, React-free `/headless/` document
+  model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`, `web-admin`), and nine isomorphic
+  React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`toolchain`, `test`, `harness`, `browser`, `email`, `i18n-tools`, `trace`, `pack`);
   nothing ships in the product binary, and product `src/` never imports a tools package.
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
@@ -72,8 +73,11 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
 - `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/api`. `catalog` and the
   api `contracts/` layer reach the Lexical document model only via `@kobato/inkling/headless` (catalog type-only).
 - `@kobato/api` → the shared leaves only; `src/rpc/` is metadata-only (`method`/`path`/`input`/`output`) composing the
-  Zod schemas in `src/contracts/` (never a copy), and `src/contracts/` imports no `@orpc/*`. The server implements
-  through the `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.
+  Zod schemas in `src/contracts/` (never a copy), and `src/contracts/` imports no `@orpc/*`. `src/client/` is the
+  React-free transport factory `createKobatoClient({ url, fetch?, getHeaders? })` (`url` is the full RPC URL, e.g.
+  `https://host/rpc`) plus the wire error payload decoding; `@orpc/client` stays inside `src/client/`, and React Query
+  integration stays at the web-client seam. The server implements through the `implement{Public,Authed,Author,Admin}`
+  bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; owns row/query models, never wire shapes.
 - Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`. Web leaves never

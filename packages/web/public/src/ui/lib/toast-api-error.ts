@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { extractApiErrorMessage } from '@kobato/web-client/lib/api-error'
+import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { toast } from 'sonner'
 
 export type ToastMessageParams = Record<string, string | number | Date | null | undefined>

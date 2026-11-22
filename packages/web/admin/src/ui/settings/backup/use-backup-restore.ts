@@ -2,8 +2,8 @@ import type { RestoreProgressDto, RestoreProgressStage } from '@kobato/api/contr
 import type { RestoreStep } from '@kobato/web-admin/ui/settings/backup/RestoreProgressPanel'
 import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 
+import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { extractApiErrorMessage } from '@kobato/web-client/lib/api-error'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'

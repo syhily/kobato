@@ -20,8 +20,6 @@
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@openobserve/browser-rum-slim": "catalog:",
-    "@orpc/client": "catalog:",
-    "@orpc/contract": "catalog:",
     "@orpc/react-query": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",

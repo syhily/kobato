@@ -20,6 +20,7 @@
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
+    "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "@types/node": "catalog:",
     "vitest": "catalog:",

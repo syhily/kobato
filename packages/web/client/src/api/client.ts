@@ -1,8 +1,4 @@
-import type { apiContract } from '@kobato/api/contract'
-import type { ContractRouterClient } from '@orpc/contract'
-
-import { createORPCClient } from '@orpc/client'
-import { RPCLink } from '@orpc/client/fetch'
+import { createKobatoClient } from '@kobato/api/client/create-client'
 
 const csrfStore = { token: null as string | null }
 
@@ -10,16 +6,13 @@ export function setCsrfToken(token: string) {
   csrfStore.token = token
 }
 
-const link = new RPCLink({
-  fetch: (request, init) => globalThis.fetch(request, init),
+export const orpc = createKobatoClient({
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
-  headers: () => {
-    const h: Record<string, string> = {}
+  getHeaders: () => {
+    const headers: Record<string, string> = {}
     if (csrfStore.token) {
-      h['X-CSRF-Token'] = csrfStore.token
+      headers['X-CSRF-Token'] = csrfStore.token
     }
-    return h
+    return headers
   },
 })
-
-export const orpc: ContractRouterClient<typeof apiContract> = createORPCClient(link)

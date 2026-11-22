@@ -1,10 +1,11 @@
 # `@kobato/api`
 
-The API SDK — one package owning both halves of the wire surface: the Zod vocabulary (`src/contracts/`) and the oRPC
-procedure metadata (`src/rpc/`) that composes it. An endpoint's wire schema and procedure metadata are declared here and
-only here — server implementations, callers, and their tests change with their own responsibilities. Controllers in
-`@kobato/server` implement the procedures through the `implement*` bases in `packages/server/src/http/orpc-base.ts`, and
-handlers own no schema or route metadata of their own.
+The API SDK — one package owning the wire surface end to end: the Zod vocabulary (`src/contracts/`), the oRPC procedure
+metadata (`src/rpc/`) that composes it, and the React-free client transport (`src/client/`) that calls it. An endpoint's
+wire schema and procedure metadata are declared here and only here — server implementations, callers, and their tests
+change with their own responsibilities. Controllers in `@kobato/server` implement the procedures through the
+`implement*` bases in `packages/server/src/http/orpc-base.ts`, and handlers own no schema or route metadata of their
+own.
 
 ## Layout
 
@@ -30,22 +31,35 @@ handlers own no schema or route metadata of their own.
   nesting exactly (`apiRouter.likes` ⇔ `apiContract.likes`). It composes domain contracts into the tree; it does not
   declare, forward, or re-export procedures. Adding or removing a domain requires updating this tree and the full server
   parity test.
-- `src/client/` — reserved for the Phase 3 transport factory (React-free `createKobatoClient`); nothing lives there yet.
+- `src/client/` — the React-free client transport layer. `create-client.ts` exports
+  `createKobatoClient({ url, fetch?, getHeaders? })` returning `ContractRouterClient<typeof apiContract>`: `url` is the
+  FULL RPC URL (`https://host/rpc`), never the site origin — a function is forwarded to the RPC link's dynamic-URL
+  support; `fetch` defaults to delegating `globalThis.fetch(request, init)` (late-bound, receiver-safe); `getHeaders`
+  maps onto the RPC link's `headers` option (plain value, promise, or per-call function). No ambient state: no
+  singleton, no CSRF store, no `location` or other browser assumption — ambient assembly is the consumer's job
+  (`@kobato/web-client` owns the browser singleton). `error.ts` decodes wire error/response payloads:
+  `extractApiErrorMessage` and `apiErrorDescriptorKey` read the error payload (the latter from an `ORPCError`
+  rejection's `data.descriptor`), while `isApiAccepted` is a RESPONSE-payload guard (`{ accepted: true }`), not an
+  error-object test — keep the two sides distinct when adding helpers.
 
 ## Rules
 
-- Allowed deps: `@orpc/contract` (rpc layer only) plus the eight shared leaves `auth`, `catalog`, `settings`, `i18n`,
-  `utils`, inkling `/headless`, `assets`, `cache`. `src/contracts/` imports no `@orpc/*` package and never imports
-  `src/rpc/` or `src/client/` — schema-only consumers stay free of the RPC runtime
+- Allowed deps: `@orpc/contract` (rpc + client layers), `@orpc/client` (client layer only), plus the eight shared leaves
+  `auth`, `catalog`, `settings`, `i18n`, `utils`, inkling `/headless`, `assets`, `cache`. `src/contracts/` imports no
+  `@orpc/*` package and never imports `src/rpc/` or `src/client/` — schema-only consumers stay free of the RPC runtime
   (`apps/kobato/tests/arch/shared-react-free.test.ts`).
 - Runtime-isomorphic and React-free (same rules as the shared umbrella): safe in both bundles, no node/DOM-only APIs, no
-  logger — validation behavior belongs to whatever runtime executes the contract.
+  logger — validation behavior belongs to whatever runtime executes the contract. The client layer uses only the
+  isomorphic web platform (`fetch`/`Request`/`Response`/`Headers`), never `location` or other browser-only globals and
+  never ambient mutable state (no singleton, no token store); `globalThis.fetch` appears only as the default fetch
+  adapter — resolved at call time and replaceable through the `fetch` option.
 - No barrel `index.ts`, no `export { X } from 'y'` re-exports — consumers import `@kobato/api/<module>.ts` straight from
   the source file.
 - Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side — a contract carries only
   transport-visible metadata, never behavior.
 - Tests: `tests/unit/` (`api-unit`) — contract shape pins: key sets, route method/path values, schema-object identity
-  against `@kobato/api/contracts`, input/output parse behavior. `contract.test.ts` pins the complete composition; the
-  server-side full-tree parity test compares every implemented procedure against this package. `tests/utils/catalog.ts`
-  is the workspace-canonical content and DTO fixture; other packages' test trees import it through the sanctioned
-  cross-package helper seam.
+  against `@kobato/api/contracts`, input/output parse behavior. `tests/unit/client/` pins the transport factory wiring
+  (URL/fetch/headers pass-through, default fetch delegation) and the wire error decoding branches. `contract.test.ts`
+  pins the complete composition; the server-side full-tree parity test compares every implemented procedure against this
+  package. `tests/utils/catalog.ts` is the workspace-canonical content and DTO fixture; other packages' test trees
+  import it through the sanctioned cross-package helper seam.

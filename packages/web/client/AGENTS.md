@@ -54,8 +54,12 @@ that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the o
   table module. Four locales are four chunks; no static table import anywhere in the client.
 - `api/` — all RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@kobato/web-client/api/client`; errors
   arrive as `ORPCError` rejections with `{ descriptor, issues }` in `data` (the client never inspects `data` for copy
-  and installs no rejection interceptor). TanStack Query wrappers live in `api/orpc-query`. No route talks to domain
-  services directly.
+  and installs no rejection interceptor). `api/client` is the browser singleton ASSEMBLY only — the CSRF token store +
+  `setCsrfToken`, the same-origin `${location?.origin ?? 'http://localhost'}/rpc` URL default — delegating to the
+  React-free `createKobatoClient` factory from `@kobato/api/client/create-client`; web-client declares no
+  `@orpc/client`/`@orpc/contract` of its own. Wire error payload decoding (`extractApiErrorMessage` / `isApiAccepted` /
+  `apiErrorDescriptorKey`) lives in `@kobato/api/client/error`. TanStack Query wrappers live in `api/orpc-query` — React
+  Query stays at this seam permanently. No route talks to domain services directly.
 
 ## Patterns
 
