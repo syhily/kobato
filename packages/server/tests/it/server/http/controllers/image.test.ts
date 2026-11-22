@@ -6,7 +6,7 @@ import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const { __resetRateLimitsForTests, tryResourceRateLimit } = await import('@kobato/server/infra/rate-limit')
-const { imageRouter } = await import('@kobato/server/http/controllers/image.controller')
+const { imageRouter } = await import('@kobato/server/http/controllers/public/image.controller')
 
 const db = getTestDb()
 

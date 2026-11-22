@@ -24,7 +24,7 @@ export function ExportButton({ state, className, scope }: ExportButtonProps) {
   const download = async () => {
     setPending(true)
     try {
-      const csv = await orpc.analytics.export(buildAnalyticsInput(state, { scope, limit: 500 }))
+      const csv = await orpc.admin.analytics.export(buildAnalyticsInput(state, { scope, limit: 500 }))
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')

@@ -68,7 +68,7 @@ describe('glue contract / middleware pipeline order', () => {
 })
 
 describe('glue contract / oRPC bridge projection', () => {
-  it('projects exactly the HandlerContext key set (no markSessionDirty)', async () => {
+  it('projects exactly the HandlerContext key set (markSessionDirty forwarded from RequestContext)', async () => {
     let captured: Record<string, unknown> | undefined
     handlerHandleMock.mockImplementation(async (_req, opts) => {
       captured = opts.context
@@ -89,6 +89,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'clientAddress',
       'db',
       'localization',
+      'markSessionDirty',
       'request',
       'requestFacts',
       'responseHeaders',
@@ -97,7 +98,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'viewer',
     ])
 
-    expect('markSessionDirty' in captured!).toBe(false)
+    expect(typeof captured!.markSessionDirty).toBe('function')
     expect(captured!.responseHeaders).toBeInstanceOf(Headers)
   })
 })

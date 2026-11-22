@@ -36,7 +36,7 @@ describe('integration / comment threading', () => {
     expect(page.commentPublicId).toBeTruthy()
 
     const commentRes = await callRpc(
-      '/comments/replyComment',
+      '/public/comments/replyComment',
       {
         page_key: page.commentPublicId,
         name: 'Alice',
@@ -50,7 +50,7 @@ describe('integration / comment threading', () => {
     expect(comment.comment.name).toBe('Alice')
 
     const loadRes = await callRpc(
-      '/comments/loadComments',
+      '/public/comments/loadComments',
       { page_key: page.commentPublicId, offset: 0, limit: 10 },
       adminCtx,
     )
@@ -74,7 +74,7 @@ describe('integration / comment threading', () => {
 
     const input = makeCommentBody('dual column')
     const commentRes = await callRpc(
-      '/comments/replyComment',
+      '/public/comments/replyComment',
       { page_key: page.commentPublicId, name: 'Bob', email: 'bob@example.com', body: input },
       publicCtx,
     )

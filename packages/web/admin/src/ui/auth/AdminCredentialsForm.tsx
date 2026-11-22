@@ -107,7 +107,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       setPasskeyError(t('auth.signin.passkeyTimeout'))
     }, PASSKEY_TIMEOUT_MS)
     try {
-      const result: unknown = await orpc.passkey.authBegin({ email: email.trim() })
+      const result: unknown = await orpc.account.passkey.authBegin({ email: email.trim() })
       const options = extractAuthOptions(result)
       const challenge = options.challenge
       const assertion = await startAuthentication({ optionsJSON: options })

@@ -9,7 +9,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   requireRole(viewer ?? undefined, 'admin')
   const url = new URL(request.url)
-  return caller.analytics.overview({ search: url.searchParams.toString() })
+  return caller.admin.analytics.overview({ search: url.searchParams.toString() })
 }
 
 export default function WpAdminAnalyticsOverview({ loaderData }: Route.ComponentProps) {

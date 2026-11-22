@@ -24,7 +24,7 @@ export interface MetricListProps {
 export function MetricList({ type, title, initial, className, scope }: MetricListProps) {
   const state = useAnalyticsDashboardState()
   const query = useQuery(
-    orpcQuery.analytics.metrics.queryOptions({
+    orpcQuery.admin.analytics.metrics.queryOptions({
       input: { ...buildAnalyticsInput(state, { scope, limit: 500 }), type },
     }),
   )

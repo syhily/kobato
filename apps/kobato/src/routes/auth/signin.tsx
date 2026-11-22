@@ -1,19 +1,11 @@
-import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
-import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared'
 
+import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/auth'
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
-import { signInWithPasskey } from '@kobato/server/domains/auth/passkey/signin'
-import { handleCredentialLogin } from '@kobato/server/domains/auth/services/credential'
-import { handleIdentify } from '@kobato/server/domains/auth/services/identify'
-import { handleMagicLinkConsume } from '@kobato/server/domains/auth/services/magic-link'
-import { handleOtpCancel, handleOtpResend, handleOtpVerify } from '@kobato/server/domains/auth/services/otp'
-import { requestPasswordReset, resetPasswordWithToken } from '@kobato/server/domains/auth/services/password-reset'
-import { authFlowError, authFlowMessage, authFlowSuccess } from '@kobato/server/domains/auth/services/shared'
-import { hasApprovedComments } from '@kobato/server/domains/comments/services/public-query'
+import { authFlowError } from '@kobato/server/domains/auth/services/shared'
 import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate'
-import { handleSigninLogout, loadSigninData } from '@kobato/server/http/loaders/signin'
 import { getRequestContext } from '@kobato/server/http/request-context'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider'
 import { safeRedirectPath } from '@kobato/utils/safe-url'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
@@ -25,6 +17,13 @@ import { ResetPasswordForm } from '@kobato/web-admin/ui/auth/ResetPasswordForm'
 import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
 import { data, redirect, useNavigation } from 'react-router'
 
+import {
+  authErrorPayload,
+  authMessagePayload,
+  cookieHeaders,
+  formField,
+  toActionResult,
+} from '@/routes/auth/flow-response'
 import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/signin'
@@ -47,113 +46,138 @@ function hasError(data: unknown): data is { error: string } {
   )
 }
 
-function toActionResult(result: AuthFlowResult, locale: AppLocale, extraData?: Record<string, unknown>) {
-  const headers: Record<string, string> = {}
-  if (result.setCookie) {
-    headers['Set-Cookie'] = result.setCookie
-  }
-  switch (result.type) {
-    case 'redirect':
-      return redirect(result.to, { headers })
-    case 'error':
-      return data(
-        {
-          error: authFlowMessage(result.message, result.descriptor, locale),
-          ...(result.descriptor === undefined ? {} : { errorDescriptor: result.descriptor }),
-          ...extraData,
-        },
-        { headers },
-      )
-    case 'success':
-      return data(
-        {
-          message: authFlowMessage(result.message, result.descriptor, locale),
-          ...(result.descriptor === undefined ? {} : { messageDescriptor: result.descriptor }),
-          ...extraData,
-        },
-        { headers },
-      )
-  }
-}
-
 export async function loader({ request, context }: Route.LoaderArgs) {
-  return loadSigninData({ request, context })
+  const rc = getRequestContext({ request, context })
+  await ensureInstalledOrRedirect(rc.db)
+
+  const { caller } = createSsrCaller({ request, context })
+  const result = await caller.account.auth.status({
+    redirectTo: rc.url.searchParams.get('redirect_to'),
+    action: rc.url.searchParams.get('action'),
+    token: rc.url.searchParams.get('token'),
+    error: rc.url.searchParams.get('error'),
+  })
+  if (result.kind === 'redirect') {
+    throw redirect(result.to)
+  }
+  return data({
+    redirectTo: result.redirectTo,
+    action: result.action,
+    tokenError: result.tokenError,
+    resetToken: result.resetToken,
+    magicToken: result.magicToken,
+    authError: result.authError,
+    csrfToken: result.csrfToken ?? undefined,
+    ...('pendingOtpEmail' in result
+      ? { pendingOtpEmail: result.pendingOtpEmail, pendingOtpSentAt: result.pendingOtpSentAt }
+      : {}),
+  })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
   const locale = rc.localization.locale
-  const db = rc.db
-  await ensureInstalledOrRedirect(db)
+  await ensureInstalledOrRedirect(rc.db)
 
-  const { session, clientAddress, url } = rc
-  const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/admin', url.origin)
-  const action = url.searchParams.get('action')
+  const { caller, responseHeaders } = createSsrCaller({ request, context })
+  const redirectTo = rc.url.searchParams.get('redirect_to')
+  const action = rc.url.searchParams.get('action')
 
   const formData = await request.formData()
 
-  if (!validateCsrfForAction(session, request, formData)) {
-    return toActionResult(authFlowError('error.api.csrfFailed'), locale)
+  if (!validateCsrfForAction(rc.session, request, formData)) {
+    return toActionResult(authFlowError('error.api.csrfFailed'), locale, responseHeaders)
   }
 
   if (action === 'logout') {
-    return handleSigninLogout(rc, redirectTo)
+    return toActionResult(await caller.account.auth.logout({ redirectTo }), locale, responseHeaders)
   }
 
   if (action === 'lostpassword') {
     return toActionResult(
-      await requestPasswordReset(db, clientAddress, request, formData, { hasApprovedComments }),
+      await caller.account.auth.passwordResetRequest({ email: formField(formData, 'email') }),
       locale,
+      responseHeaders,
     )
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
-    const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
-    return toActionResult(await resetPasswordWithToken(rc, request, formData, redirectTo, purpose), locale)
+    return toActionResult(
+      await caller.account.auth.passwordReset({
+        token: formField(formData, 'reset_token'),
+        password: formField(formData, 'password'),
+        purpose: action === 'resetpassword' ? 'password-reset' : 'author-invite',
+        redirectTo,
+      }),
+      locale,
+      responseHeaders,
+    )
   }
 
   if (action === 'cancelotp') {
-    return toActionResult(await handleOtpCancel(rc, redirectTo), locale)
+    return toActionResult(await caller.account.auth.otpCancel({ redirectTo }), locale, responseHeaders)
   }
 
   if (action === 'verifyotp') {
-    return toActionResult(await handleOtpVerify(rc, request, formData, redirectTo), locale)
+    return toActionResult(
+      await caller.account.auth.otpVerify({ code: formField(formData, 'otp_code'), redirectTo }),
+      locale,
+      responseHeaders,
+    )
   }
 
   if (action === 'resendotp') {
-    return toActionResult(await handleOtpResend(rc, request), locale)
+    return toActionResult(await caller.account.auth.otpResend({}), locale, responseHeaders)
   }
 
   if (action === 'passkey') {
-    return toActionResult(await signInWithPasskey(rc, request, formData, redirectTo), locale)
+    return toActionResult(
+      await caller.account.passkey.authFinish({
+        response: formField(formData, 'passkey_response'),
+        challenge: formField(formData, 'passkey_challenge'),
+        redirectTo,
+      }),
+      locale,
+      responseHeaders,
+    )
   }
 
   if (action === 'identify') {
-    const result = await handleIdentify(rc, request, formData, redirectTo)
+    const result = await caller.account.auth.identify({ email: formField(formData, 'email'), redirectTo })
     switch (result.kind) {
       case 'passkey':
         return data({ method: 'passkey' as const })
       case 'password':
         return data({ method: 'password' as const })
       case 'magic-link-sent':
-        return toActionResult(authFlowSuccess('auth.signin.magicLinkSent'), locale)
+        return data(authMessagePayload(result.message, result.descriptor, locale), {
+          headers: cookieHeaders(responseHeaders),
+        })
       case 'error':
-        return toActionResult(
-          {
-            type: 'error',
-            message: result.message,
-            ...(result.descriptor === undefined ? {} : { descriptor: result.descriptor }),
-          },
-          locale,
-        )
+        return data(authErrorPayload(result.message, result.descriptor, locale), {
+          headers: cookieHeaders(responseHeaders),
+        })
     }
   }
 
   if (action === 'magiclink') {
-    return toActionResult(await handleMagicLinkConsume(rc, request, formData, redirectTo), locale)
+    return toActionResult(
+      await caller.account.auth.magicLink({ token: formField(formData, 'magic_token'), redirectTo }),
+      locale,
+      responseHeaders,
+    )
   }
 
-  return toActionResult(await handleCredentialLogin(rc, request, formData, redirectTo), locale, { redirectTo })
+  return toActionResult(
+    await caller.account.auth.login({
+      email: formField(formData, 'email'),
+      password: formField(formData, 'password'),
+      redirectTo,
+    }),
+    locale,
+    responseHeaders,
+    { redirectTo: safeRedirectPath(redirectTo, AUTH_ACTION_REDIRECT_FALLBACK, rc.url.origin) },
+  )
 }
 
 export const meta = titleMeta('meta.title.auth.signin')

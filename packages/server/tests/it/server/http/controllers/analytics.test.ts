@@ -20,7 +20,7 @@ const db = getTestDb()
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { analyticsRouter } = await import('@kobato/server/http/controllers/analytics.controller')
+const { analyticsRouter } = await import('@kobato/server/http/controllers/admin/analytics.controller')
 
 const rangeInput = { startAt: 1000, endAt: 2000 }
 

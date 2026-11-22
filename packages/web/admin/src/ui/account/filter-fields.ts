@@ -40,7 +40,7 @@ export function buildMyCommentFilterFields(
       icon: FileTextIcon,
       kind: 'search',
       queryOptions: (query) =>
-        orpcQuery.comments.searchMineEntities.queryOptions({
+        orpcQuery.account.comments.searchMineEntities.queryOptions({
           input: query ? { q: query } : {},
           enabled: query !== '',
         }),

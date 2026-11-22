@@ -20,7 +20,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
   const { t } = useI18n()
   const actions = useCommentsActions('InlineOwnEditForm')
   const updateOwn = useMutation({
-    ...orpcQuery.comments.updateOwn.mutationOptions(),
+    ...orpcQuery.account.comments.updateOwn.mutationOptions(),
     onSuccess: (payload) => {
       actions.onEdited(payload.comment)
       onSaved()

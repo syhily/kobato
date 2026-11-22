@@ -20,7 +20,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const wantsDraftPreview = new URL(request.url).searchParams.get('draft') === 'true'
 
   const result = await unwrapDetail(
-    caller.content.pages.bySlug({
+    caller.public.content.pages.bySlug({
       slug: params.slug,
       draft: wantsDraftPreview,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,

@@ -1,0 +1,226 @@
+import type { RegistrationResponseJSON } from '@simplewebauthn/server'
+
+import { accountSelfContract } from '@kobato/api/rpc/account/self'
+import { findSafeUserById } from '@kobato/db/operations/user'
+import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
+import {
+  deleteCredential,
+  generateRegistrationOptions,
+  listCredentials,
+  setLoginMethod,
+  verifyRegistrationResponse,
+} from '@kobato/server/domains/auth/passkey/service'
+import { listSessionsByUser } from '@kobato/server/domains/auth/services/sessions'
+import { isMailLoginReady } from '@kobato/server/domains/auth/services/shared'
+import { revokeOwnSessionWithGuard } from '@kobato/server/domains/auth/session-guard'
+import {
+  getAccountProfile,
+  updateAccountPassword,
+  updateAccountProfile,
+} from '@kobato/server/domains/users/services/account'
+import { implementAuthed, localizedOrpcError, passkeyGuard } from '@kobato/server/http/orpc-base'
+import { createServerTranslator } from '@kobato/server/infra/i18n'
+import {
+  tryPasskeyDeleteRateLimit,
+  tryPasskeyRegisterBeginRateLimit,
+  tryPasskeyRegisterFinishRateLimit,
+  tryPasskeySetForceRateLimit,
+  tryRateLimit,
+} from '@kobato/server/infra/rate-limit'
+import { idFromString } from '@kobato/utils/id'
+import { isRecord } from '@kobato/utils/type-guards'
+
+const impl = implementAuthed(accountSelfContract)
+
+function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
+  if (!isRecord(value)) {
+    return false
+  }
+  const id = value.id
+  const rawId = value.rawId
+  const resp = value.response
+  const type = value.type
+  if (typeof id !== 'string' || typeof rawId !== 'string' || typeof type !== 'string' || !isRecord(resp)) {
+    return false
+  }
+  return typeof resp.clientDataJSON === 'string' && typeof resp.attestationObject === 'string'
+}
+
+const profile = impl.profile.handler(async ({ context }) => {
+  const { db, viewer } = context
+  const user = await getAccountProfile(db, idFromString(viewer.id))
+  return { user, passkeyEnabled: isPasskeyEnabled(), mailReady: isMailLoginReady() }
+})
+
+const sessions = impl.sessions.handler(async ({ context }) => {
+  const rows = await listSessionsByUser(context.db, idFromString(context.viewer.id))
+  const translator = createServerTranslator(context.localization.locale)
+  return rows.map((row) => ({
+    sid: row.sid,
+    userId: row.userId,
+    label: formatUaLabel(row.userAgent, row.platformHint, translator.format('auth.sessions.unknownDevice')),
+    ip: row.ip,
+    loginAt: row.loginAt,
+    lastActiveAt: row.lastActiveAt,
+    expiresAt: row.expiresAt,
+  }))
+})
+
+const updateProfile = impl.updateProfile.handler(async ({ input, context }) => {
+  const { viewer, db } = context
+  const updated = await updateAccountProfile(db, idFromString(viewer.id), input, viewer.role)
+  return {
+    user: {
+      id: String(updated.id),
+      name: updated.name,
+      email: updated.email,
+      link: updated.link,
+      badgeName: updated.badgeName,
+      badgeColor: updated.badgeColor,
+      badgeTextColor: updated.badgeTextColor,
+      role: updated.role,
+      emailVerified: updated.emailVerified,
+    },
+  }
+})
+
+const updatePassword = impl.updatePassword.handler(async ({ input, context }) => {
+  const { viewer, session, db, clientAddress } = context
+
+  const limit = await tryRateLimit(clientAddress)
+  if (limit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
+  }
+
+  await updateAccountPassword(db, idFromString(viewer.id), input.oldPassword, input.newPassword, session.id)
+  recordAuditEventFromContext(context, {
+    action: 'password_changed',
+    resourceType: 'user',
+    resourceId: viewer.id,
+  })
+  return { success: true }
+})
+
+const revokeSession = impl.revokeSession.handler(async ({ input, context }) => {
+  const { viewer, session, db } = context
+  const currentSession = input.id === session.id
+  const { targetUserId } = await revokeOwnSessionWithGuard(db, input.id, viewer)
+  if (targetUserId !== null) {
+    recordAuditEventFromContext(context, {
+      action: 'session_revoked',
+      resourceType: 'session',
+      resourceId: input.id,
+      details: { currentSession, targetUserId: String(targetUserId) },
+    })
+  }
+  return { success: true, currentSession }
+})
+
+const passkeyList = impl.passkeyList.use(passkeyGuard).handler(async ({ context }) => {
+  const { db, viewer } = context
+  const credentials = await listCredentials(db, idFromString(viewer.id))
+  return {
+    credentials: credentials.map((c) => ({
+      id: c.id,
+      deviceName: c.deviceName,
+      createdAt: c.createdAt.toISOString(),
+      backedUp: c.backedUp,
+    })),
+  }
+})
+
+const passkeyRegisterBegin = impl.passkeyRegisterBegin.use(passkeyGuard).handler(async ({ input, context }) => {
+  const { db, viewer, clientAddress } = context
+  const limit = await tryPasskeyRegisterBeginRateLimit(clientAddress)
+  if (limit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
+  }
+  const dbUser = await findSafeUserById(db, idFromString(viewer.id))
+  if (!dbUser) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.userNotFound')
+  }
+  const { options } = await generateRegistrationOptions(db, dbUser, input.deviceName)
+  return { options }
+})
+
+const passkeyRegisterFinish = impl.passkeyRegisterFinish.use(passkeyGuard).handler(async ({ input, context }) => {
+  const { db, viewer, clientAddress } = context
+  const limit = await tryPasskeyRegisterFinishRateLimit(clientAddress)
+  if (limit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
+  }
+  const dbUser = await findSafeUserById(db, idFromString(viewer.id))
+  if (!dbUser) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.userNotFound')
+  }
+  if (!isRegistrationResponseJSON(input.response)) {
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'account.error.passkeyResponseInvalid')
+  }
+  await verifyRegistrationResponse(db, dbUser, {
+    response: input.response,
+    deviceName: input.deviceName,
+    challenge: input.challenge,
+  })
+  recordAuditEventFromContext(context, {
+    action: 'passkey_registered',
+    resourceType: 'user',
+    resourceId: viewer.id,
+  })
+  return { success: true }
+})
+
+const passkeyDelete = impl.passkeyDelete.use(passkeyGuard).handler(async ({ input, context }) => {
+  const { db, viewer, clientAddress } = context
+  const limit = await tryPasskeyDeleteRateLimit(clientAddress)
+  if (limit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
+  }
+  const userId = idFromString(viewer.id)
+  const ok = await deleteCredential(db, input.credentialId, userId)
+  if (!ok) {
+    throw localizedOrpcError(context, 'NOT_FOUND', 'account.error.credentialNotFound')
+  }
+  recordAuditEventFromContext(context, {
+    action: 'passkey_deleted',
+    resourceType: 'user',
+    resourceId: viewer.id,
+  })
+  return { success: true }
+})
+
+const setLoginMethodProc = impl.setLoginMethod.handler(async ({ input, context }) => {
+  const { db, viewer, clientAddress } = context
+  const limit = await tryPasskeySetForceRateLimit(clientAddress)
+  if (limit.exceeded) {
+    throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'auth.signin.error.tooFrequent')
+  }
+  if (input.method === 'passkey' && !isPasskeyEnabled()) {
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'auth.passkey.error.disabled')
+  }
+  if (input.method === 'magic-link' && !isMailLoginReady()) {
+    throw localizedOrpcError(context, 'BAD_REQUEST', 'account.error.mailNotConfigured')
+  }
+  await setLoginMethod(db, idFromString(viewer.id), input.method)
+  recordAuditEventFromContext(context, {
+    action: 'login_method_changed',
+    resourceType: 'user',
+    resourceId: viewer.id,
+    details: { method: input.method },
+  })
+  return { success: true }
+})
+
+export const accountRouter = impl.router({
+  profile,
+  sessions,
+  updateProfile,
+  updatePassword,
+  revokeSession,
+  passkeyList,
+  passkeyRegisterBegin,
+  passkeyRegisterFinish,
+  passkeyDelete,
+  setLoginMethod: setLoginMethodProc,
+})

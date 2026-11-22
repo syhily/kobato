@@ -37,5 +37,5 @@ Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings 
 
 ## Client API usage
 
-UI calls `orpc.<domain>.<resource>.<verb>(flatInput)` — single flat input, no `{ body, query, params }` buckets; errors
-reach the client as `ORPCError('CODE', { message })` rejections.
+UI calls `orpc.<group>.<domain>.<resource>.<verb>(flatInput)` (`group` is `public` / `account` / `admin`) — single flat
+input, no `{ body, query, params }` buckets; errors reach the client as `ORPCError('CODE', { message })` rejections.

@@ -16,10 +16,12 @@ const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
-      likes: {
-        validate: (input: unknown) => api.validate(input),
-        increase: (input: unknown) => api.increase(input),
-        decrease: (input: unknown) => api.decrease(input),
+      account: {
+        likes: {
+          validate: (input: unknown) => api.validate(input),
+          increase: (input: unknown) => api.increase(input),
+          decrease: (input: unknown) => api.decrease(input),
+        },
       },
     }) as never,
 )

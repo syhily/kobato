@@ -243,7 +243,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   const onApproved = useCallback((id: number | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: number | string) => dispatch({ type: 'removeComment', id }), [])
   const { mutate: revokeToken } = useMutation({
-    ...orpcQuery.comments.revokeToken.mutationOptions(),
+    ...orpcQuery.public.comments.revokeToken.mutationOptions(),
   })
 
   const admin = user?.admin === true
@@ -264,7 +264,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
   const myComments = useMutation({
-    ...orpcQuery.comments.myComments.mutationOptions(),
+    ...orpcQuery.public.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {
       if (payload.comments.length > 0) {
         dispatch({
@@ -374,7 +374,7 @@ function CommentsLoadMore() {
   })
 
   const loadMore = useMutation({
-    ...orpcQuery.comments.loadComments.mutationOptions(),
+    ...orpcQuery.public.comments.loadComments.mutationOptions(),
     onSuccess: (payload: LoadCommentsOutput) => {
       actions.dispatch({
         type: 'append',

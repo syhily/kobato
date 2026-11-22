@@ -515,5 +515,136 @@ describe('routes/setup', () => {
         clientAddress: '127.0.0.1',
       })
     })
+
+    it('treats an empty-string locale as an invalid field, not the default', async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+      formData.set('locale', '')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('请填写完整的管理员账号信息。')
+      expect((data?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('auth.setup.error.formIncomplete')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+    })
+
+    it("defaults the locale to DEFAULT_LOCALE ('zh-CN') when the field is absent", async () => {
+      await mintSetupToken()
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+
+      await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      expect(flows.signUpInitialAdminWithSession).toHaveBeenCalledOnce()
+      const call = vi.mocked(flows.signUpInitialAdminWithSession).mock.calls[0]!
+      expect(call[1]).toMatchObject({ locale: 'zh-CN' })
+    })
+  })
+
+  describe('action: csrf gate + unknown intents', () => {
+    function installFormData(): FormData {
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+      return formData
+    }
+
+    async function callAction(formData: FormData, session = csrfSession()) {
+      return action({
+        request: new Request('http://localhost/admin/setup', { method: 'POST', body: formData }),
+        url: new URL('http://localhost/admin/setup'),
+        context: makeRouteContext({ session }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+    }
+
+    it('rejects verify-token with a wrong CSRF token and leaves the session unverified', async () => {
+      await mintSetupToken()
+      const session = csrfSession()
+      const formData = new FormData()
+      formData.set('intent', 'verify-token')
+      formData.set('setup_token', 'any-token')
+      formData.set('csrf_token', 'wrong-csrf-value')
+
+      const result = await callAction(formData, session)
+
+      const payload = (result as { data?: Record<string, unknown> }).data
+      expect(payload?.error).toBe('安全校验失败，请刷新页面后重试。')
+      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
+      expect(session.data.setupTokenVerified).toBeUndefined()
+    })
+
+    it('rejects verify-token with a missing CSRF token', async () => {
+      await mintSetupToken()
+      const session = csrfSession()
+      const formData = new FormData()
+      formData.set('intent', 'verify-token')
+      formData.set('setup_token', 'any-token')
+
+      const result = await callAction(formData, session)
+
+      const payload = (result as { data?: Record<string, unknown> }).data
+      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
+      expect(session.data.setupTokenVerified).toBeUndefined()
+    })
+
+    it('rejects install on a bad CSRF token even with a verified session, creating no admin', async () => {
+      await mintSetupToken()
+      const formData = installFormData()
+      formData.set('csrf_token', 'wrong-csrf-value')
+
+      const result = await callAction(formData, csrfSession({ setupTokenVerified: true }))
+
+      const payload = (result as { data?: Record<string, unknown> }).data
+      expect(payload?.error).toBe('安全校验失败，请刷新页面后重试。')
+      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
+      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
+      expect(await db.select().from(user)).toHaveLength(0)
+    })
+
+    it('answers unknownAction for an unrecognized intent', async () => {
+      const formData = new FormData()
+      formData.set('intent', 'bogus')
+
+      const result = await callAction(withCsrf(formData))
+
+      const payload = (result as { data?: Record<string, unknown> }).data
+      expect(payload?.error).toBe('未知操作。')
+      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('auth.setup.error.unknownAction')
+    })
   })
 })

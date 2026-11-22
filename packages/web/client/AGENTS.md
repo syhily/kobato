@@ -52,14 +52,18 @@ that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the o
 - `inkling-labels` is the client seam for the Inkling label overlay: WORKSPACE documents read the root loader's
   `i18n.inklingLabels` payload; PUBLIC documents `loadInklingLabels(locale)` — the ONE sanctioned dynamic import of a
   table module. Four locales are four chunks; no static table import anywhere in the client.
-- `api/` — all RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@kobato/web-client/api/client`; errors
-  arrive as `ORPCError` rejections with `{ descriptor, issues }` in `data` (the client never inspects `data` for copy
-  and installs no rejection interceptor). `api/client` is the browser singleton ASSEMBLY only — the CSRF token store +
-  `setCsrfToken`, the same-origin `${location?.origin ?? 'http://localhost'}/rpc` URL default — delegating to the
-  React-free `createKobatoClient` factory from `@kobato/api/client/create-client`; web-client declares no
-  `@orpc/client`/`@orpc/contract` of its own. Wire error payload decoding (`extractApiErrorMessage` / `isApiAccepted` /
-  `apiErrorDescriptorKey`) lives in `@kobato/api/client/error`. TanStack Query wrappers live in `api/orpc-query` — React
-  Query stays at this seam permanently. No route talks to domain services directly.
+- `api/` — all RPC calls go through `orpc.<group>.<domain>.<endpoint>(flatInput)` from `@kobato/web-client/api/client`
+  (the three groups mirror `apiContract`: `public` — the anonymous surface, `account` — the signed-in viewer incl. self
+  keys spread at the root such as `orpc.account.profile`, `admin`); errors arrive as `ORPCError` rejections with
+  `{ descriptor, issues }` in `data` (the client never inspects `data` for copy and installs no rejection interceptor).
+  `api/client` is the browser singleton ASSEMBLY only — the CSRF token store + `setCsrfToken`, the same-origin
+  `${location?.origin ?? 'http://localhost'}/rpc` URL default — delegating to the React-free `createKobatoClient`
+  factory from `@kobato/api/client/create-client`; web-client declares no `@orpc/client`/`@orpc/contract` of its own.
+  The headless public seam for external (non-browser) consumers is the sibling factory `createKobatoPublicClient` in
+  `@kobato/api/client/create-client` — same transport, `public` group only; this leaf keeps the full-tree singleton
+  because its surfaces reach `account`/`admin` too. Wire error payload decoding (`extractApiErrorMessage` /
+  `isApiAccepted` / `apiErrorDescriptorKey`) lives in `@kobato/api/client/error`. TanStack Query wrappers live in
+  `api/orpc-query` — React Query stays at this seam permanently. No route talks to domain services directly.
 
 ## Patterns
 

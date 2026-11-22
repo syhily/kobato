@@ -49,7 +49,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
   const patchReadState = usePatchNotificationReadState()
 
   const markAllRead = useMutation(
-    orpcQuery.notifications.markRead.mutationOptions({
+    orpcQuery.account.notifications.markRead.mutationOptions({
       onSuccess: (data) => {
         patchReadState([], true, data.count)
         void invalidate()

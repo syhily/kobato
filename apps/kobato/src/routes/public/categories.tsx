@@ -11,7 +11,7 @@ import type { Route } from './+types/categories'
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
   const { etag, payload } = await unwrapListingPayload(
-    caller.content.categories.list({ ifNoneMatch: request.headers.get('if-none-match') ?? undefined }),
+    caller.public.content.categories.list({ ifNoneMatch: request.headers.get('if-none-match') ?? undefined }),
     localization,
   )
   return data({ ...payload, eid: analyticsEventId }, { headers: { ETag: etag } })

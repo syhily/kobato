@@ -6,7 +6,7 @@ at the perimeter, call orchestrators (`@kobato/server/http/loaders/*`, domain-su
 `@kobato/db/operations/*`. `routes.ts` is the URL contract; URLs and physical paths stay stable. Non-page requests (API,
 feeds, sitemap, generated images) are Hono routes in `server.ts`; components take plain props, never `server/*` in JSX.
 
-**Public routes and the root loader are the exception**: both read `content.*` via `createSsrCaller`
+**Public routes and the root loader are the exception**: both read `public.content.*` via `createSsrCaller`
 (`@kobato/server/http/ssr-caller`), never domain services or `server/http/loaders/*`.
 
 ## Route trees
@@ -35,19 +35,28 @@ pick the area directory, choose a role filename, add the manifest entry — neve
   the output union to the URL contract (`redirect` → thrown 301/302, `not-modified` → thrown 304,
   `ORPCError('NOT_FOUND')` → `notFound()`). Listing loaders forward `if-none-match` and return
   `data(payload, { headers: { ETag } })`.
-- Detail loaders fire `content.comments.byKey` and `webmention.list` only on the ok branch, un-awaited off `commentKey`
-  so they stream via `<Await>` — never speculatively.
-- The root loader calls `content.bootstrap()` with no args; `shouldRevalidate` refreshes it on public ↔ workspace
+- Detail loaders fire `public.content.comments.byKey` and `public.webmentions.list` only on the ok branch, un-awaited
+  off `commentKey` so they stream via `<Await>` — never speculatively.
+- The root loader calls `public.content.bootstrap()` with no args; `shouldRevalidate` refreshes it on public ↔ workspace
   navigation and every form action. Root middleware `[traceRouteMiddleware]` stays in the root module.
 - The root loader projects `activeFrontendRum()` as `rum`; withheld responses omit the key entirely (no null
   placeholder, endpoint, or token). `App` mounts `useRum(loaderData.rum ?? null)` once.
-- Admin/editor loaders compose `account.*`, `comments.*`, `analytics.*`, `admin.*` via `createSsrCaller`; they keep
-  `requireRole`, map `ORPCError` codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts).
-  Gate-only loaders collapse to `guardOnlyLoader('<role>')`.
+- Admin/editor loaders compose `account.*` (self keys at the root plus the `account.comments` / `account.notifications`
+  / … sub-trees), `admin.analytics.*`, and `admin.*` via `createSsrCaller`; they keep `requireRole`, map `ORPCError`
+  codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts). Gate-only loaders collapse to
+  `guardOnlyLoader('<role>')`.
+- `auth/signin` and `auth/setup` are oRPC end to end. The signin loader (after `ensureInstalledOrRedirect`) calls
+  `account.auth.status`; the setup loader (after `ensureNoAdminOrRedirect`, the 303 install gate) calls
+  `account.setup.status`. Both actions keep `validateCsrfForAction` + their install gate, then dispatch the parsed form
+  fields to `account.auth.*` / `account.passkey.authFinish` / `account.setup.*` through `createSsrCaller` — never the
+  auth domain services directly. Flow cookies come back on the caller's `responseHeaders` (merged into `redirect`/
+  `data` via the shared `auth/flow-response.ts` adapters), every `redirectTo` is re-sanitized inside the controller, and
+  setup's verify 429 rides the wire error variant. Setup keeps the historical visible-error priority: the session gate
+  answers before CSRF; the setup-token liveness check stays in the controller.
 - Boundaries whitelists — public+root: `ssr-caller`, `route-cache-headers`, `infra/http/*` (+ `render/warmup/*`,
   `infra/trace/react-router`, `infra/trace/config`); admin/editor: `ssr-caller`, `request-context`, `domains/auth/rbac`,
-  `infra/http/*`; auth (direct): `domains/auth/*`, `domains/comments/services/public-query`,
-  `domains/settings/install-gate`, `http/loaders/signin`, `request-context`, `infra/rate-limit`.
+  `infra/http/*`; auth (direct): `domains/auth/csrf`, `domains/auth/services/shared` (message formatting only),
+  `domains/settings/install-gate`, `http/request-context`, `http/ssr-caller`.
 
 ## Content patterns
 

@@ -36,13 +36,13 @@ type TestCtx = Parameters<typeof callRpc>[2]
 
 async function openDirectThread(adminCtx: TestCtx, visitorCtx: TestCtx, visitorId: number): Promise<string> {
   await callJson('/admin/notifications/sendDirect', { userId: String(visitorId), title: 'Hi', body: 'hello' }, adminCtx)
-  const inbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
+  const inbox = await callJson('/account/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
   return (inbox.json.json as { items: Array<{ threadId: string }> }).items[0]!.threadId
 }
 
 describe('integration / notifications controller', () => {
   it('requires auth for the inbox procedures', async () => {
-    const res = await callRpc('/notifications/list', { tab: 'all', limit: 20 }, makePublicCtx({ db }))
+    const res = await callRpc('/account/notifications/list', { tab: 'all', limit: 20 }, makePublicCtx({ db }))
     expect(res.status).toBe(401)
   })
 
@@ -59,19 +59,23 @@ describe('integration / notifications controller', () => {
     )
     expect(sent.status).toBe(200)
 
-    const inbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
+    const inbox = await callJson('/account/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
     const items = (inbox.json.json as { items: Array<{ title: string; threadId: string }> }).items
     expect(items).toHaveLength(1)
     expect(items[0]!.title).toBe('Hi')
 
-    const unread = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    const unread = await callJson('/account/notifications/unreadCount', {}, visitorCtx)
     expect((unread.json.json as { count: number }).count).toBe(1)
 
-    const reply = await callJson('/notifications/reply', { threadId: items[0]!.threadId, body: '你好' }, visitorCtx)
+    const reply = await callJson(
+      '/account/notifications/reply',
+      { threadId: items[0]!.threadId, body: '你好' },
+      visitorCtx,
+    )
     expect(reply.status).toBe(200)
     expect((reply.json.json as { threadId: string }).threadId).toBe(items[0]!.threadId)
 
-    const adminInbox = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
+    const adminInbox = await callJson('/account/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminInbox.json.json as { items: unknown[] }).items).toHaveLength(1)
   })
 
@@ -83,11 +87,11 @@ describe('integration / notifications controller', () => {
     const threadId = await openDirectThread(adminCtx, visitorCtx, visitorId)
 
     for (let i = 0; i < 10; i += 1) {
-      const reply = await callJson('/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, visitorCtx)
+      const reply = await callJson('/account/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, visitorCtx)
       expect(reply.status).toBe(200)
     }
 
-    const throttled = await callRpc('/notifications/reply', { threadId, body: '超了' }, visitorCtx)
+    const throttled = await callRpc('/account/notifications/reply', { threadId, body: '超了' }, visitorCtx)
     expect(throttled.status).toBe(429)
   })
 
@@ -102,12 +106,12 @@ describe('integration / notifications controller', () => {
     const quietThread = await openDirectThread(adminCtx, quietCtx, quietId)
 
     for (let i = 0; i < 10; i += 1) {
-      await callJson('/notifications/reply', { threadId: fastThread, body: `第 ${i + 1} 条` }, fastCtx)
+      await callJson('/account/notifications/reply', { threadId: fastThread, body: `第 ${i + 1} 条` }, fastCtx)
     }
-    const throttled = await callRpc('/notifications/reply', { threadId: fastThread, body: '超了' }, fastCtx)
+    const throttled = await callRpc('/account/notifications/reply', { threadId: fastThread, body: '超了' }, fastCtx)
     expect(throttled.status).toBe(429)
 
-    const quiet = await callJson('/notifications/reply', { threadId: quietThread, body: '你好' }, quietCtx)
+    const quiet = await callJson('/account/notifications/reply', { threadId: quietThread, body: '你好' }, quietCtx)
     expect(quiet.status).toBe(200)
   })
 
@@ -119,7 +123,7 @@ describe('integration / notifications controller', () => {
     const threadId = await openDirectThread(adminCtx, visitorCtx, visitorId)
 
     for (let i = 0; i < 11; i += 1) {
-      const reply = await callJson('/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, adminCtx)
+      const reply = await callJson('/account/notifications/reply', { threadId, body: `第 ${i + 1} 条` }, adminCtx)
       expect(reply.status).toBe(200)
     }
   })
@@ -143,7 +147,7 @@ describe('integration / notifications controller', () => {
     await callJson('/admin/notifications/sendBroadcast', { title: 'a', body: 'b', replyable: false }, adminCtx)
     await callJson('/admin/notifications/sendBroadcast', { title: 'c', body: 'd', replyable: false }, adminCtx)
 
-    const cleared = await callJson('/notifications/markRead', {}, visitorCtx)
+    const cleared = await callJson('/account/notifications/markRead', {}, visitorCtx)
     expect(cleared.status).toBe(200)
     expect((cleared.json.json as { count: number }).count).toBe(0)
   })
@@ -155,15 +159,15 @@ describe('integration / notifications controller', () => {
     const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
 
     await callJson('/admin/notifications/sendBroadcast', { title: 'a', body: 'b', replyable: false }, adminCtx)
-    const inbox = await callJson('/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
+    const inbox = await callJson('/account/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
     const item = (inbox.json.json as { items: Array<{ id: string }> }).items[0]!
 
-    await callJson('/notifications/markRead', {}, visitorCtx)
-    const restored = await callJson('/notifications/markUnread', { ids: [item.id] }, visitorCtx)
+    await callJson('/account/notifications/markRead', {}, visitorCtx)
+    const restored = await callJson('/account/notifications/markUnread', { ids: [item.id] }, visitorCtx)
     expect(restored.status).toBe(200)
     expect((restored.json.json as { count: number }).count).toBe(1)
 
-    const unread = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    const unread = await callJson('/account/notifications/unreadCount', {}, visitorCtx)
     expect((unread.json.json as { count: number }).count).toBe(1)
   })
 
@@ -174,21 +178,25 @@ describe('integration / notifications controller', () => {
     const visitorCtx = makeAuthedCtx({ userId: String(visitorId), role: 'visitor', db })
 
     await callJson('/admin/notifications/sendBroadcast', { title: '公告', body: '欢迎反馈', replyable: true }, adminCtx)
-    const broadcastInbox = await callJson('/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
+    const broadcastInbox = await callJson('/account/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
     const broadcast = (broadcastInbox.json.json as { items: Array<{ threadId: string }> }).items[0]!
 
-    const reply = await callJson('/notifications/reply', { threadId: broadcast.threadId, body: '赞' }, visitorCtx)
+    const reply = await callJson(
+      '/account/notifications/reply',
+      { threadId: broadcast.threadId, body: '赞' },
+      visitorCtx,
+    )
     expect(reply.status).toBe(200)
     const replyThreadId = (reply.json.json as { threadId: string }).threadId
     expect(replyThreadId).not.toBe(broadcast.threadId)
 
-    const visitorDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
+    const visitorDirect = await callJson('/account/notifications/list', { tab: 'direct', limit: 20 }, visitorCtx)
     const fork = (visitorDirect.json.json as { items: Array<{ threadId: string; read: boolean }> }).items[0]!
     expect(fork.threadId).not.toBe(broadcast.threadId)
     expect(replyThreadId).toBe(fork.threadId)
     expect(fork.read).toBe(true)
 
-    const adminDirect = await callJson('/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
+    const adminDirect = await callJson('/account/notifications/list', { tab: 'direct', limit: 20 }, adminCtx)
     expect((adminDirect.json.json as { items: unknown[] }).items).toHaveLength(1)
   })
 
@@ -200,9 +208,9 @@ describe('integration / notifications controller', () => {
 
     await callJson('/admin/notifications/sendBroadcast', { title: '发早了', body: 'b', replyable: true }, adminCtx)
 
-    const inbox = await callJson('/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
+    const inbox = await callJson('/account/notifications/list', { tab: 'announce', limit: 20 }, visitorCtx)
     const item = (inbox.json.json as { items: Array<{ id: string; threadId: string }> }).items[0]!
-    const unreadBefore = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    const unreadBefore = await callJson('/account/notifications/unreadCount', {}, visitorCtx)
     expect((unreadBefore.json.json as { count: number }).count).toBe(1)
 
     const recalled = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)
@@ -210,11 +218,11 @@ describe('integration / notifications controller', () => {
     expect((recalled.json.json as { id: string }).id).toBe(item.id)
     expect((recalled.json.json as { recalledAt: string }).recalledAt).toBeTruthy()
 
-    const afterInbox = await callJson('/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
+    const afterInbox = await callJson('/account/notifications/list', { tab: 'all', limit: 20 }, visitorCtx)
     expect((afterInbox.json.json as { items: unknown[] }).items).toHaveLength(0)
-    const unreadAfter = await callJson('/notifications/unreadCount', {}, visitorCtx)
+    const unreadAfter = await callJson('/account/notifications/unreadCount', {}, visitorCtx)
     expect((unreadAfter.json.json as { count: number }).count).toBe(0)
-    const thread = await callRpc('/notifications/thread', { threadId: item.threadId }, visitorCtx)
+    const thread = await callRpc('/account/notifications/thread', { threadId: item.threadId }, visitorCtx)
     expect(thread.status).toBe(404)
 
     const again = await callJson('/admin/notifications/recall', { id: item.id }, adminCtx)

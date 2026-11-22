@@ -35,7 +35,7 @@ export function VisitSummaryCard({ summary, weeklyTrend }: VisitSummaryCardProps
   const { locale, t } = useI18n()
   const values = [summary.visits, summary.visitors, summary.referers]
   const trendQuery = useQuery(
-    orpcQuery.analytics.views.queryOptions({
+    orpcQuery.admin.analytics.views.queryOptions({
       input: { preset: 'last-7d', unit: 'day', clientTimezone: getClientTimezone() },
     }),
   )

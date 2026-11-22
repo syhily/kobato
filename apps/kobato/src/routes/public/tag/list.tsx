@@ -11,7 +11,7 @@ import type { Route } from './+types/list'
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
   const { etag, listing } = await unwrapListing(
-    caller.content.posts.list({
+    caller.public.content.posts.list({
       scope: { type: 'tag', slug: params.slug },
       num: params.num,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,

@@ -7,7 +7,7 @@ import {
   likeIncreaseOutput,
   likeValidateInput,
 } from '@kobato/api/contracts/likes'
-import { likesContract } from '@kobato/api/rpc/likes'
+import { likesContract } from '@kobato/api/rpc/account/likes'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -51,29 +51,22 @@ describe('likesContract shape', () => {
 })
 
 describe('apiContract composition', () => {
-  it('mirrors every top-level apiRouter domain', () => {
-    expect(Object.keys(apiContract)).toEqual([
-      'account',
-      'analytics',
+  it('composes exactly the public, account, and admin groups', () => {
+    expect(Object.keys(apiContract)).toEqual(['public', 'account', 'admin'])
+    expect(Object.keys(apiContract.public)).toEqual([
+      'content',
+      'comments',
+      'webmentions',
       'avatar',
       'github',
-      'comments',
-      'content',
-      'friends',
       'images',
-      'likes',
       'music',
-      'newsletter',
-      'notifications',
-      'passkey',
-      'webmentions',
-      'admin',
     ])
-    expect(Object.keys(apiContract.admin)).toHaveLength(23)
+    expect(Object.keys(apiContract.admin)).toHaveLength(24)
   })
 
   it('composes the very same procedure objects as the domain module', () => {
-    const procedures = contractProcedures(apiContract.likes as Record<string, unknown>)
+    const procedures = contractProcedures(apiContract.account.likes as Record<string, unknown>)
     expect(procedures.increase).toBe(likesContract.increase)
     expect(procedures.decrease).toBe(likesContract.decrease)
     expect(procedures.validate).toBe(likesContract.validate)

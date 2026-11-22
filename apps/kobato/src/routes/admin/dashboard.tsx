@@ -39,13 +39,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       ? caller.admin.comments.listPendingDashboard({ kind: 'all', offset: 0, limit: PENDING_PAGE_SIZE })
       : Promise.resolve(null),
     admin
-      ? caller.analytics.counters({ startAt: String(dayRange.startAt), endAt: String(dayRange.endAt) })
+      ? caller.admin.analytics.counters({ startAt: String(dayRange.startAt), endAt: String(dayRange.endAt) })
       : Promise.resolve(null),
     admin
-      ? caller.analytics.views({ startAt: String(weekRange.startAt), endAt: String(weekRange.endAt) })
+      ? caller.admin.analytics.views({ startAt: String(weekRange.startAt), endAt: String(weekRange.endAt) })
       : Promise.resolve(null),
     caller.admin.posts.mySummary(),
-    caller.comments.myCounts(),
+    caller.account.comments.myCounts(),
   ])
 
   return {

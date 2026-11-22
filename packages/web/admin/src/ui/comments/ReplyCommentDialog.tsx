@@ -33,7 +33,7 @@ export interface ReplyCommentDialogProps {
 export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentDialogProps) {
   const { t } = useI18n()
   const mutation = useMutation({
-    ...orpcQuery.comments.replyComment.mutationOptions(),
+    ...orpcQuery.public.comments.replyComment.mutationOptions(),
     onSuccess: () => {
       onReplied()
     },

@@ -43,11 +43,11 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
   })
 
   const requestDelete = useMutation({
-    ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
+    ...orpcQuery.account.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: (payload) => actions.onEdited(payload.comment),
   })
   const cancelDelete = useMutation({
-    ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
+    ...orpcQuery.account.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: (payload) => actions.onEdited(payload.comment),
   })
 

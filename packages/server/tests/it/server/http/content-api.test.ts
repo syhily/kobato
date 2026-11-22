@@ -131,7 +131,11 @@ function seedSingleAttemptResourceBucket() {
 
 describe('content.bootstrap', () => {
   it('returns the root data segment (identity, redacted bundle, fonts, csrf token)', async () => {
-    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const res = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       admin: boolean
@@ -165,7 +169,11 @@ describe('content.bootstrap', () => {
         },
       },
     })
-    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const res = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
     const json = await parseRpcJson<{ blogSettings: Record<string, unknown> | null }>(res)
 
     expect(json.blogSettings).not.toBeNull()
@@ -178,14 +186,14 @@ describe('content.bootstrap', () => {
 
   it('parses the theme cookie inside the procedure (dark / light)', async () => {
     const dark = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makePublicCtx({ db, csrfToken: 'test-csrf-token', cookie: 'kobato-blog-theme=dark' }),
     )
     expect((await parseRpcJson<{ theme: string | null }>(dark)).theme).toBe('dark')
 
     const light = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makePublicCtx({ db, csrfToken: 'test-csrf-token', cookie: 'other=1; kobato-blog-theme=light' }),
     )
@@ -193,7 +201,11 @@ describe('content.bootstrap', () => {
   })
 
   it('ships exactly the public namespace allowlist and the settings revision for a public document', async () => {
-    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const res = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
     const json = await parseRpcJson<{
       i18n: { locale: string; messages: Record<string, string>; revision: string }
     }>(res)
@@ -216,7 +228,7 @@ describe('content.bootstrap', () => {
   it('ships the full catalog and the active locale Inkling labels to a SIGNED-IN workspace document', async () => {
     for (const path of ['/admin/settings', '/editor/post/new']) {
       const res = await callRpc(
-        '/content/bootstrap',
+        '/public/content/bootstrap',
         undefined,
         makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
       )
@@ -239,7 +251,7 @@ describe('content.bootstrap', () => {
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'zh-TW' },
     })
     const localized = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: 'http://localhost/admin/settings' }),
     )
@@ -254,7 +266,7 @@ describe('content.bootstrap', () => {
   it('keeps auth/setup on the workspace catalog but without an editor label table', async () => {
     for (const path of ['/admin/signin', '/admin/setup']) {
       const res = await callRpc(
-        '/content/bootstrap',
+        '/public/content/bootstrap',
         undefined,
         makePublicCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
       )
@@ -269,7 +281,11 @@ describe('content.bootstrap', () => {
   })
 
   it('public documents never carry an Inkling label table', async () => {
-    const res = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const res = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
     const json = await parseRpcJson<{ i18n: Record<string, unknown> }>(res)
 
     expect(json.i18n).not.toHaveProperty('inklingLabels')
@@ -282,7 +298,7 @@ describe('content.bootstrap', () => {
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, locale: 'en-US' },
     })
     const localized = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
     )
@@ -293,7 +309,7 @@ describe('content.bootstrap', () => {
 
     setBlogSettingsBundleForTests(null)
     const preinstall = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
     )
@@ -305,11 +321,15 @@ describe('content.bootstrap', () => {
   })
 
   it('answers a null theme when the cookie is absent or invalid', async () => {
-    const absent = await callRpc('/content/bootstrap', undefined, makePublicCtx({ db, csrfToken: 'test-csrf-token' }))
+    const absent = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
     expect((await parseRpcJson<{ theme: string | null }>(absent)).theme).toBeNull()
 
     const invalid = await callRpc(
-      '/content/bootstrap',
+      '/public/content/bootstrap',
       undefined,
       makePublicCtx({ db, csrfToken: 'test-csrf-token', cookie: 'kobato-blog-theme=neon' }),
     )
@@ -323,7 +343,7 @@ describe('content.home', () => {
       await seedPost({ slug: `post-${i}`, publishedAt: new Date(Date.UTC(2024, 0, i + 1)) })
     }
 
-    const res = await callRpc('/content/home', {}, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/home', {}, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       kind: string
@@ -341,7 +361,7 @@ describe('content.home', () => {
       await seedPost({ slug: `post-${i}`, publishedAt: new Date(Date.UTC(2024, 0, i + 1)) })
     }
 
-    const res = await callRpc('/content/home', { num: '9999' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/home', { num: '9999' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
@@ -349,7 +369,7 @@ describe('content.home', () => {
   })
 
   it('collapses /page/1 to the canonical root as a redirect union member', async () => {
-    const res = await callRpc('/content/home', { num: '1' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/home', { num: '1' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
     expect(json).toEqual({ kind: 'redirect', to: '/', status: 302 })
@@ -363,7 +383,7 @@ describe('content.posts.list', () => {
     await db.insert(postTag).values({ postId, tagId })
 
     const res = await callRpc(
-      '/content/posts/list',
+      '/public/content/posts/list',
       { scope: { type: 'tag', slug: 'typescript' } },
       makePublicCtx({ db }),
     )
@@ -382,7 +402,7 @@ describe('content.posts.list', () => {
     await seedPost({ slug: 'categorized-post', categoryId })
 
     const res = await callRpc(
-      '/content/posts/list',
+      '/public/content/posts/list',
       { scope: { type: 'category', slug: 'general' } },
       makePublicCtx({ db }),
     )
@@ -405,7 +425,7 @@ describe('content.posts.list', () => {
     }
 
     const res = await callRpc(
-      '/content/posts/list',
+      '/public/content/posts/list',
       { scope: { type: 'category', slug: 'general' }, num: '9999' },
       makePublicCtx({ db }),
     )
@@ -415,7 +435,11 @@ describe('content.posts.list', () => {
   })
 
   it('answers NOT_FOUND for an unknown taxonomy slug', async () => {
-    const res = await callRpc('/content/posts/list', { scope: { type: 'tag', slug: 'missing' } }, makePublicCtx({ db }))
+    const res = await callRpc(
+      '/public/content/posts/list',
+      { scope: { type: 'tag', slug: 'missing' } },
+      makePublicCtx({ db }),
+    )
     expect(res.status).toBe(404)
     const json = await parseRpcJson<RpcError>(res)
     expect(json.code).toBe('NOT_FOUND')
@@ -426,7 +450,7 @@ describe('content.posts.bySlug', () => {
   it('returns the ok payload and stamps the weak ETag', async () => {
     await seedPost({ slug: 'hello', title: 'Hello', publishedAt: new Date('2024-01-01') })
 
-    const res = await callRpc('/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       kind: string
@@ -448,10 +472,14 @@ describe('content.posts.bySlug', () => {
 
   it('answers not-modified when the carried If-None-Match matches the full-payload ETag', async () => {
     await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
-    const first = await callRpc('/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
+    const first = await callRpc('/public/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
     const { etag } = await parseRpcJson<{ etag: string }>(first)
 
-    const res = await callRpc('/content/posts/bySlug', { slug: 'hello', ifNoneMatch: etag }, makePublicCtx({ db }))
+    const res = await callRpc(
+      '/public/content/posts/bySlug',
+      { slug: 'hello', ifNoneMatch: etag },
+      makePublicCtx({ db }),
+    )
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; etag: string }>(res)
 
@@ -461,14 +489,14 @@ describe('content.posts.bySlug', () => {
   it('answers the canonical 301 for an alias slug', async () => {
     await seedPost({ slug: 'hello', alias: ['hello-old'] })
 
-    const res = await callRpc('/content/posts/bySlug', { slug: 'hello-old' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/posts/bySlug', { slug: 'hello-old' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
     expect(json).toEqual({ kind: 'redirect', to: '/posts/hello', status: 301 })
   })
 
   it('answers NOT_FOUND for an unknown slug', async () => {
-    const res = await callRpc('/content/posts/bySlug', { slug: 'missing' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/posts/bySlug', { slug: 'missing' }, makePublicCtx({ db }))
     expect(res.status).toBe(404)
     const json = await parseRpcJson<RpcError>(res)
     expect(json.code).toBe('NOT_FOUND')
@@ -477,10 +505,14 @@ describe('content.posts.bySlug', () => {
   it('gates the draft preview by role and ownership: anonymous 404s, the author sees their draft', async () => {
     await seedDraftPost('secret', 'Secret', 1)
 
-    const anonymous = await callRpc('/content/posts/bySlug', { slug: 'secret' }, makePublicCtx({ db }))
+    const anonymous = await callRpc('/public/content/posts/bySlug', { slug: 'secret' }, makePublicCtx({ db }))
     expect(anonymous.status).toBe(404)
 
-    const author = await callRpc('/content/posts/bySlug', { slug: 'secret' }, makeAuthedCtx({ role: 'author', db }))
+    const author = await callRpc(
+      '/public/content/posts/bySlug',
+      { slug: 'secret' },
+      makeAuthedCtx({ role: 'author', db }),
+    )
     expect(author.status).toBe(200)
     const json = await parseRpcJson<{
       kind: string
@@ -513,7 +545,7 @@ describe('content.posts.bySlug', () => {
 
     const cachedPublishedEtag = weakEtag(['post', String(postId), new Date('2024-01-01')])
     const res = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'ghost', ifNoneMatch: cachedPublishedEtag },
       makeAuthedCtx({ role: 'author', db }),
     )
@@ -529,7 +561,7 @@ describe('content.posts.bySlug', () => {
     const firstPreviewEtag = weakEtag(['post', String(postId), undefined])
 
     const res = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'fresh', ifNoneMatch: firstPreviewEtag },
       makeAuthedCtx({ role: 'author', db }),
     )
@@ -545,7 +577,7 @@ describe('content.posts.bySlug', () => {
     await seedPost({ slug: 'raw-body', publishedAt: new Date('2024-01-01') })
     await db.update(contentTable).set({ bodyHtml: raw })
 
-    const res = await callRpc('/content/posts/bySlug', { slug: 'raw-body' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/posts/bySlug', { slug: 'raw-body' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; payload: { bodyHtml: string } }>(res)
 
     expect(json.kind).toBe('ok')
@@ -556,7 +588,7 @@ describe('content.posts.bySlug', () => {
     await seedDraftPost('secret', 'Secret', 1)
 
     const other = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'secret' },
       makeAuthedCtx({ role: 'author', userId: '2', db }),
     )
@@ -568,7 +600,7 @@ describe('content.posts.bySlug', () => {
     await seedDraftPost('secret', 'Secret', 2)
 
     const admin = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'secret' },
       makeAuthedCtx({ role: 'admin', userId: '1', db }),
     )
@@ -582,7 +614,7 @@ describe('content.pages.bySlug', () => {
   it('returns the ok payload (bodyHtml resolved inside the procedure)', async () => {
     await seedPage({ slug: 'about', title: 'About', publishedAt: new Date('2024-01-01') })
 
-    const res = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       kind: string
@@ -599,10 +631,14 @@ describe('content.pages.bySlug', () => {
 
   it('answers not-modified when the carried If-None-Match matches the full-payload ETag', async () => {
     await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
-    const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
+    const first = await callRpc('/public/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
     const { etag } = await parseRpcJson<{ etag: string }>(first)
 
-    const res = await callRpc('/content/pages/bySlug', { slug: 'about', ifNoneMatch: etag }, makePublicCtx({ db }))
+    const res = await callRpc(
+      '/public/content/pages/bySlug',
+      { slug: 'about', ifNoneMatch: etag },
+      makePublicCtx({ db }),
+    )
     const json = await parseRpcJson<{ kind: string; etag: string }>(res)
 
     expect(json).toEqual({ kind: 'not-modified', etag })
@@ -611,7 +647,7 @@ describe('content.pages.bySlug', () => {
   it('301-redirects when the slug belongs to a live post', async () => {
     await seedPost({ slug: 'hello' })
 
-    const res = await callRpc('/content/pages/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/pages/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
     expect(json).toEqual({ kind: 'redirect', to: '/posts/hello', status: 301 })
@@ -620,10 +656,14 @@ describe('content.pages.bySlug', () => {
   it('gates the draft preview by role: anonymous 404s on an unpublished page, admins see the draft', async () => {
     await seedPage({ slug: 'new-page', title: 'New Page Draft', published: false, draftBody: publishedBody })
 
-    const anonymous = await callRpc('/content/pages/bySlug', { slug: 'new-page' }, makePublicCtx({ db }))
+    const anonymous = await callRpc('/public/content/pages/bySlug', { slug: 'new-page' }, makePublicCtx({ db }))
     expect(anonymous.status).toBe(404)
 
-    const admin = await callRpc('/content/pages/bySlug', { slug: 'new-page' }, makeAuthedCtx({ role: 'admin', db }))
+    const admin = await callRpc(
+      '/public/content/pages/bySlug',
+      { slug: 'new-page' },
+      makeAuthedCtx({ role: 'admin', db }),
+    )
     expect(admin.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; payload: { draftMarker: string | null } }>(admin)
     expect(json.kind).toBe('ok')
@@ -634,7 +674,7 @@ describe('content.pages.bySlug', () => {
     await seedPage({ slug: 'about', title: 'About', publishedAt: new Date('2024-01-01'), draftBody: publishedBody })
 
     const res = await callRpc(
-      '/content/pages/bySlug',
+      '/public/content/pages/bySlug',
       { slug: 'about', draft: true },
       makeAuthedCtx({ role: 'admin', db }),
     )
@@ -653,11 +693,11 @@ describe('content.pages.bySlug', () => {
       publishedAt: new Date('2024-01-01'),
       draftBody: publishedBody,
     })
-    const first = await callRpc('/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
+    const first = await callRpc('/public/content/pages/bySlug', { slug: 'about' }, makePublicCtx({ db }))
     const publishedEtag = (await parseRpcJson<{ etag: string }>(first)).etag
 
     const res = await callRpc(
-      '/content/pages/bySlug',
+      '/public/content/pages/bySlug',
       { slug: 'about', draft: true, ifNoneMatch: publishedEtag },
       makeAuthedCtx({ role: 'admin', db }),
     )
@@ -673,11 +713,11 @@ describe('content.pages.bySlug', () => {
 describe('content.comments.byKey', () => {
   it('resolves the metric page_key from the detail critical', async () => {
     await seedPost({ slug: 'hello' })
-    const detailRes = await callRpc('/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
+    const detailRes = await callRpc('/public/content/posts/bySlug', { slug: 'hello' }, makePublicCtx({ db }))
     const detail = await parseRpcJson<{ payload: { critical: { commentKey: string } } }>(detailRes)
 
     const res = await callRpc(
-      '/content/comments/byKey',
+      '/public/content/comments/byKey',
       { pageKey: detail.payload.critical.commentKey },
       makePublicCtx({ db }),
     )
@@ -688,7 +728,7 @@ describe('content.comments.byKey', () => {
   })
 
   it('answers NOT_FOUND for an unknown page_key', async () => {
-    const res = await callRpc('/content/comments/byKey', { pageKey: 'missing-key' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/comments/byKey', { pageKey: 'missing-key' }, makePublicCtx({ db }))
     expect(res.status).toBe(404)
     const json = await parseRpcJson<RpcError>(res)
     expect(json.code).toBe('NOT_FOUND')
@@ -697,7 +737,7 @@ describe('content.comments.byKey', () => {
 
 describe('content.search', () => {
   it('answers the empty-keyword bounce as a redirect union member (302 to /)', async () => {
-    const res = await callRpc('/content/search', { keyword: '   ' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/search', { keyword: '   ' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
     expect(json).toEqual({ kind: 'redirect', to: '/', status: 302 })
@@ -706,7 +746,7 @@ describe('content.search', () => {
   it('returns the ok listing for a real query', async () => {
     await seedPost({ slug: 'react-post' })
 
-    const res = await callRpc('/content/search', { keyword: 'react' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/search', { keyword: 'react' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; listing: { title?: string; resolvedPosts: { slug: string }[] } }>(
       res,
@@ -722,7 +762,7 @@ describe('content.search', () => {
       await seedPost({ slug: `react-${i}` })
     }
 
-    const res = await callRpc('/content/search', { keyword: 'react', num: '9999' }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/search', { keyword: 'react', num: '9999' }, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
 
@@ -730,7 +770,7 @@ describe('content.search', () => {
   })
 
   it('rejects a keyword over the contract cap before any scan', async () => {
-    const res = await callRpc('/content/search', { keyword: 'x'.repeat(201) }, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/search', { keyword: 'x'.repeat(201) }, makePublicCtx({ db }))
     expect(res.status).toBe(400)
   })
 
@@ -738,8 +778,8 @@ describe('content.search', () => {
     __resetRateLimitsForTests()
     seedSingleAttemptResourceBucket()
 
-    expect((await callRpc('/content/search', { keyword: 'react' }, makePublicCtx({ db }))).status).toBe(200)
-    const throttled = await callRpc('/content/search', { keyword: 'react' }, makePublicCtx({ db }))
+    expect((await callRpc('/public/content/search', { keyword: 'react' }, makePublicCtx({ db }))).status).toBe(200)
+    const throttled = await callRpc('/public/content/search', { keyword: 'react' }, makePublicCtx({ db }))
     expect(throttled.status).toBe(429)
     await expect(throttled.text()).resolves.toContain('TOO_MANY_REQUESTS')
   })
@@ -749,7 +789,7 @@ describe('content.categories.list', () => {
   it('returns every category', async () => {
     await seedCategory('general', 'general')
 
-    const res = await callRpc('/content/categories/list', {}, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/categories/list', {}, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ kind: string; payload: { categories: { name: string; slug: string }[] } }>(res)
 
@@ -777,7 +817,7 @@ describe('content.archives', () => {
       firstPublishedAt: new Date('2024-01-03'),
     })
 
-    const res = await callRpc('/content/archives', {}, makePublicCtx({ db }))
+    const res = await callRpc('/public/content/archives', {}, makePublicCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       kind: string
@@ -793,8 +833,8 @@ describe('content.archives', () => {
     __resetRateLimitsForTests()
     seedSingleAttemptResourceBucket()
 
-    expect((await callRpc('/content/archives', {}, makePublicCtx({ db }))).status).toBe(200)
-    const throttled = await callRpc('/content/archives', {}, makePublicCtx({ db }))
+    expect((await callRpc('/public/content/archives', {}, makePublicCtx({ db }))).status).toBe(200)
+    const throttled = await callRpc('/public/content/archives', {}, makePublicCtx({ db }))
     expect(throttled.status).toBe(429)
     await expect(throttled.text()).resolves.toContain('TOO_MANY_REQUESTS')
   })

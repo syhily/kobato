@@ -939,7 +939,7 @@ async function main(): Promise<void> {
       runStart,
       (rows) =>
         rows.some((row) => (row as TraceRow).operation_name === 'http.server') &&
-        rows.some((row) => (row as TraceRow).operation_name === 'orpc.content.bootstrap') &&
+        rows.some((row) => (row as TraceRow).operation_name === 'orpc.public.content.bootstrap') &&
         rows.some((row) => (row as TraceRow).operation_name === 'db.sqlite.query'),
     )) as TraceRow[]
 
@@ -1078,7 +1078,13 @@ async function main(): Promise<void> {
 
     await check('server waterfall: Hono → RR → oRPC → SQLite → SSR', () => {
       const names = new Set(traceRows.map((row) => row.operation_name))
-      for (const required of ['http.server', 'rr.document', 'orpc.content.bootstrap', 'db.sqlite.query', 'ssr.shell']) {
+      for (const required of [
+        'http.server',
+        'rr.document',
+        'orpc.public.content.bootstrap',
+        'db.sqlite.query',
+        'ssr.shell',
+      ]) {
         assert(names.has(required), `missing span ${required}`)
       }
       return `${traceRows.length} spans; ${[...names]

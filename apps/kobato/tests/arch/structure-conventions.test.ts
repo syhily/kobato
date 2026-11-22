@@ -94,10 +94,11 @@ describe('structure conventions', () => {
 
   it('suffixes every router-owning controller with .controller.ts', () => {
     const root = `${REPO_ROOT}/packages/server/src/http/controllers`
+    const sharedFactories = new Set(['admin/revision-shared.ts', 'account/auth-shared.ts'])
     const offenders = walk(root)
       .map((file) => relative(root, file))
       .filter((file) => file.endsWith('.ts') && !file.endsWith('.controller.ts'))
-      .filter((file) => file !== 'admin/revision-shared.ts')
+      .filter((file) => !sharedFactories.has(file))
     expect(offenders, 'only a documented shared factory may omit the .controller.ts suffix (add it here)').toEqual([])
   })
 
@@ -196,8 +197,17 @@ describe('structure conventions', () => {
     expect(actual, 'a new admin domain directory joins this table with its API/server counterpart').toEqual(expected)
   })
 
-  it('prefixes every admin API route with /admin', () => {
+  it('prefixes every admin oc.route with /admin', () => {
     const root = `${REPO_ROOT}/packages/api/src/rpc/admin`
+    const legacyAnalyticsRoutes = new Set([
+      '/analytics/counters',
+      '/analytics/views',
+      '/analytics/heatmap',
+      '/analytics/metrics',
+      '/analytics/export',
+      '/analytics/overview',
+      '/analytics/mentions',
+    ])
     const offenders: string[] = []
     for (const file of walk(root).filter((entry) => entry.endsWith('.ts'))) {
       const source = readFileSync(file, 'utf8')
@@ -205,37 +215,48 @@ describe('structure conventions', () => {
         if (match[1].startsWith('/admin/')) {
           continue
         }
+        if (relative(root, file) === 'analytics.ts' && legacyAnalyticsRoutes.has(match[1])) {
+          continue
+        }
         offenders.push(`${relative(REPO_ROOT, file)}: ${match[1]}`)
       }
     }
-    expect(offenders, 'every admin wire path is `/admin/<domain>/…`').toEqual([])
+    expect(
+      offenders,
+      'every admin oc.route path is `/admin/<domain>/…` (sole legacy exception: analytics keeps its deployed ' +
+        '`/analytics/*` oc.route metadata; the /rpc transport alias /rpc/analytics/* is rewritten server-side by ' +
+        'request/legacy-rpc-path.ts and is NOT route metadata)',
+    ).toEqual([])
   })
 
-  it('aligns the public API module names with their contract modules', () => {
+  it('aligns the rpc group module names with their contract modules', () => {
     const apiRoot = `${REPO_ROOT}/packages/api/src/rpc`
     const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
-    const publicModules = readdirSync(apiRoot, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
-      .map((entry) => entry.name)
+    const groups = ['public', 'account', 'admin'] as const
 
-    const ALIASES: Record<string, string> = {
-      'account.ts': 'users.ts',
-      'avatar.ts': 'comments.ts',
-      'passkey.ts': 'users.ts',
+    const ALIASES: Record<string, Record<string, string>> = {
+      public: { 'avatar.ts': 'comments.ts' },
+      account: { 'self.ts': 'users.ts', 'passkey.ts': 'users.ts' },
+      admin: {},
     }
 
-    const orphans = publicModules.filter((name) => {
-      const target = ALIASES[name] ?? name
-      try {
-        statSync(`${contractRoot}/${target}`)
-        return false
-      } catch {
-        return true
+    const orphans: string[] = []
+    for (const group of groups) {
+      for (const entry of readdirSync(join(apiRoot, group), { withFileTypes: true })) {
+        if (!entry.isFile() || !entry.name.endsWith('.ts')) {
+          continue
+        }
+        const target = ALIASES[group][entry.name] ?? entry.name
+        try {
+          statSync(`${contractRoot}/${target}`)
+        } catch {
+          orphans.push(`${group}/${entry.name}`)
+        }
       }
-    })
+    }
     expect(
       orphans,
-      'a public `@kobato/api/rpc/<domain>` module needs a matching `@kobato/api/contracts/<domain>` (same noun)',
+      'an `@kobato/api/rpc/<group>/<domain>` module needs a matching `@kobato/api/contracts/<domain>` (same noun)',
     ).toEqual([])
   })
 })

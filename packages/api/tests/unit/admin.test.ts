@@ -1,4 +1,17 @@
-import { adminPostAnalyticsInputSchema, adminPostAnalyticsOutputSchema } from '@kobato/api/contracts/analytics'
+import {
+  adminAnalyticsMentionsOutputSchema,
+  adminAnalyticsOverviewOutputSchema,
+  adminAnalyticsSearchInputSchema,
+  adminPostAnalyticsInputSchema,
+  adminPostAnalyticsOutputSchema,
+  analyticsExportOutputSchema,
+  analyticsHeatmapOutputSchema,
+  analyticsMetricsInputSchema,
+  analyticsMetricsOutputSchema,
+  analyticsQuerySchema,
+  countersDto,
+  viewsDto,
+} from '@kobato/api/contracts/analytics'
 import {
   auditLogActorsOutput,
   auditLogExportInput,
@@ -191,6 +204,7 @@ import {
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
 } from '@kobato/api/contracts/webmentions'
+import { analyticsContract } from '@kobato/api/rpc/admin/analytics'
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
 import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
 import { adminCacheContract } from '@kobato/api/rpc/admin/cache'
@@ -381,6 +395,15 @@ const ADMIN_ROUTES = {
     apply: { method: 'POST', path: '/admin/update/apply' },
     status: { method: 'GET', path: '/admin/update/status' },
   },
+  analytics: {
+    counters: { method: 'GET', path: '/analytics/counters' },
+    views: { method: 'GET', path: '/analytics/views' },
+    heatmap: { method: 'GET', path: '/analytics/heatmap' },
+    metrics: { method: 'GET', path: '/analytics/metrics' },
+    export: { method: 'GET', path: '/analytics/export' },
+    overview: { method: 'GET', path: '/analytics/overview' },
+    mentions: { method: 'GET', path: '/analytics/mentions' },
+  },
 } as const
 
 const ADMIN_SCHEMAS = {
@@ -541,6 +564,15 @@ const ADMIN_SCHEMAS = {
     apply: { input: adminUpdateApplyInput, output: adminUpdateApplyOutputDto },
     status: { input: adminUpdateStatusInput, output: updateJobStatusDto },
   },
+  analytics: {
+    counters: { input: analyticsQuerySchema, output: countersDto },
+    views: { input: analyticsQuerySchema, output: viewsDto },
+    heatmap: { input: analyticsQuerySchema, output: analyticsHeatmapOutputSchema },
+    metrics: { input: analyticsMetricsInputSchema, output: analyticsMetricsOutputSchema },
+    export: { input: analyticsQuerySchema, output: analyticsExportOutputSchema },
+    overview: { input: adminAnalyticsSearchInputSchema, output: adminAnalyticsOverviewOutputSchema },
+    mentions: { input: adminAnalyticsSearchInputSchema, output: adminAnalyticsMentionsOutputSchema },
+  },
 } as const
 
 const ADMIN_CONTRACTS = {
@@ -567,6 +599,7 @@ const ADMIN_CONTRACTS = {
   geoip: adminGeoipContract,
   webmentions: adminWebmentionsContract,
   update: adminUpdateContract,
+  analytics: analyticsContract,
 } as const
 
 function procedures(router: Record<string, unknown>): Record<string, AnyContractProcedure> {

@@ -53,7 +53,7 @@ describe('ui/admin/shell/VersionDialog', () => {
       return mockFetch.fetch(input as never, init)
     }) as unknown as typeof globalThis.fetch
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-    queryClient.setQueryData(orpcQuery.github.avatar.queryOptions({ input: {} }).queryKey, { avatar: null })
+    queryClient.setQueryData(orpcQuery.public.github.avatar.queryOptions({ input: {} }).queryKey, { avatar: null })
   })
 
   function renderDialog() {

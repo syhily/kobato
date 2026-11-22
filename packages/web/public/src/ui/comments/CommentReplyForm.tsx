@@ -73,7 +73,7 @@ export function CommentReplyForm({
   }
 
   const reply = useMutation({
-    ...orpcQuery.comments.replyComment.mutationOptions(),
+    ...orpcQuery.public.comments.replyComment.mutationOptions(),
     onSuccess: (data: ReplyCommentOutput, variables: ReplyCommentInput) => {
       setSubmitError(null)
       onReplied(data.comment, replyToId)
@@ -95,7 +95,7 @@ export function CommentReplyForm({
   })
 
   const avatar = useMutation({
-    ...orpcQuery.avatar.find.mutationOptions(),
+    ...orpcQuery.public.avatar.find.mutationOptions(),
     onSuccess: (payload: FindAvatarOutput) => setAvatarSrc(payload.avatar),
   })
 

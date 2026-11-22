@@ -3,7 +3,7 @@ import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/settings/typ
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
-import { accountRouter } from '@kobato/server/http/controllers/account.controller'
+import { accountRouter } from '@kobato/server/http/controllers/account/account.controller'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

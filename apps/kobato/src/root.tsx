@@ -90,7 +90,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, cspNonce } = createSsrCaller({ request, context })
 
-  const boot = await caller.content.bootstrap()
+  const boot = await caller.public.content.bootstrap()
 
   const rum = activeFrontendRum()
 

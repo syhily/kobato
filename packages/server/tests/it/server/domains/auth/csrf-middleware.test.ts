@@ -9,6 +9,15 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
+const PROCEDURE_ROUTES: readonly string[] = [
+  '/rpc/public/content/bootstrap',
+  '/rpc/content/bootstrap',
+  '/rpc/public/comments/getRaw',
+  '/rpc/public/comments/replyComment',
+  '/rpc/account/notifications/list',
+  '/rpc/admin/analytics/overview',
+]
+
 function seedCsrfSettings(csrf: { enabled: boolean; exemptPaths: string[] }): void {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -39,6 +48,9 @@ describe('csrfGuard middleware', () => {
     app.post('/rpc/webhook', (c) => c.json({ ok: true }))
     app.post('/rpc/webhook/event', (c) => c.json({ ok: true }))
     app.post('/rpc/webhookx', (c) => c.json({ ok: true }))
+    for (const route of PROCEDURE_ROUTES) {
+      app.post(route, (c) => c.json({ ok: true }))
+    }
     return app
   }
 
@@ -99,5 +111,28 @@ describe('csrfGuard middleware', () => {
     const app = await setupApp()
     const res = await app.request('/rpc/test', { method: 'POST' })
     expect(res.status).toBe(200)
+  })
+
+  it('exempts the frozen anonymous public-read procedures without a CSRF header (canonical and legacy alike)', async () => {
+    const app = await setupApp()
+    const canonical = await app.request('/rpc/public/content/bootstrap', { method: 'POST' })
+    const legacy = await app.request('/rpc/content/bootstrap', { method: 'POST' })
+    expect(canonical.status).toBe(200)
+    expect(legacy.status).toBe(200)
+  })
+
+  it.each([
+    '/rpc/public/comments/getRaw',
+    '/rpc/comments/getRaw',
+    '/rpc/public/comments/replyComment',
+    '/rpc/comments/replyComment',
+    '/rpc/account/notifications/list',
+    '/rpc/notifications/list',
+    '/rpc/admin/analytics/overview',
+    '/rpc/analytics/overview',
+  ])('still requires the CSRF header for the non-exempt procedure %s', async (path) => {
+    const app = await setupApp()
+    const res = await app.request(path, { method: 'POST' })
+    expect(res.status).toBe(403)
   })
 })

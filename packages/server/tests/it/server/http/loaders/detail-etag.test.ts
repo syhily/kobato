@@ -165,7 +165,7 @@ function sidebarTagSlugs(result: DetailResult): string[] {
 
 async function readPost(slug: string, options: DetailCallOptions = {}): Promise<DetailResult> {
   const res = await callRpc(
-    '/content/posts/bySlug',
+    '/public/content/posts/bySlug',
     options.ifNoneMatch === undefined ? { slug } : { slug, ifNoneMatch: options.ifNoneMatch },
     makePublicCtx({
       db,
@@ -179,7 +179,7 @@ async function readPost(slug: string, options: DetailCallOptions = {}): Promise<
 async function readPage(slug: string, options: DetailCallOptions & { draft?: boolean } = {}): Promise<DetailResult> {
   const input = { slug, ...(options.draft === true ? { draft: true } : {}) }
   const res = await callRpc(
-    '/content/pages/bySlug',
+    '/public/content/pages/bySlug',
     options.ifNoneMatch === undefined ? input : { ...input, ifNoneMatch: options.ifNoneMatch },
     options.draft === true
       ? makeAuthedCtx({ role: 'admin', db, localization: options.localization ?? LOCALIZATION })
@@ -284,7 +284,7 @@ describe('detail representation ETags', () => {
 
     const pinned = sidebarBundle({ recentPosts: 0, randomTags: 0 })
     const res = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'etag-post' },
       makePublicCtx({ db, settings: pinned, localization: LOCALIZATION }),
     )
@@ -387,7 +387,7 @@ describe('detail representation ETags', () => {
 
   it('post: a real settings save (new snapshot revision) invalidates the old ETag', async () => {
     await seedPost('etag-post')
-    const first = await callRpc('/content/posts/bySlug', { slug: 'etag-post' }, makePublicCtx({ db }))
+    const first = await callRpc('/public/content/posts/bySlug', { slug: 'etag-post' }, makePublicCtx({ db }))
     const base = await parseRpcJson<DetailResult>(first)
 
     setBlogSettingsBundleForTests({
@@ -395,7 +395,7 @@ describe('detail representation ETags', () => {
       siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Renamed site' },
     })
     const res = await callRpc(
-      '/content/posts/bySlug',
+      '/public/content/posts/bySlug',
       { slug: 'etag-post', ifNoneMatch: base.etag! },
       makePublicCtx({ db }),
     )
@@ -420,7 +420,7 @@ describe('detail representation ETags', () => {
 
     const readDraft = (ifNoneMatch?: string) =>
       callRpc(
-        '/content/posts/bySlug',
+        '/public/content/posts/bySlug',
         ifNoneMatch === undefined ? { slug: 'secret' } : { slug: 'secret', ifNoneMatch },
         makeAuthedCtx({ role: 'author', userId: '1', db, localization: LOCALIZATION }),
       ).then((res) => parseRpcJson<{ kind: string; etag: string | null; payload: { draftMarker: string } }>(res))

@@ -27,11 +27,11 @@ afterAll(() => {
 
 const publicQuery = await import('@kobato/server/domains/comments/services/public-query')
 const loadCommentsSpy = vi.spyOn(publicQuery, 'loadComments')
-const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller')
-const { commentsPublicRouter } = await import('@kobato/server/http/controllers/comments-public.controller')
+const { avatarRouter } = await import('@kobato/server/http/controllers/public/avatar.controller')
+const { commentsPublicRouter } = await import('@kobato/server/http/controllers/public/comments-public.controller')
 const commentsRouter = commentsPublicRouter
-const { commentsTokenRouter } = await import('@kobato/server/http/controllers/comments-token.controller')
-const { likesRouter } = await import('@kobato/server/http/controllers/likes.controller')
+const { commentsTokenRouter } = await import('@kobato/server/http/controllers/public/comments-token.controller')
+const { likesRouter } = await import('@kobato/server/http/controllers/account/likes.controller')
 
 const db = getTestDb()
 

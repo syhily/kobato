@@ -14,7 +14,7 @@ describe('integration / public comments', () => {
   it('rejects XSS payload in comment body link href', async () => {
     const ctx = makePublicCtx({ db })
     const res = await callRpc(
-      '/comments/replyComment',
+      '/public/comments/replyComment',
       {
         page_key: 'posts/nonexistent',
         name: 'Guest',
@@ -82,7 +82,7 @@ describe('integration / public comments', () => {
 
     const longText = 'a'.repeat(10_001)
     const res = await callRpc(
-      '/comments/replyComment',
+      '/public/comments/replyComment',
       {
         page_key: page.commentPublicId,
         name: 'Guest',

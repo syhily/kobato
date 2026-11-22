@@ -29,7 +29,7 @@ export function LocationsMap({ initial, className, scope }: LocationsMapProps) {
   const { t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
-    orpcQuery.analytics.metrics.queryOptions({
+    orpcQuery.admin.analytics.metrics.queryOptions({
       input: { ...buildAnalyticsInput(state, { scope, limit: 500 }), type: 'country' as const },
     }),
   )

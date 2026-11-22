@@ -76,10 +76,44 @@ feature files. Once a subdirectory exists (`services/`, `repos/`), the root file
 ## http/
 
 HTTP perimeter only: `orpc-base.ts`, `request-context.ts`, `hono-env.ts`, `api-router.ts`, `errors.ts`, `app.ts`,
-`orpc-trace.ts`, `middlewares/`, `controllers/` (admin under `admin/`), `resources/`, `loaders/`,
-`route-cache-headers.ts`, `request/`, `ssr-caller.ts`. Controllers and loaders **orchestrate only** — logic stays in
-`domains/<x>/service.ts`. `controllers/**` mirrors the `apiRouter` groups one-to-one; route-less shared factories are
-the only exception (`admin/revision-shared.ts`).
+`orpc-trace.ts`, `middlewares/`, `controllers/` (mirroring the router groups: `public/`, `account/`, `admin/`),
+`resources/`, `loaders/`, `route-cache-headers.ts`, `request/`, `ssr-caller.ts`. Controllers and loaders **orchestrate
+only** — logic stays in `domains/<x>/service.ts`. `controllers/**` mirrors the `apiRouter` groups one-to-one
+(`apiRouter.public.comments` ⇔ `controllers/public/comments-*.controller.ts`); route-less shared factories are the only
+exception (`admin/revision-shared.ts`, `account/auth-shared.ts`). `apiRouter` mirrors the three-group contract tree
+exactly (`public` / `account` / `admin`); the account self procedures spread at the `account` root (so `account.profile`
+etc. keep their keys — `/rpc/account/*` never moved).
+
+Two URL surfaces, never conflated: (1) the **oc.route method/path metadata** from `@kobato/api` — the REST-style wire
+compatibility contract; `admin.analytics` keeps its legacy `/analytics/*` route metadata (the one non-`/admin/` admin
+prefix). (2) the **`/rpc/*` transport URLs** — oRPC's `RPCHandler` derives them from the ROUTER TREE KEYS, so the
+grouped tree answers at `/rpc/public/...` / `/rpc/account/...` / `/rpc/admin/...` (canonical). `app.ts` runs every
+`/rpc/*` request through `request/legacy-rpc-path.ts` FIRST: the adapter rewrites the exact pre-grouping tree URLs
+(`/rpc/content/*`; `/rpc/{avatar,github,images,music,webmentions}/*` → `public`;
+`/rpc/{likes,friends,newsletter,notifications,passkey}/*` → `account`; `/rpc/analytics/*` → `/rpc/admin/analytics/*`;
+per-procedure `/rpc/comments/*`) onto the canonical grouped paths before the handler, preserving
+method/headers/body/query — RequestContext, CSRF, and business guards run on the original request and are untouched. The
+canonical grouped paths are what every in-repo caller and new headless client (`createKobatoPublicClient`) uses; the
+adapter exists only for already-deployed old clients.
+
+### Sign-in & install flows (`account.auth.*` / `account.setup.*`)
+
+`controllers/account/auth.controller.ts` owns the whole signin orchestration over the auth domain services (the former
+`http/loaders/signin.ts` is gone): `status` (view/redirect union: logged-in redirect, reset/invite/magic token peek, OTP
+pending/expired + `markSessionDirty`, csrf token), `identify`, `login`, `logout`, `magicLink`, OTP verify/resend/cancel,
+and password reset (+ author invite); `passkey.authFinish` lives in the passkey controller.
+`controllers/account/setup.controller.ts` mirrors that for install: `status` (mint-or-read setup token + session
+projection), `verifyToken` (keyed rate limit — the 429 rides the wire error variant —, session flag +
+`markSessionDirty`), and `install` (session/token gates, `signUpAdminSchema` safeParse so field copy stays
+`auth.setup.error.*` descriptors, `signUpInitialAdminWithSession`). All are `implementPublic` — anonymous ceremonies
+with their own rate limits; HTTP calls still pay the global `csrfGuard` (none of them joined the frozen public-read
+exemption). Typed camelCase inputs are adapted to `FormData` (auth) or the domain schema (setup) so the services keep
+owning user-visible error copy — the wire input schemas are deliberately permissive. Controllers re-validate every
+`redirectTo` with `safeRedirectPath` themselves (action fallback `AUTH_ACTION_REDIRECT_FALLBACK`, status fallback
+`AUTH_STATUS_REDIRECT_FALLBACK`, both declared in `@kobato/api/contracts/auth`) — never trust a route-side sanitization.
+Internal `setCookie` values move from `AuthFlowResult` onto `context.responseHeaders` (`wireAuthFlow`) and never appear
+in the wire output; the `/rpc` mount and `createSsrCaller` both surface them as real `Set-Cookie` headers — the same
+cookie reaches HTTP RPC clients and the in-process React Router action.
 
 - Error translation seam: `errors.ts` (vocabulary), `translate-domain-error.ts` (domain error → `ORPCError`),
   `localized-http-exception.ts` + `leaked-response.ts`.
@@ -90,13 +124,13 @@ the only exception (`admin/revision-shared.ts`).
   next to `/api/rum/status` — both install-gate-exempt, trace-excluded, with caps/limits enforced in the resource. The
   OpenObserve origin appears in no policy, document, or CORS entry.
 
-### Public content API (`content.*`)
+### Public content API (`public.content.*`)
 
-- The public read-only contract is the `content.*` group (Ghost-Content-API style), implemented by
-  `controllers/content-*.controller.ts`, schemas in `@kobato/api/contracts/content.ts`. Admin SSR lives in the domain
-  groups; there is deliberately NO page-level aggregate group — loaders compose domain endpoints.
-- Public route loaders and the root loader consume `content.*` through `createSsrCaller` (`ssr-caller.ts`) — in-process,
-  no HTTP hop; it also owns `unwrapListing`/`unwrapDetail`.
+- The public read-only contract is the `public.content.*` group (Ghost-Content-API style), implemented by
+  `controllers/public/content-*.controller.ts`, schemas in `@kobato/api/contracts/content.ts`. Admin SSR lives in the
+  domain groups; there is deliberately NO page-level aggregate group — loaders compose domain endpoints.
+- Public route loaders and the root loader consume `public.content.*` through `createSsrCaller` (`ssr-caller.ts`) —
+  in-process, no HTTP hop; it also owns `unwrapListing`/`unwrapDetail`.
 - `loaders/*` are the orchestration layer (`listing`, `search`, `sidebar`, `comments`, `detail-critical` + the
   `page-preview` / `post-detail` / `home` pipelines); pipelines signal 301/302/404 by throwing `Response`s mapped by
   `http/content-signals.ts`.
@@ -105,8 +139,8 @@ the only exception (`admin/revision-shared.ts`).
   (locale/zone/format + revisions + `APP_VERSION` + calendar day) and record a page view only for a served document. The
   sidebar "random" widgets are DETERMINISTIC per representation (seeded shuffle — never a per-request CSPRNG, it would
   break the ETag).
-- `content.bootstrap` takes no input: theme cookie + message scope resolved inside, Inkling labels only for signed-in
-  workspace documents, `observability` dropped from the anonymous projection.
+- `public.content.bootstrap` takes no input: theme cookie + message scope resolved inside, Inkling labels only for
+  signed-in workspace documents, `observability` dropped from the anonymous projection.
 
 ### Base procedures
 
@@ -117,8 +151,13 @@ the only exception (`admin/revision-shared.ts`).
 | `authorProc` | `requireRole('author')` + `csrfGuard` | Authors and admins         |
 | `adminProc`  | `requireRole('admin')` + `csrfGuard`  | Admins only                |
 
-`csrfGuard` runs on EVERY `/rpc/*` request — safe methods included; anonymous sessions validate against the stateless
-`__csrf` double-submit token.
+`csrfGuard` runs on every `/rpc/*` request — safe methods included (the RPC transport POSTs reads too); anonymous
+sessions validate against the stateless `__csrf` double-submit token. Sole exception: the frozen anonymous public-read
+procedure set (`request/public-read-rpc-path.ts` — the sixteen exact canonical `content.*`/`comments.loadComments`/
+`webmentions.list`/`avatar.find`/`github.*`/`images.resolveThumbhash`/`music.get` paths, legacy aliases equivalent),
+exempted by procedure identity, never by HTTP method or route metadata. Token reads (`comments.getRaw`/`myComments`),
+every mutation, and the whole `account`/`admin` surface keep the full guard — a future sensitive read gains nothing
+automatically.
 
 ### Contract-first procedures
 
@@ -128,8 +167,9 @@ limiter that must run BEFORE input parsing rides the implementer; `impl.router({
 
 ### Adding an endpoint
 
-- Schema in `@kobato/api/contracts/<domain>.ts` (never inline); declare in the domain's `@kobato/api/rpc/` module;
-  implement with the right `implement*` base; register in `apiRouter` / `apiRouter.admin`.
+- Schema in `@kobato/api/contracts/<domain>.ts` (never inline); declare in the domain's `@kobato/api/rpc/<group>/`
+  module; implement with the right `implement*` base; register in `apiRouter` under the matching group (`public` /
+  `account` / `admin`) and the group composition root in `@kobato/api`.
 - A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/api/contracts/merge-patch` —
   `clearable(...)` for nullable columns, `splitMergePatch(input)` in the handler (pinned by
   `apps/kobato/tests/arch/merge-patch-controllers.test.ts`; reference `admin.users.update`). Full-record upserts,
@@ -170,7 +210,10 @@ the root. Produces strings, `Buffer`s, or `Response`s; never persists.
 One perimeter middleware derives the canonical `RequestContext` (session, viewer, address, normalized URL, db, CSP
 nonce, pinned settings + localization). Both getters share ONE lazy capture (`createLazyAppSnapshot`);
 `buildLoadContext` and the `/rpc/*` mount hydrate settings before first read. Same-session mutations call
-`markSessionDirty()`; the middleware commits `Set-Cookie` after the response — the only commit point.
+`markSessionDirty()`; the middleware commits `Set-Cookie` after the response — the only commit point. `HandlerContext`
+carries the same `markSessionDirty` plus a per-request `responseHeaders` — controllers stage out-of-band headers there
+(session cookies from auth flows, refreshed comment tokens) and the `/rpc/*` mount / `createSsrCaller` merge them into
+the outgoing response.
 
 ## Databases
 

@@ -4,7 +4,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobat
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { avatarRouter } = await import('@kobato/server/http/controllers/avatar.controller')
+const { avatarRouter } = await import('@kobato/server/http/controllers/public/avatar.controller')
 const { __resetRateLimitsForTests } = await import('@kobato/server/infra/rate-limit')
 
 const db = getTestDb()

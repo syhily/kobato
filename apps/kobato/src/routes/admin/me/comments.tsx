@@ -32,11 +32,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const entity = parseCommentEntity(url.searchParams.get('entity'))
   const entityValue = entity ? serializeCommentEntity(entity) : null
 
-  const { entities } = await caller.comments.searchMineEntities({})
+  const { entities } = await caller.account.comments.searchMineEntities({})
   const entityOptions = [...entities]
 
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
-    const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
+    const resolved = await caller.account.comments.resolveEntity({ entity: entityValue! })
     if (resolved !== null) {
       entityOptions.unshift(resolved)
     }

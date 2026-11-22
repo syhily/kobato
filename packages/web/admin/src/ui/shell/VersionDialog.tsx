@@ -44,7 +44,9 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
   const [jobStarted, setJobStarted] = useState(false)
   const [applyError, setApplyError] = useState<string | null>(null)
 
-  const { data: avatarData } = useQuery(orpcQuery.github.avatar.queryOptions({ input: {}, staleTime: 1000 * 60 * 60 }))
+  const { data: avatarData } = useQuery(
+    orpcQuery.public.github.avatar.queryOptions({ input: {}, staleTime: 1000 * 60 * 60 }),
+  )
 
   const { data: jobStatus } = useQuery(
     orpcQuery.admin.update.status.queryOptions({

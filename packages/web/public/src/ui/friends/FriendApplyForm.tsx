@@ -15,7 +15,7 @@ export function FriendApplyForm() {
   const formRef = useRef<HTMLFormElement | null>(null)
 
   const apply = useMutation({
-    ...orpcQuery.friends.apply.mutationOptions(),
+    ...orpcQuery.account.friends.apply.mutationOptions(),
     onSuccess: () => {
       setSubmitError(null)
       setSubmitted(true)

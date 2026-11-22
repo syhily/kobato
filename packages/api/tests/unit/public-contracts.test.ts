@@ -1,36 +1,15 @@
 import {
-  adminAnalyticsMentionsOutputSchema,
-  adminAnalyticsOverviewOutputSchema,
-  adminAnalyticsSearchInputSchema,
-  analyticsExportOutputSchema,
-  analyticsHeatmapOutputSchema,
-  analyticsMetricsInputSchema,
-  analyticsMetricsOutputSchema,
-  analyticsQuerySchema,
-  countersDto,
-  viewsDto,
-} from '@kobato/api/contracts/analytics'
-import {
-  commentsMyCountsOutputSchema,
-  commentsResolveEntityInputSchema,
-  commentsResolveEntityOutputSchema,
   avatarFindInputSchema,
   avatarFindOutputSchema,
   commentEditInputSchema,
   commentGetRawOutputSchema,
-  commentIdInputSchema,
   commentListInputSchema,
   commentListOutputSchema,
-  commentLoadMineInputSchema,
-  commentLoadMineOutputSchema,
   commentMyCommentsInputSchema,
   commentReplySchema,
   commentRevokeTokenInputSchema,
   commentRevokeTokenOutputSchema,
   commentRidSchema,
-  commentSearchMineEntitiesInputSchema,
-  commentSearchMineEntitiesOutputSchema,
-  commentUpdateOwnInputSchema,
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
@@ -54,70 +33,23 @@ import {
   contentSearchInputSchema,
   contentSearchOutputSchema,
 } from '@kobato/api/contracts/content'
-import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/friends'
 import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/github'
 import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/api/contracts/images'
 import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/music'
-import {
-  newsletterConfirmSchema,
-  newsletterOkOutputSchema,
-  newsletterSubscribeSchema,
-  newsletterUnsubscribeSchema,
-} from '@kobato/api/contracts/newsletter'
-import {
-  listNotificationsInput,
-  listNotificationsOutput,
-  markNotificationsReadInput,
-  markNotificationsUnreadInput,
-  notificationThreadInput,
-  notificationThreadOutput,
-  replyNotificationInput,
-  replyNotificationOutput,
-  unreadCountOutput,
-} from '@kobato/api/contracts/notifications'
-import { successDto } from '@kobato/api/contracts/primitives'
-import {
-  accountPasskeyDeleteInput,
-  accountPasskeyListOutputSchema,
-  accountPasskeyRegisterBeginInput,
-  accountPasskeyRegisterBeginOutputSchema,
-  accountPasskeyRegisterFinishInput,
-  accountProfileOutputSchema,
-  accountRevokeSessionInput,
-  accountRevokeSessionOutputSchema,
-  accountSessionsOutputSchema,
-  accountSetLoginMethodInput,
-  accountUpdatePasswordInput,
-  accountUpdateProfileInput,
-  accountUpdateProfileOutputSchema,
-  passkeyAuthBeginInputSchema,
-  passkeyOptionsOutputSchema,
-} from '@kobato/api/contracts/users'
 import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/webmentions'
-import { accountContract } from '@kobato/api/rpc/account'
-import { analyticsContract } from '@kobato/api/rpc/analytics'
-import { avatarContract } from '@kobato/api/rpc/avatar'
-import {
-  commentsAuthedContract,
-  commentsContract,
-  commentsPublicContract,
-  commentsTokenContract,
-} from '@kobato/api/rpc/comments'
+import { avatarContract } from '@kobato/api/rpc/public/avatar'
+import { commentsContract, commentsPublicContract, commentsTokenContract } from '@kobato/api/rpc/public/comments'
 import {
   contentBootstrapContract,
   contentCommentsContract,
   contentContract,
   contentDetailContract,
   contentListingsContract,
-} from '@kobato/api/rpc/content'
-import { friendsContract } from '@kobato/api/rpc/friends'
-import { githubContract } from '@kobato/api/rpc/github'
-import { imagesContract } from '@kobato/api/rpc/images'
-import { musicContract } from '@kobato/api/rpc/music'
-import { newsletterContract } from '@kobato/api/rpc/newsletter'
-import { notificationsContract } from '@kobato/api/rpc/notifications'
-import { passkeyContract } from '@kobato/api/rpc/passkey'
-import { webmentionsContract } from '@kobato/api/rpc/webmentions'
+} from '@kobato/api/rpc/public/content'
+import { githubContract } from '@kobato/api/rpc/public/github'
+import { imagesContract } from '@kobato/api/rpc/public/images'
+import { musicContract } from '@kobato/api/rpc/public/music'
+import { webmentionsContract } from '@kobato/api/rpc/public/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -134,93 +66,6 @@ interface ContractSpec {
 }
 
 const CONTRACT_SPECS: Record<string, ContractSpec> = {
-  account: {
-    contract: accountContract as unknown as Record<string, unknown>,
-    routes: {
-      profile: { method: 'GET', path: '/account/profile', output: accountProfileOutputSchema },
-      sessions: { method: 'GET', path: '/account/sessions', output: accountSessionsOutputSchema },
-      updateProfile: {
-        method: 'POST',
-        path: '/account/update-profile',
-        input: accountUpdateProfileInput,
-        output: accountUpdateProfileOutputSchema,
-      },
-      updatePassword: {
-        method: 'POST',
-        path: '/account/update-password',
-        input: accountUpdatePasswordInput,
-        output: successDto,
-      },
-      revokeSession: {
-        method: 'POST',
-        path: '/account/revoke-session',
-        input: accountRevokeSessionInput,
-        output: accountRevokeSessionOutputSchema,
-      },
-      passkeyList: { method: 'GET', path: '/account/passkeys', output: accountPasskeyListOutputSchema },
-      passkeyRegisterBegin: {
-        method: 'POST',
-        path: '/account/passkeys/register-begin',
-        input: accountPasskeyRegisterBeginInput,
-        output: accountPasskeyRegisterBeginOutputSchema,
-      },
-      passkeyRegisterFinish: {
-        method: 'POST',
-        path: '/account/passkeys/register-finish',
-        input: accountPasskeyRegisterFinishInput,
-        output: successDto,
-      },
-      passkeyDelete: {
-        method: 'POST',
-        path: '/account/passkeys/delete',
-        input: accountPasskeyDeleteInput,
-        output: successDto,
-      },
-      setLoginMethod: {
-        method: 'POST',
-        path: '/account/login-method',
-        input: accountSetLoginMethodInput,
-        output: successDto,
-      },
-    },
-  },
-  analytics: {
-    contract: analyticsContract as unknown as Record<string, unknown>,
-    routes: {
-      counters: { method: 'GET', path: '/analytics/counters', input: analyticsQuerySchema, output: countersDto },
-      views: { method: 'GET', path: '/analytics/views', input: analyticsQuerySchema, output: viewsDto },
-      heatmap: {
-        method: 'GET',
-        path: '/analytics/heatmap',
-        input: analyticsQuerySchema,
-        output: analyticsHeatmapOutputSchema,
-      },
-      metrics: {
-        method: 'GET',
-        path: '/analytics/metrics',
-        input: analyticsMetricsInputSchema,
-        output: analyticsMetricsOutputSchema,
-      },
-      export: {
-        method: 'GET',
-        path: '/analytics/export',
-        input: analyticsQuerySchema,
-        output: analyticsExportOutputSchema,
-      },
-      overview: {
-        method: 'GET',
-        path: '/analytics/overview',
-        input: adminAnalyticsSearchInputSchema,
-        output: adminAnalyticsOverviewOutputSchema,
-      },
-      mentions: {
-        method: 'GET',
-        path: '/analytics/mentions',
-        input: adminAnalyticsSearchInputSchema,
-        output: adminAnalyticsMentionsOutputSchema,
-      },
-    },
-  },
   avatar: {
     contract: avatarContract as unknown as Record<string, unknown>,
     routes: {
@@ -253,48 +98,6 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         path: '/comments/edit',
         input: commentEditInputSchema,
         output: ownCommentMutationDto,
-      },
-    },
-  },
-  'comments/authed': {
-    contract: commentsAuthedContract as unknown as Record<string, unknown>,
-    routes: {
-      updateOwn: {
-        method: 'POST',
-        path: '/comments/update-own',
-        input: commentUpdateOwnInputSchema,
-        output: ownCommentMutationDto,
-      },
-      requestDeleteOwn: {
-        method: 'POST',
-        path: '/comments/request-delete-own',
-        input: commentIdInputSchema,
-        output: ownCommentMutationDto,
-      },
-      cancelDeleteOwn: {
-        method: 'POST',
-        path: '/comments/cancel-delete-own',
-        input: commentIdInputSchema,
-        output: ownCommentMutationDto,
-      },
-      loadMine: {
-        method: 'GET',
-        path: '/comments/load-mine',
-        input: commentLoadMineInputSchema,
-        output: commentLoadMineOutputSchema,
-      },
-      searchMineEntities: {
-        method: 'GET',
-        path: '/comments/search-mine-entities',
-        input: commentSearchMineEntitiesInputSchema,
-        output: commentSearchMineEntitiesOutputSchema,
-      },
-      myCounts: { method: 'GET', path: '/comments/my-counts', output: commentsMyCountsOutputSchema },
-      resolveEntity: {
-        method: 'GET',
-        path: '/comments/resolve-entity',
-        input: commentsResolveEntityInputSchema,
-        output: commentsResolveEntityOutputSchema,
       },
     },
   },
@@ -379,12 +182,6 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
       },
     },
   },
-  friends: {
-    contract: friendsContract as unknown as Record<string, unknown>,
-    routes: {
-      apply: { method: 'POST', path: '/friends/apply', input: applyFriendSchema, output: friendsApplyOutputSchema },
-    },
-  },
   github: {
     contract: githubContract as unknown as Record<string, unknown>,
     routes: {
@@ -407,76 +204,6 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
     contract: musicContract as unknown as Record<string, unknown>,
     routes: {
       get: { method: 'GET', path: '/music/get', input: musicGetInputSchema, output: musicGetOutputSchema },
-    },
-  },
-  newsletter: {
-    contract: newsletterContract as unknown as Record<string, unknown>,
-    routes: {
-      subscribe: {
-        method: 'POST',
-        path: '/newsletter/subscribe',
-        input: newsletterSubscribeSchema,
-        output: newsletterOkOutputSchema,
-      },
-      confirm: {
-        method: 'POST',
-        path: '/newsletter/confirm',
-        input: newsletterConfirmSchema,
-        output: newsletterOkOutputSchema,
-      },
-      unsubscribe: {
-        method: 'POST',
-        path: '/newsletter/unsubscribe',
-        input: newsletterUnsubscribeSchema,
-        output: newsletterOkOutputSchema,
-      },
-    },
-  },
-  notifications: {
-    contract: notificationsContract as unknown as Record<string, unknown>,
-    routes: {
-      list: {
-        method: 'GET',
-        path: '/notifications/list',
-        input: listNotificationsInput,
-        output: listNotificationsOutput,
-      },
-      unreadCount: { method: 'GET', path: '/notifications/unread-count', output: unreadCountOutput },
-      markRead: {
-        method: 'POST',
-        path: '/notifications/mark-read',
-        input: markNotificationsReadInput,
-        output: unreadCountOutput,
-      },
-      markUnread: {
-        method: 'POST',
-        path: '/notifications/mark-unread',
-        input: markNotificationsUnreadInput,
-        output: unreadCountOutput,
-      },
-      thread: {
-        method: 'GET',
-        path: '/notifications/thread',
-        input: notificationThreadInput,
-        output: notificationThreadOutput,
-      },
-      reply: {
-        method: 'POST',
-        path: '/notifications/reply',
-        input: replyNotificationInput,
-        output: replyNotificationOutput,
-      },
-    },
-  },
-  passkey: {
-    contract: passkeyContract as unknown as Record<string, unknown>,
-    routes: {
-      authBegin: {
-        method: 'POST',
-        path: '/passkey/auth-begin',
-        input: passkeyAuthBeginInputSchema,
-        output: passkeyOptionsOutputSchema,
-      },
     },
   },
   webmentions: {
@@ -524,19 +251,17 @@ describe('public contract shapes', () => {
   })
 })
 
-describe('composed domain contracts', () => {
-  it('commentsContract merges the three controller surfaces flat', () => {
+describe('composed public domain contracts', () => {
+  it('commentsContract merges the anonymous and token surfaces flat', () => {
     expect(Object.keys(commentsContract)).toEqual([
       ...Object.keys(commentsPublicContract),
-      ...Object.keys(commentsAuthedContract),
       ...Object.keys(commentsTokenContract),
     ])
     expect(commentsContract.replyComment).toBe(commentsPublicContract.replyComment)
-    expect(commentsContract.myCounts).toBe(commentsAuthedContract.myCounts)
     expect(commentsContract.myComments).toBe(commentsTokenContract.myComments)
   })
 
-  it('contentContract mirrors the apiRouter.content nesting', () => {
+  it('contentContract mirrors the apiRouter.public.content nesting', () => {
     expect(Object.keys(contentContract)).toEqual([
       'bootstrap',
       'home',
@@ -556,7 +281,7 @@ describe('composed domain contracts', () => {
   })
 })
 
-describe('contracts schema sanity (spot checks)', () => {
+describe('public contracts schema sanity (spot checks)', () => {
   it('keeps the rid-regex shared by get-raw and edit', async () => {
     await expect(commentRidSchema.parseAsync({ rid: '42' })).resolves.toEqual({ rid: '42' })
     expect(commentRidSchema.safeParse({ rid: 'abc' }).success).toBe(false)
@@ -570,10 +295,5 @@ describe('contracts schema sanity (spot checks)', () => {
   it('keeps the music player id grammar', () => {
     expect(musicGetInputSchema.safeParse({ id: 'a1b2c3d4e5f6g7h8' }).success).toBe(true)
     expect(musicGetInputSchema.safeParse({ id: 'UPPER' }).success).toBe(false)
-  })
-
-  it('keeps the update-password policy wired into the account input', () => {
-    expect(accountUpdatePasswordInput.safeParse({ oldPassword: 'x', newPassword: 'short' }).success).toBe(false)
-    expect(accountUpdatePasswordInput.safeParse({ oldPassword: 'x', newPassword: 'CorrectHorse1' }).success).toBe(true)
   })
 })

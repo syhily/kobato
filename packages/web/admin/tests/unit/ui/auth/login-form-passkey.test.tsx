@@ -14,8 +14,10 @@ const apiClientMod = await import('@kobato/web-client/api/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({
-      passkey: {
-        authBegin: mocks.authBegin,
+      account: {
+        passkey: {
+          authBegin: mocks.authBegin,
+        },
       },
     }) as never,
 )

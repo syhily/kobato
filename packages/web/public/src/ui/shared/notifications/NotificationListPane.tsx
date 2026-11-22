@@ -32,7 +32,7 @@ const EMPTY_COPY_IDS: Record<NotificationTab, UiMessageId> = {
 export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled }: NotificationListPaneProps) {
   const { t } = useI18n()
   const query = useInfiniteQuery(
-    orpcQuery.notifications.list.infiniteOptions({
+    orpcQuery.account.notifications.list.infiniteOptions({
       input: (pageParam) => ({ tab, cursor: pageParam === '' ? undefined : pageParam, limit: 20 }),
       initialPageParam: '',
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -132,7 +132,7 @@ function NotificationRow({
   const titleId = `notification-row-title-${item.id}`
   const patchReadState = usePatchNotificationReadState()
   const markUnread = useMutation(
-    orpcQuery.notifications.markUnread.mutationOptions({
+    orpcQuery.account.notifications.markUnread.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], false, data.count),
       onError: onMutationError('admin.toast.operationFailed', t),
     }),

@@ -39,7 +39,7 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
   const { locale, t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
-    orpcQuery.analytics.heatmap.queryOptions({
+    orpcQuery.admin.analytics.heatmap.queryOptions({
       input: buildAnalyticsInput(state, { scope }),
     }),
   )

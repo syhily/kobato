@@ -38,6 +38,7 @@ export interface HandlerContext {
   viewer: SessionUser | null
   clientAddress: string
   responseHeaders: Headers
+  markSessionDirty(): void
   db: Database
   settings: BlogSettingsBundle | null
   localization: AppLocalization

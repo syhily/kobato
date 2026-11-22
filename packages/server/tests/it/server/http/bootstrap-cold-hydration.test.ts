@@ -64,7 +64,7 @@ type BootstrapPayload = {
 
 async function coldBootstrap(): Promise<BootstrapPayload> {
   const { app } = makeApiApp()
-  const response = await app.request('/rpc/content/bootstrap', {
+  const response = await app.request('/rpc/public/content/bootstrap', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-csrf-token': CSRF },
     body: '{}',
@@ -86,7 +86,7 @@ describe('cold /rpc/content/bootstrap', () => {
     expect(getBlogSettingsBundleSync()).toBeNull()
 
     const { app, rc } = makeApiApp()
-    const response = await app.request('/rpc/content/bootstrap', {
+    const response = await app.request('/rpc/public/content/bootstrap', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-csrf-token': CSRF },
       body: '{}',
@@ -112,7 +112,7 @@ describe('cold /rpc/content/bootstrap', () => {
     resetBlogSettingsForTests()
 
     const { app, rc } = makeApiApp()
-    const response = await app.request('/rpc/content/bootstrap', {
+    const response = await app.request('/rpc/public/content/bootstrap', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-csrf-token': CSRF },
       body: '{}',
@@ -140,7 +140,7 @@ describe('cold /rpc/content/bootstrap', () => {
 
     const { app } = makeApiApp()
     const body = 'x'.repeat(2048)
-    const response = await app.request('/rpc/content/bootstrap', {
+    const response = await app.request('/rpc/public/content/bootstrap', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -161,7 +161,9 @@ describe('cold /rpc/content/bootstrap', () => {
     expect(getBlogSettingsBundleSync()).toBeNull()
 
     const { app } = makeApiApp()
-    const response = await app.request('/rpc/content/bootstrap', {
+    // A non-exempt procedure: the anonymous public reads are CSRF-exempt, so the guard's cold rejection needs a
+    // protected path (the token read getRaw) to stay observable.
+    const response = await app.request('/rpc/public/comments/getRaw', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: '{}',

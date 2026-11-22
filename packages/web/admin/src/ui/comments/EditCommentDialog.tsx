@@ -38,7 +38,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [lastRawData, setLastRawData] = useState<typeof rawData>(undefined)
 
   const rawQuery = useQuery(
-    orpcQuery.comments.getRaw.queryOptions({
+    orpcQuery.public.comments.getRaw.queryOptions({
       input: { rid: comment ? idStr(comment.id) : '0' },
       enabled: !!comment,
     }),

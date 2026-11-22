@@ -99,7 +99,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const validateSeqRef = useRef(0)
 
   const validate = useMutation({
-    ...orpcQuery.likes.validate.mutationOptions(),
+    ...orpcQuery.account.likes.validate.mutationOptions(),
     onSuccess: (data: ValidateLikeTokenOutput) => {
       if (validateSeqRef.current !== interactionSeqRef.current) {
         return
@@ -118,7 +118,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const increase = useMutation({
-    ...orpcQuery.likes.increase.mutationOptions(),
+    ...orpcQuery.account.likes.increase.mutationOptions(),
     onSuccess: (data: IncreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
       if (data.token) {
@@ -131,7 +131,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const decrease = useMutation({
-    ...orpcQuery.likes.decrease.mutationOptions(),
+    ...orpcQuery.account.likes.decrease.mutationOptions(),
     onSuccess: (data: DecreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
       tokenRef.current = null

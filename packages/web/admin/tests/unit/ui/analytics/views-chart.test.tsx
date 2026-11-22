@@ -11,11 +11,13 @@ const captured = vi.hoisted(() => ({ inputs: [] as Record<string, unknown>[] }))
 
 const orpcQueryMod = await import('@kobato/web-client/api/orpc-query')
 vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
-  analytics: {
-    views: {
-      queryOptions: (options: { input: Record<string, unknown> }) => {
-        captured.inputs.push(options.input)
-        return { queryKey: ['analytics', 'views', options.input] }
+  admin: {
+    analytics: {
+      views: {
+        queryOptions: (options: { input: Record<string, unknown> }) => {
+          captured.inputs.push(options.input)
+          return { queryKey: ['analytics', 'views', options.input] }
+        },
       },
     },
   },

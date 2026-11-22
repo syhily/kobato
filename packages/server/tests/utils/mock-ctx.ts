@@ -17,6 +17,7 @@ export interface MockCtxOptions {
   db?: Database
   localization?: LocalizationOverride
   settings?: BlogSettingsBundle | null
+  markSessionDirty?: () => void
 }
 
 type LocalizationOverride = Pick<AppLocalization, 'locale' | 'timeZone'> &
@@ -55,6 +56,7 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     viewer: { id: userId, name: 'Test User', email: 'test@example.com', website: null, role },
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
+    markSessionDirty: opts.markSessionDirty ?? (() => {}),
     db: opts.db ?? ({} as Database),
     get settings() {
       return opts.settings === undefined ? lazySnapshot().settings : opts.settings
@@ -88,6 +90,7 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     viewer: null,
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
+    markSessionDirty: opts.markSessionDirty ?? (() => {}),
     db: opts.db ?? ({} as Database),
     get settings() {
       return opts.settings === undefined ? lazySnapshot().settings : opts.settings

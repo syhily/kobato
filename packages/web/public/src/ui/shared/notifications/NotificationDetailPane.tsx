@@ -45,9 +45,11 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   const { timeZone } = useSiteIdentity()
   const invalidate = useInvalidateNotifications()
   const patchReadState = usePatchNotificationReadState()
-  const threadQuery = useQuery(orpcQuery.notifications.thread.queryOptions({ input: { threadId: item.threadId } }))
+  const threadQuery = useQuery(
+    orpcQuery.account.notifications.thread.queryOptions({ input: { threadId: item.threadId } }),
+  )
   const markRead = useMutation(
-    orpcQuery.notifications.markRead.mutationOptions({
+    orpcQuery.account.notifications.markRead.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], true, data.count),
       onError: onMutationError('admin.toast.markReadFailed', t),
     }),
@@ -186,7 +188,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
   const [body, setBody] = useState('')
   const invalidate = useInvalidateNotifications()
   const reply = useMutation(
-    orpcQuery.notifications.reply.mutationOptions({
+    orpcQuery.account.notifications.reply.mutationOptions({
       onSuccess: (data) => {
         setBody('')
         if (isForkReply(threadId, data.threadId)) {

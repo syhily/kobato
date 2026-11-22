@@ -143,7 +143,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     isFetchingNextPage,
     sentinelRef,
   } = useAdminInfiniteList({
-    namespace: orpcQuery.comments.loadMine,
+    namespace: orpcQuery.account.comments.loadMine,
     pageSize: PAGE_SIZE,
     buildInput: (offset) => ({
       offset,
@@ -157,18 +157,18 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   })
 
   const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: orpcQuery.comments.loadMine.key() })
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.account.comments.loadMine.key() })
   }, [queryClient])
 
   const requestDelete = useMutation({
-    ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
+    ...orpcQuery.account.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: () => {
       invalidateList()
     },
     onError: onMutationError('admin.toast.deleteRequestFailed', t),
   })
   const cancelDelete = useMutation({
-    ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
+    ...orpcQuery.account.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
       invalidateList()
     },

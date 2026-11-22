@@ -13,7 +13,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   requireRole(viewer ?? undefined, 'admin')
 
   const url = new URL(request.url)
-  return caller.analytics.mentions({ search: url.searchParams.toString() })
+  return caller.admin.analytics.mentions({ search: url.searchParams.toString() })
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {

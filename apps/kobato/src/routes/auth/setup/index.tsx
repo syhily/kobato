@@ -1,20 +1,12 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
-import { signUpAdminSchema } from '@kobato/server/domains/auth/schema'
-import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup'
-import {
-  authFlowError,
-  authFlowMessage,
-  authFlowValidationError,
-  type AuthFlowError,
-} from '@kobato/server/domains/auth/services/shared'
-import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@kobato/server/domains/auth/setup-token'
+import { authFlowError } from '@kobato/server/domains/auth/services/shared'
 import { ensureNoAdminOrRedirect } from '@kobato/server/domains/settings/install-gate'
 import { getRequestContext } from '@kobato/server/http/request-context'
-import { tryKeyedRateLimit } from '@kobato/server/infra/rate-limit'
+import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm'
 import { SetupLocaleSelect } from '@kobato/web-admin/ui/auth/SetupLocaleSelect'
@@ -23,124 +15,84 @@ import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 
+import { authErrorPayload, cookieHeaders, formField, formOptionalField } from '@/routes/auth/flow-response'
 import { titleMeta } from '@/seo/title-meta'
 
 import type { Route } from './+types/index'
 
-const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password', 'locale'] as const
-
-const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
+function fail(messageKey: UiMessageId, locale: AppLocale) {
+  const flow = authFlowError(messageKey)
+  return data(authErrorPayload(flow.message, flow.descriptor, locale))
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
-  const db = rc.db
-  await ensureNoAdminOrRedirect(db)
+  await ensureNoAdminOrRedirect(rc.db)
 
-  try {
-    await getSetupToken(db)
-  } catch {}
-
-  const { session } = rc
+  const { caller } = createSsrCaller({ request, context })
+  const status = await caller.account.setup.status({})
   return data({
-    setupTokenVerified: session.get('setupTokenVerified') === true,
-    csrfToken: session.get('csrfToken'),
+    setupTokenVerified: status.setupTokenVerified,
+    csrfToken: status.csrfToken ?? undefined,
   })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
-  const db = rc.db
-  await ensureNoAdminOrRedirect(db)
+  await ensureNoAdminOrRedirect(rc.db)
 
-  const { session, clientAddress } = rc
+  const { caller, responseHeaders } = createSsrCaller({ request, context })
+  const { session } = rc
+  const locale = rc.localization.locale
   const formData = await request.formData()
   const intent = formData.get('intent')
 
-  const failFlow = (flow: AuthFlowError, status?: number) => {
-    const payload: {
-      error: string
-      errorDescriptor?: ErrorMessageDescriptor
-    } = {
-      error: authFlowMessage(flow.message, flow.descriptor, rc.localization.locale),
-      ...(flow.descriptor === undefined ? {} : { errorDescriptor: flow.descriptor }),
-    }
-    return status === undefined ? data(payload) : data(payload, { status })
-  }
-  const fail = (messageKey: UiMessageId, status?: number) => failFlow(authFlowError(messageKey), status)
-
   if (intent === 'verify-token') {
     if (!validateCsrfForAction(session, request, formData)) {
-      return fail('error.api.csrfFailed')
+      return fail('error.api.csrfFailed', locale)
     }
 
-    const { exceeded } = await tryKeyedRateLimit(`rate-limit:setup-verify:${clientAddress}`, SETUP_VERIFY_BUCKET)
-    if (exceeded) {
-      return fail('auth.setup.error.rateLimited', 429)
+    const result = await caller.account.setup.verifyToken({ token: formField(formData, 'setup_token') })
+    if (result.kind === 'verified') {
+      return data({ setupTokenVerified: true })
     }
-
-    const token = formData.get('setup_token')
-    if (typeof token !== 'string' || !token) {
-      return fail('auth.setup.error.tokenRequired')
-    }
-
-    const isValid = await verifySetupToken(db, token)
-    if (!isValid) {
-      return fail('auth.setup.error.tokenInvalid')
-    }
-
-    session.set('setupTokenVerified', true)
-
-    rc.markSessionDirty()
-    return data({ setupTokenVerified: true })
+    return data(
+      authErrorPayload(result.message, result.descriptor, locale),
+      result.status === undefined ? undefined : { status: result.status },
+    )
   }
 
   if (intent === 'install' || intent === null) {
+    // Preserve the historical visible-error priority: the session gate answers before CSRF, while the
+    // setup-token liveness re-check stays server-side in the controller.
     if (session.get('setupTokenVerified') !== true) {
-      return fail('auth.setup.error.tokenNotVerified')
-    }
-
-    if (!(await isSetupTokenActive(db))) {
-      return fail('auth.setup.error.tokenExpired')
+      return fail('auth.setup.error.tokenNotVerified', locale)
     }
 
     if (!validateCsrfForAction(session, request, formData)) {
-      return fail('error.api.csrfFailed')
+      return fail('error.api.csrfFailed', locale)
     }
 
-    const values: Record<string, FormDataEntryValue | null> = {}
-    for (const field of ADMIN_INSTALL_FIELDS) {
-      values[field] = formData.get(field)
-    }
-    values.locale ??= DEFAULT_LOCALE
-
-    const parsed = signUpAdminSchema.safeParse(values)
-    if (!parsed.success) {
-      return failFlow(authFlowValidationError('auth.setup.error.formIncomplete', parsed.error.issues))
-    }
-
-    const result = await signUpInitialAdminWithSession(db, {
-      ...parsed.data,
-      session,
-      request,
-      clientAddress,
+    const result = await caller.account.setup.install({
+      title: formField(formData, 'title'),
+      name: formField(formData, 'name'),
+      email: formField(formData, 'email'),
+      password: formField(formData, 'password'),
+      locale: formOptionalField(formData, 'locale'),
     })
 
-    if (result.type === 'error') {
-      return failFlow(result)
+    if (result.type === 'success') {
+      return fail('auth.setup.error.unknown', locale)
     }
-
     if (result.type === 'redirect') {
-      const headers: Record<string, string> = {}
-      if (result.setCookie) {
-        headers['Set-Cookie'] = result.setCookie
-      }
-      return redirect(result.to, { headers })
+      return redirect(result.to, { headers: cookieHeaders(responseHeaders) })
     }
-
-    return fail('auth.setup.error.unknown')
+    return data(authErrorPayload(result.message, result.descriptor, locale), {
+      headers: cookieHeaders(responseHeaders),
+    })
   }
 
-  return fail('auth.setup.error.unknownAction')
+  return fail('auth.setup.error.unknownAction', locale)
 }
 
 export const meta = titleMeta('meta.title.auth.setup')

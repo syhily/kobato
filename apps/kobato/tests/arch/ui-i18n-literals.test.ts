@@ -333,7 +333,7 @@ describe('production sources', () => {
         'packages/server/src/domains/comments/services/moderate.ts',
         'packages/server/src/domains/comments/services/policy.ts',
         'packages/server/src/domains/webmentions/reverify.ts',
-        'packages/server/src/http/controllers/comments-public.controller.ts',
+        'packages/server/src/http/controllers/public/comments-public.controller.ts',
         'packages/server/src/http/controllers/admin/webmentions.controller.ts',
 
         'packages/server/src/domains/backup/services/restore.ts',
@@ -361,7 +361,7 @@ describe('production sources', () => {
         'packages/server/src/domains/notifications/service.ts',
         'packages/server/src/domains/update/service.ts',
         'packages/server/src/domains/update/job.ts',
-        'packages/server/src/http/controllers/likes.controller.ts',
+        'packages/server/src/http/controllers/account/likes.controller.ts',
         'packages/server/src/http/controllers/admin/audit.controller.ts',
         'packages/server/src/http/controllers/admin/users-admin.controller.ts',
         'packages/server/src/http/loaders/search.ts',

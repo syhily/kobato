@@ -29,7 +29,7 @@ export function InlineEditForm({ comment, onCancel, onSaved }: InlineEditFormPro
     onSuccess,
   })
   const ownEdit = useMutation({
-    ...orpcQuery.comments.edit.mutationOptions(),
+    ...orpcQuery.public.comments.edit.mutationOptions(),
     onSuccess,
   })
   const seed = comment.body

@@ -8,7 +8,7 @@ import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-sch
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import { adminCommentsRouter } from '@kobato/server/http/controllers/admin/comments.controller'
-import { contentCommentsByKey } from '@kobato/server/http/controllers/content-comments.controller'
+import { contentCommentsByKey } from '@kobato/server/http/controllers/public/content-comments.controller'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'

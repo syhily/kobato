@@ -120,9 +120,9 @@ describe('listing representation ETags — same representation', () => {
     await seedPost({ slug: 'one' })
     await seedPost({ slug: 'two' })
 
-    const first = await read<OkListing>('/content/home', {})
+    const first = await read<OkListing>('/public/content/home', {})
     expect(first.kind).toBe('ok')
-    const repeated = await read<NotModified>('/content/home', { ifNoneMatch: first.etag })
+    const repeated = await read<NotModified>('/public/content/home', { ifNoneMatch: first.etag })
     expect(repeated.kind).toBe('not-modified')
     expect(repeated.etag).toBe(first.etag)
   })
@@ -132,20 +132,22 @@ describe('listing representation ETags — same representation', () => {
       await seedPost({ slug: `p-${i}`, firstPublishedAt: new Date(Date.UTC(2026, 0, i + 1)) })
     }
 
-    const first = await read<OkListing>('/content/home', { num: '2' })
+    const first = await read<OkListing>('/public/content/home', { num: '2' })
     expect(first.kind).toBe('ok')
     expect(first.listing.pageNum).toBe(2)
-    expect((await read<NotModified>('/content/home', { num: '2', ifNoneMatch: first.etag })).kind).toBe('not-modified')
+    expect((await read<NotModified>('/public/content/home', { num: '2', ifNoneMatch: first.etag })).kind).toBe(
+      'not-modified',
+    )
   })
 
   it('search answers not-modified on a repeat request', async () => {
     await seedPost({ slug: 'searchable', title: 'react notes' })
 
-    const first = await read<OkListing>('/content/search', { keyword: 'react' })
+    const first = await read<OkListing>('/public/content/search', { keyword: 'react' })
     expect(first.kind).toBe('ok')
-    expect((await read<NotModified>('/content/search', { keyword: 'react', ifNoneMatch: first.etag })).kind).toBe(
-      'not-modified',
-    )
+    expect(
+      (await read<NotModified>('/public/content/search', { keyword: 'react', ifNoneMatch: first.etag })).kind,
+    ).toBe('not-modified')
   })
 
   it('category and tag listings answer not-modified on a repeat request', async () => {
@@ -154,24 +156,24 @@ describe('listing representation ETags — same representation', () => {
     const postId = await seedPost({ slug: 'tagged', categoryId })
     await db.insert(postTag).values({ postId, tagId })
 
-    const category = await read<OkListing>('/content/posts/list', {
+    const category = await read<OkListing>('/public/content/posts/list', {
       scope: { type: 'category', slug: 'general' },
     })
     expect(category.kind).toBe('ok')
     expect(
       (
-        await read<NotModified>('/content/posts/list', {
+        await read<NotModified>('/public/content/posts/list', {
           scope: { type: 'category', slug: 'general' },
           ifNoneMatch: category.etag,
         })
       ).kind,
     ).toBe('not-modified')
 
-    const tag = await read<OkListing>('/content/posts/list', { scope: { type: 'tag', slug: 'typescript' } })
+    const tag = await read<OkListing>('/public/content/posts/list', { scope: { type: 'tag', slug: 'typescript' } })
     expect(tag.kind).toBe('ok')
     expect(
       (
-        await read<NotModified>('/content/posts/list', {
+        await read<NotModified>('/public/content/posts/list', {
           scope: { type: 'tag', slug: 'typescript' },
           ifNoneMatch: tag.etag,
         })
@@ -182,27 +184,29 @@ describe('listing representation ETags — same representation', () => {
   it('archives answers not-modified on a repeat request', async () => {
     await seedPost({ slug: 'archived' })
 
-    const first = await read<{ kind: string; etag: string }>('/content/archives', {})
+    const first = await read<{ kind: string; etag: string }>('/public/content/archives', {})
     expect(first.kind).toBe('ok')
-    expect((await read<NotModified>('/content/archives', { ifNoneMatch: first.etag })).kind).toBe('not-modified')
+    expect((await read<NotModified>('/public/content/archives', { ifNoneMatch: first.etag })).kind).toBe('not-modified')
   })
 
   it('categories list answers not-modified on a repeat request', async () => {
     await seedCategory('general', 'general')
 
-    const first = await read<{ kind: string; etag: string }>('/content/categories/list', {})
+    const first = await read<{ kind: string; etag: string }>('/public/content/categories/list', {})
     expect(first.kind).toBe('ok')
-    expect((await read<NotModified>('/content/categories/list', { ifNoneMatch: first.etag })).kind).toBe('not-modified')
+    expect((await read<NotModified>('/public/content/categories/list', { ifNoneMatch: first.etag })).kind).toBe(
+      'not-modified',
+    )
   })
 })
 
 describe('listing representation ETags — a changed representation is 200', () => {
   it('a new visible post invalidates the old home tag', async () => {
     await seedPost({ slug: 'first' })
-    const base = await read<OkListing>('/content/home', {})
+    const base = await read<OkListing>('/public/content/home', {})
 
     await seedPost({ slug: 'second', firstPublishedAt: new Date('2026-02-01') })
-    const after = await read<OkListing>('/content/home', { ifNoneMatch: base.etag })
+    const after = await read<OkListing>('/public/content/home', { ifNoneMatch: base.etag })
 
     expect(after.kind).toBe('ok')
     expect(after.etag).not.toBe(base.etag)
@@ -210,10 +214,10 @@ describe('listing representation ETags — a changed representation is 200', () 
 
   it('a locale change invalidates the old listing tag', async () => {
     await seedPost({ slug: 'first' })
-    const base = await read<OkListing>('/content/home', {})
+    const base = await read<OkListing>('/public/content/home', {})
 
     const after = await read<OkListing>(
-      '/content/home',
+      '/public/content/home',
       { ifNoneMatch: base.etag },
       { ...LOCALIZATION, locale: 'en-US' },
     )
@@ -223,9 +227,9 @@ describe('listing representation ETags — a changed representation is 200', () 
 
   it('a listing-generation change invalidates the old tag', async () => {
     await seedPost({ slug: 'first' })
-    const base = await read<OkListing>('/content/home', {})
+    const base = await read<OkListing>('/public/content/home', {})
 
-    const after = await read<OkListing>('/content/home', { ifNoneMatch: base.etag }, changedListingRevision())
+    const after = await read<OkListing>('/public/content/home', { ifNoneMatch: base.etag }, changedListingRevision())
     expect(after.kind).toBe('ok')
     expect(after.etag).not.toBe(base.etag)
   })
@@ -233,10 +237,10 @@ describe('listing representation ETags — a changed representation is 200', () 
   it('a category rename invalidates the old category tag', async () => {
     const categoryId = await seedCategory('general', 'general')
     await seedPost({ slug: 'tagged', categoryId })
-    const base = await read<OkListing>('/content/posts/list', { scope: { type: 'category', slug: 'general' } })
+    const base = await read<OkListing>('/public/content/posts/list', { scope: { type: 'category', slug: 'general' } })
 
     await db.update(categoryTable).set({ name: 'renamed' }).where(eq(categoryTable.id, categoryId))
-    const after = await read<OkListing>('/content/posts/list', {
+    const after = await read<OkListing>('/public/content/posts/list', {
       scope: { type: 'category', slug: 'general' },
       ifNoneMatch: base.etag,
     })
@@ -251,10 +255,10 @@ describe('listing representation ETags — site midnight and pinned settings', (
     await seedPost({ slug: 'one' })
 
     vi.setSystemTime(new Date('2026-11-08T15:59:59.000Z'))
-    const before = await read<OkListing>('/content/home', {})
+    const before = await read<OkListing>('/public/content/home', {})
 
     vi.setSystemTime(new Date('2026-11-08T16:00:01.000Z'))
-    const after = await read<OkListing>('/content/home', { ifNoneMatch: before.etag })
+    const after = await read<OkListing>('/public/content/home', { ifNoneMatch: before.etag })
 
     expect(after.kind).toBe('ok')
     expect(after.etag).not.toBe(before.etag)
@@ -265,7 +269,12 @@ describe('listing representation ETags — site midnight and pinned settings', (
       await seedPost({ slug: `search-${i}`, title: 'react notes' })
     }
 
-    const json = await read<OkListing>('/content/search', { keyword: 'react' }, LOCALIZATION, withPageSize('search', 3))
+    const json = await read<OkListing>(
+      '/public/content/search',
+      { keyword: 'react' },
+      LOCALIZATION,
+      withPageSize('search', 3),
+    )
     expect(json.listing.totalPage).toBe(3)
   })
 
@@ -280,7 +289,7 @@ describe('listing representation ETags — site midnight and pinned settings', (
     }
 
     const json = await read<OkListing>(
-      '/content/posts/list',
+      '/public/content/posts/list',
       { scope: { type: 'category', slug: 'general' } },
       LOCALIZATION,
       withPageSize('posts', 4),
@@ -292,9 +301,9 @@ describe('listing representation ETags — site midnight and pinned settings', (
 describe('listing representation ETags — redirects and page views', () => {
   it('keeps the pagination redirect even when a matching tag is carried', async () => {
     await seedPost({ slug: 'only' })
-    const base = await read<OkListing>('/content/home', {})
+    const base = await read<OkListing>('/public/content/home', {})
 
-    const overflow = await read<{ kind: string; status: number }>('/content/home', {
+    const overflow = await read<{ kind: string; status: number }>('/public/content/home', {
       num: '9999',
       ifNoneMatch: base.etag,
     })
@@ -304,15 +313,15 @@ describe('listing representation ETags — redirects and page views', () => {
   it('does not record a page view for a 304, but does for a served listing', async () => {
     await seedPost({ slug: 'first' })
 
-    const first = await read<OkListing>('/content/home', {})
+    const first = await read<OkListing>('/public/content/home', {})
     expect(trackPageView).toHaveBeenCalledTimes(1)
 
-    const repeated = await read<NotModified>('/content/home', { ifNoneMatch: first.etag })
+    const repeated = await read<NotModified>('/public/content/home', { ifNoneMatch: first.etag })
     expect(repeated.kind).toBe('not-modified')
     expect(trackPageView).toHaveBeenCalledTimes(1)
 
     await seedPost({ slug: 'second', firstPublishedAt: new Date('2026-02-01') })
-    await read<OkListing>('/content/home', { ifNoneMatch: first.etag })
+    await read<OkListing>('/public/content/home', { ifNoneMatch: first.etag })
     expect(trackPageView).toHaveBeenCalledTimes(2)
   })
 })

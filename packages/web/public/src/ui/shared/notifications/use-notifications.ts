@@ -15,7 +15,7 @@ import { useCallback } from 'react'
 
 export function useUnreadNotificationCount(enabled = true): number | null {
   const query = useQuery(
-    orpcQuery.notifications.unreadCount.queryOptions({
+    orpcQuery.account.notifications.unreadCount.queryOptions({
       refetchInterval: 120_000,
       refetchOnWindowFocus: true,
       enabled,
@@ -27,7 +27,7 @@ export function useUnreadNotificationCount(enabled = true): number | null {
 export function useInvalidateNotifications(): () => Promise<void> {
   const queryClient = useQueryClient()
   return async () => {
-    await queryClient.invalidateQueries({ queryKey: orpcQuery.notifications.key() })
+    await queryClient.invalidateQueries({ queryKey: orpcQuery.account.notifications.key() })
   }
 }
 
@@ -38,10 +38,10 @@ interface NotificationCacheKeys {
 }
 
 function notificationCacheKeys(): NotificationCacheKeys {
-  const [listPath] = orpcQuery.notifications.list.key()
+  const [listPath] = orpcQuery.account.notifications.list.key()
   return {
-    scope: orpcQuery.notifications.key(),
-    unreadCount: orpcQuery.notifications.unreadCount.queryOptions({}).queryKey,
+    scope: orpcQuery.account.notifications.key(),
+    unreadCount: orpcQuery.account.notifications.unreadCount.queryOptions({}).queryKey,
     listPath: Array.isArray(listPath) ? listPath : [],
   }
 }
@@ -164,7 +164,7 @@ export function patchNotificationReadState(
     }
   } catch {
     try {
-      invalidateNotifications(queryClient, orpcQuery.notifications.key())
+      invalidateNotifications(queryClient, orpcQuery.account.notifications.key())
     } catch {}
   }
 }

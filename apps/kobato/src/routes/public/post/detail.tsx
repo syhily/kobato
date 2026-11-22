@@ -17,7 +17,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
 
   const result = await unwrapDetail(
-    caller.content.posts.bySlug({
+    caller.public.content.posts.bySlug({
       slug: params.slug,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
     }),

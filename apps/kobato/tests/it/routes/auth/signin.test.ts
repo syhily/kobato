@@ -718,6 +718,57 @@ describe('routes/signin — identify (real db)', () => {
   })
 })
 
+describe('routes/signin — passkey finish dispatch (real db)', () => {
+  function passkeyFormData(response?: string, challenge?: string): FormData {
+    const fd = new FormData()
+    if (response !== undefined) {
+      fd.set('passkey_response', response)
+    }
+    if (challenge !== undefined) {
+      fd.set('passkey_challenge', challenge)
+    }
+    return withCsrf(fd)
+  }
+
+  it('dispatches action=passkey through account.passkey.authFinish and maps the invalid-JSON error', async () => {
+    setBlogSettingsBundleForTests(PASSKEY_ON_BUNDLE)
+    await seedUser()
+
+    const result = await callAction('passkey', passkeyFormData('{not-json', 'challenge-value'))
+
+    expect(extractData(result).error).toBe('Passkey 响应格式错误。')
+    expect((extractData(result).errorDescriptor as { messageKey: string }).messageKey).toBe(
+      'auth.passkey.error.responseInvalid',
+    )
+    expect(await db.select().from(sessionTable)).toHaveLength(0)
+  })
+
+  it('requires the challenge field before parsing the passkey response', async () => {
+    setBlogSettingsBundleForTests(PASSKEY_ON_BUNDLE)
+    await seedUser()
+
+    const result = await callAction('passkey', passkeyFormData('{"id":"c"}'))
+
+    expect(extractData(result).error).toBe('Passkey 响应缺失。')
+    expect((extractData(result).errorDescriptor as { messageKey: string }).messageKey).toBe(
+      'auth.passkey.error.responseMissing',
+    )
+    expect(await db.select().from(sessionTable)).toHaveLength(0)
+  })
+
+  it('answers with the disabled copy when the passkey switch is off', async () => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    await seedUser()
+
+    const result = await callAction('passkey', passkeyFormData('{"id":"c"}', 'challenge-value'))
+
+    expect(extractData(result).error).toBe('Passkey 登录未启用。')
+    expect((extractData(result).errorDescriptor as { messageKey: string }).messageKey).toBe(
+      'auth.passkey.error.disabled',
+    )
+  })
+})
+
 describe('routes/signin — magic-link consume (real db + tokens)', () => {
   it('rejects an invalid or expired token', async () => {
     const fd = new FormData()

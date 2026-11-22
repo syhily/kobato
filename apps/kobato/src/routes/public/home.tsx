@@ -12,7 +12,7 @@ import type { Route } from './+types/home'
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { caller, analyticsEventId, localization } = createSsrCaller({ request, context })
   const { etag, listing } = await unwrapListing(
-    caller.content.home({
+    caller.public.content.home({
       num: params.num,
       ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
     }),

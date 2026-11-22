@@ -266,7 +266,7 @@ describe('comments.myCounts', () => {
     await seedComment(me, {})
     await seedComment(999, { isPending: true })
 
-    const res = await callRpc('/comments/myCounts', undefined, makeAuthedCtx({ db, userId: String(me) }))
+    const res = await callRpc('/account/comments/myCounts', undefined, makeAuthedCtx({ db, userId: String(me) }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ total: number; pending: number; deleteRequested: number; deleted: number }>(res)
     expect(json).toEqual({ total: 4, pending: 1, deleteRequested: 1, deleted: 1 })
@@ -277,7 +277,7 @@ describe('comments.resolveEntity', () => {
   it('resolves an existing entity key to its value/label pair', async () => {
     await seedPost({ slug: 'hello', title: 'Hello' })
 
-    const res = await callRpc('/comments/resolveEntity', { entity: 'post:1' }, makeAuthedCtx({ db }))
+    const res = await callRpc('/account/comments/resolveEntity', { entity: 'post:1' }, makeAuthedCtx({ db }))
     expect(res.status).toBe(200)
     expect(await parseRpcJson<{ value: string; label: string }>(res)).toEqual({ value: 'post:1', label: 'Hello' })
   })
@@ -285,15 +285,15 @@ describe('comments.resolveEntity', () => {
   it('answers null for unknown or malformed keys', async () => {
     await seedPost({ slug: 'hello', title: 'Hello' })
 
-    const missing = await callRpc('/comments/resolveEntity', { entity: 'post:999' }, makeAuthedCtx({ db }))
+    const missing = await callRpc('/account/comments/resolveEntity', { entity: 'post:999' }, makeAuthedCtx({ db }))
     expect(await parseRpcJson<null>(missing)).toBeNull()
 
-    const malformed = await callRpc('/comments/resolveEntity', { entity: 'not-a-key' }, makeAuthedCtx({ db }))
+    const malformed = await callRpc('/account/comments/resolveEntity', { entity: 'not-a-key' }, makeAuthedCtx({ db }))
     expect(await parseRpcJson<null>(malformed)).toBeNull()
   })
 
   it('answers UNAUTHORIZED for anonymous callers', async () => {
-    const res = await callRpc('/comments/resolveEntity', { entity: 'post:1' }, makePublicCtx({ db }))
+    const res = await callRpc('/account/comments/resolveEntity', { entity: 'post:1' }, makePublicCtx({ db }))
     expect(res.status).toBe(401)
     expect((await parseRpcJson<RpcError>(res)).code).toBe('UNAUTHORIZED')
   })
@@ -456,7 +456,7 @@ describe('admin.analytics.overview', () => {
       { ts, visitorHash: 'b', path: '/post/world', country: 'US' },
     ])
 
-    const res = await callRpc('/analytics/overview', { search: '' }, makeAuthedCtx({ db }))
+    const res = await callRpc('/admin/analytics/overview', { search: '' }, makeAuthedCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{
       counters: { visits: number; visitors: number; referers: number }
@@ -469,7 +469,7 @@ describe('admin.analytics.overview', () => {
   })
 
   it('rejects authors with FORBIDDEN', async () => {
-    const res = await callRpc('/analytics/overview', { search: '' }, makeAuthedCtx({ db, role: 'author' }))
+    const res = await callRpc('/admin/analytics/overview', { search: '' }, makeAuthedCtx({ db, role: 'author' }))
     expect(res.status).toBe(403)
     expect((await parseRpcJson<RpcError>(res)).code).toBe('FORBIDDEN')
   })
@@ -485,7 +485,7 @@ describe('admin.analytics.mentions', () => {
       { ts, visitorHash: 'd', path: '/', country: 'US' },
     ])
 
-    const res = await callRpc('/analytics/mentions', { search: '' }, makeAuthedCtx({ db }))
+    const res = await callRpc('/admin/analytics/mentions', { search: '' }, makeAuthedCtx({ db }))
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ referers: Array<{ name: string; visits: number; visitors: number }> }>(res)
 
@@ -494,7 +494,7 @@ describe('admin.analytics.mentions', () => {
   })
 
   it('rejects authors with FORBIDDEN', async () => {
-    const res = await callRpc('/analytics/mentions', { search: '' }, makeAuthedCtx({ db, role: 'author' }))
+    const res = await callRpc('/admin/analytics/mentions', { search: '' }, makeAuthedCtx({ db, role: 'author' }))
     expect(res.status).toBe(403)
     expect((await parseRpcJson<RpcError>(res)).code).toBe('FORBIDDEN')
   })

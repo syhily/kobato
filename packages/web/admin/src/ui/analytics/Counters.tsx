@@ -30,7 +30,7 @@ export function Counters({ initial, className, scope }: CountersProps) {
   const { t } = useI18n()
   const state = useAnalyticsDashboardState()
   const query = useQuery(
-    orpcQuery.analytics.counters.queryOptions({
+    orpcQuery.admin.analytics.counters.queryOptions({
       input: buildAnalyticsInput(state, { scope }),
     }),
   )

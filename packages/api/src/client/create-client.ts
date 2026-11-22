@@ -1,4 +1,5 @@
 import type { apiContract } from '@kobato/api/contract'
+import type { publicContract } from '@kobato/api/public-contract'
 import type { ClientContext } from '@orpc/client'
 import type { RPCLinkOptions } from '@orpc/client/fetch'
 import type { ContractRouterClient } from '@orpc/contract'
@@ -27,4 +28,13 @@ export function createKobatoClient(options: KobatoClientOptions): ContractRouter
     url: options.url,
   })
   return createORPCClient(link)
+}
+
+/**
+ * The headless public seam: the same transport as `createKobatoClient`, narrowed to the `public` group so external
+ * consumers get `client.content.*` / `client.comments.*` against the canonical `/rpc/public/*` paths — with no
+ * `account`/`admin` surface reachable from the returned client.
+ */
+export function createKobatoPublicClient(options: KobatoClientOptions): ContractRouterClient<typeof publicContract> {
+  return createKobatoClient(options).public
 }

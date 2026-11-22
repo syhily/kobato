@@ -29,7 +29,7 @@ export interface MyEditCommentDialogProps {
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
   const { t } = useI18n()
   const update = useMutation({
-    ...orpcQuery.comments.updateOwn.mutationOptions(),
+    ...orpcQuery.account.comments.updateOwn.mutationOptions(),
     onSuccess: () => onSaved(),
     onError: onMutationError('admin.toast.commentSaveFailed', t),
   })

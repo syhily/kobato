@@ -5,7 +5,7 @@ import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const { musicRouter } = await import('@kobato/server/http/controllers/music.controller')
+const { musicRouter } = await import('@kobato/server/http/controllers/public/music.controller')
 
 const db = getTestDb()
 

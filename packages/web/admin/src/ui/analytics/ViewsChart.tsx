@@ -26,7 +26,7 @@ export function ViewsChart({ className, scope }: ViewsChartProps) {
   const state = useAnalyticsDashboardState()
   const unit: TimeUnit = pickTimeUnit(state.range)
   const query = useQuery(
-    orpcQuery.analytics.views.queryOptions({
+    orpcQuery.admin.analytics.views.queryOptions({
       input: buildAnalyticsInput(state, { scope, unit }),
     }),
   )

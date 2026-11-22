@@ -27,6 +27,7 @@ type SsrCallerArgs = {
 
 export type SsrCallerResult = {
   caller: SsrCaller
+  responseHeaders: Headers
   cspNonce: string
   analyticsEventId: string
   viewer: SessionUser | null
@@ -36,13 +37,15 @@ export type SsrCallerResult = {
 
 export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   const rc = getRequestContext(args)
+  const responseHeaders = new Headers()
   const context: HandlerContext = {
     request: args.request,
     requestFacts: rc.requestFacts,
     session: rc.session,
     viewer: rc.viewer,
     clientAddress: rc.clientAddress,
-    responseHeaders: new Headers(),
+    responseHeaders,
+    markSessionDirty: () => rc.markSessionDirty(),
     db: rc.db,
     settings: rc.settings,
     localization: rc.localization,
@@ -52,6 +55,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
       context,
       interceptors: [ssrTraceInterceptor, orpcInputValidationInterceptor],
     }),
+    responseHeaders,
     cspNonce: rc.cspNonce,
     analyticsEventId: rc.requestFacts.analyticsEventId,
     viewer: rc.viewer,
@@ -136,7 +140,7 @@ export function streamDetailExtras(
   commentKey: string,
 ): { comments: Promise<DetailPageComments>; webmentions: Promise<PublicWebmentionWire[]> } {
   return {
-    comments: caller.content.comments.byKey({ pageKey: commentKey }),
-    webmentions: caller.webmentions.list({ page_key: commentKey }).then((r) => r.webmentions),
+    comments: caller.public.content.comments.byKey({ pageKey: commentKey }),
+    webmentions: caller.public.webmentions.list({ page_key: commentKey }).then((r) => r.webmentions),
   }
 }
