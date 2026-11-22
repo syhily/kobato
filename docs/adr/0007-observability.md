@@ -212,7 +212,7 @@ privacy), and log rows must never stand in for metric rows.
 dynamically imported, and `use-rum`'s `import.meta.env.SSR` early return removes the dynamic-import edge from the server
 graph, so the SSR/SEA bundle carries no browser SDK.
 
-The bootstrap from `@kobato/telemetry/rum.ts` carries only
+The bootstrap from `@kobato/settings/telemetry/rum.ts` carries only
 `{ applicationId, service, environment, sessionSampleRate, clientIdentity }` — no endpoint, organization, or credential.
 The SDK's mandatory `clientToken` is the public constant `RUM_RELAY_CLIENT_TOKEN` (`'kobato-relay'`), which never leaves
 the relay unrewritten; `resolveTraceConfig` projects the endpoint/organization/token only into the server-side
