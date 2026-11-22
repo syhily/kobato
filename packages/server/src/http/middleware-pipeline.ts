@@ -9,7 +9,7 @@ import { onErrorHandler } from '@kobato/server/http/errors'
 import { corsMiddleware } from '@kobato/server/http/middlewares/cors'
 import { honoInstallGateMiddleware } from '@kobato/server/http/middlewares/install-gate'
 import { requestContextMiddleware } from '@kobato/server/http/middlewares/request-context'
-import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
+import { requestTimeout, type TimeoutOverride } from '@kobato/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@kobato/server/http/middlewares/trailing-slash'
 import { trustProxy } from '@kobato/server/http/middlewares/trust-proxy'
 import { honoWpDecoyMiddleware } from '@kobato/server/http/middlewares/wp-decoy'
@@ -88,6 +88,13 @@ export function siteUsesHttps(bundle: BlogSettingsBundle | null): boolean {
   return URL.parse(bundle?.siteIdentity?.website ?? '')?.protocol === 'https:'
 }
 
+/** The restore endpoints run on a 30-minute budget — every other request gets the 30s default above. */
+export const REQUEST_TIMEOUT_OVERRIDES: readonly TimeoutOverride[] = [
+  { prefix: '/api/admin/backup/upload-restore', timeoutMs: 30 * 60_000 },
+  { prefix: '/rpc/admin/backup/uploadRestoreDecrypt', timeoutMs: 30 * 60_000 },
+  { prefix: '/api/setup/restore', timeoutMs: 30 * 60_000 },
+]
+
 export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
   app.use(trustProxy)
@@ -154,12 +161,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   )
   app.use(trailingSlashNormaliser)
   app.use(honoWpDecoyMiddleware)
-  app.use(
-    requestTimeout(30_000, [
-      { prefix: '/api/admin/backup/upload-restore', timeoutMs: 30 * 60_000 },
-      { prefix: '/api/setup/restore', timeoutMs: 30 * 60_000 },
-    ]),
-  )
+  app.use(requestTimeout(30_000, REQUEST_TIMEOUT_OVERRIDES))
   app.use(requestContextMiddleware)
   app.use(honoInstallGateMiddleware)
 

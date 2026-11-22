@@ -1,5 +1,6 @@
 import type { FontRow } from '@kobato/db/schema/font'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog, setting } from '@kobato/db/schema/config'
 import { font } from '@kobato/db/schema/font'
 import { user } from '@kobato/db/schema/user'
@@ -38,7 +39,7 @@ let seq = 0
 
 async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Promise<FontRow> {
   const hash = overrides.hash ?? `hash-${++seq}`
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(font)
     .values({
       familyName: 'Test Sans',
@@ -56,7 +57,7 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
 }
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -101,7 +102,7 @@ describe('adminFontsRouter.delete', () => {
 
     expect(res.font.id).toBe(seeded.id)
     expect(res.font.familyName).toBe(seeded.familyName)
-    const remaining = await db.select().from(font).where(eq(font.id, seeded.id))
+    const remaining = await sqliteOf(db).select().from(font).where(eq(font.id, seeded.id))
     expect(remaining).toHaveLength(0)
 
     const packageKeys = packageFiles.map((name) => `fonts/${seeded.hash}/${name}`)
@@ -111,7 +112,7 @@ describe('adminFontsRouter.delete', () => {
     }
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'font_deleted'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'font_deleted'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('font')
     expect(rows[0]!.resourceId).toBe(seeded.id)
@@ -136,11 +137,11 @@ describe('adminFontsRouter.setSlot', () => {
 
     await call(adminFontsRouter.setSlot, { slot: 'post', fontIds: [seeded.id] }, { context: adminCtx(admin) })
 
-    const settingsRows = await db.select().from(setting).where(eq(setting.scope, 'blog.fonts'))
+    const settingsRows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.fonts'))
     expect(settingsRows[0]?.data).toMatchObject({ post: [seeded.id] })
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'font_slot_updated'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'font_slot_updated'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('font')
     expect(rows[0]!.resourceId).toBe('post')

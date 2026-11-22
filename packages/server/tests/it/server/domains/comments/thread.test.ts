@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -82,7 +83,7 @@ describe('integration / comment threading', () => {
     const created = await parseRpcJson<{ comment: { id: string } }>(commentRes)
 
     const expected = await canonicalizeCommentBody(input)
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select()
       .from(comment)
       .where(eq(comment.id, Number(created.comment.id)))

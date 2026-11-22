@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { content } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
@@ -28,7 +29,7 @@ afterEach(async () => {
 let seq = 0
 
 async function seedPage(overrides: Partial<typeof pageTable.$inferInsert> = {}) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug: overrides.slug ?? `page-${++seq}-${Math.random().toString(36).slice(2)}`,
@@ -40,7 +41,7 @@ async function seedPage(overrides: Partial<typeof pageTable.$inferInsert> = {}) 
 }
 
 async function seedRevision(ownerId: number, revisionNo: number, status: 'draft' | 'published' = 'published') {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(content)
     .values({
       type: 'page',
@@ -56,7 +57,7 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
 }
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -69,7 +70,7 @@ function adminCtx(userId: number) {
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 describe('adminPagesRouter.get', () => {
@@ -110,7 +111,7 @@ describe('adminPagesRouter.delete', () => {
     const res = await call(adminPagesRouter.delete, { id: String(seeded.id) }, { context: adminCtx(admin) })
 
     expect(res).toBeUndefined()
-    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(pageTable).where(eq(pageTable.id, seeded.id))
     expect(row!.deletedAt).not.toBeNull()
 
     const audits = await auditRowsFor('page_deleted')
@@ -131,7 +132,7 @@ describe('adminPagesRouter.restore', () => {
     const res = await call(adminPagesRouter.restore, { id: String(seeded.id) }, { context: adminCtx(admin) })
 
     expect(res).toEqual({ success: true })
-    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(pageTable).where(eq(pageTable.id, seeded.id))
     expect(row!.deletedAt).toBeNull()
 
     const audits = await auditRowsFor('page_restored')
@@ -160,7 +161,7 @@ describe('adminPagesRouter.unpublish', () => {
 
     expect(res.page.id).toBe(String(seeded.id))
     expect(res.page.published).toBe(false)
-    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(pageTable).where(eq(pageTable.id, seeded.id))
     expect(row!.published).toBe(false)
 
     const audits = await auditRowsFor('page_unpublished')
@@ -248,7 +249,7 @@ describe('adminPagesRouter.upsertMeta', () => {
     expect(res.page.slug).toBe('about')
     expect(res.page.title).toBe('About')
 
-    const rows = await db.select().from(pageTable).where(eq(pageTable.slug, 'about'))
+    const rows = await sqliteOf(db).select().from(pageTable).where(eq(pageTable.slug, 'about'))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ title: 'About', published: false, authorId: admin })
 
@@ -285,7 +286,7 @@ describe('adminPagesRouter.upsertMeta', () => {
     expect(res.page.id).toBe(String(seeded.id))
     expect(res.page.title).toBe('New')
 
-    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(pageTable).where(eq(pageTable.id, seeded.id))
     expect(row).toMatchObject({ slug: 'about', title: 'New', summary: 'updated', showToc: true })
 
     const audits = await auditRowsFor('page_meta_updated')

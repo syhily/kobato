@@ -188,8 +188,12 @@ limiter that must run BEFORE input parsing rides the implementer; `impl.router({
   routes use `failureJsonResponse` / `errorJsonResponse`; a worker isolate throws `WorkerDomainError` carrying the same
   descriptor. Ordinary `Error` is CLI-only; user-visible background failures carry descriptors. Settings strict patches
   reject unknown keys with `unrecognizedKeys`.
-- No ad-hoc Hono RPC routes bypassing `apiRouter`; non-JSON routes belong in `resources/`. Procedure inputs are a single
-  flat object.
+- No ad-hoc Hono JSON command/query routes bypassing `apiRouter`; only audited multipart/stream/download/external
+  protocol resources belong in `resources/`. A JSON admin operation is an oRPC procedure even when its sibling multipart
+  upload stays a resource (`admin.branding.clear` ⇄ the branding upload resource;
+  `admin.backup.restoreStatus`/`restoreProgress`/`uploadRestoreDecrypt` ⇄ the backup download/upload resources).
+  `apps/kobato/tests/arch/api-resource-surface.test.ts` pins the exact paths and browser callers. Procedure inputs are a
+  single flat object.
 
 ## render/
 
@@ -219,15 +223,24 @@ the outgoing response.
 
 Two embedded engines, zero services:
 
-- **Content DB** — SQLite via `node:sqlite` + drizzle at `storage.database`. Transactions are sync callbacks
+- **Content DB** — SQLite via `node:sqlite` + drizzle at `storage.database`, owned entirely by `@kobato/db`: server src
+  NEVER imports `node:sqlite`/Drizzle, constructs SQL, or touches a native client. Server code holds the opaque
+  `Database`/`DatabaseHandle` tokens and calls semantic `@kobato/db/operations/*`; `sqliteOf`/`sqliteEngineOf` and the
+  `SqliteEngine` anatomy are db-plane only. Every transaction executes inside a db operation with sync callbacks
   (`db.transaction(async …)` is a compile error). Column modes `timestamp_ms` / `boolean` / `json`; `LIKE`, not `ILIKE`.
-- **Analytics sidecar** — DuckDB via `@duckdb/node-api` at `storage.analyticsDatabase`: `access_events` (generic-column
-  style; blob semantics in the `blobsMap` in `@kobato/db/duckdb/access-events` — `blob5` is the daily-salted visitor
-  hash, raw IPs never persisted) plus the `device_env_*` sidecars keyed by the event UUID. Queries build with Kysely
-  (compile-only) and execute through `@kobato/db/duckdb/query::runAnalyticsQuery` — the single telemetry perimeter.
-  Dashboard SQL lives in `@kobato/db/duckdb/queries/`; one definition per dimension; geo-unknown excluded unless
-  `includeUnknown: true`. The sidecar recreates empty when missing but is INCLUDED in backups; storage-format upgrade
-  happens at open; legacy `access_log` migrates at boot.
+- **Analytics sidecar** — DuckDB at `storage.analyticsDatabase`, owned entirely by `@kobato/db`: server src NEVER
+  imports `@duckdb/node-api` or `kysely` and never runs DuckDB SQL. `access_events` uses the generic-column style (blob
+  semantics in the `blobsMap` in `@kobato/db/duckdb/access-events` — `blob5` is the daily-salted visitor hash, raw IPs
+  never persisted) plus the `device_env_*` sidecars keyed by the event UUID. Server code carries only the opaque
+  capabilities from `@kobato/db/duckdb/connection` (`AnalyticsWriter` for appends/dedup probes, `AnalyticsReader` + the
+  `duckdb/queries/` modules for reads, `AnalyticsQuery` through the executor seam) and the opaque `AnalyticsHandle`
+  engine token in `bootstrap/analytics-lifecycle.ts` (lifecycle metadata `path`/`inMemory`/`closed` only — no native
+  connection fields; lifecycle/adopt wiring passes it straight into db operations); statements (including CHECKPOINT via
+  `@kobato/db/duckdb/database::checkpointAnalyticsDatabase`) stay behind db operations. The single telemetry perimeter
+  is `domains/analytics/services/analytics-sql.ts::runAnalyticsQuery`, registered into db through
+  `setAnalyticsQueryExecutor` at boot — spans/metrics carry only the stable operation label, never SQL or parameters.
+  Geo-unknown excluded unless `includeUnknown: true`. The sidecar recreates empty when missing but is INCLUDED in
+  backups; storage-format upgrade happens at open; legacy `access_log` migrates at boot.
 - **Backup & restore** — `src/domains/backup/AGENTS.md`. The 30s global request timeout exempts the restore endpoints
   (30 min).
 - **Page views** — `metric.pv` through the in-memory `PageViewBatcher` (flush on 50 bumps / 60s); reads merge
@@ -271,8 +284,8 @@ Two embedded engines, zero services:
 ### Slug derivation
 
 Canonical: `infra/slug/derive::deriveSlug` (pinyin-pro → collapse → github-slugger); resolver `resolve::resolveSlug`;
-fence + in-transaction reservation in `infra/slug/reservation`. Page ↔ post slugs share the `slug_registry` namespace;
-`rethrowSlugConflict` maps raced UNIQUE violations to 409.
+validation stays server-side, while fence + in-transaction reservation lives in `@kobato/db/operations/entity-meta`.
+Page ↔ post slugs share the `slug_registry` namespace; `rethrowSlugConflict` maps raced UNIQUE violations to 409.
 
 ### Images
 
@@ -293,4 +306,6 @@ Batcher 50 events / 500ms, flushed on SIGTERM/SIGINT/beforeExit.
 - `domains/*` imports nothing from `bootstrap/*` — wiring goes through `wire*` seams. Background jobs are the exception
   (self-register on `infra/job-registry`).
 - `http/controllers/*` and `http/loaders/*` orchestrate only; `render/*` never persists.
+- `drizzle-orm` remains a devDependency only for test seed/assertion helpers; no production source may import it or any
+  other persistence driver/unwrap seam.
 - No barrel `index.ts` files; no `*.server.ts` suffix.

@@ -1,4 +1,5 @@
 import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
+import { sqliteOf } from '@kobato/db/database'
 import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox'
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
 import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention'
@@ -65,13 +66,13 @@ describe('adminJobsRouter.list', () => {
   it('aggregates the webmention queue stats (outbox depth/attention, inbox depth/attention)', async () => {
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://a.example/1', targetUrl: 'https://b.example/1' })
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://a.example/2', targetUrl: 'https://b.example/2' })
-    await db
+    await sqliteOf(db)
       .update(webmentionOutbox)
       .set({ status: 'failed' })
       .where(eq(webmentionOutbox.sourceUrl, 'https://a.example/2'))
     await upsertWebmentionInbox(db, { sourceUrl: 'https://c.example/1', targetUrl: 'https://d.example/1' })
     await upsertWebmentionInbox(db, { sourceUrl: 'https://c.example/2', targetUrl: 'https://d.example/2' })
-    const inboxRow = await db.select().from(webmentionInbox).limit(1)
+    const inboxRow = await sqliteOf(db).select().from(webmentionInbox).limit(1)
     await markWebmentionInboxRetry(db, inboxRow[0]!.id, 1, new Date(Date.now() + 60_000), 'fetch failed')
 
     const res = await call(adminJobsRouter.list, undefined, { context: ctx })

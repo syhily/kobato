@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { listPublicPostCardsPaginated } from '@kobato/server/domains/posts/services/public-query'
@@ -16,7 +17,7 @@ beforeEach(async () => {
 async function seedLivePosts(count: number): Promise<void> {
   for (let i = 0; i < count; i++) {
     const date = new Date(Date.UTC(2024, 0, i + 1))
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(postTable)
       .values({
         slug: `post-${i}`,
@@ -28,11 +29,11 @@ async function seedLivePosts(count: number): Promise<void> {
       })
       .returning({ id: postTable.id })
     const postId = rows[0]!.id
-    const revisions = await db
+    const revisions = await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
       .returning({ id: contentTable.id })
-    await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+    await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   }
 }
 

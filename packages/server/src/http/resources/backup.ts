@@ -5,29 +5,23 @@ import { findFirstAdminUser, hasAdmin } from '@kobato/db/operations/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@kobato/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@kobato/server/domains/auth/setup-token'
-import {
-  claimEncryptedUploadForDecrypt,
-  endDecryptClaim,
-  parkEncryptedUpload,
-  releaseEncryptedUpload,
-} from '@kobato/server/domains/backup/pending-uploads'
-import { consumeRestoreJobReport, withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
+import { parkEncryptedUpload } from '@kobato/server/domains/backup/pending-uploads'
+import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
 import {
   beginStagingProgress,
   endStagingProgress,
-  peekRestoreProgress,
   reportStagingProgress,
 } from '@kobato/server/domains/backup/restore-progress'
 import { getBackupStream, isValidBackupKey } from '@kobato/server/domains/backup/services/backup'
 import {
   type StagedBackup,
   assertStagedBackupContainsAdmin,
-  BackupPasswordError,
   EncryptedBackupPasswordRequired,
   MAX_BACKUP_FILE_SIZE,
   restoreFromStagedBackup,
   stageBackup,
 } from '@kobato/server/domains/backup/services/restore'
+import { startRestoreFromStaged } from '@kobato/server/domains/backup/upload-restore'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { errorJsonResponse, failureJsonResponse } from '@kobato/server/http/errors'
 import { csrfGuard } from '@kobato/server/http/middlewares/csrf'
@@ -40,7 +34,7 @@ import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { createMiddleware } from 'hono/factory'
-import { createReadStream, rmSync } from 'node:fs'
+import { rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
 
 const log = getLogger('backup.upload')
@@ -108,31 +102,22 @@ async function claimAndStartRestore(
   options: { withAnalytics?: boolean },
 ): Promise<Response> {
   const viewer = c.var.requestContext.viewer
-  const clientAddress = c.var.requestContext.clientAddress
-  const userAgent = c.req.raw.headers.get('User-Agent')
-  const outcome = await withRestoreClaim(async () => ({
-    restoreFn: async () => {
-      const result = await restoreFromStagedBackup(staged, fileName, options)
-      log.info('Restore from uploaded backup completed', { configApplied: result.configApplied })
-      return result
-    },
-    afterReopenFn: async () => {
+  const outcome = await startRestoreFromStaged(staged, fileName, {
+    withAnalytics: options.withAnalytics,
+    afterReopen: () => {
       recordAuditEvent({
         action: 'backup_restored',
         resourceType: 'backup',
         resourceId: fileName,
         actorId: viewer?.id ?? null,
         actorRole: viewer?.role ?? null,
-        ipAddress: clientAddress,
-        userAgent,
+        ipAddress: c.var.requestContext.clientAddress,
+        userAgent: c.req.raw.headers.get('User-Agent'),
       })
     },
-    onFailureFn: () => {
-      rmSync(staged.dir, { recursive: true, force: true })
-    },
-  }))
+  })
   if (outcome === 'busy') {
-    return busyRestoreResponse(c, staged)
+    return errorJsonResponse(c, 409, 'backup.error.restoreRunning')
   }
   return c.json({ accepted: true })
 }
@@ -160,12 +145,6 @@ const setupRestoreGate = createMiddleware<Env>(async (c, next) => {
 })
 
 export const backupRouter = new Hono<Env>()
-  .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
-    return c.json(consumeRestoreJobReport())
-  })
-  .get('/api/admin/backup/restore-progress', requireRoleMw('admin'), (c) => {
-    return c.json(peekRestoreProgress())
-  })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
     const timestamp = c.req.param('timestamp')
     if (!isValidBackupKey(timestamp)) {
@@ -209,85 +188,6 @@ export const backupRouter = new Hono<Env>()
       }
 
       return claimAndStartRestore(c, stagedOrError, file.name, {})
-    },
-  )
-  .post(
-    '/api/admin/backup/upload-restore/decrypt',
-    requireRoleMw('admin'),
-    csrfGuard,
-    rateLimitByIp('backupRestoreDecrypt', { windowSeconds: 3600, maxAttempts: 30 }),
-    bodyLimit({
-      maxSize: 64 * 1024,
-      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
-    }),
-    async (c) => {
-      const body: unknown = await c.req.json().catch(() => null)
-      if (typeof body !== 'object' || body === null) {
-        return errorJsonResponse(c, 400, 'backup.error.requestInvalid')
-      }
-      const token = 'token' in body && typeof body.token === 'string' ? body.token : ''
-      const password = 'password' in body && typeof body.password === 'string' ? body.password : ''
-      if (token === '' || password === '') {
-        return errorJsonResponse(c, 400, 'backup.error.passwordMissing')
-      }
-      if (password.length > 512) {
-        return errorJsonResponse(c, 400, 'backup.error.passwordTooLong')
-      }
-
-      const claim = claimEncryptedUploadForDecrypt(token)
-      if (!claim.ok) {
-        if (claim.reason === 'in-flight') {
-          return errorJsonResponse(c, 409, 'backup.error.decryptInProgress')
-        }
-        return errorJsonResponse(c, 410, 'backup.error.uploadExpired')
-      }
-      const parked = claim.entry
-
-      let fate: 'keep' | 'release' = 'release'
-      try {
-        const progressOwned = beginStagingProgress()
-        let staged: StagedBackup
-        try {
-          staged = await stageBackup(createReadStream(parked.uploadPath), {
-            password,
-            onProgress: progressOwned
-              ? (stage, doneBytes, totalBytes) => reportStagingProgress(stage, doneBytes, totalBytes)
-              : undefined,
-          })
-        } catch (error) {
-          if (error instanceof BackupPasswordError) {
-            fate = 'keep'
-            return failureJsonResponse(c, error, 400)
-          }
-          if (error instanceof ActionFailure) {
-            return failureJsonResponse(c, error, 410)
-          }
-          return errorJsonResponse(c, 410, 'backup.error.invalidFileReupload')
-        } finally {
-          if (progressOwned) {
-            endStagingProgress()
-          }
-        }
-
-        try {
-          await assertStagedBackupContainsAdmin(staged)
-        } catch {
-          rmSync(staged.dir, { recursive: true, force: true })
-          return errorJsonResponse(c, 410, 'backup.error.invalidFileNoAdminReupload')
-        }
-
-        const res = await claimAndStartRestore(c, staged, parked.fileName, {})
-        if (res.status !== 200) {
-          fate = 'keep'
-        }
-        return res
-      } finally {
-        if (fate === 'keep') {
-          endDecryptClaim(token)
-        } else {
-          releaseEncryptedUpload(token)
-        }
-      }
     },
   )
   .post(

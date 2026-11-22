@@ -78,7 +78,7 @@ function fakeDb(rows: unknown[] = []): Database {
 
 import {
   commentCountsByOwnerIds,
-  consumeActiveLikeToken,
+  consumeLikeAndDecrement,
   existsActiveLikeToken,
   metricVoteUp,
   metricsByOwnerIds,
@@ -99,13 +99,13 @@ describe('like operations', () => {
 
   it('consumes an active like token', async () => {
     const db = fakeDb([{ id: 1 }])
-    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1 }, 'token')
+    const consumed = await consumeLikeAndDecrement(db, { type: 'post', ownerId: 1 }, 'token')
     expect(consumed).toBe(true)
   })
 
   it('returns false when no token is consumed', async () => {
     const db = fakeDb([])
-    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1 }, 'token')
+    const consumed = await consumeLikeAndDecrement(db, { type: 'post', ownerId: 1 }, 'token')
     expect(consumed).toBe(false)
   })
 

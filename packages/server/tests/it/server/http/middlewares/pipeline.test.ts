@@ -1,6 +1,6 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { closeDatabase } from '@kobato/db/database'
+import { closeDatabase, databaseOf } from '@kobato/db/database'
 import { upsertSetting } from '@kobato/db/operations/setting'
 import { requestContext } from '@kobato/server/http/request-context'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -69,7 +69,7 @@ describe('middleware-pipeline / buildLoadContext', () => {
     const closed = createTestDatabaseFile()
     closeDatabase(closed)
 
-    await expect(buildLoadContext(makeContextStub({ db: closed.db }))).rejects.toThrow()
+    await expect(buildLoadContext(makeContextStub({ db: databaseOf(closed) }))).rejects.toThrow()
   })
 
   it('sets the canonical RequestContext as the single React Router context value', async () => {

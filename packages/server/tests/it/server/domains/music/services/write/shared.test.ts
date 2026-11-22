@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { music } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,16 +27,18 @@ function candidateFor(byte: number): string {
 }
 
 async function seedMusicWithPlayerId(playerId: string): Promise<void> {
-  await db.insert(music).values({
-    source: 'netease',
-    sourceId: `sid-${playerId}`,
-    playerId,
-    name: 'Collision Song',
-    artist: 'Artist',
-    album: 'Album',
-    audioStoragePath: `musics/${playerId}.mp3`,
-    coverStoragePath: `musics/${playerId}.jpg`,
-  })
+  await sqliteOf(db)
+    .insert(music)
+    .values({
+      source: 'netease',
+      sourceId: `sid-${playerId}`,
+      playerId,
+      name: 'Collision Song',
+      artist: 'Artist',
+      album: 'Album',
+      audioStoragePath: `musics/${playerId}.mp3`,
+      coverStoragePath: `musics/${playerId}.jpg`,
+    })
 }
 
 describe('music/write/shared — generateUniquePlayerId', () => {

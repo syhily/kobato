@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user } from '@kobato/db/schema/user'
 import { recordSessionLogin } from '@kobato/server/domains/auth/repo'
@@ -13,7 +14,7 @@ beforeEach(async () => {
 
 describe('listSessionsByUser', () => {
   it('returns parsed metadata for each live session row of the user', async () => {
-    const [u] = await db
+    const [u] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'T', email: 'sessions@example.com', password: 'hashed', role: 'admin' })
       .returning()
@@ -25,12 +26,14 @@ describe('listSessionsByUser', () => {
       { sid: 'sid-b', userAgent: null, ip: '203.0.113.2' },
     ] as const
     for (const seed of seeds) {
-      await db.insert(sessionTable).values({
-        id: seed.sid,
-        userId,
-        data: {},
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-      })
+      await sqliteOf(db)
+        .insert(sessionTable)
+        .values({
+          id: seed.sid,
+          userId,
+          data: {},
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        })
       await recordSessionLogin(db, { sid: seed.sid, userId, userAgent: seed.userAgent, ip: seed.ip, loginAt })
     }
 

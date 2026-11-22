@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user } from '@kobato/db/schema/user'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -14,7 +15,7 @@ const ctx = makeAuthedCtx({ role: 'admin', db })
 let seq = 0
 
 async function seedUser(name: string): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `user-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -29,7 +30,9 @@ async function seedAuditRows(count: number, overrides: Partial<typeof auditLog.$
     ...overrides,
   }))
   for (let i = 0; i < values.length; i += 500) {
-    await db.insert(auditLog).values(values.slice(i, i + 500))
+    await sqliteOf(db)
+      .insert(auditLog)
+      .values(values.slice(i, i + 500))
   }
 }
 

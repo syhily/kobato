@@ -191,7 +191,8 @@ reverse.
 
 ## Testing
 
-Own vitest projects (`inkling-unit` / `inkling-iso-unit`, jsdom, globals off), exported from `tests/vitest.config.ts`
-and inlined into the root config (see `tests/AGENTS.md`); the config inlines `@testing-library/jest-dom`
-(`server.deps.inline`) — keep that inline entry. Rendered-card specs need the decorate adapter
-(`tests/utils/test-editor.ts`); an unregistered slot throws on first card render.
+Own vitest project (`inkling-unit`, jsdom, globals off, `isolate: true`), built by the `inklingUnitProject` factory
+(`@kobato/test/projects/inkling-unit.ts`) and instantiated from `tests/vitest.config.ts`, which the root registry
+references by path (see `tests/AGENTS.md`); the factory inlines `@testing-library/jest-dom` (`server.deps.inline`) —
+keep that inline entry. Rendered-card specs need the decorate adapter (`tests/utils/test-editor.ts`); an unregistered
+slot throws on first card render.

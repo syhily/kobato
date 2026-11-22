@@ -2,6 +2,7 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { Mock } from 'vitest'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user, verification } from '@kobato/db/schema/user'
@@ -76,7 +77,7 @@ afterAll(async () => {
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
 async function seedGateAdmin() {
-  await db.insert(user).values({
+  await sqliteOf(db).insert(user).values({
     name: 'Gatekeeper',
     email: 'gatekeeper@example.com',
     password: 'not-a-real-hash',
@@ -86,7 +87,7 @@ async function seedGateAdmin() {
 
 async function seedUser(loginMethod: 'password' | 'magic-link' | 'passkey', email = 'admin@example.com') {
   const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Admin',
@@ -183,7 +184,7 @@ function magicLinkFormData(token: string) {
 }
 
 async function getLinkRow(userId: number) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(verification)
     .where(and(eq(verification.purpose, 'signin-link'), eq(verification.userId, userId)))
@@ -192,7 +193,7 @@ async function getLinkRow(userId: number) {
 
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, actionName))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
 function linkFromBody(body: string): string {
@@ -278,7 +279,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
     expect(result.headers.get('Location')).toBe('/admin')
     expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
-    const sessions = await db.select().from(sessionTable).where(eq(sessionTable.userId, admin.id))
+    const sessions = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, admin.id))
     expect(sessions).toHaveLength(1)
 
     const logins = await auditRowsFor('login')
@@ -296,7 +297,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
     const admin = await seedUser('magic-link')
     const token = await identifyAndExtractToken()
 
-    await db
+    await sqliteOf(db)
       .update(verification)
       .set({ expiresAt: new Date(Date.now() - 1000) })
       .where(and(eq(verification.purpose, 'signin-link'), eq(verification.userId, admin.id)))
@@ -307,7 +308,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
     const result = await callAction('magiclink', magicLinkFormData(token))
     expect(result.data?.error).toBe('链接无效或已过期，请重新获取。')
-    expect(await db.select().from(sessionTable).where(eq(sessionTable.userId, admin.id))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, admin.id))).toHaveLength(0)
   })
 
   it('rate limiting blocks the 4th link send', async () => {

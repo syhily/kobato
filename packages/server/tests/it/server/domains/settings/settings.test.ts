@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { findSettingByScope } from '@kobato/db/operations/setting'
 import { setting } from '@kobato/db/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
@@ -198,7 +199,7 @@ async function seedSections(
     if (data === null) {
       continue
     }
-    await db.insert(setting).values({ scope, data })
+    await sqliteOf(db).insert(setting).values({ scope, data })
   }
 }
 
@@ -236,10 +237,12 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('treats a deployment as uninstalled when only some sections exist', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.general',
-      data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.general',
+        data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
+      })
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -393,22 +396,24 @@ describe('services/settings — mail section', () => {
       except: ['blog.mail'],
       override: {},
     })
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          notificationEmails: true,
-          sender: 'a@b.co',
-          transport: 'smtp',
-          smtpHost: 'smtp.old.com',
-          smtpPort: 587,
-          smtpUser: 'olduser',
-          smtpPass: 'STOREDSMTPPASS',
-          smtpSecure: false,
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            notificationEmails: true,
+            sender: 'a@b.co',
+            transport: 'smtp',
+            smtpHost: 'smtp.old.com',
+            smtpPort: 587,
+            smtpUser: 'olduser',
+            smtpPass: 'STOREDSMTPPASS',
+            smtpSecure: false,
+          },
         },
-      },
-    })
+      })
 
     await updateBlogSettingsSection(
       db,
@@ -438,24 +443,26 @@ describe('services/settings — mail section', () => {
 
   it("preserves the existing mailgunApiKey by reading scope='blog.mail' when omitted", async () => {
     await seedSections(fixtureBundle, { except: ['blog.mail'] })
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          notificationEmails: true,
-          sender: 'a@b.co',
-          transport: 'mailgun',
-          smtpHost: '',
-          smtpPort: 587,
-          smtpUser: '',
-          smtpPass: '',
-          smtpSecure: false,
-          mailgunDomain: 'mg.old.com',
-          mailgunApiKey: 'STOREDMAILGUNKEY',
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            notificationEmails: true,
+            sender: 'a@b.co',
+            transport: 'mailgun',
+            smtpHost: '',
+            smtpPort: 587,
+            smtpUser: '',
+            smtpPass: '',
+            smtpSecure: false,
+            mailgunDomain: 'mg.old.com',
+            mailgunApiKey: 'STOREDMAILGUNKEY',
+          },
         },
-      },
-    })
+      })
 
     await updateBlogSettingsSection(
       db,
@@ -505,17 +512,19 @@ describe('services/settings — comments section', () => {
 
   it('preserves the stored githubToken when the patch omits it', async () => {
     await seedSections(fixtureBundle, { except: ['blog.comments'] })
-    await db.insert(setting).values({
-      scope: 'blog.comments',
-      data: {
-        comments: {
-          size: 10,
-          avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'] },
-          githubToken: 'STOREDGITHUBTOKEN',
-          tokenTtlSeconds: 1800,
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.comments',
+        data: {
+          comments: {
+            size: 10,
+            avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'] },
+            githubToken: 'STOREDGITHUBTOKEN',
+            tokenTtlSeconds: 1800,
+          },
         },
-      },
-    })
+      })
 
     await updateBlogSettingsSection(db, 'comments', { comments: { avatar: { sources: ['gravatar'] } } }, null)
 
@@ -529,16 +538,18 @@ describe('services/settings — comments section', () => {
 
   it('hydrates a legacy row without avatar.sources with the schema default', async () => {
     await seedSections(fixtureBundle, { except: ['blog.comments'] })
-    await db.insert(setting).values({
-      scope: 'blog.comments',
-      data: {
-        comments: {
-          size: 10,
-          avatar: { mirror: 'https://gravatar.com/avatar/' },
-          tokenTtlSeconds: 1800,
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.comments',
+        data: {
+          comments: {
+            size: 10,
+            avatar: { mirror: 'https://gravatar.com/avatar/' },
+            tokenTtlSeconds: 1800,
+          },
         },
-      },
-    })
+      })
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -851,24 +862,26 @@ describe('services/settings — security section', () => {
 describe('services/settings — section patch merge', () => {
   it('keeps the stored SMTP TLS flags when a focused patch only carries the sender', async () => {
     await seedSections(fixtureBundle, { except: ['blog.mail'] })
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          notificationEmails: true,
-          sender: 'a@b.co',
-          transport: 'smtp',
-          smtpHost: 'smtp.example.com',
-          smtpPort: 465,
-          smtpUser: 'user',
-          smtpPass: 'STORED-SMTP-PASS',
-          smtpSecure: true,
-          smtpRequireTls: false,
-          smtpRejectUnauthorized: false,
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            notificationEmails: true,
+            sender: 'a@b.co',
+            transport: 'smtp',
+            smtpHost: 'smtp.example.com',
+            smtpPort: 465,
+            smtpUser: 'user',
+            smtpPass: 'STORED-SMTP-PASS',
+            smtpSecure: true,
+            smtpRequireTls: false,
+            smtpRejectUnauthorized: false,
+          },
         },
-      },
-    })
+      })
 
     await updateBlogSettingsSection(db, 'mail', { mail: { sender: 'new@example.com' } }, null)
 
@@ -920,14 +933,16 @@ describe('services/settings — section patch merge', () => {
 
   it('replaces csrf.exemptPaths wholesale instead of concatenating', async () => {
     await seedSections(fixtureBundle, { except: ['blog.security'] })
-    await db.insert(setting).values({
-      scope: 'blog.security',
-      data: {
-        csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
-        cors: { enabled: false, origins: [] },
-        passkey: { enabled: false },
-      },
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.security',
+        data: {
+          csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
+          cors: { enabled: false, origins: [] },
+          passkey: { enabled: false },
+        },
+      })
 
     await updateBlogSettingsSection(db, 'security', { csrf: { exemptPaths: ['/webhook/github'] } }, null)
 
@@ -947,14 +962,16 @@ describe('services/settings — section patch merge', () => {
 
   it('merges a nested cors patch and preserves the sibling buckets', async () => {
     await seedSections(fixtureBundle, { except: ['blog.security'] })
-    await db.insert(setting).values({
-      scope: 'blog.security',
-      data: {
-        csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
-        cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
-        passkey: { enabled: false },
-      },
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.security',
+        data: {
+          csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
+          cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
+          passkey: { enabled: false },
+        },
+      })
 
     await updateBlogSettingsSection(db, 'security', { cors: { enabled: true } }, null)
 
@@ -1002,16 +1019,18 @@ describe('services/settings — snapshot reader', () => {
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
     await seedSections(fixtureBundle, { except: ['blog.cache'] })
-    await db.insert(setting).values({
-      scope: 'blog.cache',
-      data: {
-        cache: {
-          og: { prefix: 'og:', ttlSeconds: 3600 },
-          calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
-          avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.cache',
+        data: {
+          cache: {
+            og: { prefix: 'og:', ttlSeconds: 3600 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+          },
         },
-      },
-    })
+      })
 
     const bundle = await hydrateBlogSettings(db)
 

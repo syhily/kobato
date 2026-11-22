@@ -1,5 +1,6 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog, setting } from '@kobato/db/schema/config'
 import { storageMigration } from '@kobato/db/schema/storage-migration'
 import { user } from '@kobato/db/schema/user'
@@ -20,14 +21,16 @@ const db = getTestDb()
 let adminId = 0
 
 async function seedBaselineSettings(): Promise<void> {
-  await db.insert(setting).values([
-    { scope: 'blog.general', data: TEST_BLOG_SETTINGS_BUNDLE.siteIdentity },
-    { scope: 'blog.assets', data: TEST_BLOG_SETTINGS_BUNDLE.assets },
-  ])
+  await sqliteOf(db)
+    .insert(setting)
+    .values([
+      { scope: 'blog.general', data: TEST_BLOG_SETTINGS_BUNDLE.siteIdentity },
+      { scope: 'blog.assets', data: TEST_BLOG_SETTINGS_BUNDLE.assets },
+    ])
 }
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -77,11 +80,11 @@ describe('adminSettingsRouter.update', () => {
     })
     expect((res.section as { mail: Record<string, unknown> }).mail).not.toHaveProperty('smtpPass')
 
-    const [row] = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
+    const [row] = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect((row.data as { mail: { smtpPass: string } }).mail.smtpPass).toMatch(/^enc2:/)
 
     await flushAuditLog()
-    const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'settings_updated'))
+    const auditRows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'settings_updated'))
     expect(auditRows).toHaveLength(1)
     expect(auditRows[0]!.resourceType).toBe('setting')
     expect(auditRows[0]!.resourceId).toBe('mail')
@@ -194,7 +197,7 @@ describe('adminSettingsRouter.update', () => {
 
   it('rejects storage patches with CONFLICT while a migration is in flight', async () => {
     const now = new Date()
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 'local-to-s3',
       targetStorage: null,

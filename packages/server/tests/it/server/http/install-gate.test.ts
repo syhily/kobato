@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { user } from '@kobato/db/schema/user'
 import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -68,7 +69,9 @@ describe('honoInstallGateMiddleware', () => {
 
   async function seedAdmin(): Promise<void> {
     const hashed = await bcrypt.hash('Password123!', 12)
-    await db.insert(user).values({ name: 'Admin', email: 'admin@example.com', password: hashed, role: 'admin' })
+    await sqliteOf(db)
+      .insert(user)
+      .values({ name: 'Admin', email: 'admin@example.com', password: hashed, role: 'admin' })
   }
 
   describe('exempt paths (noAdmin → passes through)', () => {
@@ -99,7 +102,7 @@ describe('honoInstallGateMiddleware', () => {
       const app = await makeApp()
       const res = await app.request('/posts/hello')
       expect(res.status).toBe(200)
-      const admins = await db.select().from(user).where(eq(user.role, 'admin'))
+      const admins = await sqliteOf(db).select().from(user).where(eq(user.role, 'admin'))
       expect(admins.length).toBe(1)
     })
   })

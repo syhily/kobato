@@ -1,6 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user as userTable } from '@kobato/db/schema/user'
@@ -57,7 +58,7 @@ function ctxWithSession(
 }
 
 async function seedLoginUser(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: 'Admin',
@@ -74,7 +75,7 @@ async function seedLoginUser(): Promise<number> {
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 const STATUS_INPUT = { redirectTo: null, action: null, token: null, error: null }
@@ -214,7 +215,7 @@ describe('account auth controller — login', () => {
     expect('setCookie' in result).toBe(false)
     expect(ctx.responseHeaders.get('Set-Cookie')).toMatch(/^__session=/)
 
-    const sessions = await db.select().from(sessionTable).where(eq(sessionTable.userId, id))
+    const sessions = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, id))
     expect(sessions).toHaveLength(1)
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)

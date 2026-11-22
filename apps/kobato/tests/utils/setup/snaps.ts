@@ -10,6 +10,5 @@ vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation', async () => {
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {
-  vi.useRealTimers()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })

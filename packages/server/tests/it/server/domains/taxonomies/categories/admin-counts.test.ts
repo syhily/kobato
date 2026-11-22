@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { post } from '@kobato/db/schema/post'
 import { category } from '@kobato/db/schema/taxonomy'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -11,7 +12,7 @@ beforeEach(async () => {
 
 describe('listCategoriesForAdmin', () => {
   it('counts published posts per category regardless of visibility or scheduled date', async () => {
-    const [techRow, lifeRow] = await db
+    const [techRow, lifeRow] = await sqliteOf(db)
       .insert(category)
       .values([
         { name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 },
@@ -22,94 +23,96 @@ describe('listCategoriesForAdmin', () => {
     const future = new Date(Date.now() + 24 * 60 * 60 * 1000)
     const past = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-    await db.insert(post).values([
-      {
-        slug: 'tech-visible',
-        title: 'Tech Visible',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: true,
-        published: true,
-        publishedAt: past,
-        publishedRevisionId: 1,
-      },
-      {
-        slug: 'tech-hidden',
-        title: 'Tech Hidden',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: false,
-        published: true,
-        publishedAt: past,
-        publishedRevisionId: 2,
-      },
-      {
-        slug: 'tech-future',
-        title: 'Tech Future',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: true,
-        published: true,
-        publishedAt: future,
-        publishedRevisionId: 3,
-      },
-      {
-        slug: 'tech-norev',
-        title: 'Tech NoRev',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: true,
-        published: true,
-        publishedAt: past,
-      },
-      {
-        slug: 'tech-draft',
-        title: 'Tech Draft',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: true,
-        published: false,
-        publishedAt: past,
-      },
-      {
-        slug: 'tech-deleted',
-        title: 'Tech Deleted',
-        summary: '',
-        cover: '',
-        categoryId: techRow.id,
-        visible: true,
-        published: true,
-        publishedAt: past,
-        deletedAt: new Date(),
-      },
-      {
-        slug: 'life-post',
-        title: 'Life Post',
-        summary: '',
-        cover: '',
-        categoryId: lifeRow.id,
-        visible: true,
-        published: true,
-        publishedAt: past,
-        publishedRevisionId: 4,
-      },
-      {
-        slug: 'uncategorized',
-        title: 'Uncategorized',
-        summary: '',
-        cover: '',
-        categoryId: null,
-        visible: true,
-        published: true,
-        publishedAt: past,
-        publishedRevisionId: 5,
-      },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        {
+          slug: 'tech-visible',
+          title: 'Tech Visible',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: true,
+          published: true,
+          publishedAt: past,
+          publishedRevisionId: 1,
+        },
+        {
+          slug: 'tech-hidden',
+          title: 'Tech Hidden',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: false,
+          published: true,
+          publishedAt: past,
+          publishedRevisionId: 2,
+        },
+        {
+          slug: 'tech-future',
+          title: 'Tech Future',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: true,
+          published: true,
+          publishedAt: future,
+          publishedRevisionId: 3,
+        },
+        {
+          slug: 'tech-norev',
+          title: 'Tech NoRev',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: true,
+          published: true,
+          publishedAt: past,
+        },
+        {
+          slug: 'tech-draft',
+          title: 'Tech Draft',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: true,
+          published: false,
+          publishedAt: past,
+        },
+        {
+          slug: 'tech-deleted',
+          title: 'Tech Deleted',
+          summary: '',
+          cover: '',
+          categoryId: techRow.id,
+          visible: true,
+          published: true,
+          publishedAt: past,
+          deletedAt: new Date(),
+        },
+        {
+          slug: 'life-post',
+          title: 'Life Post',
+          summary: '',
+          cover: '',
+          categoryId: lifeRow.id,
+          visible: true,
+          published: true,
+          publishedAt: past,
+          publishedRevisionId: 4,
+        },
+        {
+          slug: 'uncategorized',
+          title: 'Uncategorized',
+          summary: '',
+          cover: '',
+          categoryId: null,
+          visible: true,
+          published: true,
+          publishedAt: past,
+          publishedRevisionId: 5,
+        },
+      ])
 
     const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const result = await listCategoriesForAdmin(db, {})
@@ -122,7 +125,9 @@ describe('listCategoriesForAdmin', () => {
   })
 
   it('returns zero counts when no posts match', async () => {
-    await db.insert(category).values([{ name: 'Empty', slug: 'empty', cover: '', description: '', sortOrder: 0 }])
+    await sqliteOf(db)
+      .insert(category)
+      .values([{ name: 'Empty', slug: 'empty', cover: '', description: '', sortOrder: 0 }])
 
     const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const result = await listCategoriesForAdmin(db, {})
@@ -132,35 +137,37 @@ describe('listCategoriesForAdmin', () => {
   })
 
   it('list count and upsert-returned count agree (both exclude drafts)', async () => {
-    const [cat] = await db
+    const [cat] = await sqliteOf(db)
       .insert(category)
       .values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
       .returning()
 
     const past = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    await db.insert(post).values([
-      {
-        slug: 'tech-published',
-        title: 'Tech Published',
-        summary: '',
-        cover: '',
-        categoryId: cat.id,
-        visible: true,
-        published: true,
-        publishedAt: past,
-        publishedRevisionId: 1,
-      },
-      {
-        slug: 'tech-draft',
-        title: 'Tech Draft',
-        summary: '',
-        cover: '',
-        categoryId: cat.id,
-        visible: true,
-        published: false,
-        publishedAt: past,
-      },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        {
+          slug: 'tech-published',
+          title: 'Tech Published',
+          summary: '',
+          cover: '',
+          categoryId: cat.id,
+          visible: true,
+          published: true,
+          publishedAt: past,
+          publishedRevisionId: 1,
+        },
+        {
+          slug: 'tech-draft',
+          title: 'Tech Draft',
+          summary: '',
+          cover: '',
+          categoryId: cat.id,
+          visible: true,
+          published: false,
+          publishedAt: past,
+        },
+      ])
 
     const { listCategoriesForAdmin } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')

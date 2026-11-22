@@ -1,15 +1,17 @@
 import type { Database } from '@kobato/db/database'
 
+import { sqliteOf } from '@kobato/db/database'
 import { postTag } from '@kobato/db/schema/post-tag'
 import { tag } from '@kobato/db/schema/taxonomy'
 import { eq, inArray } from 'drizzle-orm'
 
 export function setPostTags(db: Database, postId: number, tagIds: number[]): void {
-  db.delete(postTag).where(eq(postTag.postId, postId)).run()
+  sqliteOf(db).delete(postTag).where(eq(postTag.postId, postId)).run()
   if (tagIds.length === 0) {
     return
   }
-  db.insert(postTag)
+  sqliteOf(db)
+    .insert(postTag)
     .values(tagIds.map((tagId) => ({ postId, tagId })))
     .onConflictDoNothing()
     .run()
@@ -20,7 +22,7 @@ export async function findTagNamesByPostIds(db: Database, postIds: number[]): Pr
   if (postIds.length === 0) {
     return map
   }
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ postId: postTag.postId, name: tag.name })
     .from(postTag)
     .innerJoin(tag, eq(postTag.tagId, tag.id))
@@ -38,7 +40,7 @@ export async function findTagNamesByPostIds(db: Database, postIds: number[]): Pr
 }
 
 export async function findTagNamesByPostId(db: Database, postId: number): Promise<string[]> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ name: tag.name })
     .from(postTag)
     .innerJoin(tag, eq(postTag.tagId, tag.id))

@@ -1,3 +1,11 @@
+import { sqliteOf } from '@kobato/db/database'
+import {
+  buildAuditLogWhere,
+  countAuditLogs,
+  listAuditLogs,
+  fetchAuditLogActorMap,
+  fetchAuditLogActors,
+} from '@kobato/db/operations/audit-log'
 import { auditLog } from '@kobato/db/schema/config'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -7,13 +15,6 @@ import {
   runArchiveJob,
 } from '@kobato/server/domains/audit/services/archive'
 import { flushAuditLog, pushAuditEvent } from '@kobato/server/domains/audit/services/batcher'
-import {
-  buildAuditLogWhere,
-  countAuditLogs,
-  listAuditLogs,
-  fetchAuditLogActorMap,
-  fetchAuditLogActors,
-} from '@kobato/server/domains/audit/services/query'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
@@ -36,14 +37,14 @@ afterEach(() => {
 })
 
 async function seedUser(role: 'admin' | 'visitor' = 'admin', name = 'T', email = 'a@example.com') {
-  const [u] = await db.insert(user).values({ name, email, password: 'h', role }).returning()
+  const [u] = await sqliteOf(db).insert(user).values({ name, email, password: 'h', role }).returning()
   return u
 }
 
 async function seedAuditRow(
   overrides: Partial<{ action: string; resourceType: string; actorId: number; createdAt: Date }> = {},
 ) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(auditLog)
     .values({
       action: overrides.action ?? 'login',
@@ -66,12 +67,12 @@ describe('audit/repos/query — buildAuditLogWhere', () => {
   })
 
   it('clamps an over-old dateFrom to the retention boundary', () => {
-    const where = buildAuditLogWhere({ dateFrom: '2020-01-01' })
+    const where = buildAuditLogWhere({ createdAfter: new Date('2020-01-01') })
     expect(where).toBeDefined()
   })
 
   it('extends dateTo to the start of the next day', () => {
-    const where = buildAuditLogWhere({ dateTo: '2026-06-13' })
+    const where = buildAuditLogWhere({ createdBeforeExclusive: new Date('2026-06-14') })
     expect(where).toBeDefined()
   })
 })
@@ -110,14 +111,14 @@ describe('audit/repos/query — listAuditLogs', () => {
 describe('audit/repos/query — fetchAuditLogActorMap', () => {
   it('returns an empty map when no rows have an actorId', async () => {
     await seedAuditRow()
-    const rows = await db.select().from(auditLog)
+    const rows = await sqliteOf(db).select().from(auditLog)
     expect(await fetchAuditLogActorMap(db, rows)).toEqual(new Map())
   })
 
   it('maps actorId string → user name', async () => {
     const u = await seedUser('admin', 'Alice', 'alice@example.com')
     await seedAuditRow({ actorId: u.id })
-    const rows = await db.select().from(auditLog)
+    const rows = await sqliteOf(db).select().from(auditLog)
     const map = await fetchAuditLogActorMap(db, rows)
     expect(map.get(String(u.id))).toBe('Alice')
   })
@@ -156,7 +157,7 @@ describe('audit/repos/batcher — flushAuditLog', () => {
     pushAuditEvent({ action: 'logout', resourceType: 'session' })
     const result = await flushAuditLog()
     expect(result.committed).toBe(2)
-    const rows = await db.select().from(auditLog).orderBy(auditLog.id)
+    const rows = await sqliteOf(db).select().from(auditLog).orderBy(auditLog.id)
     expect(rows).toHaveLength(2)
     expect(rows.map((r) => r.action).sort()).toEqual(['login', 'logout'])
   })
@@ -182,7 +183,7 @@ describe('audit/services/record — recordAuditEvent', () => {
     })
     const result = await flushAuditLog()
     expect(result.committed).toBe(1)
-    const rows = await db.select().from(auditLog)
+    const rows = await sqliteOf(db).select().from(auditLog)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceId).toBe('sid-1')
   })

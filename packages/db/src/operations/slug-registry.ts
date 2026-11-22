@@ -1,5 +1,6 @@
 import type { Database } from '@kobato/db/database'
 
+import { sqliteOf } from '@kobato/db/database'
 import { slugRegistry } from '@kobato/db/schema/config'
 import { eq, and } from 'drizzle-orm'
 
@@ -15,7 +16,7 @@ export function insertSlugRegistry(
     entityId: number
   },
 ) {
-  const rows = db.insert(slugRegistry).values({ slug, entityType, entityId }).returning().all()
+  const rows = sqliteOf(db).insert(slugRegistry).values({ slug, entityType, entityId }).returning().all()
   return rows[0]
 }
 
@@ -31,7 +32,7 @@ export function updateSlugRegistryByEntity(
     slug: string
   },
 ) {
-  const rows = db
+  const rows = sqliteOf(db)
     .update(slugRegistry)
     .set({ slug })
     .where(and(eq(slugRegistry.entityType, entityType), eq(slugRegistry.entityId, entityId)))
@@ -50,17 +51,18 @@ export function deleteSlugRegistryByEntity(
     entityId: number
   },
 ) {
-  db.delete(slugRegistry)
+  sqliteOf(db)
+    .delete(slugRegistry)
     .where(and(eq(slugRegistry.entityType, entityType), eq(slugRegistry.entityId, entityId)))
     .run()
 }
 
 export function findSlugRegistryBySlug(db: Database, slug: string) {
-  const rows = db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
+  const rows = sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
   return rows[0] ?? null
 }
 
 export function findSlugRegistryBySlugForUpdate(db: Database, slug: string) {
-  const rows = db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
+  const rows = sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
   return rows[0] ?? null
 }

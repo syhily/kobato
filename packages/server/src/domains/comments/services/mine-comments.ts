@@ -1,23 +1,17 @@
 import type { Database } from '@kobato/db/database'
+import type { MyCommentEntity, MyCommentsFilters } from '@kobato/db/operations/comment'
 import type { EntityType } from '@kobato/db/target'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { likeEscape } from '@kobato/db/like-escape'
-import { comment } from '@kobato/db/schema/comment'
-import { listMyComments } from '@kobato/server/domains/comments/repos/admin-query'
-import { findParentCommentsByIds } from '@kobato/server/domains/comments/repos/public-query/by-id'
 import {
+  countMyComments as countMyCommentsOp,
+  findParentCommentsByIds,
+  listMyCommentEntities as listMyCommentEntitiesOp,
+  listMyComments,
   mineSoftDeleteCutoff,
-  mineVisibleClause,
-  mineWhere,
-  targetSlugTitleSubquery,
-  MY_COMMENT_ENTITY_LIMIT,
-  type MyCommentEntity,
-  type MyCommentsFilters,
-} from '@kobato/server/domains/comments/repos/shared'
-import { resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title'
+} from '@kobato/db/operations/comment'
+import { resolveEntitiesForComments } from '@kobato/db/operations/entity-asset'
 import { entityPermalink } from '@kobato/server/domains/content/urls'
-import { and, count, eq, sql } from 'drizzle-orm'
 
 export interface MineCommentItem {
   id: string
@@ -120,30 +114,7 @@ export async function listMyCommentEntities(
   userId: number,
   options: { q?: string; cutoff?: Date } = {},
 ): Promise<MyCommentEntity[]> {
-  const q = options.q?.trim() ?? ''
-  const entity = targetSlugTitleSubquery(db)
-  const conditions = [mineVisibleClause(userId, options.cutoff ?? mineSoftDeleteCutoff())]
-  if (q !== '') {
-    conditions.push(likeEscape(entity.title, q))
-  }
-  const rows = await db
-    .selectDistinct({
-      type: entity.type,
-      ownerId: entity.ownerId,
-      slug: entity.slug,
-      title: entity.title,
-    })
-    .from(comment)
-    .innerJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
-    .where(and(...conditions))
-    .orderBy(entity.title)
-    .limit(MY_COMMENT_ENTITY_LIMIT)
-  return rows.map((row) => ({
-    type: row.type,
-    ownerId: row.ownerId,
-    slug: row.slug ?? '',
-    title: row.title ?? '',
-  }))
+  return listMyCommentEntitiesOp(db, userId, options)
 }
 
 export async function countMyComments(
@@ -152,19 +123,5 @@ export async function countMyComments(
   filters: MyCommentsFilters = {},
   cutoff: Date = mineSoftDeleteCutoff(),
 ): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {
-  const rows = await db
-    .select({
-      total: count(),
-      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`.mapWith(Number),
-      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`.mapWith(Number),
-      deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`.mapWith(Number),
-    })
-    .from(comment)
-    .where(mineWhere(userId, filters, cutoff))
-  return {
-    total: rows[0]?.total ?? 0,
-    pending: rows[0]?.pending ?? 0,
-    deleteRequested: rows[0]?.deleteRequested ?? 0,
-    deleted: rows[0]?.deleted ?? 0,
-  }
+  return countMyCommentsOp(db, userId, filters, cutoff)
 }

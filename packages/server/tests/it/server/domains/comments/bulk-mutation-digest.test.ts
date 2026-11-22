@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'
@@ -30,7 +31,7 @@ afterAll(async () => {
 })
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Commenter',
@@ -44,7 +45,7 @@ async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Prom
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -58,7 +59,7 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedComment(userId: number, ownerId: number, isPending: boolean): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: 'post',

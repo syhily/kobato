@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/database'
 import type { NotificationKind } from '@kobato/db/schema/notification'
 import type { NewNotificationRecipient, NotificationRecipientRow, NotificationRow } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { notification, notificationRecipient } from '@kobato/db/schema/notification'
 import { user } from '@kobato/db/schema/user'
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, notInArray, or, type SQL } from 'drizzle-orm'
@@ -28,7 +29,7 @@ export function createNotificationWithRecipients(
   recipientIds: readonly number[],
   options?: { readRecipientIds?: readonly number[] },
 ): NotificationRow {
-  return db.transaction((tx) => {
+  return sqliteOf(db).transaction((tx) => {
     const inserted = tx
       .insert(notification)
       .values({
@@ -101,7 +102,7 @@ export function notificationInboxQuery(db: Database, userId: number, filters: In
   if (filters.cursorId !== undefined) {
     conditions.push(lt(notification.id, filters.cursorId))
   }
-  return db
+  return sqliteOf(db)
     .select({ message: notification, recipient: notificationRecipient })
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
@@ -111,7 +112,7 @@ export function notificationInboxQuery(db: Database, userId: number, filters: In
 }
 
 export function countUnreadNotifications(db: Database, userId: number): number {
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ value: count() })
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
@@ -131,7 +132,7 @@ export function markNotificationsRead(db: Database, userId: number, ids?: readon
   if (ids !== undefined) {
     conditions.push(inArray(notificationRecipient.notificationId, [...ids]))
   }
-  const result = db
+  const result = sqliteOf(db)
     .update(notificationRecipient)
     .set({ readAt: new Date() })
     .where(and(...conditions))
@@ -140,7 +141,7 @@ export function markNotificationsRead(db: Database, userId: number, ids?: readon
 }
 
 export function markNotificationsUnread(db: Database, userId: number, ids: readonly number[]): number {
-  const result = db
+  const result = sqliteOf(db)
     .update(notificationRecipient)
     .set({ readAt: null })
     .where(
@@ -155,11 +156,11 @@ export function markNotificationsUnread(db: Database, userId: number, ids: reado
 }
 
 export async function listThreadNotifications(db: Database, threadId: number): Promise<NotificationRow[]> {
-  return db.select().from(notification).where(eq(notification.threadId, threadId)).orderBy(notification.id)
+  return sqliteOf(db).select().from(notification).where(eq(notification.threadId, threadId)).orderBy(notification.id)
 }
 
 export function findNotificationById(db: Database, id: number): NotificationRow | null {
-  return db.select().from(notification).where(eq(notification.id, id)).limit(1).all()[0] ?? null
+  return sqliteOf(db).select().from(notification).where(eq(notification.id, id)).limit(1).all()[0] ?? null
 }
 
 export interface RecallNotificationResult {
@@ -168,7 +169,7 @@ export interface RecallNotificationResult {
 }
 
 export function recallNotification(db: Database, id: number): RecallNotificationResult | null {
-  const updated = db
+  const updated = sqliteOf(db)
     .update(notification)
     .set({ recalledAt: new Date() })
     .where(and(eq(notification.id, id), isNull(notification.recalledAt)))
@@ -180,7 +181,7 @@ export function recallNotification(db: Database, id: number): RecallNotification
 
 export function listThreadParticipantIds(db: Database, threadId: number): number[] {
   const participants = new Set<number>()
-  const messages = db
+  const messages = sqliteOf(db)
     .select({ senderId: notification.senderId })
     .from(notification)
     .innerJoin(user, eq(notification.senderId, user.id))
@@ -189,7 +190,7 @@ export function listThreadParticipantIds(db: Database, threadId: number): number
   for (const message of messages) {
     participants.add(message.senderId!)
   }
-  const recipients = db
+  const recipients = sqliteOf(db)
     .select({ userId: notificationRecipient.userId })
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
@@ -203,7 +204,7 @@ export function listThreadParticipantIds(db: Database, threadId: number): number
 }
 
 export function isThreadParticipant(db: Database, threadId: number, userId: number): boolean {
-  const sent = db
+  const sent = sqliteOf(db)
     .select({ id: notification.id })
     .from(notification)
     .where(and(eq(notification.threadId, threadId), eq(notification.senderId, userId)))
@@ -212,7 +213,7 @@ export function isThreadParticipant(db: Database, threadId: number, userId: numb
   if (sent.length > 0) {
     return true
   }
-  const received = db
+  const received = sqliteOf(db)
     .select({ notificationId: notificationRecipient.notificationId })
     .from(notificationRecipient)
     .innerJoin(notification, eq(notificationRecipient.notificationId, notification.id))
@@ -227,7 +228,7 @@ export function listRecipientUserIds(db: Database, options: { adminsOnly: boolea
   if (options.adminsOnly) {
     conditions.push(eq(user.role, 'admin'))
   }
-  return db
+  return sqliteOf(db)
     .select({ id: user.id })
     .from(user)
     .where(and(...conditions))
@@ -236,7 +237,7 @@ export function listRecipientUserIds(db: Database, options: { adminsOnly: boolea
 }
 
 export function isActiveUserId(db: Database, userId: number): boolean {
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ id: user.id })
     .from(user)
     .where(and(eq(user.id, userId), isNull(user.deletedAt), isNotNull(user.role)))
@@ -249,7 +250,7 @@ export function findUserNamesByIds(db: Database, ids: readonly number[]): Map<nu
   if (ids.length === 0) {
     return new Map()
   }
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ id: user.id, name: user.name })
     .from(user)
     .where(inArray(user.id, [...ids]))
@@ -261,7 +262,7 @@ export function findUserEmailsByIds(db: Database, ids: readonly number[]): Map<n
   if (ids.length === 0) {
     return new Map()
   }
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ id: user.id, email: user.email })
     .from(user)
     .where(inArray(user.id, [...ids]))
@@ -278,7 +279,7 @@ export interface NotificationPruneCounts {
 
 export function pruneNotifications(db: Database, now: Date = new Date()): NotificationPruneCounts {
   const cutoff = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * 86_400_000)
-  return db.transaction((tx) => {
+  return sqliteOf(db).transaction((tx) => {
     const agedMessageIds = tx
       .select({ id: notification.id })
       .from(notification)

@@ -1,6 +1,6 @@
 import { commentsTokenContract } from '@kobato/api/rpc/public/comments'
+import { findCommentsByIds } from '@kobato/db/operations/comment'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
-import { findCommentsByIds } from '@kobato/server/domains/comments/services/lookup'
 import { parseComments } from '@kobato/server/domains/comments/services/public-query'
 import {
   cleanupExpiredTokens,

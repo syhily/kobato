@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import {
   findNextWebmentionOutboxDueAt,
   pickDueWebmentionOutbox,
@@ -38,9 +39,9 @@ beforeEach(async () => {
 async function seedRow(overrides: { endpoint?: string | null; nextRetryAt?: Date | null } = {}) {
   await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: overrides.nextRetryAt })
   if (overrides.endpoint !== undefined && overrides.endpoint !== null) {
-    await db.update(webmentionOutbox).set({ endpoint: overrides.endpoint })
+    await sqliteOf(db).update(webmentionOutbox).set({ endpoint: overrides.endpoint })
   }
-  const rows = await db.select().from(webmentionOutbox)
+  const rows = await sqliteOf(db).select().from(webmentionOutbox)
   return rows[0]!
 }
 
@@ -57,7 +58,7 @@ describe('webmentions/outbox state machine', () => {
     const row = await seedRow()
     await processWebmentionOutboxRow(db, row, hooks({}))
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('sent')
     expect(after!.endpoint).toBe('https://a.dev/wm')
     expect(after!.sentAt).not.toBeNull()
@@ -67,7 +68,7 @@ describe('webmentions/outbox state machine', () => {
     const row = await seedRow()
     await processWebmentionOutboxRow(db, row, hooks({ discover: () => Promise.resolve({ kind: 'none' }) }))
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('no-endpoint')
   })
 
@@ -80,7 +81,7 @@ describe('webmentions/outbox state machine', () => {
       hooks({ discover: () => Promise.resolve({ kind: 'retry', error: 'timeout' }) }),
     )
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('pending')
     expect(after!.attempts).toBe(1)
     expect(after!.lastError).toBe('timeout')
@@ -91,7 +92,7 @@ describe('webmentions/outbox state machine', () => {
     const row = await seedRow({ endpoint: 'https://a.dev/wm' })
     await processWebmentionOutboxRow(db, row, hooks({ send: () => Promise.resolve({ kind: 'rejected', status: 410 }) }))
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('failed')
     expect(after!.lastError).toBe('http-410')
   })
@@ -100,11 +101,11 @@ describe('webmentions/outbox state machine', () => {
     await seedRow({ endpoint: 'https://a.dev/wm' })
     const retryHooks = hooks({ send: () => Promise.resolve({ kind: 'retry', error: 'http-error (HTTP 500)' }) })
     for (let i = 0; i < OUTBOX_MAX_ATTEMPTS; i++) {
-      const [current] = await db.select().from(webmentionOutbox)
+      const [current] = await sqliteOf(db).select().from(webmentionOutbox)
       await processWebmentionOutboxRow(db, current!, retryHooks)
     }
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.attempts).toBe(OUTBOX_MAX_ATTEMPTS)
     expect(after!.status).toBe('failed')
   })
@@ -124,7 +125,7 @@ describe('webmentions/outbox state machine', () => {
     )
 
     expect(discovered).toBe(0)
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('sent')
   })
 })
@@ -133,7 +134,7 @@ describe('webmentions/outbox upsert dedup', () => {
   it('inserts once for the same source×target pair', async () => {
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
-    expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmentionOutbox)).toHaveLength(1)
   })
 
   it('never resets a sent row (repeat-bombing guard)', async () => {
@@ -141,7 +142,7 @@ describe('webmentions/outbox upsert dedup', () => {
     await processWebmentionOutboxRow(db, row, hooks({}))
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('sent')
   })
 
@@ -151,7 +152,7 @@ describe('webmentions/outbox upsert dedup', () => {
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: sooner })
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: later })
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('pending')
     expect(after!.nextRetryAt!.getTime()).toBe(later.getTime())
   })
@@ -161,7 +162,7 @@ describe('webmentions/outbox upsert dedup', () => {
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: later })
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.nextRetryAt!.getTime()).toBe(later.getTime())
   })
 
@@ -172,7 +173,7 @@ describe('webmentions/outbox upsert dedup', () => {
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET, nextRetryAt: sooner })
     await upsertWebmentionOutbox(db, { sourceUrl: SOURCE, targetUrl: TARGET })
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.nextRetryAt!.getTime()).toBe(later.getTime())
   })
 })
@@ -230,7 +231,7 @@ describe('webmentions/outbox real send path', () => {
 
     await processWebmentionOutboxRow(db, row)
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('sent')
 
     expect(mockFetch.calls).toHaveLength(1)
@@ -250,7 +251,7 @@ describe('webmentions/outbox real send path', () => {
 
     await processWebmentionOutboxRow(db, row)
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('failed')
     expect(after!.lastError).toBe('http-410')
   })
@@ -262,7 +263,7 @@ describe('webmentions/outbox real send path', () => {
 
     await processWebmentionOutboxRow(db, row)
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('pending')
     expect(after!.attempts).toBe(1)
     expect(after!.lastError).toBe('http-error (HTTP 500)')
@@ -275,7 +276,7 @@ describe('webmentions/outbox real send path', () => {
 
     await processWebmentionOutboxRow(db, row)
 
-    const [after] = await db.select().from(webmentionOutbox)
+    const [after] = await sqliteOf(db).select().from(webmentionOutbox)
     expect(after!.status).toBe('pending')
     expect(after!.attempts).toBe(1)
     expect(after!.lastError).toBe('fetch-failed')

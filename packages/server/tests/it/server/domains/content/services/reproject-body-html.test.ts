@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html'
@@ -14,7 +15,7 @@ const BODY = lexicalBodyWith([lexicalParagraph('你好，世界')])
 const UNREADABLE_BODY = [{ _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: '旧格式' }] }]
 
 async function seedRevision(overrides: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: 1, revisionNo: 1, status: 'published', body: BODY, ...overrides })
     .returning({ id: contentTable.id })
@@ -22,7 +23,7 @@ async function seedRevision(overrides: Partial<typeof contentTable.$inferInsert>
 }
 
 function contentRow(id: number) {
-  return db.select().from(contentTable).where(eq(contentTable.id, id)).all()[0]!
+  return sqliteOf(db).select().from(contentTable).where(eq(contentTable.id, id)).all()[0]!
 }
 
 beforeEach(async () => {

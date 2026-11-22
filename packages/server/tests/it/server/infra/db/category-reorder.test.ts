@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { reorderCategories } from '@kobato/db/operations/category'
 import { category } from '@kobato/db/schema/taxonomy'
 import { reorderAdminCategories } from '@kobato/server/domains/taxonomies/categories/services/mutate'
@@ -13,7 +14,7 @@ beforeEach(async () => {
 
 describe('reorderCategories', () => {
   it('batch-updates sort_order via CASE expression', async () => {
-    const inserted = await db
+    const inserted = await sqliteOf(db)
       .insert(category)
       .values([
         { name: 'A', slug: 'a', cover: '', description: '', sortOrder: 0 },
@@ -33,7 +34,7 @@ describe('reorderCategories', () => {
     expect(result[2].name).toBe('B')
     expect(result[2].sortOrder).toBe(2)
 
-    const rows = await db.select().from(category).orderBy(asc(category.sortOrder))
+    const rows = await sqliteOf(db).select().from(category).orderBy(asc(category.sortOrder))
     expect(rows.map((r) => r.name)).toEqual(['C', 'A', 'B'])
   })
 
@@ -43,7 +44,7 @@ describe('reorderCategories', () => {
   })
 
   it('returns rows in the requested id order', async () => {
-    const inserted = await db
+    const inserted = await sqliteOf(db)
       .insert(category)
       .values([
         { name: 'X', slug: 'x', cover: '', description: '', sortOrder: 0 },
@@ -58,7 +59,7 @@ describe('reorderCategories', () => {
 
 describe('reorderAdminCategories', () => {
   it('reorders and returns DTOs with correct post counts', async () => {
-    const inserted = await db
+    const inserted = await sqliteOf(db)
       .insert(category)
       .values([
         { name: 'Alpha', slug: 'alpha', cover: '', description: '', sortOrder: 0 },
@@ -90,14 +91,14 @@ describe('reorderAdminCategories', () => {
   })
 
   it('rejects when id count mismatches live rows', async () => {
-    await db.insert(category).values({ name: 'Only', slug: 'only', cover: '', description: '', sortOrder: 0 })
+    await sqliteOf(db).insert(category).values({ name: 'Only', slug: 'only', cover: '', description: '', sortOrder: 0 })
     await expect(reorderAdminCategories(db, ['1', '2'])).rejects.toMatchObject({
       descriptor: { messageKey: 'taxonomy.error.orderStale' },
     })
   })
 
   it('rejects unknown ids', async () => {
-    const inserted = await db
+    const inserted = await sqliteOf(db)
       .insert(category)
       .values({ name: 'Only', slug: 'only', cover: '', description: '', sortOrder: 0 })
       .returning()

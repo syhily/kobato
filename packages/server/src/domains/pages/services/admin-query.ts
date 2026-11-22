@@ -1,10 +1,18 @@
 import type { AdminPageDetailDto, AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Database } from '@kobato/db/database'
-import type { ListPagesFilters } from '@kobato/server/domains/pages/repo'
 
+import {
+  countPageMetas as countPageMetasOp,
+  type EntityListFiltersBase,
+  listPageMetas as listPageMetasOp,
+} from '@kobato/db/operations/entity-meta'
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query'
 import { pageDescriptor } from '@kobato/server/domains/pages/descriptor'
-import { countPageMetas, listPageMetas } from '@kobato/server/domains/pages/repo'
+
+export type ListPagesFilters = EntityListFiltersBase
+
+export const listPageMetas = listPageMetasOp
+export const countPageMetas = countPageMetasOp
 
 export interface AdminPagesListResult {
   pages: AdminPageDto[]

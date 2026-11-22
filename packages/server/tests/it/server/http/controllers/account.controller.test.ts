@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
@@ -95,7 +96,7 @@ function ctxFor(
 }
 
 async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: opts.name ?? 'Alice',
@@ -109,25 +110,27 @@ async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Prom
 }
 
 async function userRow(id: number): Promise<typeof userTable.$inferSelect> {
-  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  const rows = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, id))
   return rows[0]!
 }
 
 async function seedSession(sid: string, userId: number): Promise<void> {
-  await db.insert(sessionTable).values({
-    id: sid,
-    userId,
-    data: {},
-    userAgent: 'vitest',
-    ip: '127.0.0.1',
-    loginAt: new Date(),
-    lastActiveAt: new Date(),
-    expiresAt: new Date(Date.now() + 3_600_000),
-  })
+  await sqliteOf(db)
+    .insert(sessionTable)
+    .values({
+      id: sid,
+      userId,
+      data: {},
+      userAgent: 'vitest',
+      ip: '127.0.0.1',
+      loginAt: new Date(),
+      lastActiveAt: new Date(),
+      expiresAt: new Date(Date.now() + 3_600_000),
+    })
 }
 
 async function sessionRow(sid: string): Promise<typeof sessionTable.$inferSelect | undefined> {
-  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
   return rows[0]
 }
 
@@ -135,33 +138,37 @@ async function seedCredential(
   userId: number,
   opts: { credentialId: string; deviceName?: string | null; backedUp?: boolean; createdAt?: Date },
 ): Promise<void> {
-  await db.insert(passkeyCredential).values({
-    userId,
-    credentialId: opts.credentialId,
-    publicKey: Buffer.from([1, 2, 3]),
-    counter: 0,
-    transports: [],
-    deviceName: opts.deviceName ?? null,
-    backedUp: opts.backedUp ?? false,
-    createdAt: opts.createdAt ?? new Date(),
-  })
+  await sqliteOf(db)
+    .insert(passkeyCredential)
+    .values({
+      userId,
+      credentialId: opts.credentialId,
+      publicKey: Buffer.from([1, 2, 3]),
+      counter: 0,
+      transports: [],
+      deviceName: opts.deviceName ?? null,
+      backedUp: opts.backedUp ?? false,
+      createdAt: opts.createdAt ?? new Date(),
+    })
 }
 
 async function credentialRows(): Promise<(typeof passkeyCredential.$inferSelect)[]> {
-  return db.select().from(passkeyCredential)
+  return sqliteOf(db).select().from(passkeyCredential)
 }
 
 async function seedRegChallenge(challenge: string, userId: number, deviceName: string | null = null): Promise<void> {
-  await db.insert(oneTimeToken).values({
-    key: `passkey:reg-challenge:${challenge}`,
-    payload: { userId: String(userId), deviceName },
-    expiresAt: new Date(Date.now() + 300_000),
-  })
+  await sqliteOf(db)
+    .insert(oneTimeToken)
+    .values({
+      key: `passkey:reg-challenge:${challenge}`,
+      payload: { userId: String(userId), deviceName },
+      expiresAt: new Date(Date.now() + 300_000),
+    })
 }
 
 async function auditRowsFor(action: string): Promise<(typeof auditLog.$inferSelect)[]> {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 function regResponse(overrides: Record<string, unknown> = {}) {
@@ -399,7 +406,7 @@ describe('account controller', () => {
       expect(swaMocks.generateRegistrationOptions).toHaveBeenCalledWith(
         expect.objectContaining({ userName: 'yubi@example.com' }),
       )
-      const tokens = await db
+      const tokens = await sqliteOf(db)
         .select()
         .from(oneTimeToken)
         .where(eq(oneTimeToken.key, 'passkey:reg-challenge:reg-challenge-1'))
@@ -478,7 +485,7 @@ describe('account controller', () => {
       expect(creds[0]!.credentialId).toBe('cred-1')
       expect(creds[0]!.deviceName).toBe('Phone')
       expect(creds[0]!.backedUp).toBe(true)
-      expect(await db.select().from(oneTimeToken)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(oneTimeToken)).toHaveLength(0)
       expect(await auditRowsFor('passkey_registered')).toHaveLength(1)
     })
   })

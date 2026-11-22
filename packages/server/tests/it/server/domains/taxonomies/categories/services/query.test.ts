@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { category } from '@kobato/db/schema/taxonomy'
 import {
   findCategoryBySlug,
@@ -13,7 +14,10 @@ beforeEach(async () => {
 })
 
 async function seedCategory(name: string, slug: string): Promise<typeof category.$inferSelect> {
-  const rows = await db.insert(category).values({ name, slug, cover: '', description: '', sortOrder: 0 }).returning()
+  const rows = await sqliteOf(db)
+    .insert(category)
+    .values({ name, slug, cover: '', description: '', sortOrder: 0 })
+    .returning()
   return rows[0]!
 }
 

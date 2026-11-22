@@ -9,9 +9,10 @@ Personal blog/CMS: posts, pages, comments, settings, assets — one admin, one p
 revision, scheduling)
 
 **Promoted**: published with a published revision, whatever the soft-delete state and schedule; the projection for
-lifecycle bucketing (draft vs published) and restore re-indexing. Live implies Promoted.
-`isPromoted`/`promotedContentWhere` in `packages/server/src/domains/content/schemas/live-gate.ts`, bound per entity by
-`promotedPostWhere`. _Avoid_: live (stricter: adds not-deleted and not-future legs), published (misses the revision)
+lifecycle bucketing (draft vs published) and restore re-indexing. Live implies Promoted. `isPromoted` in
+`packages/server/src/domains/content/schemas/live-gate.ts` and `promotedEntityWhere` in
+`packages/db/src/operations/entity-meta.ts`. _Avoid_: live (stricter: adds not-deleted and not-future legs), published
+(misses the revision)
 
 **Visible**: `visible=false` hides a post from the home page and random-post widgets only; it stays in archives, tags,
 search, sitemap, feeds, and direct links. Orthogonal to Live. _Avoid_: hidden (implies unreachable)
@@ -34,10 +35,9 @@ product
 publishing points the entity's `publishedRevisionId` at one. _Avoid_: version (ambiguous with app version), draft (a
 revision's state)
 
-**Live gate**: `isLive` (in-memory) and `liveContentWhere` (SQL) in
-`packages/server/src/domains/content/schemas/live-gate.ts` decide Live; both take `{ asOf, includeScheduled }`; column
-binding in `posts/live-gate.ts` / `pages/live-gate.ts`. _Avoid_: hand-written `published && publishedRevisionId` checks
-(that is the Promoted gate)
+**Live gate**: `isLive` (in-memory) in `packages/server/src/domains/content/schemas/live-gate.ts` and `liveEntityWhere`
+(SQL) in `packages/db/src/operations/entity-meta.ts` decide Live; both take `{ asOf, includeScheduled }`. _Avoid_:
+hand-written `published && publishedRevisionId` checks (that is the Promoted gate)
 
 **Draft preview**: viewing non-live content by direct link: authors their own post drafts (admins any post draft),
 admins only for page drafts. _Avoid_: "preview" unqualified (the rule differs per entity), admin-only (never enforced)

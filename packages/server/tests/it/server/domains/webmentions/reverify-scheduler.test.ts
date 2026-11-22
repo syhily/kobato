@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { upsertWebmention } from '@kobato/db/operations/webmention'
 import { post } from '@kobato/db/schema/post'
 import { webmention } from '@kobato/db/schema/webmention'
@@ -54,11 +55,13 @@ async function seedRow(lastVerifiedAt: Date): Promise<void> {
 }
 
 async function seedLivePost(): Promise<void> {
-  await db.insert(post).values({ slug: 'wm-target', title: 'Mentioned Post', published: true, publishedRevisionId: 1 })
+  await sqliteOf(db)
+    .insert(post)
+    .values({ slug: 'wm-target', title: 'Mentioned Post', published: true, publishedRevisionId: 1 })
 }
 
 function failedCount(): number {
-  return db.select().from(webmention).where(eq(webmention.verificationStatus, 'failed')).all().length
+  return sqliteOf(db).select().from(webmention).where(eq(webmention.verificationStatus, 'failed')).all().length
 }
 
 beforeEach(async () => {

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { upsertWebmention } from '@kobato/db/operations/webmention'
 import { auditLog } from '@kobato/db/schema/config'
 import { user } from '@kobato/db/schema/user'
@@ -19,7 +20,7 @@ beforeEach(async () => {
 })
 
 async function seedAdmin(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Admin',
@@ -120,7 +121,7 @@ describe('integration / admin webmentions approve + reject', () => {
 
   async function auditRowsFor(action: string) {
     await flushAuditLog()
-    return db.select().from(auditLog).where(eq(auditLog.action, action))
+    return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
   }
 
   it('approves a pending mention and records the audit event', async () => {
@@ -128,7 +129,7 @@ describe('integration / admin webmentions approve + reject', () => {
     const id = await seedMention('pending')
     await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: adminCtx(adminId) })
 
-    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
     expect(rows[0]!.status).toBe('approved')
     expect(rows[0]!.moderatedAt).not.toBeNull()
 
@@ -143,7 +144,7 @@ describe('integration / admin webmentions approve + reject', () => {
     const id = await seedMention('pending')
     await call(adminWebmentionsRouter.reject, { id: id.toString() }, { context: adminCtx(adminId) })
 
-    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
     expect(rows[0]!.status).toBe('rejected')
 
     const audits = await auditRowsFor('webmention_rejected')
@@ -157,7 +158,7 @@ describe('integration / admin webmentions approve + reject', () => {
     const ctx = adminCtx(adminId)
     await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: ctx })
     await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: ctx })
-    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
     expect(rows[0]!.status).toBe('approved')
 
     await expect(call(adminWebmentionsRouter.approve, { id: '999999' }, { context: ctx })).rejects.toThrow()
@@ -171,7 +172,7 @@ describe('integration / admin webmentions approve + reject', () => {
       call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: adminCtx(adminId) }),
     ).rejects.toThrow('只能通过重新验证恢复')
 
-    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
     expect(rows[0]!.status).toBe('hidden')
   })
 
@@ -190,11 +191,11 @@ describe('integration / admin webmentions approve + reject', () => {
       summary: null,
     })
     expect(outcome).toBe('demoted')
-    expect((await db.select().from(webmention).where(eq(webmention.id, id)))[0]!.status).toBe('pending')
+    expect((await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id)))[0]!.status).toBe('pending')
 
     const ctx = adminCtx(adminId)
     await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: ctx })
-    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
     expect(rows[0]!.status).toBe('approved')
     expect(rows[0]!.title).toBe('Edited after approval')
 

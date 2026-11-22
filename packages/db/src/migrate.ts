@@ -1,5 +1,6 @@
 import type { Database } from '@kobato/db/database'
 
+import { sqliteOf } from '@kobato/db/database'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -28,7 +29,7 @@ export function migrateDatabase(db: Database, options: MigrateDatabaseOptions = 
   logger?.info('Running database migrations', { migrationsFolder: folder, embedded: options.embedded === true })
 
   try {
-    migrate(db, { migrationsFolder: folder, migrationsTable: MIGRATIONS_TABLE })
+    migrate(sqliteOf(db), { migrationsFolder: folder, migrationsTable: MIGRATIONS_TABLE })
     logger?.info('Database migrations completed')
   } catch (error) {
     logger?.error('Database migrations failed', {

@@ -1,9 +1,8 @@
 import type { AdminFontDto } from '@kobato/api/contracts/fonts'
 import type { Database } from '@kobato/db/database'
-import type { FontRow } from '@kobato/db/schema/font'
+import type { FontRow } from '@kobato/db/types'
 
-import { font } from '@kobato/db/schema/font'
-import { eq, inArray } from 'drizzle-orm'
+import { findFontByHash as findFontByHashOp, findFontRowsByIds, listFontRows } from '@kobato/db/operations/font'
 
 export function toAdminFontDto(row: FontRow): AdminFontDto {
   return {
@@ -21,21 +20,12 @@ export function toAdminFontDto(row: FontRow): AdminFontDto {
 }
 
 export async function listFonts(db: Database): Promise<AdminFontDto[]> {
-  const rows = await db.select().from(font).orderBy(font.createdAt)
+  const rows = await listFontRows(db)
   return rows.map(toAdminFontDto)
 }
 
 export async function findFontsByIds(db: Database, ids: readonly string[]): Promise<Map<string, FontRow>> {
-  if (ids.length === 0) {
-    return new Map()
-  }
-  const unique = [...new Set(ids)]
-  const rows = await db.select().from(font).where(inArray(font.id, unique))
-  const byId = new Map<string, FontRow>()
-  for (const row of rows) {
-    byId.set(row.id, row)
-  }
-  return byId
+  return findFontRowsByIds(db, ids)
 }
 
 export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontRow>): FontRow[] {
@@ -50,6 +40,5 @@ export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontR
 }
 
 export async function findFontByHash(db: Database, hash: string): Promise<FontRow | null> {
-  const rows = await db.select().from(font).where(eq(font.hash, hash)).limit(1)
-  return rows[0] ?? null
+  return findFontByHashOp(db, hash)
 }

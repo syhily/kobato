@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
@@ -29,7 +30,7 @@ afterEach(async () => {
 })
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -37,7 +38,7 @@ async function seedAdmin(): Promise<number> {
 }
 
 async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: `post-${++seq}`,
@@ -51,11 +52,11 @@ async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) 
 }
 
 async function seedPublishedRevision(postId: number): Promise<number> {
-  const [rev] = await db
+  const [rev] = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: emptyLexicalBody() })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))
   return rev.id
 }
 
@@ -102,12 +103,12 @@ describe('adminPostsRouter.delete', () => {
     const res = await call(adminPostsRouter.delete, { id: String(seeded.id) }, { context: adminCtx(admin) })
 
     expect(res).toBeUndefined()
-    const [row] = await db.select().from(postTable).where(eq(postTable.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(postTable).where(eq(postTable.id, seeded.id))
     expect(row).toBeDefined()
     expect(row!.deletedAt).not.toBeNull()
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_deleted'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'post_deleted'))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
       resourceType: 'post',
@@ -132,7 +133,7 @@ describe('adminPostsRouter.saveDraft', () => {
     expect(res.revision?.status).toBe('draft')
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_draft_saved'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'post_draft_saved'))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ resourceType: 'post', resourceId: String(seeded.id), actorId: admin })
   })

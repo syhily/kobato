@@ -2,20 +2,31 @@ import { z } from 'zod'
 
 export type UploadRestoreResponse = { accepted: true } | { encrypted: true; token: string }
 
-export type RestoreProgressStage =
-  | 'decrypting'
-  | 'extracting'
-  | 'draining'
-  | 'restoring'
-  | 'completed'
-  | 'failed'
-  | 'idle'
+export const restoreProgressStageDto = z.enum([
+  'decrypting',
+  'extracting',
+  'draining',
+  'restoring',
+  'completed',
+  'failed',
+  'idle',
+])
+export type RestoreProgressStage = z.infer<typeof restoreProgressStageDto>
 
-export interface RestoreProgressDto {
-  stage: RestoreProgressStage
-  percent: number | null
-  error?: string
-}
+export const restoreProgressDto = z.object({
+  stage: restoreProgressStageDto,
+  percent: z.number().nullable(),
+  error: z.string().optional(),
+})
+export type RestoreProgressDto = z.infer<typeof restoreProgressDto>
+
+export const restoreJobStatusDto = z.object({
+  phase: z.enum(['idle', 'draining', 'restoring', 'completed', 'failed']),
+  startedAt: z.string(),
+  error: z.string().optional(),
+  configApplied: z.boolean().optional(),
+})
+export type RestoreJobStatusDto = z.infer<typeof restoreJobStatusDto>
 
 export const backupFileDto = z.object({
   key: z.string(),
@@ -68,3 +79,12 @@ export const adminBackupRestoreOutputDto = z.union([
   z.object({ passwordRequired: z.boolean() }),
 ])
 export type AdminBackupRestoreOutput = z.infer<typeof adminBackupRestoreOutputDto>
+
+export const adminBackupUploadRestoreDecryptInput = z.object({
+  token: z.string(),
+  password: z.string(),
+})
+export type AdminBackupUploadRestoreDecryptInput = z.infer<typeof adminBackupUploadRestoreDecryptInput>
+
+export const adminBackupUploadRestoreDecryptOutputDto = z.object({ accepted: z.boolean() })
+export type AdminBackupUploadRestoreDecryptOutput = z.infer<typeof adminBackupUploadRestoreDecryptOutputDto>

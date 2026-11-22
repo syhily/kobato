@@ -1,12 +1,11 @@
-import '@kobato/test/setup/unit'
+import '@kobato/test/setup/node'
 import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
-import { afterAll, afterEach, vi } from 'vitest'
+import { afterAll, afterEach } from 'vitest'
 
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {
-  vi.useRealTimers()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   setAnalyticsQueryExecutor(null)
 })

@@ -1,8 +1,9 @@
+import { sqliteOf } from '@kobato/db/database'
+import { liveEntityWhere } from '@kobato/db/operations/entity-meta'
 import { content } from '@kobato/db/schema/content'
 import { page } from '@kobato/db/schema/page'
 import { post } from '@kobato/db/schema/post'
 import { APP_VERSION } from '@kobato/distribution/app'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@kobato/server/infra/cache/registry'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
@@ -24,29 +25,29 @@ let seq = 0
 
 async function seedScheduledPost(publishedAt: Date): Promise<number> {
   const key = ++seq
-  const [meta] = await db
+  const [meta] = await sqliteOf(db)
     .insert(post)
     .values({ slug: `post-${key}`, title: `Post ${key}` })
     .returning({ id: post.id })
-  const [rev] = await db
+  const [rev] = await sqliteOf(db)
     .insert(content)
     .values({ type: 'post', ownerId: meta.id, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: content.id })
-  await db.update(post).set({ publishedRevisionId: rev.id, publishedAt }).where(eq(post.id, meta.id))
+  await sqliteOf(db).update(post).set({ publishedRevisionId: rev.id, publishedAt }).where(eq(post.id, meta.id))
   return meta.id
 }
 
 async function seedScheduledPage(publishedAt: Date): Promise<number> {
   const key = ++seq
-  const [meta] = await db
+  const [meta] = await sqliteOf(db)
     .insert(page)
     .values({ slug: `page-${key}`, title: `Page ${key}` })
     .returning({ id: page.id })
-  const [rev] = await db
+  const [rev] = await sqliteOf(db)
     .insert(content)
     .values({ type: 'page', ownerId: meta.id, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: content.id })
-  await db.update(page).set({ publishedRevisionId: rev.id, publishedAt }).where(eq(page.id, meta.id))
+  await sqliteOf(db).update(page).set({ publishedRevisionId: rev.id, publishedAt }).where(eq(page.id, meta.id))
   return meta.id
 }
 
@@ -90,12 +91,12 @@ describe('scheduled-publish job', () => {
 
     await vi.advanceTimersByTimeAsync(HOUR_MS - 60_000)
     expect(await feedRowCount()).toBe(1)
-    expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(0)
+    expect(sqliteOf(db).select().from(post).where(liveEntityWhere(post)).all()).toHaveLength(0)
 
     await vi.advanceTimersByTimeAsync(60_000)
     expect(await feedRowCount()).toBe(0)
     expect(await getCounter('searchResult')).toBe(generationBefore + 1)
-    expect(db.select().from(post).where(livePostWhere()).all()).toHaveLength(1)
+    expect(sqliteOf(db).select().from(post).where(liveEntityWhere(post)).all()).toHaveLength(1)
   })
 
   it('re-arms to the next scheduled row after firing', async () => {

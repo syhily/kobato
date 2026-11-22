@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
@@ -9,23 +10,24 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
+const sdb = sqliteOf(db)
 
 beforeEach(async () => {
   await clearAllTables(db)
 })
 
 async function seedCategory(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
+  const rows = await sdb.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
 async function seedTag(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
+  const rows = await sdb.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
   return rows[0]!.id
 }
 
 async function seedPost(opts: { slug: string; title: string; categoryId?: number }): Promise<number> {
-  const rows = await db
+  const rows = await sdb
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -38,16 +40,16 @@ async function seedPost(opts: { slug: string; title: string; categoryId?: number
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sdb
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sdb.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 async function linkTag(postId: number, tagId: number): Promise<void> {
-  await db.insert(postTag).values({ postId, tagId })
+  await sdb.insert(postTag).values({ postId, tagId })
 }
 
 function itemCount(rss: string): number {

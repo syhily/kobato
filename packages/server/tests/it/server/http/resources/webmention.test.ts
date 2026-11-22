@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox'
 import { page } from '@kobato/db/schema/page'
 import { post } from '@kobato/db/schema/post'
@@ -40,7 +41,7 @@ function buildApp(clientAddress = '203.0.113.10') {
 }
 
 async function seedLivePost(slug: string, title = 'Mentioned Post'): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({ slug, title, published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
@@ -48,7 +49,7 @@ async function seedLivePost(slug: string, title = 'Mentioned Post'): Promise<num
 }
 
 async function seedLivePage(slug: string, title = 'Mentioned Page'): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(page)
     .values({ slug, title, published: true, publishedRevisionId: 1 })
     .returning({ id: page.id })
@@ -75,8 +76,8 @@ describe('integration / POST /webmention (async enqueue)', () => {
     expect(body.status).toBe('pending')
 
     expect(mockFetch.calls).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
-    const queued = await db.select().from(webmentionInbox)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(0)
+    const queued = await sqliteOf(db).select().from(webmentionInbox)
     expect(queued).toHaveLength(1)
     expect(queued[0]!.sourceUrl).toBe(SOURCE)
     expect(queued[0]!.targetUrl).toBe('https://example.com/posts/wm-target/')
@@ -89,7 +90,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
 
     const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/wm-page/' })
     expect(res.status).toBe(202)
-    const queued = await db.select().from(webmentionInbox)
+    const queued = await sqliteOf(db).select().from(webmentionInbox)
     expect(queued).toHaveLength(1)
     expect(queued[0]!.targetUrl).toBe('https://example.com/wm-page/')
   })
@@ -100,7 +101,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
 
-    expect(await db.select().from(webmentionInbox)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmentionInbox)).toHaveLength(1)
   })
 
   it('converges source URL variants (fragment / trailing slash) onto one queued row', async () => {
@@ -110,7 +111,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
       expect((await formPost(app, { source, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
     }
 
-    const queued = await db.select().from(webmentionInbox)
+    const queued = await sqliteOf(db).select().from(webmentionInbox)
     expect(queued).toHaveLength(1)
     expect(queued[0]!.sourceUrl).toBe(SOURCE)
   })
@@ -133,7 +134,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
     expect((await formPost(app, { source: SOURCE, target: 'https://other.example/posts/wm-target' })).status).toBe(404)
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/archives' })).status).toBe(404)
     expect(mockFetch.calls).toHaveLength(0)
-    expect(await db.select().from(webmentionInbox)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(webmentionInbox)).toHaveLength(0)
   })
 
   it('rejects a request whose declared content-length exceeds the 16KB form cap', async () => {
@@ -146,7 +147,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
       body: 'x'.repeat(20 * 1024),
     })
     expect(res.status).toBe(413)
-    expect((await db.select().from(webmentionInbox)).length).toBe(0)
+    expect((await sqliteOf(db).select().from(webmentionInbox)).length).toBe(0)
   })
 
   it('rejects a chunked request without content-length whose body exceeds the 16KB form cap', async () => {
@@ -164,7 +165,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
       duplex: 'half',
     })
     expect(res.status).toBe(413)
-    expect((await db.select().from(webmentionInbox)).length).toBe(0)
+    expect((await sqliteOf(db).select().from(webmentionInbox)).length).toBe(0)
   })
 
   it('rate-limits repeated mentions from the same IP', async () => {
@@ -192,7 +193,7 @@ describe('integration / POST /webmention — receive switch (G5)', () => {
     const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
     expect(res.status).toBe(410)
     expect(mockFetch.calls).toHaveLength(0)
-    expect((await db.select().from(webmentionInbox)).length).toBe(0)
+    expect((await sqliteOf(db).select().from(webmentionInbox)).length).toBe(0)
   })
 })
 
@@ -209,7 +210,7 @@ describe('integration / POST /webmention (bounded queue)', () => {
     const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
 
     expect(res.status).toBe(429)
-    expect(await db.select().from(webmentionInbox)).toHaveLength(INBOX_MAX_QUEUED)
+    expect(await sqliteOf(db).select().from(webmentionInbox)).toHaveLength(INBOX_MAX_QUEUED)
   })
 
   it('backpressures a flooded source host while other hosts still enqueue', async () => {

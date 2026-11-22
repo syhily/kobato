@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { image } from '@kobato/db/schema/media'
@@ -127,12 +128,12 @@ function seedObject(target: { store: Map<string, { body: Buffer; contentType: st
 }
 
 async function seedSettingsRows(bundle: BlogSettingsBundle): Promise<void> {
-  await db.insert(setting).values({ scope: 'blog.general', data: bundle.siteIdentity })
-  await db.insert(setting).values({ scope: 'blog.assets', data: bundle.assets })
+  await sqliteOf(db).insert(setting).values({ scope: 'blog.general', data: bundle.siteIdentity })
+  await sqliteOf(db).insert(setting).values({ scope: 'blog.assets', data: bundle.assets })
 }
 
 async function seedImageRow(storagePath: string, storageDriver: 's3' | 'local') {
-  await db.insert(image).values({
+  await sqliteOf(db).insert(image).values({
     storagePath,
     storageDriver,
     mimeType: 'image/jpeg',
@@ -143,7 +144,7 @@ async function seedImageRow(storagePath: string, storageDriver: 's3' | 'local') 
 }
 
 async function readDriver(storagePath: string): Promise<string> {
-  const rows = await db.select().from(image).where(eq(image.storagePath, storagePath))
+  const rows = await sqliteOf(db).select().from(image).where(eq(image.storagePath, storagePath))
   return rows[0]!.storageDriver
 }
 
@@ -202,7 +203,7 @@ describe('storage/s3-migration — local-to-s3', () => {
     await seedSettingsRows(bundle)
     seedObject(localMem, 'images/a.jpg')
 
-    const [postRow] = await db
+    const [postRow] = await sqliteOf(db)
       .insert(postTable)
       .values({
         slug: 'baked',
@@ -213,24 +214,29 @@ describe('storage/s3-migration — local-to-s3', () => {
         firstPublishedAt: new Date('2024-01-01'),
       })
       .returning({ id: postTable.id })
-    await db.insert(contentTable).values({
-      type: 'post',
-      ownerId: postRow!.id,
-      revisionNo: 1,
-      status: 'published',
-      body: lexicalBodyWith([
-        lexicalImage({ src: 'https://assets.example.com/images/a.jpg', storagePath: 'images/a.jpg' }),
-        lexicalImage({ src: 'https://external.example/hotlink.jpg', storagePath: '' }),
-      ]),
-    })
+    await sqliteOf(db)
+      .insert(contentTable)
+      .values({
+        type: 'post',
+        ownerId: postRow!.id,
+        revisionNo: 1,
+        status: 'published',
+        body: lexicalBodyWith([
+          lexicalImage({ src: 'https://assets.example.com/images/a.jpg', storagePath: 'images/a.jpg' }),
+          lexicalImage({ src: 'https://external.example/hotlink.jpg', storagePath: '' }),
+        ]),
+      })
 
     await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
     await __awaitStorageMigrationForTests()
 
     expect((await getStorageMigrationStatus(db)).phase).toBe('completed')
-    const [post] = await db.select({ cover: postTable.cover }).from(postTable).where(eq(postTable.id, postRow!.id))
+    const [post] = await sqliteOf(db)
+      .select({ cover: postTable.cover })
+      .from(postTable)
+      .where(eq(postTable.id, postRow!.id))
     expect(post!.cover).toBe('/storage/images/a.jpg')
-    const [revision] = await db.select({ body: contentTable.body }).from(contentTable)
+    const [revision] = await sqliteOf(db).select({ body: contentTable.body }).from(contentTable)
     const blocks = (revision!.body as { root: { children: { src: string }[] } }).root.children
     expect(blocks[0]!.src).toBe('/storage/images/a.jpg')
     expect(blocks[1]!.src).toBe('https://external.example/hotlink.jpg')
@@ -505,7 +511,7 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
     await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
     await __awaitStorageMigrationForTests()
 
-    const rows = await db.select().from(storageMigration).where(eq(storageMigration.id, 1))
+    const rows = await sqliteOf(db).select().from(storageMigration).where(eq(storageMigration.id, 1))
     expect(rows[0]!.phase).toBe('failed')
     expect(rows[0]!.cursor).toBe('images/obj-199.jpg')
     expect(rows[0]!.copiedObjects).toBe(200)
@@ -537,7 +543,7 @@ describe('storage/s3-migration — resume / cancel / single-flight', () => {
   })
 
   it('reports an in-flight row without a running task as interrupted', async () => {
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 's3-to-s3',
       targetStorage: null,
@@ -647,7 +653,7 @@ describe('settings core — assets storage lock', () => {
 
   it('rejects storage.* patches while a migration is in flight', async () => {
     setBlogSettingsBundleForTests(bundleWithStorage({ enabled: false }))
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 'local-to-s3',
       targetStorage: null,
@@ -697,7 +703,7 @@ describe('settings core — assets storage lock', () => {
 describe('storage/s3-migration — corrupt rows & error paths', () => {
   it('degrades status reads on a corrupt row instead of crashing', async () => {
     const now = new Date()
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 'local-to-s3',
       targetStorage: 'not-json{',
@@ -716,7 +722,7 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
 
   it('cancels an interrupted run (in-flight row without an in-memory task)', async () => {
     const now = new Date()
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 'local-to-s3',
       targetStorage: null,
@@ -735,7 +741,7 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
     await expect(resumeStorageMigration(db)).rejects.toMatchObject({ name: 'DomainError', code: 'BAD_REQUEST' })
 
     const now = new Date()
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 'local-to-s3',
       targetStorage: null,
@@ -752,7 +758,7 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
 
   it('rejects a start while a stale in-flight row exists (no running task)', async () => {
     const now = new Date()
-    await db.insert(storageMigration).values({
+    await sqliteOf(db).insert(storageMigration).values({
       id: 1,
       direction: 's3-to-s3',
       targetStorage: null,

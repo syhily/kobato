@@ -1,3 +1,4 @@
+import { databaseOf, sqliteEngineOf } from '@kobato/db/database'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMock = { id: 'client' }
@@ -27,6 +28,8 @@ vi.mock('@kobato/db/database', () => ({
     closeDatabase(handle)
     handle.closed = true
   },
+  databaseOf: (handle: { db: unknown }) => handle.db,
+  sqliteEngineOf: (handle: unknown) => handle,
 }))
 
 vi.mock('@kobato/server/infra/db/paths', () => ({
@@ -105,8 +108,8 @@ describe('db-lifecycle', () => {
 
   it('exposes the current db and handle', () => {
     expect(getDb()).toBe(dbMock)
-    expect(getDatabaseHandle().db).toBe(dbMock)
-    expect(getDatabaseHandle().client).toBe(clientMock)
+    expect(databaseOf(getDatabaseHandle())).toBe(dbMock)
+    expect(sqliteEngineOf(getDatabaseHandle()).client).toBe(clientMock)
   })
 
   it('prepares the database for the file swap (flush + reset + close, in order)', async () => {
@@ -133,8 +136,8 @@ describe('db-lifecycle', () => {
     expect(handle.closed).toBe(true)
 
     const instance = await reopenDatabase()
-    expect(instance.db).toBe(dbMock)
-    expect(instance.client).toBe(clientMock)
+    expect(databaseOf(instance)).toBe(dbMock)
+    expect(sqliteEngineOf(instance).client).toBe(clientMock)
     expect(initAllBatchers).toHaveBeenCalled()
     expect(startLikeTokenSweep).toHaveBeenCalledWith(dbMock)
 

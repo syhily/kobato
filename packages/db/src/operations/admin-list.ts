@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { SelectedFields, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core'
 
+import { sqliteOf } from '@kobato/db/database'
 import { user } from '@kobato/db/schema/user'
 import { and, eq, type SQL } from 'drizzle-orm'
 
@@ -46,7 +47,7 @@ export function withUploader<TColumns extends SelectedFields>(options: {
   const columns = { ...options.columns, uploaderName: user.name } as const
 
   function selectJoined(db: Database) {
-    return db.select(columns).from(options.table).leftJoin(user, eq(user.id, options.uploaderIdColumn))
+    return sqliteOf(db).select(columns).from(options.table).leftJoin(user, eq(user.id, options.uploaderIdColumn))
   }
 
   async function findJoinedRowById(db: Database, id: number) {

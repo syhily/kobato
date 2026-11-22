@@ -1,4 +1,5 @@
 import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/api/contracts/jobs'
+import { sqliteOf } from '@kobato/db/database'
 import { jobRun } from '@kobato/db/schema/job-run'
 import {
   JOB_FAILURE_NOTIFY_DEDUPE_MS,
@@ -23,7 +24,7 @@ beforeEach(async () => {
 })
 
 function insertRow(values: { taskKey: string; startedAt?: Date; status?: 'running' | 'success' | 'failed' }): number {
-  const result = db
+  const result = sqliteOf(db)
     .insert(jobRun)
     .values({
       taskKey: values.taskKey,
@@ -42,7 +43,7 @@ describe('job-run-recorder — start/finish', () => {
 
     finishJobRun(id, 'success')
 
-    const row = db.select().from(jobRun).where(eq(jobRun.id, id!)).get()!
+    const row = sqliteOf(db).select().from(jobRun).where(eq(jobRun.id, id!)).get()!
     expect(row.status).toBe('success')
     expect(row.trigger).toBe('manual')
     expect(row.finishedAt).toBeInstanceOf(Date)
@@ -54,7 +55,7 @@ describe('job-run-recorder — start/finish', () => {
     const id = startJobRun('backup', 'scheduled')!
     finishJobRun(id, 'failed', 'x'.repeat(1000))
 
-    const row = db.select().from(jobRun).where(eq(jobRun.id, id)).get()!
+    const row = sqliteOf(db).select().from(jobRun).where(eq(jobRun.id, id)).get()!
     expect(row.status).toBe('failed')
     expect(row.error).toHaveLength(500)
   })
@@ -123,7 +124,7 @@ describe('job-run-recorder — failure notifier', () => {
 
     const id = startJobRun('backup', 'scheduled')!
     expect(() => finishJobRun(id, 'failed', 'boom')).not.toThrow()
-    const row = db.select().from(jobRun).where(eq(jobRun.id, id)).get()!
+    const row = sqliteOf(db).select().from(jobRun).where(eq(jobRun.id, id)).get()!
     expect(row.status).toBe('failed')
     expect(row.error).toBe('boom')
   })
@@ -143,7 +144,7 @@ describe('job-run-recorder — orphan sweep', () => {
 
     sweepOrphanedJobRuns(db)
 
-    const row = db.select().from(jobRun).where(eq(jobRun.id, id)).get()!
+    const row = sqliteOf(db).select().from(jobRun).where(eq(jobRun.id, id)).get()!
     expect(row.status).toBe('failed')
     expect(row.error).toBe(JOB_RUN_ERROR_PROCESS_RESTART)
     expect(row.finishedAt).toBeInstanceOf(Date)

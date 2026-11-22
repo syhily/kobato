@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { CountersSummary, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
 import { visitAggregates } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'

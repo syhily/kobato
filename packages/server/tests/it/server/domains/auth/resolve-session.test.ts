@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user as userTable } from '@kobato/db/schema/user'
 import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
@@ -16,7 +17,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(overrides: Record<string, unknown> = {}) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: 'legacy',
@@ -37,7 +38,7 @@ async function sessionCookie(
   sidCounter += 1
   const sid = `test-sid-${sidCounter}`
   const setCookie = await commitSession(buildSessionWithSid(sid, {}))
-  await db
+  await sqliteOf(db)
     .update(sessionTable)
     .set({ data, userId: opts.userId ?? null })
     .where(eq(sessionTable.id, sid))
@@ -95,7 +96,7 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
     expect(result.dirty).toBe(false)
     expect(result.user).toEqual(modernUser)
 
-    const [row] = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+    const [row] = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
     expect(row!.lastActiveAt).not.toBeNull()
   })
 

@@ -16,10 +16,9 @@ import {
   listApprovedWebmentionsForTarget,
   listWebmentionsByStatus,
   setWebmentionStatus,
+  isEntityWebmentionsEnabled,
 } from '@kobato/db/operations/webmention'
 import { countWebmentionOutboxByStatus, listWebmentionOutboxForAdmin } from '@kobato/db/operations/webmention-outbox'
-import { page } from '@kobato/db/schema/page'
-import { post } from '@kobato/db/schema/post'
 import {
   asAdminWebmentionOutboxListWire,
   asAdminWebmentionsWire,
@@ -29,7 +28,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { idFromString } from '@kobato/utils/id'
-import { eq } from 'drizzle-orm'
 
 export interface AdminWebmentionList {
   mentions: AdminWebmentionWire[]
@@ -83,23 +81,6 @@ export async function listAdminWebmentionOutbox(
 
 export async function listPublicWebmentions(db: Database, target: EntityTarget): Promise<PublicWebmentionWire[]> {
   return asPublicWebmentionsWire(await listApprovedWebmentionsForTarget(db, target))
-}
-
-async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
-  if (target.type === 'post') {
-    const rows = await db
-      .select({ enabled: post.webmentionsEnabled })
-      .from(post)
-      .where(eq(post.id, target.ownerId))
-      .limit(1)
-    return rows[0]?.enabled ?? false
-  }
-  const rows = await db
-    .select({ enabled: page.webmentionsEnabled })
-    .from(page)
-    .where(eq(page.id, target.ownerId))
-    .limit(1)
-  return rows[0]?.enabled ?? false
 }
 
 export async function loadPublicWebmentionsForTarget(

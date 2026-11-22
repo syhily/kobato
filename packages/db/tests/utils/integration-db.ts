@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
 import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
 import { sql } from 'drizzle-orm'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -14,13 +14,13 @@ let sharedHandle: DatabaseHandle | null = null
 
 function openMigratedHandle(path: string): DatabaseHandle {
   const handle = openDatabase(path)
-  migrateDatabase(handle.db)
+  migrateDatabase(databaseOf(handle))
   return handle
 }
 
 export function getTestDb(): Database {
   sharedHandle ??= openMigratedHandle(':memory:')
-  return sharedHandle.db
+  return databaseOf(sharedHandle)
 }
 
 export function createTestDatabaseFile(): DatabaseHandle {
@@ -53,7 +53,8 @@ afterAll(() => {
 })
 
 export function clearAllTables(db: Database): void {
-  const rows = db.all<{ name: string }>(sql`
+  const sdb = sqliteOf(db)
+  const rows = sdb.all<{ name: string }>(sql`
     SELECT name
     FROM sqlite_master
     WHERE type = 'table'
@@ -61,13 +62,13 @@ export function clearAllTables(db: Database): void {
       AND name != ${MIGRATIONS_TABLE}
     ORDER BY name
   `)
-  db.run(sql`PRAGMA foreign_keys = OFF`)
+  sdb.run(sql`PRAGMA foreign_keys = OFF`)
   try {
     for (const { name } of rows) {
-      db.run(sql.raw(`DELETE FROM "${name}"`))
+      sdb.run(sql.raw(`DELETE FROM "${name}"`))
     }
-    db.run(sql`DELETE FROM sqlite_sequence`)
+    sdb.run(sql`DELETE FROM sqlite_sequence`)
   } finally {
-    db.run(sql`PRAGMA foreign_keys = ON`)
+    sdb.run(sql`PRAGMA foreign_keys = ON`)
   }
 }

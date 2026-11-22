@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { page as pageMetaTable } from '@kobato/db/schema/page'
 import { post as postMetaTable } from '@kobato/db/schema/post'
 import { saveBody } from '@kobato/server/domains/content/lifecycle'
@@ -36,12 +37,18 @@ beforeEach(async () => {
 })
 
 async function postIdBySlug(slug: string): Promise<number> {
-  const rows = await db.select({ id: postMetaTable.id }).from(postMetaTable).where(eq(postMetaTable.slug, slug))
+  const rows = await sqliteOf(db)
+    .select({ id: postMetaTable.id })
+    .from(postMetaTable)
+    .where(eq(postMetaTable.slug, slug))
   return rows[0]!.id
 }
 
 async function pageIdBySlug(slug: string): Promise<number> {
-  const rows = await db.select({ id: pageMetaTable.id }).from(pageMetaTable).where(eq(pageMetaTable.slug, slug))
+  const rows = await sqliteOf(db)
+    .select({ id: pageMetaTable.id })
+    .from(pageMetaTable)
+    .where(eq(pageMetaTable.slug, slug))
   return rows[0]!.id
 }
 

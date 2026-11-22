@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { ensureMetric, incrementMetricPvBatch } from '@kobato/db/operations/metric'
 import { metric } from '@kobato/db/schema/metric'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
@@ -12,10 +13,12 @@ beforeEach(async () => {
 
 describe('db/query/metric', () => {
   it('increments pv for valid batched deltas', async () => {
-    await db.insert(metric).values([
-      { type: 'post', ownerId: 1, pv: 0 },
-      { type: 'page', ownerId: 2, pv: 0 },
-    ])
+    await sqliteOf(db)
+      .insert(metric)
+      .values([
+        { type: 'post', ownerId: 1, pv: 0 },
+        { type: 'page', ownerId: 2, pv: 0 },
+      ])
 
     await incrementMetricPvBatch(
       db,
@@ -25,12 +28,12 @@ describe('db/query/metric', () => {
       ]),
     )
 
-    const postRow = await db
+    const postRow = await sqliteOf(db)
       .select({ pv: metric.pv })
       .from(metric)
       .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
       .limit(1)
-    const pageRow = await db
+    const pageRow = await sqliteOf(db)
       .select({ pv: metric.pv })
       .from(metric)
       .where(and(eq(metric.type, 'page'), eq(metric.ownerId, 2)))
@@ -41,7 +44,9 @@ describe('db/query/metric', () => {
   })
 
   it('skips empty and non-positive batched view deltas', async () => {
-    await db.insert(metric).values([{ type: 'post', ownerId: 1, pv: 5 }])
+    await sqliteOf(db)
+      .insert(metric)
+      .values([{ type: 'post', ownerId: 1, pv: 5 }])
 
     await incrementMetricPvBatch(
       db,
@@ -51,7 +56,7 @@ describe('db/query/metric', () => {
       ]),
     )
 
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ pv: metric.pv })
       .from(metric)
       .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
@@ -60,7 +65,9 @@ describe('db/query/metric', () => {
   })
 
   it('skips malformed composite keys (no colon, unknown type, empty id)', async () => {
-    await db.insert(metric).values([{ type: 'post', ownerId: 1, pv: 10 }])
+    await sqliteOf(db)
+      .insert(metric)
+      .values([{ type: 'post', ownerId: 1, pv: 10 }])
 
     await incrementMetricPvBatch(
       db,
@@ -71,7 +78,7 @@ describe('db/query/metric', () => {
       ]),
     )
 
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ pv: metric.pv })
       .from(metric)
       .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
@@ -86,8 +93,8 @@ describe('db/query/metric — ensureMetric', () => {
   })
 
   it('returns the existing row without issuing any write when the row exists', async () => {
-    const seeded = await db.insert(metric).values({ type: 'post', ownerId: 1, pv: 7 }).returning()
-    const insertSpy = vi.spyOn(db, 'insert')
+    const seeded = await sqliteOf(db).insert(metric).values({ type: 'post', ownerId: 1, pv: 7 }).returning()
+    const insertSpy = vi.spyOn(sqliteOf(db), 'insert')
 
     const row = await ensureMetric(db, { type: 'post', ownerId: 1 })
 
@@ -96,7 +103,7 @@ describe('db/query/metric — ensureMetric', () => {
   })
 
   it('inserts defaults and returns the minted row when the row is missing', async () => {
-    const insertSpy = vi.spyOn(db, 'insert')
+    const insertSpy = vi.spyOn(sqliteOf(db), 'insert')
 
     const row = await ensureMetric(db, { type: 'page', ownerId: 9 })
 

@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
 import { queryExportRows } from '@kobato/db/duckdb/queries/export'
 

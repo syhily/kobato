@@ -28,7 +28,12 @@ import {
   adminBackupRestoreInput,
   adminBackupRestoreOutputDto,
   adminBackupStatusOutputDto,
+  adminBackupUploadRestoreDecryptInput,
+  adminBackupUploadRestoreDecryptOutputDto,
+  restoreJobStatusDto,
+  restoreProgressDto,
 } from '@kobato/api/contracts/backup'
+import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/branding'
 import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
@@ -207,6 +212,7 @@ import {
 import { analyticsContract } from '@kobato/api/rpc/admin/analytics'
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
 import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
+import { adminBrandingContract } from '@kobato/api/rpc/admin/branding'
 import { adminCacheContract } from '@kobato/api/rpc/admin/cache'
 import { adminCategoriesContract } from '@kobato/api/rpc/admin/categories'
 import { adminCommentsContract } from '@kobato/api/rpc/admin/comments'
@@ -372,6 +378,12 @@ const ADMIN_ROUTES = {
     create: { method: 'POST', path: '/admin/backup/create' },
     restore: { method: 'POST', path: '/admin/backup/restore' },
     delete: { method: 'POST', path: '/admin/backup/delete' },
+    restoreStatus: { method: 'GET', path: '/admin/backup/restore-status' },
+    restoreProgress: { method: 'GET', path: '/admin/backup/restore-progress' },
+    uploadRestoreDecrypt: { method: 'POST', path: '/admin/backup/upload-restore/decrypt' },
+  },
+  branding: {
+    clear: { method: 'POST', path: '/admin/branding/clear' },
   },
   fonts: {
     list: { method: 'GET', path: '/admin/fonts/list' },
@@ -541,6 +553,15 @@ const ADMIN_SCHEMAS = {
     create: { input: adminBackupCreateInput, output: adminBackupCreateOutputDto },
     restore: { input: adminBackupRestoreInput, output: adminBackupRestoreOutputDto },
     delete: { input: adminBackupDeleteInput, output: successDto },
+    restoreStatus: { input: undefined, output: restoreJobStatusDto },
+    restoreProgress: { input: undefined, output: restoreProgressDto },
+    uploadRestoreDecrypt: {
+      input: adminBackupUploadRestoreDecryptInput,
+      output: adminBackupUploadRestoreDecryptOutputDto,
+    },
+  },
+  branding: {
+    clear: { input: adminBrandingClearInput, output: adminBrandingClearOutputDto },
   },
   fonts: {
     list: { input: adminFontsListInput, output: listFontsOutputDto },
@@ -595,6 +616,7 @@ const ADMIN_CONTRACTS = {
   renders: adminRendersContract,
   comments: adminCommentsContract,
   backup: adminBackupContract,
+  branding: adminBrandingContract,
   fonts: adminFontsContract,
   geoip: adminGeoipContract,
   webmentions: adminWebmentionsContract,

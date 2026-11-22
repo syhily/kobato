@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
@@ -14,48 +15,50 @@ beforeEach(async () => {
   await clearAllTables(db)
   resetBlogSettingsForTests()
 
-  await db.insert(setting).values([
-    {
-      scope: 'blog.general',
-      data: {
-        title: 'Test',
-        description: 'Test',
-        website: 'https://example.com',
-        keywords: ['test'],
-        author: { name: 'Test', email: 'test@example.com', url: 'https://example.com' },
-        locale: 'zh-CN',
-        timeZone: 'Asia/Shanghai',
-        timeFormat: 'relative',
-        initialYear: 2024,
-      },
-    },
-    {
-      scope: 'blog.assets',
-      data: {
-        asset: { host: 'cdn.example.com', scheme: 'https' },
-        storage: {
-          enabled: false,
-          endpoint: '',
-          region: '',
-          bucket: '',
-          accessKeyId: '',
-          secretAccessKey: '',
-          forcePathStyle: false,
-          urlTemplate: '',
+  await sqliteOf(db)
+    .insert(setting)
+    .values([
+      {
+        scope: 'blog.general',
+        data: {
+          title: 'Test',
+          description: 'Test',
+          website: 'https://example.com',
+          keywords: ['test'],
+          author: { name: 'Test', email: 'test@example.com', url: 'https://example.com' },
+          locale: 'zh-CN',
+          timeZone: 'Asia/Shanghai',
+          timeFormat: 'relative',
+          initialYear: 2024,
         },
-        upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
       },
-    },
-    {
-      scope: 'blog.limits',
-      data: {
-        maxRequestBodySize: 10 * 1024 * 1024,
-        sessionMaxAge: 60 * 60 * 24 * 30,
-        auditLogDbRetentionDays: 30,
-        auditLogArchiveRetentionDays: 180,
+      {
+        scope: 'blog.assets',
+        data: {
+          asset: { host: 'cdn.example.com', scheme: 'https' },
+          storage: {
+            enabled: false,
+            endpoint: '',
+            region: '',
+            bucket: '',
+            accessKeyId: '',
+            secretAccessKey: '',
+            forcePathStyle: false,
+            urlTemplate: '',
+          },
+          upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
+        },
       },
-    },
-  ])
+      {
+        scope: 'blog.limits',
+        data: {
+          maxRequestBodySize: 10 * 1024 * 1024,
+          sessionMaxAge: 60 * 60 * 24 * 30,
+          auditLogDbRetentionDays: 30,
+          auditLogArchiveRetentionDays: 180,
+        },
+      },
+    ])
 })
 
 describe('integration / concurrent settings edits', () => {

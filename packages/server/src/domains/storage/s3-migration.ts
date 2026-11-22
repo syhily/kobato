@@ -12,10 +12,17 @@ import {
   type StorageMigrationStatus,
   type StorageMigrationVerification,
 } from '@kobato/api/contracts/storage'
-import { backup as backupTable } from '@kobato/db/schema/backup'
-import { font as fontTable } from '@kobato/db/schema/font'
-import { image, music } from '@kobato/db/schema/media'
-import { storageMigration } from '@kobato/db/schema/storage-migration'
+import {
+  cancelStorageMigrationRow,
+  completeStorageMigrationRow,
+  failStorageMigrationRow,
+  findStorageMigrationRow,
+  flipStorageDriverColumns,
+  persistStorageMigrationCounters,
+  resumeStorageMigrationRow,
+  updateStorageMigrationPhase,
+  upsertStorageMigrationRow,
+} from '@kobato/db/operations/storage'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { decryptIfNeeded, encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
@@ -31,11 +38,8 @@ import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storag
 import { backendFor } from '@kobato/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { eq } from 'drizzle-orm'
 
 const log = getLogger('storage.migration.task')
-
-const SINGLETON_ID = 1
 
 const LIST_BATCH_SIZE = 200
 const COPY_CONCURRENCY = 4
@@ -133,11 +137,10 @@ export async function isStorageMigrationActive(db: Database): Promise<boolean> {
   return row !== null && isStorageMigrationInFlightPhase(row.phase)
 }
 
-type MigrationRow = typeof storageMigration.$inferSelect
+type MigrationRow = NonNullable<Awaited<ReturnType<typeof findStorageMigrationRow>>>
 
 async function readRow(db: Database): Promise<MigrationRow | null> {
-  const rows = await db.select().from(storageMigration).where(eq(storageMigration.id, SINGLETON_ID))
-  return rows[0] ?? null
+  return findStorageMigrationRow(db)
 }
 
 function rowToStatus(row: MigrationRow | null): StorageMigrationStatus {
@@ -271,10 +274,7 @@ export async function startStorageMigration(db: Database, input: StartMigrationI
       updatedAt: now,
       finishedAt: null,
     }
-    await db
-      .insert(storageMigration)
-      .values({ id: SINGLETON_ID, ...row })
-      .onConflictDoUpdate({ target: storageMigration.id, set: row })
+    await upsertStorageMigrationRow(db, row)
   } catch (error) {
     if (running === handle) {
       running = null
@@ -294,10 +294,7 @@ export async function cancelStorageMigration(db: Database): Promise<StorageMigra
   if (running !== null) {
     running.cancelRequested = true
   } else {
-    await db
-      .update(storageMigration)
-      .set({ phase: 'cancelled', error: null, updatedAt: new Date(), finishedAt: new Date() })
-      .where(eq(storageMigration.id, SINGLETON_ID))
+    await cancelStorageMigrationRow(db)
   }
   return rowToStatus(await readRow(db))
 }
@@ -322,10 +319,7 @@ export async function resumeStorageMigration(db: Database): Promise<StorageMigra
     }
     row = existing
 
-    await db
-      .update(storageMigration)
-      .set({ phase: 'copying', error: null, updatedAt: new Date(), finishedAt: null })
-      .where(eq(storageMigration.id, SINGLETON_ID))
+    await resumeStorageMigrationRow(db)
   } catch (error) {
     if (running === handle) {
       running = null
@@ -440,15 +434,7 @@ async function runMigration(
     throwIfCancelled(handle)
 
     const verification = await verifyConsistency(endpoints.source, endpoints.target)
-    await db
-      .update(storageMigration)
-      .set({
-        phase: 'completed',
-        verification: JSON.stringify(verification),
-        updatedAt: new Date(),
-        finishedAt: new Date(),
-      })
-      .where(eq(storageMigration.id, SINGLETON_ID))
+    await completeStorageMigrationRow(db, JSON.stringify(verification))
     log.info('Storage migration completed', { direction, ...counters, verified: verification.matches })
     recordAuditEvent({
       action: 'storage_migration_completed',
@@ -468,15 +454,7 @@ async function runMigration(
     const message = error instanceof Error ? error.message : String(error)
     finishJobRun(handle.runId ?? null, cancelled ? 'cancelled' : 'failed', cancelled ? undefined : message)
     await persistCounters(db, counters, progress.cursor)
-    await db
-      .update(storageMigration)
-      .set({
-        phase: cancelled ? 'cancelled' : 'failed',
-        error: cancelled ? null : message,
-        updatedAt: new Date(),
-        finishedAt: new Date(),
-      })
-      .where(eq(storageMigration.id, SINGLETON_ID))
+    await failStorageMigrationRow(db, cancelled ? 'cancelled' : 'failed', cancelled ? null : message)
     log.warn('Storage migration ended', { direction, phase: cancelled ? 'cancelled' : 'failed', error: message })
     recordAuditEvent({
       action: cancelled ? 'storage_migration_cancelled' : 'storage_migration_failed',
@@ -662,14 +640,11 @@ async function switchStorage(db: Database, endpoints: ResolvedEndpoints): Promis
 
 async function flipDriverColumns(
   db: Database,
-  endpoints: ResolvedEndpoints,
+  _endpoints: ResolvedEndpoints,
   from: StorageDriver,
   to: StorageDriver,
 ): Promise<void> {
-  await db.update(image).set({ storageDriver: to }).where(eq(image.storageDriver, from))
-  await db.update(music).set({ storageDriver: to }).where(eq(music.storageDriver, from))
-  await db.update(fontTable).set({ storageDriver: to }).where(eq(fontTable.storageDriver, from))
-  await db.update(backupTable).set({ storageDriver: to }).where(eq(backupTable.storageDriver, from))
+  await flipStorageDriverColumns(db, from, to)
 }
 
 function throwIfCancelled(handle: RunningHandle): void {
@@ -679,7 +654,7 @@ function throwIfCancelled(handle: RunningHandle): void {
 }
 
 async function persistPhase(db: Database, phase: StorageMigrationInFlightPhase): Promise<void> {
-  await db.update(storageMigration).set({ phase, updatedAt: new Date() }).where(eq(storageMigration.id, SINGLETON_ID))
+  await updateStorageMigrationPhase(db, phase)
 }
 
 async function persistCounters(
@@ -687,16 +662,7 @@ async function persistCounters(
   counters: { copiedObjects: number; copiedBytes: number; skippedObjects: number },
   cursor: string | null,
 ): Promise<void> {
-  await db
-    .update(storageMigration)
-    .set({
-      copiedObjects: counters.copiedObjects,
-      copiedBytes: counters.copiedBytes,
-      skippedObjects: counters.skippedObjects,
-      ...(cursor !== null ? { cursor } : {}),
-      updatedAt: new Date(),
-    })
-    .where(eq(storageMigration.id, SINGLETON_ID))
+  await persistStorageMigrationCounters(db, counters, cursor)
 }
 
 function sleep(ms: number): Promise<void> {

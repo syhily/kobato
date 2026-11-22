@@ -1,6 +1,9 @@
-import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
+import type { DuckDBLogger } from '@kobato/db/duckdb/database'
 
 import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/db/duckdb/access-events'
+import { engineOf } from '@kobato/db/duckdb/connection'
+import { checkpointAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { ANALYTICS_TABLES } from '@kobato/db/duckdb/schema'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { stat } from 'node:fs/promises'
@@ -14,9 +17,10 @@ async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null
 }
 
 async function countRetentionRows(handle: AnalyticsHandle): Promise<bigint> {
+  const { reader } = engineOf(handle)
   let total = 0n
   for (const table of ANALYTICS_TABLES) {
-    const result = await handle.reader.runAndReadAll(`SELECT count(*) AS c FROM ${table}`)
+    const result = await reader.runAndReadAll(`SELECT count(*) AS c FROM ${table}`)
     total += unsafeCast<bigint>(result.getRowObjects()[0]?.c ?? 0n)
   }
   return total
@@ -29,9 +33,9 @@ export async function runAccessLogRetention(handle: AnalyticsHandle, logger?: Du
 
     const cutoffSec = Math.floor((Date.now() - ACCESS_EVENTS_RETENTION_DAYS * 24 * 60 * 60 * 1000) / 1000)
     for (const table of ANALYTICS_TABLES) {
-      await handle.writer.runAndReadAll(`DELETE FROM ${table} WHERE timestamp < to_timestamp(?)`, [cutoffSec])
+      await engineOf(handle).writer.runAndReadAll(`DELETE FROM ${table} WHERE timestamp < to_timestamp(?)`, [cutoffSec])
     }
-    await handle.writer.run('CHECKPOINT')
+    await checkpointAnalyticsDatabase(handle)
 
     const afterCount = await countRetentionRows(handle)
     const afterSize = await analyticsFileSize(handle)

@@ -2,7 +2,10 @@ import type { Database } from '@kobato/db/database'
 import type { EntityTarget } from '@kobato/db/target'
 import type { NewWebmention, WebmentionRow } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { isUniqueConstraintError } from '@kobato/db/errors'
+import { page } from '@kobato/db/schema/page'
+import { post } from '@kobato/db/schema/post'
 import { webmention } from '@kobato/db/schema/webmention'
 import { and, asc, count, desc, eq, gte, isNull, lt, lte, or, sql } from 'drizzle-orm'
 
@@ -18,7 +21,7 @@ export interface WebmentionUpsertResult {
 }
 
 async function findWebmentionByPair(db: Database, sourceUrl: string, targetUrl: string): Promise<WebmentionRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(webmention)
     .where(and(eq(webmention.sourceUrl, sourceUrl), eq(webmention.targetUrl, targetUrl)))
@@ -47,7 +50,7 @@ async function insertWebmentionRow(
 ): Promise<{ row: WebmentionRow; raced: boolean }> {
   const now = new Date()
   try {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(webmention)
       .values({ ...values, createdAt: now, updatedAt: now })
       .returning()
@@ -56,7 +59,7 @@ async function insertWebmentionRow(
     if (!isUniqueConstraintError(err)) {
       throw err
     }
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(webmention)
       .values({ ...values, createdAt: now, updatedAt: now })
       .onConflictDoUpdate({
@@ -81,7 +84,7 @@ export async function upsertWebmention(db: Database, values: NewWebmention): Pro
   }
 
   const demoted = existing.status === 'approved'
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({ ...refreshSet(values, now), status: demoted ? 'pending' : existing.status })
     .where(eq(webmention.id, existing.id))
@@ -90,7 +93,7 @@ export async function upsertWebmention(db: Database, values: NewWebmention): Pro
 }
 
 export async function findWebmentionById(db: Database, id: number): Promise<WebmentionRow | null> {
-  const rows = await db.select().from(webmention).where(eq(webmention.id, id)).limit(1)
+  const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id)).limit(1)
   return rows[0] ?? null
 }
 
@@ -100,7 +103,7 @@ export async function listWebmentionsByStatus(
   offset: number,
   limit: number,
 ): Promise<WebmentionRow[]> {
-  return db
+  return sqliteOf(db)
     .select()
     .from(webmention)
     .where(status === undefined ? undefined : eq(webmention.status, status))
@@ -110,7 +113,7 @@ export async function listWebmentionsByStatus(
 }
 
 export async function countWebmentions(db: Database, status: WebmentionStatus | undefined): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ count: count() })
     .from(webmention)
     .where(status === undefined ? undefined : eq(webmention.status, status))
@@ -118,7 +121,7 @@ export async function countWebmentions(db: Database, status: WebmentionStatus | 
 }
 
 export async function countWebmentionsByStatus(db: Database): Promise<WebmentionStatusCounts> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ status: webmention.status, count: count() })
     .from(webmention)
     .groupBy(webmention.status)
@@ -135,7 +138,7 @@ export async function listApprovedWebmentionsForTarget(
   target: EntityTarget,
   limit = 50,
 ): Promise<WebmentionRow[]> {
-  return db
+  return sqliteOf(db)
     .select()
     .from(webmention)
     .where(
@@ -155,7 +158,7 @@ export async function setWebmentionStatus(
   status: WebmentionStatus,
 ): Promise<WebmentionRow | null> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({
       status,
@@ -210,7 +213,7 @@ export async function upsertWebmentionVerificationFailure(
     const { row } = await insertWebmentionRow(db, rowValues, () => failureSet)
     return row
   }
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({
       verificationStatus: 'failed',
@@ -237,7 +240,7 @@ function reverifyCycleWhere() {
 
 export async function pickWebmentionsDueForReverify(db: Database, now: Date, limit: number): Promise<WebmentionRow[]> {
   const cutoff = new Date(now.getTime() - WEBMENTION_REVERIFY_INTERVAL_MS)
-  return db
+  return sqliteOf(db)
     .select()
     .from(webmention)
     .where(and(reverifyCycleWhere(), or(isNull(webmention.lastVerifiedAt), lte(webmention.lastVerifiedAt, cutoff))))
@@ -246,7 +249,7 @@ export async function pickWebmentionsDueForReverify(db: Database, now: Date, lim
 }
 
 export async function hideExhaustedPendingWebmentions(db: Database): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({ status: 'hidden', updatedAt: new Date() })
     .where(
@@ -261,7 +264,7 @@ export async function hideExhaustedPendingWebmentions(db: Database): Promise<num
 }
 
 export function findNextWebmentionReverifyDueAt(db: Database): Date | 'now' | null {
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ lastVerifiedAt: webmention.lastVerifiedAt })
     .from(webmention)
     .where(reverifyCycleWhere())
@@ -289,7 +292,7 @@ export async function applyWebmentionReverifySuccess(
   },
 ): Promise<WebmentionRow | null> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({
       status: sql`CASE WHEN ${webmention.status} = 'hidden' THEN 'approved' ELSE ${webmention.status} END`,
@@ -315,7 +318,7 @@ export async function applyWebmentionReverifyFailure(
 ): Promise<WebmentionRow | null> {
   const now = new Date()
   const daily = values.count === 'daily'
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(webmention)
     .set({
       status: daily
@@ -330,4 +333,25 @@ export async function applyWebmentionReverifyFailure(
     .where(eq(webmention.id, id))
     .returning()
   return rows[0] ?? null
+}
+
+/**
+ * Whether the target entity (post/page) has webmentions enabled.
+ */
+export async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
+  const sdb = sqliteOf(db)
+  if (target.type === 'post') {
+    const rows = await sdb
+      .select({ enabled: post.webmentionsEnabled })
+      .from(post)
+      .where(eq(post.id, target.ownerId))
+      .limit(1)
+    return rows[0]?.enabled ?? false
+  }
+  const rows = await sdb
+    .select({ enabled: page.webmentionsEnabled })
+    .from(page)
+    .where(eq(page.id, target.ownerId))
+    .limit(1)
+  return rows[0]?.enabled ?? false
 }

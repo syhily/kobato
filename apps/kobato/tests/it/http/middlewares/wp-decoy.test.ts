@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { isWordPressDecoyPath } from '@kobato/server/http/middlewares/wp-decoy'
@@ -15,7 +16,7 @@ beforeEach(async () => {
 })
 
 async function seedPage(slug: string, title: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug,
@@ -26,11 +27,11 @@ async function seedPage(slug: string, title: string): Promise<number> {
     })
     .returning({ id: pageTable.id })
   const pageId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   return pageId
 }
 

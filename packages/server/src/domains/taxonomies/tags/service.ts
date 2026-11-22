@@ -9,13 +9,15 @@ import {
   type AdminTagsListFilters,
   countAdminTags,
   deleteTag as deleteTagRow,
+  findTagBySlug as findTagBySlugOp,
+  findTagNameSlugByNames,
   findTagById,
   findTagByName,
   insertTag,
   listAdminTagRows,
+  listTagNameSlugRows,
   updateTag,
 } from '@kobato/db/operations/tag'
-import { tag as tagTable } from '@kobato/db/schema/taxonomy'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { countPostsByTaxonomy, listPostTitlesByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
 import {
@@ -26,7 +28,6 @@ import {
 } from '@kobato/server/domains/taxonomies/shared'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
-import { asc, eq, inArray } from 'drizzle-orm'
 
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
   return {
@@ -128,15 +129,11 @@ export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerI
 }
 
 export async function findTagBySlug(db: Database, slug: string): Promise<TagRow | null> {
-  const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)
-  return rows[0] ?? null
+  return findTagBySlugOp(db, slug)
 }
 
 export async function listAllTags(db: Database): Promise<Tag[]> {
-  const tagRows = await db
-    .select({ name: tagTable.name, slug: tagTable.slug })
-    .from(tagTable)
-    .orderBy(asc(tagTable.name))
+  const tagRows = await listTagNameSlugRows(db)
 
   if (tagRows.length === 0) {
     return []
@@ -158,12 +155,10 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
   }
   const uniqueNames = [...new Set(names)]
 
-  const tagRowsPromise = db
-    .select({ name: tagTable.name, slug: tagTable.slug })
-    .from(tagTable)
-    .where(inArray(tagTable.name, uniqueNames))
-  const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: uniqueNames })
-  const [tagRows, countsMap] = await Promise.all([tagRowsPromise, countsMapPromise])
+  const [tagRows, countsMap] = await Promise.all([
+    findTagNameSlugByNames(db, uniqueNames),
+    countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: uniqueNames }),
+  ])
 
   if (tagRows.length === 0) {
     return []

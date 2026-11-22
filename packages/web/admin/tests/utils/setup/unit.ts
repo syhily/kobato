@@ -1,4 +1,4 @@
-import '@kobato/test/setup/unit'
+import '@kobato/test/setup/dom'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { installWebStreamGlobals } from '@kobato/test/web-streams'
 import { afterEach, vi } from 'vitest'
@@ -13,6 +13,5 @@ vi.mock('@kobato/web-admin/ui/settings/use-settings-mutation', async () => {
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {
-  vi.useRealTimers()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })

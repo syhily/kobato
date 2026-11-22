@@ -1,29 +1,29 @@
 import type { AdminPostDetailDto } from '@kobato/api/contracts/posts'
 import type { Database } from '@kobato/db/database'
-import type { PostMetaRow } from '@kobato/db/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
-import type { ListPostsFilters } from '@kobato/server/domains/posts/repos/shared'
 import type { AdminPostsListResult } from '@kobato/server/domains/posts/services/shared'
 
-import { post as postMetaTable } from '@kobato/db/schema/post'
+import {
+  countPostMetas as countPostMetasOp,
+  listPostMetas as listPostMetasOp,
+  type PostListFilters,
+} from '@kobato/db/operations/entity-meta'
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query'
-import { makeMetaListQueries } from '@kobato/server/domains/content/entities/meta-repo'
 import { postDescriptor } from '@kobato/server/domains/posts/descriptor'
-import { buildPostsOrderBy, buildPostsWhere } from '@kobato/server/domains/posts/repos/shared'
 
-const listQueries = makeMetaListQueries<PostMetaRow, ListPostsFilters>(postMetaTable, {
-  buildWhere: buildPostsWhere,
-  orderBy: buildPostsOrderBy,
+export type { PostListFilters }
+
+export const listPostMetas = listPostMetasOp
+export const countPostMetas = countPostMetasOp
+
+const adminQuery = makeEntityAdminQuery(postDescriptor, {
+  listMetas: listPostMetas,
+  countMetas: countPostMetas,
 })
-
-export const listPostMetas = listQueries.listMetas
-export const countPostMetas = listQueries.countMetas
-
-const adminQuery = makeEntityAdminQuery(postDescriptor, listQueries)
 
 export async function listPostsForAdmin(
   db: Database,
-  filters: ListPostsFilters = {},
+  filters: PostListFilters = {},
   viewer?: ViewerIdentity,
 ): Promise<AdminPostsListResult> {
   const { items, total, hasMore } = await adminQuery.listForAdmin(db, filters, viewer)

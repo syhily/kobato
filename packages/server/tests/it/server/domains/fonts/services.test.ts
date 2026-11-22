@@ -1,5 +1,6 @@
 import type { FontRow } from '@kobato/db/schema/font'
 
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { font } from '@kobato/db/schema/font'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
@@ -30,7 +31,7 @@ let hashCounter = 0
 
 async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Promise<FontRow> {
   const hash = overrides.hash ?? `hash-${++hashCounter}`
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(font)
     .values({
       familyName: 'Test Sans',
@@ -58,7 +59,7 @@ function packageKeys(hash: string): string[] {
 }
 
 async function readFontsSettingsData(): Promise<Record<string, unknown> | null> {
-  const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.fonts'))
+  const rows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.fonts'))
   return (rows[0]?.data as Record<string, unknown> | undefined) ?? null
 }
 
@@ -85,7 +86,7 @@ describe('fonts/services/mutate — deleteFont', () => {
     const deleted = await deleteFont(db, target.id)
 
     expect(deleted.id).toBe(target.id)
-    const remaining = await db.select().from(font).where(eq(font.id, target.id))
+    const remaining = await sqliteOf(db).select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(0)
     expect(packageKeys(target.hash)).toHaveLength(0)
     expect(mem.deletedKeys).toContain(`fonts/${target.hash}/result.css`)
@@ -102,7 +103,7 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect(error).toBeInstanceOf(DomainError)
     expect((error as DomainError).code).toBe('CONFLICT')
     expect((error as DomainError).message).toContain('global')
-    const remaining = await db.select().from(font).where(eq(font.id, target.id))
+    const remaining = await sqliteOf(db).select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(1)
     expect(packageKeys(target.hash)).toHaveLength(4)
     expect(mem.deletedKeys).toHaveLength(0)
@@ -127,7 +128,7 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect((error as DomainError).message).toContain('global')
     expect((error as DomainError).message).toContain('post')
     expect((error as DomainError).message).not.toContain('code')
-    const remaining = await db.select().from(font).where(eq(font.id, target.id))
+    const remaining = await sqliteOf(db).select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(1)
   })
 })

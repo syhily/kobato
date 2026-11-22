@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { page } from '@kobato/db/schema/page'
 import { post } from '@kobato/db/schema/post'
@@ -19,7 +20,7 @@ beforeEach(async () => {
 })
 
 async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -33,7 +34,7 @@ async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promis
 }
 
 async function seedPost(title: string, slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -47,12 +48,12 @@ async function seedPost(title: string, slug: string): Promise<number> {
 }
 
 async function seedPage(title: string, slug: string): Promise<number> {
-  const rows = await db.insert(page).values({ slug, title }).returning({ id: page.id })
+  const rows = await sqliteOf(db).insert(page).values({ slug, title }).returning({ id: page.id })
   return rows[0]!.id
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',

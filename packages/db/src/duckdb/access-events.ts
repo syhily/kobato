@@ -1,3 +1,6 @@
+import type { DuckDBType, DuckDBValue } from '@duckdb/node-api'
+import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
+
 import {
   BOOLEAN,
   DOUBLE,
@@ -7,10 +10,8 @@ import {
   TIMESTAMPTZ,
   UUID,
   VARCHAR,
-  type DuckDBConnection,
-  type DuckDBType,
-  type DuckDBValue,
 } from '@duckdb/node-api'
+import { writerConnection } from '@kobato/db/duckdb/connection'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const ACCESS_EVENTS_DDL = `
@@ -140,8 +141,8 @@ function accessEventColumns(events: EnrichedAccessEvent[]): DuckDBValue[][] {
   ]
 }
 
-export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
-  const appender = await writer.createAppender('access_events')
+export async function appendAccessEvents(writer: AnalyticsWriter, events: EnrichedAccessEvent[]): Promise<void> {
+  const appender = await writerConnection(writer).createAppender('access_events')
   try {
     for (let offset = 0; offset < events.length; offset += 2048) {
       const chunk = DuckDBDataChunk.create(ACCESS_EVENTS_CHUNK_TYPES)

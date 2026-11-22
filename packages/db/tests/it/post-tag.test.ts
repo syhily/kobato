@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag'
 import { post } from '@kobato/db/schema/post'
 import { tag } from '@kobato/db/schema/taxonomy'
@@ -11,7 +12,7 @@ beforeEach(async () => {
 })
 
 async function seedPost(overrides: Partial<typeof post.$inferInsert> = {}) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(post)
     .values({
       slug: 'test-post',
@@ -34,7 +35,7 @@ async function seedPost(overrides: Partial<typeof post.$inferInsert> = {}) {
 }
 
 async function seedTags(names: string[]) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(tag)
     .values(names.map((name) => ({ name, slug: name })))
     .returning()

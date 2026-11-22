@@ -3,6 +3,7 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { Mock } from 'vitest'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user, verification } from '@kobato/db/schema/user'
@@ -74,7 +75,7 @@ afterAll(async () => {
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
 async function seedGateAdmin() {
-  await db.insert(user).values({
+  await sqliteOf(db).insert(user).values({
     name: 'Gatekeeper',
     email: 'gatekeeper@example.com',
     password: 'not-a-real-hash',
@@ -84,7 +85,7 @@ async function seedGateAdmin() {
 
 async function seedAdminUser() {
   const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Admin',
@@ -191,7 +192,7 @@ async function doLogin(): Promise<string> {
 }
 
 async function getOtpRow(userId: number) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(verification)
     .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
@@ -199,12 +200,12 @@ async function getOtpRow(userId: number) {
 }
 
 async function sessionRowsFor(userId: number) {
-  return db.select().from(sessionTable).where(eq(sessionTable.userId, userId))
+  return sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, userId))
 }
 
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, actionName))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
 describe('integration: OTP login flow (real DB)', () => {
@@ -352,7 +353,7 @@ describe('integration: OTP login flow (real DB)', () => {
     const admin = await seedAdminUser()
     const otpCode = await doLogin()
 
-    await db
+    await sqliteOf(db)
       .update(verification)
       .set({ expiresAt: new Date(Date.now() - 1000) })
       .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, admin.id)))

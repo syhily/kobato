@@ -6,7 +6,7 @@ import type { SectionMeta } from '@kobato/settings/sections/registry'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { isValidPasskeyDomain } from '@kobato/auth/network'
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { updateSettingTransactionally } from '@kobato/db/operations/setting'
 import {
   SECTION_REGISTRY,
   sectionWriteSchema,
@@ -55,8 +55,7 @@ export async function updateBlogSettingsSection(
     await assertAssetsStoragePatchAllowed(db, payload, options?.isStorageMigrationActive)
   }
 
-  db.transaction((tx) => {
-    const storedRow = findSettingByScope(tx, meta.scope) ?? null
+  updateSettingTransactionally(db, meta.scope, (storedRow) => {
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, payload)
     const parsed = sectionWriteSchema(section, meta).safeParse(merged)
@@ -81,7 +80,7 @@ export async function updateBlogSettingsSection(
     const nextRow = applySectionPatch(section, validated, storedRow)
 
     const encryptedRow = encryptSecretsInRow(section, nextRow)
-    upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
+    return { data: encryptedRow, updatedBy }
   })
   const bundle = await refreshBlogSettings(db)
 

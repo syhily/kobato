@@ -3,7 +3,7 @@ import type { AuditLogRow } from '@kobato/db/schema/config'
 import { describe, expect, it } from 'vitest'
 
 const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@kobato/server/domains/audit/projection')
-const { buildAuditLogWhere } = await import('@kobato/server/domains/audit/services/query')
+const { buildAuditLogWhere } = await import('@kobato/db/operations/audit-log')
 const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller')
 
 describe('audit/controller helpers', () => {
@@ -60,12 +60,15 @@ describe('audit/controller helpers', () => {
       expect(result).toBeDefined()
     })
 
-    it('throws for invalid actorId', () => {
-      expect(() => buildAuditLogWhere({ actorId: 'not-a-number' })).toThrow()
+    it('builds conditions for a numeric actorId', () => {
+      expect(buildAuditLogWhere({ actorId: 42 })).toBeDefined()
     })
 
     it('builds date range conditions', () => {
-      const result = buildAuditLogWhere({ dateFrom: '2026-01-01', dateTo: '2026-01-31' })
+      const result = buildAuditLogWhere({
+        createdAfter: new Date('2026-01-01'),
+        createdBeforeExclusive: new Date('2026-02-01'),
+      })
       expect(result).toBeDefined()
     })
   })

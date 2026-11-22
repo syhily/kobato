@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
 import { user, verification } from '@kobato/db/schema/user'
@@ -12,7 +13,7 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils
 
 const admin = await import('@kobato/server/domains/users/services/admin')
 const account = await import('@kobato/server/domains/users/services/account')
-const adminQuery = await import('@kobato/server/domains/users/repos/admin-query')
+const adminQuery = await import('@kobato/db/operations/admin-user')
 const userOps = await import('@kobato/db/operations/user')
 
 const db = getTestDb()
@@ -33,7 +34,7 @@ afterAll(async () => {
 })
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Test User',
@@ -46,7 +47,7 @@ async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}) {
 }
 
 async function seedComment(userId: number, overrides: Partial<typeof comment.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: 'post',
@@ -214,11 +215,11 @@ describe('infra/db/operations/user — softDeleteUserById / restoreUserById', ()
     const u = await seedUser({ name: 'Del', email: 'd@example.com' })
 
     expect(await userOps.softDeleteUserById(db, u.id)).toBe(true)
-    const afterDelete = await db.select().from(user).where(eq(user.id, u.id)).limit(1)
+    const afterDelete = await sqliteOf(db).select().from(user).where(eq(user.id, u.id)).limit(1)
     expect(afterDelete[0].deletedAt).not.toBeNull()
 
     expect(await userOps.restoreUserById(db, u.id)).toBe(true)
-    const afterRestore = await db.select().from(user).where(eq(user.id, u.id)).limit(1)
+    const afterRestore = await sqliteOf(db).select().from(user).where(eq(user.id, u.id)).limit(1)
     expect(afterRestore[0].deletedAt).toBeNull()
   })
 
@@ -375,7 +376,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
     expect(result.success).toBe(true)
     expect((await mail.nextMessage()).to).toContain('jane@example.com')
 
-    const rows = await db.select().from(user).where(eq(user.email, 'jane@example.com'))
+    const rows = await sqliteOf(db).select().from(user).where(eq(user.email, 'jane@example.com'))
     expect(rows).toHaveLength(1)
     expect(rows[0].role).toBe('author')
   })
@@ -394,7 +395,7 @@ describe('users/services/admin — inviteAuthorWithRollback', () => {
       admin.inviteAuthorWithRollback(db, 'Jane', 'jane@example.com', 'https://blog.example.com', 'Admin'),
     ).rejects.toMatchObject({ descriptor: { messageKey: 'users.error.mailFailedRolledBack' } })
 
-    const rows = await db.select().from(user).where(eq(user.email, 'jane@example.com'))
+    const rows = await sqliteOf(db).select().from(user).where(eq(user.email, 'jane@example.com'))
     expect(rows).toHaveLength(1)
     expect(rows[0].deletedAt).not.toBeNull()
   })
@@ -513,7 +514,7 @@ describe('users/services/account — updateAccountPassword', () => {
 
     await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
 
-    const rows = await db.select({ password: user.password }).from(user).where(eq(user.id, u.id))
+    const rows = await sqliteOf(db).select({ password: user.password }).from(user).where(eq(user.id, u.id))
     expect(rows[0].password).not.toBe(hashed)
   })
 
@@ -533,37 +534,48 @@ describe('users/services/account — updateAccountPassword', () => {
 
     expect(await peekToken(db, token, 'password-reset')).toBeNull()
     expect(await peekToken(db, magicToken, 'signin-link')).toBeNull()
-    expect(await db.select().from(verification).where(eq(verification.purpose, 'signin-otp'))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification).where(eq(verification.purpose, 'signin-otp'))).toHaveLength(0)
   })
 
   it('evicts registered passkeys and returns the account to password signin', async () => {
     const bcrypt = await import('bcryptjs')
     const hashed = await bcrypt.hash('correct', 4)
     const u = await seedUser({ name: 'P', email: 'pk@example.com', password: hashed, loginMethod: 'passkey' })
-    await db.insert(passkeyCredential).values({
-      userId: u.id,
-      credentialId: 'cred-password-change',
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 0,
-      transports: [],
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId: u.id,
+        credentialId: 'cred-password-change',
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 0,
+        transports: [],
+      })
     const other = await seedUser({ name: 'O', email: 'other-pk@example.com', password: hashed, loginMethod: 'passkey' })
-    await db.insert(passkeyCredential).values({
-      userId: other.id,
-      credentialId: 'cred-other',
-      publicKey: Buffer.from([4, 5, 6]),
-      counter: 0,
-      transports: [],
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId: other.id,
+        credentialId: 'cred-other',
+        publicKey: Buffer.from([4, 5, 6]),
+        counter: 0,
+        transports: [],
+      })
 
     await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
 
-    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, u.id))).toHaveLength(0)
-    const rows = await db.select({ loginMethod: user.loginMethod }).from(user).where(eq(user.id, u.id))
+    expect(await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, u.id))).toHaveLength(
+      0,
+    )
+    const rows = await sqliteOf(db).select({ loginMethod: user.loginMethod }).from(user).where(eq(user.id, u.id))
     expect(rows[0]!.loginMethod).toBe('password')
 
-    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, other.id))).toHaveLength(1)
-    const otherRows = await db.select({ loginMethod: user.loginMethod }).from(user).where(eq(user.id, other.id))
+    expect(
+      await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, other.id)),
+    ).toHaveLength(1)
+    const otherRows = await sqliteOf(db)
+      .select({ loginMethod: user.loginMethod })
+      .from(user)
+      .where(eq(user.id, other.id))
     expect(otherRows[0]!.loginMethod).toBe('passkey')
   })
 })

@@ -1,6 +1,9 @@
 import type { Database } from '@kobato/db/database'
 import type { EntityTarget, EntityType } from '@kobato/db/target'
+import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 
+import { sqliteOf } from '@kobato/db/database'
+import { decrementMetricVotesTx } from '@kobato/db/operations/metric'
 import { comment } from '@kobato/db/schema/comment'
 import { like, metric } from '@kobato/db/schema/metric'
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
@@ -10,7 +13,7 @@ function whereLikeTarget(target: EntityTarget) {
 }
 
 export async function recordLikeAndCount(db: Database, token: string, target: EntityTarget): Promise<number> {
-  return db.transaction((tx) => {
+  return sqliteOf(db).transaction((tx) => {
     const now = new Date()
     tx.insert(like)
       .values({
@@ -31,9 +34,9 @@ export async function recordLikeAndCount(db: Database, token: string, target: En
   })
 }
 
-export function consumeActiveLikeToken(db: Database, target: EntityTarget, token: string): boolean {
+export function consumeActiveLikeTokenTx(tx: NodeSQLiteDatabase, target: EntityTarget, token: string): boolean {
   const now = new Date()
-  const rows = db
+  const rows = tx
     .update(like)
     .set({ updatedAt: now, deletedAt: now })
     .where(and(eq(like.token, token), whereLikeTarget(target), isNull(like.deletedAt)))
@@ -43,7 +46,7 @@ export function consumeActiveLikeToken(db: Database, target: EntityTarget, token
 }
 
 export async function metricVoteUp(db: Database, target: EntityTarget): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ like: metric.voteUp })
     .from(metric)
     .where(and(eq(metric.type, target.type), eq(metric.ownerId, target.ownerId)))
@@ -63,7 +66,7 @@ export async function metricsByOwnerIds(db: Database, type: EntityType, ownerIds
   if (ownerIds.length === 0) {
     return []
   }
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({
       type: metric.type,
       ownerId: metric.ownerId,
@@ -95,7 +98,7 @@ export async function commentCountsByOwnerIds(
   if (ownerIds.length === 0) {
     return []
   }
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ ownerId: comment.ownerId, count: sql<number>`COUNT(*)`.mapWith(Number) })
     .from(comment)
     .where(
@@ -113,14 +116,30 @@ export async function commentCountsByOwnerIds(
 }
 
 export async function purgeOldLikeTokens(db: Database, before: Date): Promise<void> {
-  await db.delete(like).where(and(isNotNull(like.deletedAt), lt(like.deletedAt, before)))
+  await sqliteOf(db)
+    .delete(like)
+    .where(and(isNotNull(like.deletedAt), lt(like.deletedAt, before)))
 }
 
 export async function existsActiveLikeToken(db: Database, target: EntityTarget, token: string): Promise<boolean> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ id: like.id })
     .from(like)
     .where(and(eq(like.token, token), whereLikeTarget(target), isNull(like.deletedAt)))
     .limit(1)
   return rows.length > 0
+}
+
+/**
+ * Consumes an active like token and decrements the metric's vote count in one transaction; returns whether the
+ * token was consumed.
+ */
+export function consumeLikeAndDecrement(db: Database, target: EntityTarget, token: string): boolean {
+  return sqliteOf(db).transaction((tx) => {
+    const consumed = consumeActiveLikeTokenTx(tx, target, token)
+    if (consumed) {
+      decrementMetricVotesTx(tx, target)
+    }
+    return consumed
+  })
 }

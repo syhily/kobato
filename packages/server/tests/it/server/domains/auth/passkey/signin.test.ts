@@ -2,6 +2,7 @@ import type { SigninFlowContext } from '@kobato/server/domains/auth/services/sha
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
 import { session as sessionTable } from '@kobato/db/schema/session'
@@ -49,7 +50,7 @@ function passkeyFinishBucket(maxAttempts: number): BlogSettingsBundle {
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: 'Admin',
@@ -63,13 +64,15 @@ async function seedUser(overrides: Record<string, unknown> = {}): Promise<number
 }
 
 async function seedCredential(userId: number, credentialId: string): Promise<void> {
-  await db.insert(passkeyCredential).values({
-    userId,
-    credentialId,
-    publicKey: Buffer.from([1, 2, 3]),
-    counter: 0,
-    transports: ['internal'],
-  })
+  await sqliteOf(db)
+    .insert(passkeyCredential)
+    .values({
+      userId,
+      credentialId,
+      publicKey: Buffer.from([1, 2, 3]),
+      counter: 0,
+      transports: ['internal'],
+    })
 }
 
 async function beginAuthentication(challenge: string, email?: string): Promise<void> {
@@ -116,7 +119,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
 
     expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.passkey.error.disabled' } })
     expect(swaMocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('refuses when the response or challenge field is missing', async () => {
@@ -174,20 +177,23 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    const sessions = await db.select().from(sessionTable)
+    const sessions = await sqliteOf(db).select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
     expect(sessions[0]!.ip).toBe(CLIENT)
 
-    const [row] = await db.select().from(userTable).where(eq(userTable.id, userId))
+    const [row] = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, userId))
     expect(row!.lastIp).toBe(CLIENT)
     expect(row!.lastUa).toBe('vitest')
 
-    const [cred] = await db.select().from(passkeyCredential).where(eq(passkeyCredential.credentialId, 'cred-1'))
+    const [cred] = await sqliteOf(db)
+      .select()
+      .from(passkeyCredential)
+      .where(eq(passkeyCredential.credentialId, 'cred-1'))
     expect(cred!.counter).toBe(1)
 
     await flushAuditLog()
-    const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
+    const logins = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'login'))
     expect(logins).toHaveLength(1)
     expect(logins[0]!.actorId).toBe(userId)
     expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
@@ -206,7 +212,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
       type: 'error',
       descriptor: { messageKey: 'auth.passkey.error.verifyFailedGeneric' },
     })
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('falls back to the generic error for non-Error throws', async () => {

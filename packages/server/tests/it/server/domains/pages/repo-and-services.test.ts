@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content } from '@kobato/db/schema/content'
 import { page as pageMetaTable } from '@kobato/db/schema/page'
 import { user } from '@kobato/db/schema/user'
@@ -5,17 +6,13 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { emptyLexicalBody, stubMusicResolver } from '@kobato/server/tests/utils/lexical'
 import { adminUser } from '@kobato/server/tests/utils/session'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const findPageMetaBySlugForUpdate = vi.spyOn(
-  await import('@kobato/server/domains/pages/repo'),
-  'findPageMetaBySlugForUpdate',
-)
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const { setBlogSettingsBundleForTests } = await import('@kobato/settings/tests/utils/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 const repo = await import('@kobato/server/domains/pages/repo')
+const { rethrowSlugConflict } = await import('@kobato/server/domains/content/slug-conflict')
 const publicQuery = await import('@kobato/server/domains/pages/services/public-query')
 const mutate = await import('@kobato/server/domains/pages/services/mutate')
 const adminQuery = await import('@kobato/server/domains/pages/services/admin-query')
@@ -30,7 +27,7 @@ beforeEach(async () => {
 })
 
 async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageMetaTable)
     .values({
       slug: overrides.slug ?? `page-${Math.random().toString(36).slice(2)}`,
@@ -42,7 +39,7 @@ async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = 
 }
 
 async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'published', body?: unknown) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(content)
     .values({
       type: 'page',
@@ -58,7 +55,7 @@ async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'pu
 }
 
 async function seedAuthor() {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Author', email: `a${Math.random().toString(36).slice(2)}@example.com`, password: 'x' })
     .returning()
@@ -67,14 +64,14 @@ async function seedAuthor() {
 
 describe('pages/repo — listPageMetas', () => {
   it('returns empty array when no pages', async () => {
-    expect(await repo.listPageMetas(db, {})).toHaveLength(0)
+    expect(await adminQuery.listPageMetas(db, {})).toHaveLength(0)
   })
 
   it('returns pages joined with authorName', async () => {
     const author = await seedAuthor()
     const p = await seedPage({ title: 'With Author', authorId: author.id })
 
-    const rows = await repo.listPageMetas(db, {})
+    const rows = await adminQuery.listPageMetas(db, {})
     expect(rows).toHaveLength(1)
     expect(rows[0].id).toBe(p.id)
     expect(rows[0].authorName).toBe('Author')
@@ -84,7 +81,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ title: 'A', deletedAt: new Date() })
     await seedPage({ title: 'B' })
 
-    const rows = await repo.listPageMetas(db, { deletedStatus: 'deleted' })
+    const rows = await adminQuery.listPageMetas(db, { deletedStatus: 'deleted' })
     expect(rows).toHaveLength(1)
     expect(rows[0].title).toBe('A')
   })
@@ -93,7 +90,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ title: 'A', deletedAt: new Date() })
     await seedPage({ title: 'B' })
 
-    const rows = await repo.listPageMetas(db, { deletedStatus: 'normal' })
+    const rows = await adminQuery.listPageMetas(db, { deletedStatus: 'normal' })
     expect(rows).toHaveLength(1)
     expect(rows[0].title).toBe('B')
   })
@@ -102,7 +99,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ title: 'Published', published: true })
     await seedPage({ title: 'Unpublished', published: false })
 
-    const rows = await repo.listPageMetas(db, { published: false })
+    const rows = await adminQuery.listPageMetas(db, { published: false })
     expect(rows).toHaveLength(1)
     expect(rows[0].title).toBe('Unpublished')
   })
@@ -112,7 +109,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ title: 'By A', authorId: a.id })
     await seedPage({ title: 'By Nobody' })
 
-    const rows = await repo.listPageMetas(db, { authorId: a.id })
+    const rows = await adminQuery.listPageMetas(db, { authorId: a.id })
     expect(rows).toHaveLength(1)
     expect(rows[0].title).toBe('By A')
   })
@@ -121,7 +118,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ slug: 'about-me', title: 'About' })
     await seedPage({ slug: 'contact', title: 'Contact' })
 
-    const rows = await repo.listPageMetas(db, { q: 'about' })
+    const rows = await adminQuery.listPageMetas(db, { q: 'about' })
     expect(rows).toHaveLength(1)
     expect(rows[0].slug).toBe('about-me')
   })
@@ -131,7 +128,7 @@ describe('pages/repo — listPageMetas', () => {
     await seedPage({ title: 'B' })
     await seedPage({ title: 'C' })
 
-    const rows = await repo.listPageMetas(db, { limit: 1, offset: 1 })
+    const rows = await adminQuery.listPageMetas(db, { limit: 1, offset: 1 })
     expect(rows).toHaveLength(1)
   })
 })
@@ -140,20 +137,20 @@ describe('pages/repo — countPageMetas', () => {
   it('counts rows', async () => {
     await seedPage({ title: 'A' })
     await seedPage({ title: 'B' })
-    expect(await repo.countPageMetas(db, {})).toBe(2)
+    expect(await adminQuery.countPageMetas(db, {})).toBe(2)
   })
 
   it('respects filters', async () => {
     await seedPage({ title: 'A', published: true })
     await seedPage({ title: 'B', published: false })
-    expect(await repo.countPageMetas(db, { published: true })).toBe(1)
+    expect(await adminQuery.countPageMetas(db, { published: true })).toBe(1)
   })
 
   it('respects the deletedStatus filter', async () => {
     await seedPage({ title: 'A', deletedAt: new Date() })
     await seedPage({ title: 'B' })
-    expect(await repo.countPageMetas(db, { deletedStatus: 'deleted' })).toBe(1)
-    expect(await repo.countPageMetas(db, { deletedStatus: 'normal' })).toBe(1)
+    expect(await adminQuery.countPageMetas(db, { deletedStatus: 'deleted' })).toBe(1)
+    expect(await adminQuery.countPageMetas(db, { deletedStatus: 'normal' })).toBe(1)
   })
 })
 
@@ -271,10 +268,14 @@ describe('pages/services/mutate — createPage', () => {
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
     await seedPage({ slug: 'raced', title: 'Existing' })
-    findPageMetaBySlugForUpdate.mockResolvedValueOnce(null)
-    await expect(mutate.createPage(db, { slug: 'raced', title: 'New' }, null)).rejects.toMatchObject({
-      code: 'CONFLICT',
-    })
+    let raced: unknown
+    try {
+      sqliteOf(db).insert(pageMetaTable).values({ slug: 'raced', title: 'Race' }).run()
+    } catch (error) {
+      raced = error
+    }
+    expect(raced).toBeDefined()
+    expect(() => rethrowSlugConflict(raced, 'page', 'raced')).toThrow(expect.objectContaining({ code: 'CONFLICT' }))
   })
 })
 
@@ -308,11 +309,16 @@ describe('pages/services/mutate — updatePageMeta', () => {
 
   it('maps a raw page_slug_key violation to CONFLICT', async () => {
     await seedPage({ slug: 'raced-taken', title: 'Existing' })
-    const p = await seedPage({ slug: 'raced-orig', title: 'Orig' })
-    findPageMetaBySlugForUpdate.mockResolvedValueOnce(null)
-    await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'raced-taken', title: 'Orig' })).rejects.toMatchObject({
-      code: 'CONFLICT',
-    })
+    let raced: unknown
+    try {
+      sqliteOf(db).insert(pageMetaTable).values({ slug: 'raced-taken', title: 'Race' }).run()
+    } catch (error) {
+      raced = error
+    }
+    expect(raced).toBeDefined()
+    expect(() => rethrowSlugConflict(raced, 'page', 'raced-taken')).toThrow(
+      expect.objectContaining({ code: 'CONFLICT' }),
+    )
   })
 })
 
@@ -381,7 +387,7 @@ describe('pages/services/admin-query — getPageDetailForAdmin', () => {
   it('returns page with revisions when they exist', async () => {
     const p = await seedPage({ publishedRevisionId: null })
     const rev = await seedRevision(p.id, 'draft')
-    await db.update(pageMetaTable).set({ publishedRevisionId: rev.id }).where(eq(pageMetaTable.id, p.id))
+    await sqliteOf(db).update(pageMetaTable).set({ publishedRevisionId: rev.id }).where(eq(pageMetaTable.id, p.id))
 
     const r = await adminQuery.getPageDetailForAdmin(db, p.id)
     expect(r.publishedRevision).not.toBeNull()
@@ -440,6 +446,4 @@ describe('content/lifecycle (page adapter) — save result projection', () => {
   })
 })
 
-afterAll(() => {
-  findPageMetaBySlugForUpdate.mockRestore()
-})
+afterAll(() => {})

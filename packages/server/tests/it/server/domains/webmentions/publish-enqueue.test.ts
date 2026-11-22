@@ -1,5 +1,6 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
+import { sqliteOf } from '@kobato/db/database'
 import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
 import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue'
@@ -53,7 +54,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     )
     expect(enqueued).toBe(2)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(2)
     const targets = rows.map((r) => r.targetUrl).sort()
     expect(targets).toEqual(['https://external.dev/article', 'https://other.dev/x'])
@@ -72,18 +73,20 @@ describe('integration / webmention outbox enqueue on publish', () => {
       bodyWithLinks(['https://example.com/posts/other', 'https://ext.dev/y']),
     )
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.targetUrl).toBe('https://ext.dev/y')
   })
 
   it('dedups across republishes: sent rows stay, new links enqueue', async () => {
     await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept']))
-    await db.update(webmentionOutbox).set({ status: 'sent', endpoint: 'https://ext.dev/wm', sentAt: new Date() })
+    await sqliteOf(db)
+      .update(webmentionOutbox)
+      .set({ status: 'sent', endpoint: 'https://ext.dev/wm', sentAt: new Date() })
 
     await enqueuePostWebmentionOutbox(db, 'republish', bodyWithLinks(['https://ext.dev/kept', 'https://ext.dev/new']))
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(2)
     const kept = rows.find((r) => r.targetUrl === 'https://ext.dev/kept')
     const added = rows.find((r) => r.targetUrl === 'https://ext.dev/new')
@@ -107,7 +110,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     expect(payload.status).toBe('saved')
     expect(payload.warning).toBeUndefined()
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.targetUrl).toBe('https://ext.dev/x')
   })
@@ -124,7 +127,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
       ctx,
     )
     expect(publishRes.status).toBe(200)
-    expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmentionOutbox)).toHaveLength(1)
 
     const metaRes = await callRpc(
       '/admin/posts/upsertMeta',
@@ -132,7 +135,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
       ctx,
     )
     expect(metaRes.status).toBe(200)
-    expect(await db.select().from(webmentionOutbox)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmentionOutbox)).toHaveLength(1)
   })
 
   it('RPC waterline: a future publishedAt pushes the waterline to the publish moment', async () => {
@@ -153,7 +156,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     )
     expect(publishRes.status).toBe(200)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
   })
@@ -170,7 +173,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     )
     expect(enqueued).toBe(1)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
@@ -188,7 +191,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     )
     expect(enqueued).toBe(1)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.nextRetryAt).toBeNull()
     expect(await pickDueWebmentionOutbox(db, new Date(), 10)).toHaveLength(1)
@@ -198,7 +201,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     const enqueued = await enqueuePostWebmentionOutbox(db, 'plain-mention', bodyWithLinks(['https://ext.dev/plain']))
     expect(enqueued).toBe(1)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.nextRetryAt).toBeNull()
   })
@@ -210,7 +213,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     await enqueuePostWebmentionOutbox(db, 'rescheduled-mention', body, sooner)
     await enqueuePostWebmentionOutbox(db, 'rescheduled-mention', body, later)
 
-    const rows = await db.select().from(webmentionOutbox)
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(later.getTime())
     expect(await pickDueWebmentionOutbox(db, new Date(Date.now() + 3_600_000), 10)).toHaveLength(0)

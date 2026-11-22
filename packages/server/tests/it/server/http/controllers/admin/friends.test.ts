@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { friend } from '@kobato/db/schema/friend'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -22,7 +23,7 @@ const db = getTestDb()
 let adminId = 0
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -63,7 +64,7 @@ function upsertOverHttp(app: ReturnType<typeof adminApiApp>, input: unknown, csr
 
 async function seedFriend(website: string, visible: boolean): Promise<number> {
   const slug = website.toLowerCase()
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(friend)
     .values({
       website,
@@ -122,7 +123,7 @@ describe('adminFriendsRouter.upsert', () => {
     )
 
     expect(res.friend).toMatchObject({ website: 'Example', homepage: 'https://example.com', visible: true })
-    const rows = await db.select().from(friend).where(eq(friend.homepage, 'https://example.com'))
+    const rows = await sqliteOf(db).select().from(friend).where(eq(friend.homepage, 'https://example.com'))
     expect(rows).toHaveLength(1)
   })
 
@@ -156,7 +157,7 @@ describe('adminFriendsRouter.upsert', () => {
     })
 
     expect(res.status).toBe(400)
-    expect(await db.select().from(friend).where(eq(friend.homepage, 'https://example.com'))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(friend).where(eq(friend.homepage, 'https://example.com'))).toHaveLength(0)
   })
 
   it('still rejects the same mutation without a CSRF token', async () => {
@@ -187,7 +188,7 @@ describe('adminFriendsRouter.delete', () => {
     const res = await call(adminFriendsRouter.delete, { id: String(id) }, { context: adminCtx() })
     expect(res).toBeUndefined()
 
-    const remaining = await db.select().from(friend).where(eq(friend.id, id))
+    const remaining = await sqliteOf(db).select().from(friend).where(eq(friend.id, id))
     expect(remaining).toHaveLength(0)
   })
 

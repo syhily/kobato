@@ -1,5 +1,6 @@
 import type { Role } from '@kobato/auth/roles'
 
+import { sqliteOf } from '@kobato/db/database'
 import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification'
 import { notification, notificationRecipient } from '@kobato/db/schema/notification'
 import { user } from '@kobato/db/schema/user'
@@ -21,7 +22,7 @@ const INSIDE_DAYS = NOTIFICATION_RETENTION_DAYS - 80
 let seq = 0
 async function seedUser(role: Role, name: string): Promise<number> {
   seq += 1
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `${name}-${seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })
@@ -29,22 +30,23 @@ async function seedUser(role: Role, name: string): Promise<number> {
 }
 
 function backdateMessage(id: number, days: number): void {
-  db.update(notification)
+  sqliteOf(db)
+    .update(notification)
     .set({ createdAt: new Date(NOW.getTime() - days * DAY_MS) })
     .where(eq(notification.id, id))
     .run()
 }
 
 function dropRecipients(notificationId: number): void {
-  db.delete(notificationRecipient).where(eq(notificationRecipient.notificationId, notificationId)).run()
+  sqliteOf(db).delete(notificationRecipient).where(eq(notificationRecipient.notificationId, notificationId)).run()
 }
 
 function messageExists(id: number): boolean {
-  return db.select({ id: notification.id }).from(notification).where(eq(notification.id, id)).all().length > 0
+  return sqliteOf(db).select({ id: notification.id }).from(notification).where(eq(notification.id, id)).all().length > 0
 }
 
 function recipientRows(notificationId: number) {
-  return db
+  return sqliteOf(db)
     .select({ userId: notificationRecipient.userId, readAt: notificationRecipient.readAt })
     .from(notificationRecipient)
     .where(eq(notificationRecipient.notificationId, notificationId))
@@ -52,11 +54,11 @@ function recipientRows(notificationId: number) {
 }
 
 function recipientTableCount(): number {
-  return db.select({ value: count() }).from(notificationRecipient).all()[0]!.value
+  return sqliteOf(db).select({ value: count() }).from(notificationRecipient).all()[0]!.value
 }
 
 function messageTableCount(): number {
-  return db.select({ value: count() }).from(notification).all()[0]!.value
+  return sqliteOf(db).select({ value: count() }).from(notification).all()[0]!.value
 }
 
 beforeEach(async () => {

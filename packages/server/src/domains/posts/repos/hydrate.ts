@@ -1,11 +1,11 @@
 import type { Post, PostVisibilityOptions } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/database'
+import type { PublicPostFilters } from '@kobato/db/operations/post'
 import type { PostMetaRow } from '@kobato/db/types'
-import type { ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared'
 
 import { findCategoryNamesByIds } from '@kobato/db/operations/category'
+import { hydratePublishedRevisions } from '@kobato/db/operations/entity-revision'
 import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
-import { hydratePublishedRevisions } from '@kobato/server/domains/content/revisions'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { toCmsPost } from '@kobato/server/domains/posts/projection'
 
@@ -28,7 +28,7 @@ export async function hydratePostImages(
 
 export function buildPublicPostFilters(
   options?: PostVisibilityOptions,
-): Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> {
+): Omit<PublicPostFilters, 'sortBy' | 'limit' | 'offset'> {
   return {
     includeHidden: options?.includeHidden ?? false,
     includeScheduled: options?.includeScheduled ?? false,

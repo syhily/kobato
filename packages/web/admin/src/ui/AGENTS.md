@@ -46,7 +46,7 @@ reads from sessions, route params, request objects, or env vars.
 correct merge group.
 
 - A new `--<namespace>-<name>` token in `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list
-  (`packages/ui/tests/contract/tailwind-tokens.test.ts`).
+  (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark` rebind handles the switch. Adjacent dark surface tiers stay
   3–8 L apart; no `--line-*` token shares a value with a `--surface-*` token.
 

@@ -2,6 +2,7 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { Mock } from 'vitest'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user, verification } from '@kobato/db/schema/user'
@@ -89,7 +90,7 @@ afterAll(async () => {
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
 async function seedGateAdmin() {
-  await db.insert(user).values({
+  await sqliteOf(db).insert(user).values({
     name: 'Gatekeeper',
     email: 'gatekeeper@example.com',
     password: 'not-a-real-hash',
@@ -99,7 +100,7 @@ async function seedGateAdmin() {
 
 async function seedUser(overrides: Record<string, unknown> = {}) {
   const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Admin',
@@ -224,7 +225,7 @@ function wrongOtp(code: string): string {
 }
 
 async function getOtpRow(userId: number) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(verification)
     .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
@@ -242,12 +243,12 @@ function stagePendingOtp(userId: number | string, overrides: Record<string, unkn
 }
 
 async function sessionRowsFor(userId: number) {
-  return db.select().from(sessionTable).where(eq(sessionTable.userId, userId))
+  return sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, userId))
 }
 
 async function auditRowsFor(actionName: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, actionName))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
 describe('routes/signin', () => {
@@ -385,7 +386,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(getSetCookie(result)).toMatch(/^__session=/)
     expect(await sessionRowsFor(admin.id)).toHaveLength(1)
     expect(markSessionDirty).not.toHaveBeenCalled()
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
   })
 
   it('blocks OTP send when rate limit is exceeded', async () => {
@@ -532,7 +533,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(getSetCookie(result)).toBeNull()
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(await mail.noMessage()).toBe(true)
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
   })
 
   it('returns error when first-time OTP email send fails', async () => {
@@ -558,7 +559,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const admin = await seedUser()
     const otpCode = await doLogin()
 
-    await db.delete(user).where(eq(user.id, admin.id))
+    await sqliteOf(db).delete(user).where(eq(user.id, admin.id))
     markSessionDirty.mockClear()
 
     const result = await callAction('verifyotp', otpFormData(otpCode))
@@ -567,7 +568,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(result)).toBeNull()
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('cleans up otpFailCount on successful verification', async () => {
@@ -653,7 +654,7 @@ describe('routes/signin — identify (real db)', () => {
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
     expect(await mail.noMessage()).toBe(true)
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
   })
 
   it('returns method=password for a regular user', async () => {
@@ -690,7 +691,7 @@ describe('routes/signin — identify (real db)', () => {
     const sent = await parseMail(mail)
     expect(sent.to).toBe('admin@example.com')
     expect(sent.body).toContain('action=magiclink')
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select()
       .from(verification)
       .where(and(eq(verification.purpose, 'signin-link'), eq(verification.userId, admin.id)))
@@ -705,7 +706,7 @@ describe('routes/signin — identify (real db)', () => {
     expect(extractData(result).method).toBe('password')
 
     expect(await mail.noMessage()).toBe(true)
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
   })
 
   it('blocks identify when rate limit is exceeded', async () => {
@@ -740,7 +741,7 @@ describe('routes/signin — passkey finish dispatch (real db)', () => {
     expect((extractData(result).errorDescriptor as { messageKey: string }).messageKey).toBe(
       'auth.passkey.error.responseInvalid',
     )
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('requires the challenge field before parsing the passkey response', async () => {
@@ -753,7 +754,7 @@ describe('routes/signin — passkey finish dispatch (real db)', () => {
     expect((extractData(result).errorDescriptor as { messageKey: string }).messageKey).toBe(
       'auth.passkey.error.responseMissing',
     )
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('answers with the disabled copy when the passkey switch is off', async () => {
@@ -776,7 +777,7 @@ describe('routes/signin — magic-link consume (real db + tokens)', () => {
     const result = await callAction('magiclink', withCsrf(fd))
     expect(extractData(result).error).toBe('链接无效或已过期，请重新获取。')
 
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('establishes a session for a valid token', async () => {

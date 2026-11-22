@@ -7,20 +7,24 @@ import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type { ContentType, PublishLatestResult, SaveDraftResult } from '@kobato/server/domains/content/schemas/revision'
 import type { MusicEmbedResolver } from '@kobato/server/domains/content/services/lexical/embeds'
 
+import {
+  findContentById,
+  findLatestDraft,
+  findLatestRevision,
+  MissingContentOwnerError,
+  publishLatestRevision,
+  saveDraftRevision,
+} from '@kobato/db/operations/entity-revision'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/inkling/headless/collect'
 import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
-import {
-  isEquivalentToPublishedLatest,
-  publishLatestRevision,
-  saveDraftRevision,
-} from '@kobato/server/domains/content/repos/mutate'
-import { findContentById, findLatestDraft, findLatestRevision } from '@kobato/server/domains/content/revisions'
 import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish'
+import { isEquivalentToPublishedLatest } from '@kobato/server/domains/content/schemas/revision'
 import { syncLibraryImageBlocks } from '@kobato/server/domains/content/services/image-sync'
 import { canonicalizeLexicalEditorState } from '@kobato/server/domains/content/services/lexical/canonicalize'
 import { snapshotMusicPlayerMeta } from '@kobato/server/domains/content/services/lexical/music-snapshot'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { computeBodyProjections, type BodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger, type Logger } from '@kobato/server/infra/logger'
 
@@ -148,14 +152,19 @@ export async function saveBody<TMeta, TPreview>(
     }
   }
 
-  const result =
-    mode === 'draft'
-      ? await saveDraftRevision(db, adapter.entityType, { ...repoInput, projections })
-      : await publishLatestRevision(db, adapter.entityType, {
-          ...repoInput,
-          projections,
-          publishedAt: input.publishedAt,
-        })
+  const result: SaveDraftResult | PublishLatestResult = (() => {
+    try {
+      return mode === 'draft'
+        ? saveDraftRevision(db, adapter.entityType, { ...repoInput, projections })
+        : publishLatestRevision(db, adapter.entityType, {
+            ...repoInput,
+            projections,
+            publishedAt: input.publishedAt,
+          })
+    } catch (error) {
+      return mapMissingOwner(error)
+    }
+  })()
 
   const wroteSuccessfully = result.status === 'saved' || result.status === 'published'
   if (input.force === true && wroteSuccessfully && overwriteContext !== null) {
@@ -198,6 +207,13 @@ export async function loadDraftPreviewBySlug<TMeta, TPreview>(
     revision = findContentById(db, publishedRevisionId)
   }
   return { preview: adapter.projectPreview(meta, revision), hasNewerDraft: draft !== null }
+}
+
+function mapMissingOwner(error: unknown): never {
+  if (error instanceof MissingContentOwnerError) {
+    throw new DomainError('NOT_FOUND', error.message)
+  }
+  throw error
 }
 
 function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SaveBodyResult {

@@ -6,13 +6,14 @@ import type { AdminCategoriesListResult } from '@kobato/server/domains/taxonomie
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
+  findCategoryBySlug as findCategoryBySlugOp,
+  findCategoryNameSlugByNames,
   listAdminCategoryRows,
+  listPublicCategoryRows,
 } from '@kobato/db/operations/category'
-import { category as categoryTable } from '@kobato/db/schema/taxonomy'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { countPostsByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
 import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection'
-import { asc, eq, inArray } from 'drizzle-orm'
 
 export async function listCategoriesForAdmin(
   db: Database,
@@ -43,15 +44,7 @@ async function hydrateCategoryImages(db: Database, categories: Category[]): Prom
 }
 
 export async function listAllCategories(db: Database): Promise<Category[]> {
-  const rows = await db
-    .select({
-      name: categoryTable.name,
-      slug: categoryTable.slug,
-      cover: categoryTable.cover,
-      description: categoryTable.description,
-    })
-    .from(categoryTable)
-    .orderBy(asc(categoryTable.sortOrder), asc(categoryTable.id))
+  const rows = await listPublicCategoryRows(db)
 
   const countsMap = await countPostsByTaxonomy(db, { kind: 'category', gate: 'public' })
 
@@ -74,10 +67,7 @@ export async function getCategoryLinks(db: Database, names: readonly string[]): 
     return {}
   }
 
-  const rows = await db
-    .select({ name: categoryTable.name, slug: categoryTable.slug })
-    .from(categoryTable)
-    .where(inArray(categoryTable.name, uniqueNames))
+  const rows = await findCategoryNameSlugByNames(db, uniqueNames)
 
   const result: Record<string, string> = {}
   for (const row of rows) {
@@ -87,8 +77,7 @@ export async function getCategoryLinks(db: Database, names: readonly string[]): 
 }
 
 export async function findCategoryBySlug(db: Database, slug: string): Promise<CategoryRow | null> {
-  const rows = await db.select().from(categoryTable).where(eq(categoryTable.slug, slug)).limit(1)
-  return rows[0] ?? null
+  return findCategoryBySlugOp(db, slug)
 }
 
 export async function resolveCategoryBySlugOrName(db: Database, value: string): Promise<CategoryRow | null> {

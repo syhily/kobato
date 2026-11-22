@@ -62,7 +62,7 @@ describe('apiContract composition', () => {
       'images',
       'music',
     ])
-    expect(Object.keys(apiContract.admin)).toHaveLength(24)
+    expect(Object.keys(apiContract.admin)).toHaveLength(25)
   })
 
   it('composes the very same procedure objects as the domain module', () => {

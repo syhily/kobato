@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { post } from '@kobato/db/schema/post'
 import { webmention } from '@kobato/db/schema/webmention'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive'
@@ -23,7 +24,7 @@ const linkingHtml = (href: string) =>
   `<body><p>I wrote about <a href="${href}">this post</a>.</p></body></html>`
 
 async function seedLivePost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({ slug, title: 'Mentioned Post', published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
@@ -59,7 +60,7 @@ describe('integration / receiveWebmention — source key convergence', () => {
       const res = await receive(source)
       expect(res.row.sourceUrl).toBe('https://sender.example/post')
     }
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(1)
   })
 
@@ -72,7 +73,7 @@ describe('integration / receiveWebmention — source key convergence', () => {
     enqueueSource('https://sender.example/post?utm_source=x')
     await receive('https://sender.example/post?utm_source=x')
 
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(3)
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(3)
   })
@@ -114,7 +115,7 @@ describe('integration / receiveWebmention — response type classification', () 
     const second = await receive('https://sender.example/post')
     expect(second.row.id).toBe(first.row.id)
     expect(second.row.type).toBe('reply')
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
   })
 })
 
@@ -132,7 +133,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     const second = await receive('https://sender.example/post')
     expect(second.outcome).toBe('demoted')
 
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
 
@@ -153,7 +154,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     const second = await receive('https://sender.example/post')
     expect(second.outcome).toBe('updated')
 
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('rejected')
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(1)

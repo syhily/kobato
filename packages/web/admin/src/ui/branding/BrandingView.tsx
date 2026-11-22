@@ -1,7 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { AssetsLoaderShape, BrandingSlotStatus } from '@kobato/settings/projection'
 
-import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent } from '@kobato/ui/components/card'
 import { cn } from '@kobato/ui/lib/cn'
@@ -9,9 +8,10 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatNumber } from '@kobato/utils/format'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpc } from '@kobato/web-client/api/client'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useCallback, useRef, useState } from 'react'
-import { useRevalidator, useRouteLoaderData } from 'react-router'
+import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 type BrandingFileSlot =
@@ -236,8 +236,6 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
   const { locale, t } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [clearing, setClearing] = useState(false)
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
 
   const configured = status.etag !== ''
   const previewUrl = configured ? `${meta.publicPath}?v=${status.etag}` : meta.publicPath
@@ -282,32 +280,14 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
   const handleClear = useCallback(async () => {
     setClearing(true)
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (csrfToken) {
-        headers['x-csrf-token'] = csrfToken
-      }
-      const res = await fetch('/api/admin/branding/clear', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ slot: meta.slot }),
-      })
-      if (!res.ok) {
-        const data: unknown = await res.json().catch(() => null)
-        const message = extractApiErrorMessage(data)
-        toastApiError(
-          new Error(message ?? t('admin.branding.clearFailed', { status: res.status })),
-          'admin.toast.clearFailed',
-          t,
-        )
-      } else {
-        toast.success(t('admin.branding.cleared', { label: t(meta.labelId) }))
-        await revalidator.revalidate()
-      }
+      await orpc.admin.branding.clear({ slot: meta.slot })
+      toast.success(t('admin.branding.cleared', { label: t(meta.labelId) }))
+      await revalidator.revalidate()
     } catch (err) {
       toastApiError(err, 'admin.toast.clearFailed', t)
     }
     setClearing(false)
-  }, [csrfToken, meta, revalidator, t])
+  }, [meta, revalidator, t])
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">

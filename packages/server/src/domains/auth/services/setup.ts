@@ -3,16 +3,15 @@ import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
 import { analyzeDatabase } from '@kobato/db/operations/maintenance'
-import { hasAdmin, hashAdminPassword, insertAdmin } from '@kobato/db/operations/user'
+import { hasAdmin, hashAdminPassword, installInitialAdminWithSections } from '@kobato/db/operations/user'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared'
 import { invalidateSetupToken } from '@kobato/server/domains/auth/setup-token'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
-import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'
+import { buildInstallSectionRows } from '@kobato/server/domains/settings/services/install-flow'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
-import { idFromString } from '@kobato/utils/id'
 
 export interface SignUpAdminSeed {
   title: string
@@ -50,15 +49,15 @@ export async function signUpInitialAdminWithSession(
   }
 
   const hashedPassword = await hashAdminPassword(password)
-  const admin = db.transaction((tx) => {
-    const users = insertAdmin(tx, name, email, hashedPassword)
-    const admin = users[0]
-    if (!admin) {
-      throw new DomainError('INTERNAL', descriptorFor('auth.setup.error.createAdminFailed'))
-    }
-    seedInstallSections(tx, seedRows.rows, idFromString(admin.id))
-    return admin
+  const admin = installInitialAdminWithSections(db, {
+    name,
+    email,
+    hashedPassword,
+    sections: seedRows.rows.map((row) => ({ scope: row.scope, data: row.payload })),
   })
+  if (!admin) {
+    throw new DomainError('INTERNAL', descriptorFor('auth.setup.error.createAdminFailed'))
+  }
 
   const established = await establishLoginSession(db, session, admin, request, clientAddress)
 

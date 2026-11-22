@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { music } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -20,7 +21,7 @@ beforeEach(async () => {
 })
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(music)
     .values({
       source: 'manual',

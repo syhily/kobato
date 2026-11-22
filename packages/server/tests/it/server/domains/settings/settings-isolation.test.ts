@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
@@ -40,7 +41,7 @@ describe('services/settings — write isolation', () => {
       ),
     ])
 
-    const rows = await db.select().from(setting)
+    const rows = await sqliteOf(db).select().from(setting)
     const scopes = new Set(rows.map((r) => r.scope))
     expect(scopes).toEqual(new Set(['blog.mail', 'blog.cache']))
 
@@ -74,19 +75,21 @@ describe('services/settings — write isolation', () => {
       null,
     )
 
-    const rows = await db.select().from(setting)
+    const rows = await sqliteOf(db).select().from(setting)
     expect(rows).toHaveLength(1)
     expect(rows[0].scope).toBe('blog.sidebar')
   })
 
   it('mail save with omitted smtpPass reads ONLY the mail scope, not any other section', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: { enabled: true, smtpHost: 'old.example.com', smtpPass: 'KEEP-ME', sender: 'a@b.co' },
-      },
-      updatedBy: null,
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: { enabled: true, smtpHost: 'old.example.com', smtpPass: 'KEEP-ME', sender: 'a@b.co' },
+        },
+        updatedBy: null,
+      })
 
     await updateBlogSettingsSection(
       db,
@@ -95,7 +98,7 @@ describe('services/settings — write isolation', () => {
       null,
     )
 
-    const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
+    const rows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect(rows).toHaveLength(1)
     const mail = (rows[0].data as Record<string, unknown>).mail as Record<string, unknown>
     expect(typeof mail.smtpPass).toBe('string')

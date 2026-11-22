@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageMetaTable } from '@kobato/db/schema/page'
 import * as lifecycle from '@kobato/server/domains/content/lifecycle'
@@ -24,7 +25,7 @@ function auditInfos() {
 const db = getTestDb()
 
 async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageMetaTable)
     .values({
       slug: overrides.slug ?? `page-${Math.random().toString(36).slice(2)}`,
@@ -36,7 +37,7 @@ async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = 
 }
 
 async function seedRevision(ownerId: number, overrides: Partial<typeof contentTable.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'page',
@@ -53,7 +54,7 @@ async function seedRevision(ownerId: number, overrides: Partial<typeof contentTa
 }
 
 async function contentRows(ownerId: number) {
-  return db.select().from(contentTable).where(eq(contentTable.ownerId, ownerId))
+  return sqliteOf(db).select().from(contentTable).where(eq(contentTable.ownerId, ownerId))
 }
 
 const VALID_BODY = lexicalBodyWith([lexicalHeading('h2', 'Hello world')])
@@ -86,7 +87,7 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     const published = await seedRevision(0, { revisionNo: 3, status: 'published' })
     const meta = await seedPage({ publishedRevisionId: published.id })
     const draft = await seedRevision(meta.id, { revisionNo: 4, status: 'draft' })
-    await db.update(contentTable).set({ ownerId: meta.id }).where(eq(contentTable.id, published.id))
+    await sqliteOf(db).update(contentTable).set({ ownerId: meta.id }).where(eq(contentTable.id, published.id))
 
     const detail = await adminQuery.getPageDetailForAdmin(db, meta.id)
     expect(detail.page.id).toBe(String(meta.id))
@@ -101,14 +102,14 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
 describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   it('rejects slugs that contain illegal characters', async () => {
     await expect(mutate.createPage(db, { slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(DomainError)
-    expect(await db.select().from(pageMetaTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(pageMetaTable)).toHaveLength(0)
   })
 
   it('rejects reserved slugs that would shadow public routes', async () => {
     for (const slug of ['posts', 'cats', 'tags', 'admin', 'api']) {
       await expect(mutate.createPage(db, { slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
     }
-    expect(await db.select().from(pageMetaTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(pageMetaTable)).toHaveLength(0)
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
@@ -117,7 +118,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     const dto = await mutate.updatePageMeta(db, { id: meta.id, slug: 'about', title: 'new' })
 
     expect(dto.title).toBe('new')
-    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    const row = await sqliteOf(db).select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
     expect(row[0]?.title).toBe('new')
     expect(row[0]?.slug).toBe('about')
   })
@@ -126,7 +127,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     const dto = await mutate.createPage(db, { title: 'New Page', published: true }, null)
 
     expect(dto.published).toBe(false)
-    const rows = await db.select().from(pageMetaTable)
+    const rows = await sqliteOf(db).select().from(pageMetaTable)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.published).toBe(false)
   })
@@ -143,7 +144,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
 
     expect(dto.title).toBe('Updated')
     expect(dto.published).toBe(true)
-    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    const row = await sqliteOf(db).select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
     expect(row[0]?.published).toBe(true)
   })
 })
@@ -179,7 +180,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    expect(await db.select().from(contentTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(contentTable)).toHaveLength(0)
   })
 
   it('persists the body with derived imageSources and headings on the revision row', async () => {
@@ -250,7 +251,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
       expect(result.revision.revisionNo).toBe(1)
     }
 
-    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    const row = await sqliteOf(db).select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
     expect(row[0]?.published).toBe(true)
     expect(row[0]?.publishedRevisionId).not.toBeNull()
     expect(row[0]?.firstPublishedAt).not.toBeNull()
@@ -380,7 +381,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       expect(result.expectedToken).toBe('newer-than-client')
     }
 
-    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    const row = await sqliteOf(db).select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
     expect(row[0]?.published).toBe(false)
     expect(row[0]?.publishedRevisionId).toBeNull()
   })
@@ -420,7 +421,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       clientExpectedToken: 'cli-token',
     })
 
-    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    const row = await sqliteOf(db).select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
     expect(row[0]?.published).toBe(true)
     expect(row[0]?.publishedRevisionId).toBe(overwritten.id)
   })

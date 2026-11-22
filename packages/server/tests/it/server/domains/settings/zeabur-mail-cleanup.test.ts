@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findSettingByScope } from '@kobato/db/operations/setting'
 import { setting } from '@kobato/db/schema/config'
 import { runZeaburMailCleanupAtBoot } from '@kobato/server/domains/settings/services/zeabur-mail-cleanup'
@@ -21,18 +22,20 @@ function readMailRow(): Record<string, unknown> | null {
 
 describe('zeabur mail cleanup', () => {
   it('disables a legacy zeabur row, drops its legacy keys, and notifies once', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          sender: 'noreply@example.com',
-          transport: 'zeabur',
-          host: 'api.zeabur.com',
-          apiKey: 'ZS-SECRET',
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            sender: 'noreply@example.com',
+            transport: 'zeabur',
+            host: 'api.zeabur.com',
+            apiKey: 'ZS-SECRET',
+          },
         },
-      },
-    })
+      })
     const notify = vi.fn()
 
     await runZeaburMailCleanupAtBoot(db, notify)
@@ -50,10 +53,12 @@ describe('zeabur mail cleanup', () => {
   })
 
   it('leaves a working smtp row with leftover legacy keys untouched', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: { mail: { enabled: true, transport: 'smtp', smtpHost: 'smtp.example.com', apiKey: 'leftover' } },
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: { mail: { enabled: true, transport: 'smtp', smtpHost: 'smtp.example.com', apiKey: 'leftover' } },
+      })
     const notify = vi.fn()
 
     await runZeaburMailCleanupAtBoot(db, notify)
@@ -64,19 +69,21 @@ describe('zeabur mail cleanup', () => {
   })
 
   it('leaves a working smtp config carrying the legacy zeabur defaults untouched', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          transport: 'smtp',
-          host: 'api.zeabur.com',
-          apiKey: '',
-          smtpHost: 'mail.example.com',
-          smtpPort: 465,
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            transport: 'smtp',
+            host: 'api.zeabur.com',
+            apiKey: '',
+            smtpHost: 'mail.example.com',
+            smtpPort: 465,
+          },
         },
-      },
-    })
+      })
     const notify = vi.fn()
 
     await runZeaburMailCleanupAtBoot(db, notify)
@@ -91,19 +98,21 @@ describe('zeabur mail cleanup', () => {
   })
 
   it('leaves a working mailgun row with leftover legacy keys untouched', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: {
-        mail: {
-          enabled: true,
-          transport: 'mailgun',
-          host: 'api.zeabur.com',
-          apiKey: '',
-          mailgunDomain: 'mail.test',
-          mailgunApiKey: 'key',
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: {
+          mail: {
+            enabled: true,
+            transport: 'mailgun',
+            host: 'api.zeabur.com',
+            apiKey: '',
+            mailgunDomain: 'mail.test',
+            mailgunApiKey: 'key',
+          },
         },
-      },
-    })
+      })
     const notify = vi.fn()
 
     await runZeaburMailCleanupAtBoot(db, notify)
@@ -113,10 +122,12 @@ describe('zeabur mail cleanup', () => {
   })
 
   it('leaves a modern row untouched and only writes the flag', async () => {
-    await db.insert(setting).values({
-      scope: 'blog.mail',
-      data: { mail: { enabled: true, transport: 'mailgun', mailgunDomain: 'mail.test', mailgunApiKey: 'key' } },
-    })
+    await sqliteOf(db)
+      .insert(setting)
+      .values({
+        scope: 'blog.mail',
+        data: { mail: { enabled: true, transport: 'mailgun', mailgunDomain: 'mail.test', mailgunApiKey: 'key' } },
+      })
     const notify = vi.fn()
 
     await runZeaburMailCleanupAtBoot(db, notify)

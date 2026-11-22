@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { image } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
@@ -21,7 +22,7 @@ beforeEach(async () => {
 })
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(image)
     .values({
       storagePath: overrides.storagePath ?? `images/generic/img-${Math.random().toString(36).slice(2)}.jpg`,
@@ -55,7 +56,7 @@ describe('images/services/resolve — readManyMeta', () => {
     await seedImage({ storagePath: 'images/to-clear.jpg' })
     expect((await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')?.found).toBe(true)
 
-    await db.delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
+    await sqliteOf(db).delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
     const meta = (await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')
     expect(meta?.found).toBe(false)
   })
@@ -177,7 +178,7 @@ describe('images/services/admin-mutate — deleteImage', () => {
   it('soft-deletes the image', async () => {
     const img = await seedImage({ storagePath: 'images/delete.jpg', storageDriver: 'local' })
     await adminMutate.deleteImage(db, img.id)
-    const rows = await db.select().from(image).where(eq(image.id, img.id))
+    const rows = await sqliteOf(db).select().from(image).where(eq(image.id, img.id))
     expect(rows[0].deletedAt).not.toBeNull()
   })
 })

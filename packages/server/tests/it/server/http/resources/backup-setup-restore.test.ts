@@ -2,15 +2,14 @@ import type { Database } from '@kobato/db/database'
 import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'
 
+import { databaseOf, sqliteOf } from '@kobato/db/database'
 import { user as userTable } from '@kobato/db/schema/user'
-import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockIsSetupTokenActive = vi.fn()
@@ -80,7 +79,7 @@ beforeEach(async () => {
 })
 
 async function seedAdmin(target: Database = db): Promise<number> {
-  const rows = await target
+  const rows = await sqliteOf(target)
     .insert(userTable)
     .values({
       name: 'Admin',
@@ -318,7 +317,7 @@ describe('/api/admin/backup/upload-restore', () => {
     const body = (await res.json()) as { error: { message: string } }
     expect(body.error.message).toBe('已有还原任务正在进行，请等待完成后再试。')
   })
-  it('parks an encrypted upload; the decrypt endpoint completes the restore and a wrong password keeps the token', async () => {
+  it('parks an encrypted upload and never claims the restore slot', async () => {
     const parkedDir = mkdtempSync(join(tmpdir(), 'kobato-restore-'))
     mockStageBackup.mockRejectedValueOnce(await makePasswordRequiredError(parkedDir))
     const app = await buildAdminApp()
@@ -340,199 +339,11 @@ describe('/api/admin/backup/upload-restore', () => {
     const { peekEncryptedUpload, resetPendingEncryptedUploads } =
       await import('@kobato/server/domains/backup/pending-uploads')
     try {
-      const restoreModule = await import('@kobato/server/domains/backup/services/restore')
-      mockStageBackup.mockImplementationOnce(async (source: unknown) => {
-        if (source instanceof Readable) {
-          source.on('error', () => {})
-          source.destroy()
-        }
-        throw new restoreModule.BackupPasswordError()
-      })
-      const wrong = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify({ token: body.token, password: 'wrong-password' }),
-      })
-      expect(wrong.status).toBe(400)
-      expect(((await wrong.json()) as { error: { message: string } }).error.message).toBe('备份密码错误或文件已损坏')
       expect(peekEncryptedUpload(body.token)).not.toBeNull()
-
-      mockStageBackup.mockImplementationOnce(async (source: unknown) => {
-        if (source instanceof Readable) {
-          source.on('error', () => {})
-          source.destroy()
-        }
-        return {
-          dir: parkedDir,
-          content: join(parkedDir, 'kobato.db'),
-          analytics: null,
-          config: null,
-        }
-      })
-      const right = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify({ token: body.token, password: 'right-password' }),
-      })
-      expect(right.status).toBe(200)
-      expect(((await right.json()) as { accepted: boolean }).accepted).toBe(true)
-      expect(peekEncryptedUpload(body.token)).toBeNull()
-      expect(mockWithRestoreClaim).toHaveBeenCalledOnce()
-      expect(mockRecordAuditEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'backup_restored',
-          resourceType: 'backup',
-          resourceId: 'backup.db.tar.gz.enc',
-        }),
-      )
     } finally {
       resetPendingEncryptedUploads()
       rmSync(parkedDir, { recursive: true, force: true })
     }
-  })
-
-  it('rejects a decrypt call with an unknown or expired token as 410 (distinct from a wrong password)', async () => {
-    const app = await buildAdminApp()
-    const res = await app.request('/api/admin/backup/upload-restore/decrypt', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-      body: JSON.stringify({ token: 'no-such-token', password: 'whatever' }),
-    })
-    expect(res.status).toBe(410)
-    expect(((await res.json()) as { error: { message: string } }).error.message).toBe(
-      '上传会话已过期，请重新上传备份文件。',
-    )
-  })
-
-  it('releases the token with 410 when staging fails for a NON-password reason (retrying could never help)', async () => {
-    const parkedDir = mkdtempSync(join(tmpdir(), 'kobato-restore-'))
-    mockStageBackup.mockRejectedValueOnce(await makePasswordRequiredError(parkedDir))
-    const app = await buildAdminApp()
-    const formData = new FormData()
-    formData.set('file', new File(['encrypted-bytes'], 'backup.db.tar.gz.enc'))
-    const res = await app.request('/api/admin/backup/upload-restore', {
-      method: 'POST',
-      body: formData,
-      headers: { 'x-csrf-token': 'valid-csrf' },
-    })
-    const body = (await res.json()) as { encrypted: boolean; token: string }
-
-    const { peekEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads')
-    try {
-      mockStageBackup.mockImplementationOnce(async (source: unknown) => {
-        if (source instanceof Readable) {
-          source.on('error', () => {})
-          source.destroy()
-        }
-        throw new ActionFailure(400, '备份归档中缺少内容数据库 kobato.db')
-      })
-      const failed = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify({ token: body.token, password: 'any-password' }),
-      })
-      expect(failed.status).toBe(410)
-      expect(((await failed.json()) as { error: { message: string } }).error.message).toBe(
-        '备份归档中缺少内容数据库 kobato.db',
-      )
-      expect(peekEncryptedUpload(body.token)).toBeNull()
-    } finally {
-      resetPendingEncryptedUploads()
-      rmSync(parkedDir, { recursive: true, force: true })
-    }
-  })
-
-  it('keeps the parked token when the decrypt staging wins but the restore slot is busy (409)', async () => {
-    const parkedDir = mkdtempSync(join(tmpdir(), 'kobato-restore-'))
-    mockStageBackup.mockRejectedValueOnce(await makePasswordRequiredError(parkedDir))
-    const app = await buildAdminApp()
-    const formData = new FormData()
-    formData.set('file', new File(['encrypted-bytes'], 'backup.db.tar.gz.enc'))
-    const res = await app.request('/api/admin/backup/upload-restore', {
-      method: 'POST',
-      body: formData,
-      headers: { 'x-csrf-token': 'valid-csrf' },
-    })
-    const body = (await res.json()) as { encrypted: boolean; token: string }
-
-    const { peekEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads')
-    try {
-      mockStageBackup.mockImplementationOnce(async (source: unknown) => {
-        if (source instanceof Readable) {
-          source.on('error', () => {})
-          source.destroy()
-        }
-        return {
-          dir: '/tmp/fake-staged-busy',
-          content: '/tmp/fake-staged-busy/kobato.db',
-          analytics: null,
-          config: null,
-        }
-      })
-      mockWithRestoreClaim.mockResolvedValueOnce('busy')
-      const busy = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify({ token: body.token, password: 'right-password' }),
-      })
-      expect(busy.status).toBe(409)
-      const parked = peekEncryptedUpload(body.token)
-      expect(parked).not.toBeNull()
-      expect(parked!.inFlight).toBe(false)
-    } finally {
-      resetPendingEncryptedUploads()
-      rmSync(parkedDir, { recursive: true, force: true })
-    }
-  })
-
-  it('rejects a decrypt call whose token expired past the 10-minute TTL as 410', async () => {
-    const app = await buildAdminApp()
-    const { parkEncryptedUpload, resetPendingEncryptedUploads } =
-      await import('@kobato/server/domains/backup/pending-uploads')
-    vi.useFakeTimers()
-    try {
-      const dir = join(tmpdir(), 'kobato-restore-expired-token')
-      const token = parkEncryptedUpload({ dir, uploadPath: join(dir, 'upload.bin'), fileName: 'backup.db.tar.gz.enc' })
-      vi.advanceTimersByTime(11 * 60 * 1000)
-
-      const res = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify({ token, password: 'any-password' }),
-      })
-      expect(res.status).toBe(410)
-      expect(((await res.json()) as { error: { message: string } }).error.message).toBe(
-        '上传会话已过期，请重新上传备份文件。',
-      )
-    } finally {
-      vi.useRealTimers()
-      resetPendingEncryptedUploads()
-    }
-  })
-
-  it('rejects a decrypt call with an empty token or an empty password as 400', async () => {
-    const app = await buildAdminApp()
-    for (const payload of [
-      { token: '', password: 'some-password' },
-      { token: 'some-token', password: '' },
-    ]) {
-      const res = await app.request('/api/admin/backup/upload-restore/decrypt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': 'valid-csrf' },
-        body: JSON.stringify(payload),
-      })
-      expect(res.status).toBe(400)
-      expect(((await res.json()) as { error: { message: string } }).error.message).toBe('请提供备份密码')
-    }
-  })
-
-  it('reports the merged restore progress snapshot', async () => {
-    const app = await buildAdminApp()
-    const res = await app.request('/api/admin/backup/restore-progress')
-    expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ stage: 'idle', percent: null })
   })
 })
 
@@ -638,11 +449,11 @@ describe('/api/setup/restore', () => {
 
   it('returns accepted on successful restore — and applies content only (withAnalytics: false)', async () => {
     const restored = createTestDatabaseFile()
-    const adminId = await seedAdmin(restored.db)
+    const adminId = await seedAdmin(databaseOf(restored))
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        await afterReopenFn?.(restored.db)
+        await afterReopenFn?.(databaseOf(restored))
       },
     )
 

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { music } from '@kobato/db/schema/media'
 import { user } from '@kobato/db/schema/user'
@@ -42,7 +43,7 @@ let seq = 0
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
   const n = ++seq
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(music)
     .values({
       source: 'netease',
@@ -60,7 +61,7 @@ async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
 }
 
 async function seedUser(role: 'admin' | 'author', name = 'User'): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `user-${++seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })
@@ -147,11 +148,11 @@ describe('adminMusicRouter.update', () => {
     )
     expect(res.music.name).toBe('Updated Song')
     expect(res.music.artist).toEqual(['Artist'])
-    const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(music).where(eq(music.id, seeded.id))
     expect(row).toMatchObject({ name: 'Updated Song', artist: 'Artist', album: '', lyric: null })
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'music_updated'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'music_updated'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('music')
     expect(rows[0]!.resourceId).toBe(String(seeded.id))
@@ -167,7 +168,7 @@ describe('adminMusicRouter.update', () => {
       { id: String(seeded.id), name: 'Updated Song', artist: ['Artist'], album: 'Album', lyric: '[00:00] Hi' },
       { context: ctx },
     )
-    const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(music).where(eq(music.id, seeded.id))
     expect(row).toMatchObject({
       name: 'Updated Song',
       artist: 'Artist',
@@ -188,14 +189,14 @@ describe('adminMusicRouter.delete', () => {
     const res = await call(adminMusicRouter.delete, { id: String(seeded.id) }, { context: ctx })
     expect(res).toBeUndefined()
 
-    const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(music).where(eq(music.id, seeded.id))
     expect(row!.deletedAt).not.toBeNull()
     expect(mem.deletedKeys).toEqual(expect.arrayContaining([seeded.audioStoragePath, seeded.coverStoragePath]))
     expect(mem.store.has(seeded.audioStoragePath)).toBe(false)
     expect(mem.store.has(seeded.coverStoragePath)).toBe(false)
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'music_deleted'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'music_deleted'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('music')
     expect(rows[0]!.resourceId).toBe(String(seeded.id))

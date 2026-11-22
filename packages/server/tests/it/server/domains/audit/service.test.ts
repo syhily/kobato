@@ -1,6 +1,7 @@
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -56,7 +57,7 @@ describe('audit/service', () => {
       })
       await flushAuditLog()
 
-      const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_deleted'))
+      const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'post_deleted'))
       expect(rows).toHaveLength(1)
       expect(rows[0]).toMatchObject({
         resourceType: 'post',
@@ -69,7 +70,7 @@ describe('audit/service', () => {
       expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
       expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
-      expect(await db.select().from(auditLog)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(auditLog)).toHaveLength(0)
     })
   })
 
@@ -111,7 +112,7 @@ describe('audit/service', () => {
     it('combines buildAuditContext and recordAuditEvent into one real row', async () => {
       initAllBatchers(getDatabaseHandle())
 
-      const [actor] = await db
+      const [actor] = await sqliteOf(db)
         .insert(userTable)
         .values({ name: 'Author', email: `author-${crypto.randomUUID()}@example.com`, password: 'p', role: 'author' })
         .returning({ id: userTable.id })
@@ -129,7 +130,7 @@ describe('audit/service', () => {
       })
       await flushAuditLog()
 
-      const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_published'))
+      const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'post_published'))
       expect(rows).toHaveLength(1)
       expect(rows[0]).toMatchObject({
         actorId: actor!.id,

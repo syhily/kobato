@@ -1,6 +1,6 @@
-import type { AnalyticsOperation, AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { AnalyticsQuery, AnalyticsReader } from '@kobato/db/duckdb/connection'
+import type { AnalyticsOperation } from '@kobato/db/duckdb/query'
 import type { DbOutcome } from '@kobato/server/infra/trace/sanitize'
-import type { Compilable } from 'kysely'
 
 import { executeAnalyticsQuery, setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
 import { withSpanAsync } from '@kobato/server/infra/trace/facade'
@@ -8,7 +8,7 @@ import { recordDbOperation } from '@kobato/server/infra/trace/metrics'
 
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,
-  query: Compilable,
+  query: AnalyticsQuery,
   operation: AnalyticsOperation,
 ): Promise<Record<string, unknown>[]> {
   const startedAt = performance.now()

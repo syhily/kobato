@@ -1,10 +1,10 @@
+import { sqliteOf } from '@kobato/db/database'
 import { likeEscape } from '@kobato/db/like-escape'
+import { buildAdminListConditions } from '@kobato/db/operations/comment'
 import { comment } from '@kobato/db/schema/comment'
 import { postSearchIndex } from '@kobato/db/schema/content'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'
-import { buildAdminListConditions } from '@kobato/server/domains/comments/repos/shared'
-import { liveContentWhere } from '@kobato/server/domains/content/schemas/live-gate'
 import { searchPosts } from '@kobato/server/domains/posts/services/search-query'
 import { bumpCounter } from '@kobato/server/infra/cache/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -18,35 +18,30 @@ beforeEach(async () => {
   await bumpCounter('searchResult')
 })
 
-function liveWhere() {
-  return liveContentWhere({
-    deletedAt: post.deletedAt,
-    published: post.published,
-    publishedRevisionId: post.publishedRevisionId,
-    publishedAt: post.publishedAt,
-  })
-}
-
 describe('likeEscape — direct SQL against database', () => {
   it('finds users by normal substring', async () => {
-    await db.insert(user).values([
-      { name: 'Alice Smith', email: 'alice@test.com', password: 'x' },
-      { name: 'Bob Jones', email: 'bob@test.com', password: 'x' },
-      { name: 'Charlie', email: 'charlie@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: 'Alice Smith', email: 'alice@test.com', password: 'x' },
+        { name: 'Bob Jones', email: 'bob@test.com', password: 'x' },
+        { name: 'Charlie', email: 'charlie@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'Smith'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, 'Smith'))
 
     expect(rows.map((r) => r.name)).toEqual(['Alice Smith'])
   })
 
   it('treats % as a literal character when escaped', async () => {
-    await db.insert(user).values([
-      { name: '50% off sale', email: 'a@test.com', password: 'x' },
-      { name: '500 dollars', email: 'b@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: '50% off sale', email: 'a@test.com', password: 'x' },
+        { name: '500 dollars', email: 'b@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, '50%'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, '50%'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('50% off sale')
@@ -54,13 +49,15 @@ describe('likeEscape — direct SQL against database', () => {
   })
 
   it('treats _ as a literal character when escaped', async () => {
-    await db.insert(user).values([
-      { name: 'A_B_test', email: 'a@test.com', password: 'x' },
-      { name: 'AB_test', email: 'b@test.com', password: 'x' },
-      { name: 'A__B', email: 'c@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: 'A_B_test', email: 'a@test.com', password: 'x' },
+        { name: 'AB_test', email: 'b@test.com', password: 'x' },
+        { name: 'A__B', email: 'c@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'A_B'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, 'A_B'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('A_B_test')
@@ -69,12 +66,14 @@ describe('likeEscape — direct SQL against database', () => {
   })
 
   it('treats backslash as a literal character when escaped', async () => {
-    await db.insert(user).values([
-      { name: 'a\\b', email: 'a@test.com', password: 'x' },
-      { name: 'ab', email: 'b@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: 'a\\b', email: 'a@test.com', password: 'x' },
+        { name: 'ab', email: 'b@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'a\\b'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, 'a\\b'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('a\\b')
@@ -82,13 +81,15 @@ describe('likeEscape — direct SQL against database', () => {
   })
 
   it('handles mixed special characters', async () => {
-    await db.insert(user).values([
-      { name: '100%_complete', email: 'a@test.com', password: 'x' },
-      { name: '100_complete', email: 'b@test.com', password: 'x' },
-      { name: '100 percent', email: 'c@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: '100%_complete', email: 'a@test.com', password: 'x' },
+        { name: '100_complete', email: 'b@test.com', password: 'x' },
+        { name: '100 percent', email: 'c@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, '100%_'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, '100%_'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('100%_complete')
@@ -97,13 +98,15 @@ describe('likeEscape — direct SQL against database', () => {
   })
 
   it('is case-insensitive', async () => {
-    await db.insert(user).values([
-      { name: 'UPPERCASE', email: 'a@test.com', password: 'x' },
-      { name: 'lowercase', email: 'b@test.com', password: 'x' },
-      { name: 'MiXeD', email: 'c@test.com', password: 'x' },
-    ])
+    await sqliteOf(db)
+      .insert(user)
+      .values([
+        { name: 'UPPERCASE', email: 'a@test.com', password: 'x' },
+        { name: 'lowercase', email: 'b@test.com', password: 'x' },
+        { name: 'MiXeD', email: 'c@test.com', password: 'x' },
+      ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'mixed'))
+    const rows = await sqliteOf(db).select({ name: user.name }).from(user).where(likeEscape(user.name, 'mixed'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('MiXeD')
@@ -114,17 +117,19 @@ describe('likeEscape — direct SQL against database', () => {
 
 describe('likeEscape — comments repository', () => {
   it('filters comments containing literal % in content', async () => {
-    const [u] = await db
+    const [u] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
-    await db.insert(comment).values([
-      { content: 'Discount is 50% off', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
-      { content: 'Price is 500 yen', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
-    ])
+    await sqliteOf(db)
+      .insert(comment)
+      .values([
+        { content: 'Discount is 50% off', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+        { content: 'Price is 500 yen', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
+      ])
 
     const conditions = buildAdminListConditions({ q: '50%' })
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ content: comment.content })
       .from(comment)
       .where(and(...conditions))
@@ -134,17 +139,19 @@ describe('likeEscape — comments repository', () => {
   })
 
   it('filters comments containing literal _ in content', async () => {
-    const [u] = await db
+    const [u] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
-    await db.insert(comment).values([
-      { content: 'Variable name is foo_bar', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
-      { content: 'Variable name is foobar', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
-    ])
+    await sqliteOf(db)
+      .insert(comment)
+      .values([
+        { content: 'Variable name is foo_bar', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+        { content: 'Variable name is foobar', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
+      ])
 
     const conditions = buildAdminListConditions({ q: 'foo_bar' })
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ content: comment.content })
       .from(comment)
       .where(and(...conditions))
@@ -154,17 +161,19 @@ describe('likeEscape — comments repository', () => {
   })
 
   it('excludes comments with does-not-contain match', async () => {
-    const [u] = await db
+    const [u] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
-    await db.insert(comment).values([
-      { content: 'Contains 50% discount', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
-      { content: 'Just regular text', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
-    ])
+    await sqliteOf(db)
+      .insert(comment)
+      .values([
+        { content: 'Contains 50% discount', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+        { content: 'Just regular text', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
+      ])
 
     const conditions = buildAdminListConditions({ q: '50%', match: 'does-not-contain' })
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ content: comment.content })
       .from(comment)
       .where(and(...conditions))
@@ -176,46 +185,58 @@ describe('likeEscape — comments repository', () => {
 
 describe('likeEscape — search posts', () => {
   it('finds posts by title with escaped wildcards', async () => {
-    await db.insert(post).values([
-      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1 },
-      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', publishedRevisionId: 2 },
-    ])
-    await db.insert(postSearchIndex).values([
-      { postId: 1, plainText: 'How to get 50% off' },
-      { postId: 2, plainText: '500 reasons to code' },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1 },
+        { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', publishedRevisionId: 2 },
+      ])
+    await sqliteOf(db)
+      .insert(postSearchIndex)
+      .values([
+        { postId: 1, plainText: 'How to get 50% off' },
+        { postId: 2, plainText: '500 reasons to code' },
+      ])
 
-    const result = await searchPosts(db, liveWhere(), '50% off', 10)
+    const result = await searchPosts(db, '50% off', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })
 
   it('finds posts by summary with escaped wildcards', async () => {
-    await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', publishedRevisionId: 1 },
-      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', publishedRevisionId: 2 },
-    ])
-    await db.insert(postSearchIndex).values([
-      { postId: 1, plainText: 'Save 50% today' },
-      { postId: 2, plainText: 'Save 500 today' },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', publishedRevisionId: 1 },
+        { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', publishedRevisionId: 2 },
+      ])
+    await sqliteOf(db)
+      .insert(postSearchIndex)
+      .values([
+        { postId: 1, plainText: 'Save 50% today' },
+        { postId: 2, plainText: 'Save 500 today' },
+      ])
 
-    const result = await searchPosts(db, liveWhere(), '50%', 10)
+    const result = await searchPosts(db, '50%', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })
 
   it('finds posts by title with escaped underscores', async () => {
-    await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', publishedRevisionId: 1 },
-      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', publishedRevisionId: 2 },
-    ])
-    await db.insert(postSearchIndex).values([
-      { postId: 1, plainText: '' },
-      { postId: 2, plainText: '' },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', publishedRevisionId: 1 },
+        { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', publishedRevisionId: 2 },
+      ])
+    await sqliteOf(db)
+      .insert(postSearchIndex)
+      .values([
+        { postId: 1, plainText: '' },
+        { postId: 2, plainText: '' },
+      ])
 
-    const result = await searchPosts(db, liveWhere(), 'foo_bar', 10)
+    const result = await searchPosts(db, 'foo_bar', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })

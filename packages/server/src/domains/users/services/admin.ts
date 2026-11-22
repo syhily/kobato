@@ -3,38 +3,38 @@ import type { Database } from '@kobato/db/database'
 import type { User } from '@kobato/db/types'
 
 import {
-  countAdmins,
-  findUserByEmail,
-  findUserByIdForUpdate,
-  insertAuthor,
-  setUserMuted,
-  softDeleteUserById,
-  updateUserRole,
-} from '@kobato/db/operations/user'
-import { user } from '@kobato/db/schema/user'
-import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
-import { issueResetToken, issueSetupToken } from '@kobato/server/domains/auth/verification-tokens'
-import {
   type AdminUserRow,
   type AdminUsersListFilters,
+  type AdminUsersSortOrder,
   countAdminUsers,
   findAdminUserById,
   listAdminUsers,
-} from '@kobato/server/domains/users/repos/admin-query'
+} from '@kobato/db/operations/admin-user'
+import {
+  changeUserRoleGuarded,
+  countUsers as countUsersOp,
+  findUserByEmail,
+  inviteAuthorWithVerification,
+  setUserMuted,
+  softDeleteUserById,
+  softDeleteUserGuarded,
+} from '@kobato/db/operations/user'
+import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
+import { issueResetToken, mintSetupTokenValues } from '@kobato/server/domains/auth/verification-tokens'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@kobato/server/infra/email/sender'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 import { tryPasswordResetByTargetRateLimit } from '@kobato/server/infra/rate-limit'
-import { count } from 'drizzle-orm'
 
 const log = getLogger('users.admin')
 
-export type UserSortOrder = 'recent' | 'commentCount'
+export type UserSortOrder = AdminUsersSortOrder
+
+export type { AdminUserRow, AdminUsersListFilters }
 
 export async function countUsers(db: Database): Promise<number> {
-  const rows = await db.select({ count: count() }).from(user)
-  return rows[0]?.count ?? 0
+  return countUsersOp(db)
 }
 
 export interface AdminUserDto {
@@ -130,24 +130,15 @@ export async function updateUserRoleWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotChangeOwnRole'))
   }
-  const result = db.transaction((tx) => {
-    const target = findUserByIdForUpdate(tx, targetId)
-    if (!target) {
-      throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
-    }
-    if (target.role === 'admin' && newRole !== 'admin') {
-      const adminCount = countAdmins(tx)
-      if (adminCount <= 1) {
-        throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDemoteSoleAdmin'))
-      }
-    }
-    const updated = updateUserRole(tx, targetId, newRole)
-    return updated ? { user: updated, previousRole: target.role } : null
-  })
-  if (result) {
-    await revokeAllSessionsOfUser(db, targetId)
+  const outcome = changeUserRoleGuarded(db, targetId, newRole)
+  if (outcome.outcome === 'not-found') {
+    throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
   }
-  return result
+  if (outcome.outcome === 'sole-admin') {
+    throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDemoteSoleAdmin'))
+  }
+  await revokeAllSessionsOfUser(db, targetId)
+  return { user: outcome.user, previousRole: outcome.previousRole }
 }
 
 export interface InviteAuthorResult {
@@ -168,16 +159,14 @@ export async function inviteAuthorWithRollback(
     throw new DomainError('CONFLICT', descriptorFor('users.error.emailTaken'))
   }
 
-  const { user, token } = db.transaction((tx) => {
-    const [inserted] = insertAuthor(tx, name, email)
-    if (!inserted) {
-      throw new DomainError('INTERNAL', descriptorFor('users.error.createAuthorFailed'))
-    }
-    const { token } = issueSetupToken(tx, inserted.id)
-    return { user: inserted, token }
-  })
+  const verification = mintSetupTokenValues()
+  const invited = inviteAuthorWithVerification(db, { name, email, verification })
+  if (invited === null) {
+    throw new DomainError('INTERNAL', descriptorFor('users.error.createAuthorFailed'))
+  }
+  const { user } = invited
 
-  const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
+  const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(verification.raw)}`
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
     try {
@@ -228,23 +217,13 @@ export async function softDeleteUserWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', descriptorFor('users.error.cannotDeleteSelf'))
   }
-  const result = db.transaction((tx) => {
-    const target = findUserByIdForUpdate(tx, targetId)
-    if (!target) {
-      throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
-    }
-    if (target.role === 'admin') {
-      const adminCount = countAdmins(tx)
-      if (adminCount <= 1) {
-        throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDeleteSoleAdmin'))
-      }
-    }
-    const ok = softDeleteUserById(tx, targetId)
-    if (!ok) {
-      throw new DomainError('NOT_FOUND', descriptorFor('users.error.deleteNotFound'))
-    }
-    return { previousRole: target.role }
-  })
+  const outcome = softDeleteUserGuarded(db, targetId)
+  if (outcome.outcome === 'not-found') {
+    throw new DomainError('NOT_FOUND', descriptorFor('users.error.notFound'))
+  }
+  if (outcome.outcome === 'sole-admin') {
+    throw new DomainError('CONFLICT', descriptorFor('users.error.cannotDeleteSoleAdmin'))
+  }
   await revokeAllSessionsOfUser(db, targetId)
-  return result
+  return { previousRole: outcome.previousRole }
 }

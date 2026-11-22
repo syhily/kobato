@@ -1,6 +1,7 @@
 import { analyticsContract } from '@kobato/api/rpc/admin/analytics'
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
 import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
+import { adminBrandingContract } from '@kobato/api/rpc/admin/branding'
 import { adminCacheContract } from '@kobato/api/rpc/admin/cache'
 import { adminCategoriesContract } from '@kobato/api/rpc/admin/categories'
 import { adminCommentsContract } from '@kobato/api/rpc/admin/comments'
@@ -43,6 +44,7 @@ export const adminContract = {
   renders: adminRendersContract,
   comments: adminCommentsContract,
   backup: adminBackupContract,
+  branding: adminBrandingContract,
   fonts: adminFontsContract,
   geoip: adminGeoipContract,
   webmentions: adminWebmentionsContract,

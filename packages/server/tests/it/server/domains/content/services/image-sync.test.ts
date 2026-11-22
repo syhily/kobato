@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { image as imageTable } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { emptyLexicalBody, lexicalBodyWith, lexicalImage, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
@@ -18,7 +19,7 @@ function quote(children: unknown[]) {
 }
 
 async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(imageTable)
     .values({
       storagePath: overrides.storagePath ?? `p/${Math.random().toString(36).slice(2)}.jpg`,
@@ -33,7 +34,7 @@ async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}
 }
 
 async function imageNote(id: number): Promise<string | null> {
-  const rows = await db.select({ note: imageTable.note }).from(imageTable).where(eq(imageTable.id, id))
+  const rows = await sqliteOf(db).select({ note: imageTable.note }).from(imageTable).where(eq(imageTable.id, id))
   return rows[0]?.note ?? null
 }
 

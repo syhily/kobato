@@ -1,17 +1,9 @@
-import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api'
+import { DuckDBInstance } from '@duckdb/node-api'
 import { isInMemoryPath } from '@kobato/db/database'
+import { analyticsHandleOf, engineOf, type AnalyticsHandle, type DuckDbEngine } from '@kobato/db/duckdb/connection'
 import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
-
-export interface AnalyticsHandle {
-  instance: DuckDBInstance
-  writer: DuckDBConnection
-  reader: DuckDBConnection
-  path: string
-  inMemory: boolean
-  closed: boolean
-}
 
 export interface DuckDBLogger {
   info(message: string, context?: Record<string, unknown>): void
@@ -87,7 +79,12 @@ export async function openAnalyticsDatabase(
   for (const statement of typeof ddl === 'string' ? [ddl] : ddl) {
     await writer.run(statement)
   }
-  return { instance, writer, reader, path: analyticsPath, inMemory, closed: false }
+  const engine: DuckDbEngine = { instance, writer, reader, path: analyticsPath, inMemory, closed: false }
+  return analyticsHandleOf(engine)
+}
+
+export async function checkpointAnalyticsDatabase(handle: AnalyticsHandle): Promise<void> {
+  await engineOf(handle).writer.run('CHECKPOINT')
 }
 
 export async function closeAnalyticsDatabase(handle: AnalyticsHandle): Promise<void> {
@@ -95,8 +92,9 @@ export async function closeAnalyticsDatabase(handle: AnalyticsHandle): Promise<v
     return
   }
   handle.closed = true
-  await handle.writer.run('CHECKPOINT')
-  handle.writer.closeSync()
-  handle.reader.closeSync()
-  handle.instance.closeSync()
+  await checkpointAnalyticsDatabase(handle)
+  const engine = engineOf(handle)
+  engine.writer.closeSync()
+  engine.reader.closeSync()
+  engine.instance.closeSync()
 }

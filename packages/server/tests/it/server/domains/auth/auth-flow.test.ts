@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog, setting } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user as userTable } from '@kobato/db/schema/user'
@@ -36,7 +37,7 @@ const baseSeed = {
 }
 
 async function settingRows() {
-  return db.select().from(setting)
+  return sqliteOf(db).select().from(setting)
 }
 
 describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1, real db)', () => {
@@ -55,7 +56,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    const users = await db.select().from(userTable)
+    const users = await sqliteOf(db).select().from(userTable)
     expect(users).toHaveLength(1)
     const admin = users[0]!
     expect(admin).toMatchObject({ name: 'Admin', email: 'admin@example.com', role: 'admin' })
@@ -94,18 +95,18 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
 
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
-    const sessions = await db.select().from(sessionTable)
+    const sessions = await sqliteOf(db).select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(admin.id)
 
     await flushAuditLog()
-    const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
+    const logins = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'login'))
     expect(logins).toHaveLength(1)
     expect(logins[0]!.actorId).toBe(admin.id)
   })
 
   it('refuses a duplicate stage-1 install (no DB writes)', async () => {
-    await db.insert(userTable).values({
+    await sqliteOf(db).insert(userTable).values({
       name: 'Existing',
       email: 'existing@example.com',
       password: 'hashed',
@@ -123,7 +124,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     if (result.type === 'error') {
       expect(result.descriptor).toMatchObject({ messageKey: 'auth.setup.error.adminExists' })
     }
-    expect(await db.select().from(userTable)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(userTable)).toHaveLength(1)
     expect(await settingRows()).toHaveLength(0)
   })
 
@@ -137,12 +138,12 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
     })
 
     expect(result.type).toBe('error')
-    expect(await db.select().from(userTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(userTable)).toHaveLength(0)
     expect(await settingRows()).toHaveLength(0)
   })
 
   it('propagates the insert failure and rolls the seed back (concurrent install race)', async () => {
-    await db.insert(userTable).values({
+    await sqliteOf(db).insert(userTable).values({
       name: 'Squatter',
       email: 'admin@example.com',
       password: 'hashed',
@@ -158,7 +159,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
       }),
     ).rejects.toThrow()
 
-    const users = await db.select().from(userTable)
+    const users = await sqliteOf(db).select().from(userTable)
     expect(users).toHaveLength(1)
     expect(users[0]!.role).toBe('visitor')
     expect(await settingRows()).toHaveLength(0)

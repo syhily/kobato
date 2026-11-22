@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { user } from '@kobato/db/schema/user'
@@ -43,7 +44,7 @@ afterEach(async () => {
 })
 
 async function readMintedSetupToken(): Promise<string> {
-  const rows = await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
+  const rows = await sqliteOf(db).select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
   expect(rows).toHaveLength(1)
   return rows[0]!.payload as string
 }
@@ -107,13 +108,13 @@ describe('integration: /admin/setup full install flow', () => {
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe('/admin')
 
-    const adminRows = await db.select().from(user).where(eq(user.role, 'admin'))
+    const adminRows = await sqliteOf(db).select().from(user).where(eq(user.role, 'admin'))
     expect(adminRows).toHaveLength(1)
     expect(adminRows[0]?.name).toBe('Admin')
     expect(adminRows[0]?.email).toBe('admin@example.com')
     expect(adminRows[0]?.role).toBe('admin')
 
-    const settingRows = await db
+    const settingRows = await sqliteOf(db)
       .select()
       .from(setting)
       .where(sql`${setting.scope} like 'blog.%'`)
@@ -149,7 +150,7 @@ describe('integration: /admin/setup full install flow', () => {
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.locale).toBe('en-US')
 
-    expect(await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
 
     const cookies = response.headers.getSetCookie()
     expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)

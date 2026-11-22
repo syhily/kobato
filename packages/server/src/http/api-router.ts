@@ -10,6 +10,7 @@ import { setupRouter } from '@kobato/server/http/controllers/account/setup.contr
 import { analyticsRouter } from '@kobato/server/http/controllers/admin/analytics.controller'
 import { auditLogRouter } from '@kobato/server/http/controllers/admin/audit.controller'
 import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller'
+import { adminBrandingRouter } from '@kobato/server/http/controllers/admin/branding.controller'
 import { adminCacheRouter } from '@kobato/server/http/controllers/admin/cache.controller'
 import { adminCategoriesRouter } from '@kobato/server/http/controllers/admin/categories.controller'
 import { adminCommentsRouter } from '@kobato/server/http/controllers/admin/comments.controller'
@@ -95,6 +96,7 @@ export const apiRouter = {
     renders: adminRendersRouter,
     comments: adminCommentsRouter,
     backup: adminBackupRouter,
+    branding: adminBrandingRouter,
     fonts: adminFontsRouter,
     geoip: adminGeoipRouter,
     webmentions: adminWebmentionsRouter,

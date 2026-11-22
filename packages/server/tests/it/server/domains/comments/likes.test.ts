@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { like, metric } from '@kobato/db/schema/metric'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
@@ -35,29 +36,33 @@ async function seedMetricRow(
   target: { type: 'post' | 'page'; ownerId: number },
   opts: { voteUp?: number; pv?: number; publicId?: string } = {},
 ): Promise<void> {
-  await db.insert(metric).values({
-    type: target.type,
-    ownerId: target.ownerId,
-    publicId: opts.publicId ?? crypto.randomUUID(),
-    voteUp: opts.voteUp ?? 0,
-    pv: opts.pv ?? 0,
-  })
+  await sqliteOf(db)
+    .insert(metric)
+    .values({
+      type: target.type,
+      ownerId: target.ownerId,
+      publicId: opts.publicId ?? crypto.randomUUID(),
+      voteUp: opts.voteUp ?? 0,
+      pv: opts.pv ?? 0,
+    })
 }
 
 async function seedComment(ownerId: number, opts: { isPending?: boolean } = {}): Promise<void> {
-  await db.insert(comment).values({
-    type: 'post',
-    ownerId,
-    userId: 1,
-    content: 'hello',
-    body: EMPTY_COMMENT_EDITOR_STATE,
-    rid: 0,
-    isPending: opts.isPending ?? false,
-  })
+  await sqliteOf(db)
+    .insert(comment)
+    .values({
+      type: 'post',
+      ownerId,
+      userId: 1,
+      content: 'hello',
+      body: EMPTY_COMMENT_EDITOR_STATE,
+      rid: 0,
+      isPending: opts.isPending ?? false,
+    })
 }
 
 async function likeRows(): Promise<(typeof like.$inferSelect)[]> {
-  return db.select().from(like)
+  return sqliteOf(db).select().from(like)
 }
 
 describe('services/comments/likes — increaseLikes / decreaseLikes', () => {
@@ -177,13 +182,15 @@ describe('services/comments/likes — purgeStaleLikeTokens', () => {
       { token: 'active', deletedAt: null },
     ]
     for (const row of rows) {
-      await db.insert(like).values({
-        token: row.token,
-        type: 'post',
-        ownerId: 1,
-        deletedAt: row.deletedAt,
-        updatedAt: row.deletedAt ?? new Date(),
-      })
+      await sqliteOf(db)
+        .insert(like)
+        .values({
+          token: row.token,
+          type: 'post',
+          ownerId: 1,
+          deletedAt: row.deletedAt,
+          updatedAt: row.deletedAt ?? new Date(),
+        })
     }
 
     await purgeStaleLikeTokens(db)
@@ -198,7 +205,7 @@ describe('services/comments/likes — sweep timer', () => {
   it('purges stale tokens on the hourly tick, starts idempotently, and stops on reset', async () => {
     const seedStaleToken = async (token: string) => {
       const deletedAt = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
-      await db.insert(like).values({ token, type: 'post', ownerId: 1, deletedAt, updatedAt: deletedAt })
+      await sqliteOf(db).insert(like).values({ token, type: 'post', ownerId: 1, deletedAt, updatedAt: deletedAt })
     }
 
     vi.useFakeTimers()

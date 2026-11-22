@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { pickWebmentionsDueForReverify, upsertWebmention } from '@kobato/db/operations/webmention'
 import { auditLog } from '@kobato/db/schema/config'
 import { post } from '@kobato/db/schema/post'
@@ -30,7 +31,7 @@ const dueAt = () => new Date(Date.now() - DAY_MS - 60_000)
 const freshAt = () => new Date(Date.now() - 60_000)
 
 async function seedLivePost(slug = 'wm-target'): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({ slug, title: 'Mentioned Post', published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
@@ -38,7 +39,7 @@ async function seedLivePost(slug = 'wm-target'): Promise<number> {
 }
 
 async function rowOf(id: number) {
-  const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+  const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
   return rows[0]!
 }
 
@@ -286,7 +287,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
   })
 
   async function seedAdmin(): Promise<number> {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(user)
       .values({
         name: 'Admin',
@@ -322,7 +323,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
     expect(wire.id).toBe(id.toString())
 
     await flushAuditLog()
-    const audits = await db.select().from(auditLog).where(eq(auditLog.action, 'webmention_verified'))
+    const audits = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'webmention_verified'))
     expect(audits).toHaveLength(1)
     expect(audits[0]!.resourceType).toBe('webmention')
     expect(audits[0]!.resourceId).toBe(id.toString())

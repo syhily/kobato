@@ -1,4 +1,5 @@
-import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@kobato/db/operations/like'
+import { sqliteOf } from '@kobato/db/database'
+import { consumeLikeAndDecrement, existsActiveLikeToken, purgeOldLikeTokens } from '@kobato/db/operations/like'
 import { like } from '@kobato/db/schema/metric'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
@@ -18,15 +19,17 @@ describe('db/query/like.server', () => {
     const before = new Date('2024-01-15T00:00:00.000Z')
     const after = new Date('2024-03-01T00:00:00.000Z')
 
-    await db.insert(like).values([
-      { token: 'active', type: 'post', ownerId: 1 },
-      { token: 'old-deleted', type: 'post', ownerId: 1, deletedAt: before },
-      { token: 'new-deleted', type: 'post', ownerId: 1, deletedAt: after },
-    ])
+    await sqliteOf(db)
+      .insert(like)
+      .values([
+        { token: 'active', type: 'post', ownerId: 1 },
+        { token: 'old-deleted', type: 'post', ownerId: 1, deletedAt: before },
+        { token: 'new-deleted', type: 'post', ownerId: 1, deletedAt: after },
+      ])
 
     await purgeOldLikeTokens(db, cutoff)
 
-    const rows = await db.select({ token: like.token }).from(like)
+    const rows = await sqliteOf(db).select({ token: like.token }).from(like)
     const tokens = rows.map((r) => r.token)
     expect(tokens).toContain('active')
     expect(tokens).toContain('new-deleted')
@@ -34,10 +37,12 @@ describe('db/query/like.server', () => {
   })
 
   it('checks like token existence against active rows only', async () => {
-    await db.insert(like).values([
-      { token: 'tok-active', type: 'post', ownerId: 1 },
-      { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
-    ])
+    await sqliteOf(db)
+      .insert(like)
+      .values([
+        { token: 'tok-active', type: 'post', ownerId: 1 },
+        { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
+      ])
 
     expect(await existsActiveLikeToken(db, POST_A, 'tok-active')).toBe(true)
     expect(await existsActiveLikeToken(db, POST_A, 'tok-deleted')).toBe(false)
@@ -45,17 +50,22 @@ describe('db/query/like.server', () => {
   })
 
   it('atomically consumes active like tokens with one conditional update', async () => {
-    await db.insert(like).values([
-      { token: 'tok-consume', type: 'post', ownerId: 1 },
-      { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
-    ])
+    await sqliteOf(db)
+      .insert(like)
+      .values([
+        { token: 'tok-consume', type: 'post', ownerId: 1 },
+        { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
+      ])
 
-    const result = await consumeActiveLikeToken(db, POST_A, 'tok-consume')
+    const result = await consumeLikeAndDecrement(db, POST_A, 'tok-consume')
     expect(result).toBe(true)
 
-    const rows = await db.select({ deletedAt: like.deletedAt }).from(like).where(eq(like.token, 'tok-consume'))
+    const rows = await sqliteOf(db)
+      .select({ deletedAt: like.deletedAt })
+      .from(like)
+      .where(eq(like.token, 'tok-consume'))
     expect(rows[0]?.deletedAt).not.toBeNull()
 
-    expect(await consumeActiveLikeToken(db, POST_A, 'tok-deleted')).toBe(false)
+    expect(await consumeLikeAndDecrement(db, POST_A, 'tok-deleted')).toBe(false)
   })
 })

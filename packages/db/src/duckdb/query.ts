@@ -1,6 +1,8 @@
-import type { DuckDBConnection, DuckDBValue } from '@duckdb/node-api'
+import type { DuckDBValue } from '@duckdb/node-api'
+import type { AnalyticsQuery, AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { Compilable } from 'kysely'
 
+import { analyticsQueryOf, compilableQuery, readerConnection } from '@kobato/db/duckdb/connection'
 import { DummyDriver, Kysely, MysqlAdapter, MysqlIntrospector, MysqlQueryCompiler } from 'kysely'
 
 export interface AnalyticsEventRow {
@@ -61,8 +63,6 @@ export function compileAnalyticsQuery(query: Compilable) {
   return query.compile()
 }
 
-export type AnalyticsReader = DuckDBConnection
-
 function toBoundParameters(parameters: readonly unknown[]): DuckDBValue[] {
   return parameters.map((value) => {
     if (
@@ -91,7 +91,7 @@ export type AnalyticsOperation = (typeof ANALYTICS_OPERATIONS)[number]
 
 export type AnalyticsQueryExecutor = (
   reader: AnalyticsReader,
-  query: Compilable,
+  query: AnalyticsQuery,
   operation: AnalyticsOperation,
 ) => Promise<Record<string, unknown>[]>
 
@@ -103,10 +103,10 @@ export function setAnalyticsQueryExecutor(next: AnalyticsQueryExecutor | null): 
 
 export async function executeAnalyticsQuery(
   reader: AnalyticsReader,
-  query: Compilable,
+  query: AnalyticsQuery,
 ): Promise<Record<string, unknown>[]> {
-  const compiled = compileAnalyticsQuery(query)
-  const result = await reader.runAndReadAll(compiled.sql, toBoundParameters(compiled.parameters))
+  const compiled = compileAnalyticsQuery(compilableQuery(query))
+  const result = await readerConnection(reader).runAndReadAll(compiled.sql, toBoundParameters(compiled.parameters))
   return result
     .getRowObjects()
     .map((row) =>
@@ -128,8 +128,9 @@ export async function runAnalyticsQuery(
   query: Compilable,
   operation: AnalyticsOperation,
 ): Promise<Record<string, unknown>[]> {
+  const token = analyticsQueryOf(query)
   if (executor !== null) {
-    return executor(reader, query, operation)
+    return executor(reader, token, operation)
   }
-  return executeAnalyticsQuery(reader, query)
+  return executeAnalyticsQuery(reader, token)
 }

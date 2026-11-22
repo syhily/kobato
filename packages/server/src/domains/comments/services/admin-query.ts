@@ -1,26 +1,20 @@
-import type {
-  AdminCommentStatus,
-  AdminPendingDashboardDto,
-  AdminPendingItemDto,
-  CommentTextMatch,
-} from '@kobato/api/contracts/comments'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/comments'
 import type { Database } from '@kobato/db/database'
-import type { AdminListFilters, AdminPendingKind } from '@kobato/server/domains/comments/repos/shared'
+import type { AdminCommentListFilters, AdminPendingKind } from '@kobato/db/operations/comment'
 import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'
 
-import { findMetricByPublicId } from '@kobato/db/operations/metric'
-import { comment } from '@kobato/db/schema/comment'
-import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import {
   countAdminComments,
+  countAdminPendingDashboard as countAdminPendingDashboardOp,
   listAdminComments,
   listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
-} from '@kobato/server/domains/comments/repos/admin-query'
+} from '@kobato/db/operations/comment'
+import { findMetricByPublicId } from '@kobato/db/operations/metric'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { asCommentTarget } from '@kobato/server/domains/comments/services/shared'
 import { entityPermalink } from '@kobato/server/domains/content/urls'
-import { sql } from 'drizzle-orm'
 
 const DASHBOARD_EXCERPT_LIMIT = 120
 
@@ -47,26 +41,7 @@ export async function countAdminPendingDashboard(db: Database): Promise<{
   approval: number
   deletion: number
 }> {
-  const rows = await db
-    .select({
-      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND (${comment.isPending} = TRUE OR ${comment.deleteRequestedAt} IS NOT NULL))`.mapWith(
-        Number,
-      ),
-      approval:
-        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`.mapWith(
-          Number,
-        ),
-      deletion:
-        sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`.mapWith(
-          Number,
-        ),
-    })
-    .from(comment)
-  return {
-    all: rows[0]?.all ?? 0,
-    approval: rows[0]?.approval ?? 0,
-    deletion: rows[0]?.deletion ?? 0,
-  }
+  return countAdminPendingDashboardOp(db)
 }
 
 export async function searchPageOptions(
@@ -122,9 +97,9 @@ export interface LoadAllCommentsOptions {
   limit: number
   filterPublicId?: string
   filterUserId?: number
-  status?: AdminCommentStatus
+  status?: AdminCommentListFilters['status']
   filterQ?: string
-  filterMatch?: CommentTextMatch
+  filterMatch?: AdminCommentListFilters['match']
   filterCreatedAfter?: Date
   filterCreatedBefore?: Date
 }
@@ -157,14 +132,14 @@ export async function loadAllComments(db: Database, options: LoadAllCommentsOpti
       }
     }
   }
-  const baseFilters = { target, userId: filterUserId } satisfies Omit<AdminListFilters, 'status'>
+  const baseFilters = { target, userId: filterUserId } satisfies Omit<AdminCommentListFilters, 'status'>
   const extraFilters = {
     q: filterQ,
     match: filterMatch,
     createdAfter: filterCreatedAfter,
     createdBefore: filterCreatedBefore,
-  } satisfies Omit<AdminListFilters, 'target' | 'userId' | 'status'>
-  const filters: AdminListFilters = { ...baseFilters, status, ...extraFilters }
+  } satisfies Omit<AdminCommentListFilters, 'target' | 'userId' | 'status'>
+  const filters: AdminCommentListFilters = { ...baseFilters, status, ...extraFilters }
   const [comments, statusCounts] = await Promise.all([
     listAdminComments(db, offset, limit, filters),
     countAdminComments(db, { ...baseFilters, ...extraFilters }),

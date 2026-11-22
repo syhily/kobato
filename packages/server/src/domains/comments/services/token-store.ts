@@ -4,11 +4,14 @@ import type {
   CommentTokenCookieEntry,
 } from '@kobato/server/domains/comments/services/comment-token'
 
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import {
+  findLiveOneTimeTokenPayloads,
+  insertOneTimeToken,
+  deleteOneTimeToken,
+} from '@kobato/db/operations/one-time-token'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { isRecord } from '@kobato/utils/type-guards'
-import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 
 const log = getLogger('comments.token')
@@ -62,7 +65,7 @@ export async function issueCommentToken(
     createdAt: Date.now(),
   }
   const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
-  await db.insert(oneTimeToken).values({
+  await insertOneTimeToken(db, {
     key: `${TOKEN_KEY_PREFIX}${token}`,
     payload,
     expiresAt: new Date(Date.now() + ttl * 1000),
@@ -71,7 +74,7 @@ export async function issueCommentToken(
 }
 
 export async function revokeCommentToken(db: Database, token: string): Promise<void> {
-  await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
+  await deleteOneTimeToken(db, `${TOKEN_KEY_PREFIX}${token}`)
 }
 
 export async function cleanupExpiredTokens(
@@ -99,11 +102,7 @@ export async function cleanupExpiredTokens(
   }
 
   const keys = candidates.map((c) => `${TOKEN_KEY_PREFIX}${c.entry.token}`)
-  const rows = await db
-    .select({ key: oneTimeToken.key, payload: oneTimeToken.payload })
-    .from(oneTimeToken)
-    .where(and(inArray(oneTimeToken.key, keys), gt(oneTimeToken.expiresAt, new Date())))
-  const payloadByKey = new Map(rows.map((row) => [row.key, row.payload]))
+  const payloadByKey = await findLiveOneTimeTokenPayloads(db, keys)
 
   for (const { pageKey, entry } of candidates) {
     const raw = payloadByKey.get(`${TOKEN_KEY_PREFIX}${entry.token}`)

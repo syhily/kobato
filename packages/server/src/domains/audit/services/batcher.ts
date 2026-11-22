@@ -1,7 +1,9 @@
 import type { Database } from '@kobato/db/database'
+import type { NewAuditLog } from '@kobato/db/types'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types'
 
-import { auditLog } from '@kobato/db/schema/config'
+import { databaseOf } from '@kobato/db/database'
+import { insertAuditLogRows } from '@kobato/db/operations/audit-log'
 import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
 import {
@@ -33,7 +35,7 @@ function deserializeFromDeadLetter(line: string): AuditEventInput | null {
   })
 }
 
-function toRow(e: AuditEventInput) {
+function toRow(e: AuditEventInput): NewAuditLog {
   return {
     action: e.action,
     actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
@@ -53,7 +55,7 @@ class AuditLogBatcher extends InsertBatcher<AuditEventInput> {
   }
 
   protected insertBatch(db: Database, events: AuditEventInput[]): void {
-    db.insert(auditLog).values(events.map(toRow)).run()
+    insertAuditLogRows(db, events.map(toRow))
   }
 
   protected async onInsertFailed(events: AuditEventInput[], _error: unknown): Promise<FlushResult> {
@@ -67,7 +69,7 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
 
   for (const e of events) {
     try {
-      db.insert(auditLog).values(toRow(e)).run()
+      insertAuditLogRows(db, [toRow(e)])
       successCount++
     } catch (rowErr) {
       failedEvents.push(e)
@@ -89,7 +91,7 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
   return { committed: successCount, deadLettered: failedEvents.length }
 }
 
-registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db), {
+registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(databaseOf(handle)), {
   replayDeadLetter: () => replayDeadLetterAuditLog(),
 })
 

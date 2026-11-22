@@ -1,5 +1,6 @@
 import type { DatabaseHandle } from '@kobato/db/database'
 
+import { databaseOf, sqliteEngineOf, sqliteOf } from '@kobato/db/database'
 import { jobRun } from '@kobato/db/schema/job-run'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance'
@@ -7,7 +8,7 @@ import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
-  const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
+  const row = sqliteEngineOf(handle).client.prepare(`PRAGMA ${pragma}`).get()
   const value = row === undefined ? undefined : Object.values(row)[0]
   return typeof value === 'number' ? value : Number(value ?? 0)
 }
@@ -17,18 +18,18 @@ const handle = getDatabaseHandle()
 beforeEach(() => {
   vi.clearAllMocks()
   __clearLogCaptureForTests()
-  handle.client.exec('DROP TABLE IF EXISTS maintenance_probe')
+  sqliteEngineOf(handle).client.exec('DROP TABLE IF EXISTS maintenance_probe')
 })
 
 describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
   it('drains the freelist and logs page stats before and after', () => {
-    handle.client.exec('CREATE TABLE maintenance_probe (id INTEGER PRIMARY KEY, payload TEXT)')
+    sqliteEngineOf(handle).client.exec('CREATE TABLE maintenance_probe (id INTEGER PRIMARY KEY, payload TEXT)')
     const payload = 'x'.repeat(4096)
-    const insert = handle.client.prepare('INSERT INTO maintenance_probe (payload) VALUES (?)')
+    const insert = sqliteEngineOf(handle).client.prepare('INSERT INTO maintenance_probe (payload) VALUES (?)')
     for (let i = 0; i < 256; i++) {
       insert.run(payload)
     }
-    handle.client.exec('DELETE FROM maintenance_probe')
+    sqliteEngineOf(handle).client.exec('DELETE FROM maintenance_probe')
     const freelistBefore = pragmaNumber(handle, 'freelist_count')
     expect(freelistBefore).toBeGreaterThan(0)
 
@@ -52,17 +53,21 @@ describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
 
 describe('db maintenance — job_run history prune', () => {
   it('prunes job_run rows past the retention window and logs the count', () => {
-    const db = handle.db
-    db.delete(jobRun).run()
+    const db = databaseOf(handle)
+    sqliteOf(db).delete(jobRun).run()
     const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
-    db.insert(jobRun).values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: old }).run()
-    db.insert(jobRun)
+    sqliteOf(db)
+      .insert(jobRun)
+      .values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: old })
+      .run()
+    sqliteOf(db)
+      .insert(jobRun)
       .values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: new Date() })
       .run()
 
     runDbMaintenance(handle)
 
-    expect(db.select().from(jobRun).all()).toHaveLength(1)
+    expect(sqliteOf(db).select().from(jobRun).all()).toHaveLength(1)
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({
         level: 'info',

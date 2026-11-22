@@ -1,3 +1,6 @@
+import type { DuckDBConnection, DuckDBType, DuckDBValue } from '@duckdb/node-api'
+import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
+
 import {
   BOOLEAN,
   DOUBLE,
@@ -8,10 +11,8 @@ import {
   TIMESTAMPTZ,
   UUID,
   VARCHAR,
-  type DuckDBConnection,
-  type DuckDBType,
-  type DuckDBValue,
 } from '@duckdb/node-api'
+import { writerConnection } from '@kobato/db/duckdb/connection'
 
 export const DEVICE_ENV_SERVER_DDL = `
 CREATE TABLE IF NOT EXISTS device_env_server (
@@ -214,20 +215,31 @@ async function appendRows(
   }
 }
 
-export async function appendDeviceEnvServerRows(writer: DuckDBConnection, rows: DeviceEnvServerRow[]): Promise<void> {
-  await appendRows(writer, 'device_env_server', DEVICE_ENV_SERVER_CHUNK_TYPES, deviceEnvServerColumns(rows))
+export async function appendDeviceEnvServerRows(writer: AnalyticsWriter, rows: DeviceEnvServerRow[]): Promise<void> {
+  await appendRows(
+    writerConnection(writer),
+    'device_env_server',
+    DEVICE_ENV_SERVER_CHUNK_TYPES,
+    deviceEnvServerColumns(rows),
+  )
 }
 
-export async function appendDeviceEnvClientRows(writer: DuckDBConnection, rows: DeviceEnvClientRow[]): Promise<void> {
-  await appendRows(writer, 'device_env_client', DEVICE_ENV_CLIENT_CHUNK_TYPES, deviceEnvClientColumns(rows))
+export async function appendDeviceEnvClientRows(writer: AnalyticsWriter, rows: DeviceEnvClientRow[]): Promise<void> {
+  await appendRows(
+    writerConnection(writer),
+    'device_env_client',
+    DEVICE_ENV_CLIENT_CHUNK_TYPES,
+    deviceEnvClientColumns(rows),
+  )
 }
 
-export async function existingDeviceEnvEventIds(writer: DuckDBConnection, eventIds: string[]): Promise<Set<string>> {
+export async function existingDeviceEnvEventIds(writer: AnalyticsWriter, eventIds: string[]): Promise<Set<string>> {
+  const connection = writerConnection(writer)
   const found = new Set<string>()
   for (let offset = 0; offset < eventIds.length; offset += 2048) {
     const slice = eventIds.slice(offset, offset + 2048)
     const placeholders = slice.map(() => '?').join(', ')
-    const result = await writer.runAndReadAll(
+    const result = await connection.runAndReadAll(
       `SELECT event_id::VARCHAR AS id FROM device_env_client WHERE event_id IN (${placeholders})`,
       slice,
     )

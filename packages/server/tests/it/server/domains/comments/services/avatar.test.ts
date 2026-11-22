@@ -2,6 +2,7 @@ import type { AvatarSource } from '@kobato/assets/avatar'
 
 import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar'
 import { encodedEmail } from '@kobato/auth/security'
+import { sqliteOf } from '@kobato/db/database'
 import { user } from '@kobato/db/schema/user'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
@@ -54,7 +55,7 @@ async function pngOfSize(width: number): Promise<Buffer> {
 }
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',

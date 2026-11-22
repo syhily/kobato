@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user } from '@kobato/db/schema/user'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
@@ -14,7 +15,7 @@ const db = getTestDb()
 let seq = 0
 async function seedUser(role: 'admin' | 'visitor', name: string): Promise<number> {
   seq += 1
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `${name}-${seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })
@@ -232,7 +233,11 @@ describe('integration / notifications controller', () => {
     )
 
     await flushAuditLog()
-    const auditRows = db.select().from(auditLog).where(eq(auditLog.action, 'notification_broadcast_recalled')).all()
+    const auditRows = sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'notification_broadcast_recalled'))
+      .all()
     expect(auditRows).toHaveLength(1)
     expect(auditRows[0]!.resourceId).toBe(item.id)
   })
@@ -249,7 +254,7 @@ describe('integration / notifications controller', () => {
     expect(recalled.status).toBe(200)
 
     await flushAuditLog()
-    const rows = db.select().from(auditLog).where(eq(auditLog.action, 'notification_admin_recalled')).all()
+    const rows = sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'notification_admin_recalled')).all()
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceId).toBe(String(row.id))
   })

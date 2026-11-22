@@ -1,15 +1,17 @@
-import { content as contentTable } from '@kobato/db/schema/content'
-import { page as pageMetaTable } from '@kobato/db/schema/page'
-import { post as postMetaTable } from '@kobato/db/schema/post'
-import { saveDraftRevision, publishLatestRevision } from '@kobato/server/domains/content/repos/mutate'
+import { sqliteOf } from '@kobato/db/database'
 import {
   findContentById,
   findContentsByIds,
   findLatestRevision,
   findLatestDraft,
   listRevisions,
-} from '@kobato/server/domains/content/revisions'
-import { DomainError } from '@kobato/server/infra/http/errors'
+  MissingContentOwnerError,
+  publishLatestRevision,
+  saveDraftRevision,
+} from '@kobato/db/operations/entity-revision'
+import { content as contentTable } from '@kobato/db/schema/content'
+import { page as pageMetaTable } from '@kobato/db/schema/page'
+import { post as postMetaTable } from '@kobato/db/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'
@@ -24,18 +26,18 @@ beforeEach(async () => {
 const body = lexicalBodyWith([lexicalParagraph('hi')])
 
 async function seedPostMeta(slug = 'p1', title = 'P1') {
-  const [m] = await db.insert(postMetaTable).values({ slug, title }).returning()
+  const [m] = await sqliteOf(db).insert(postMetaTable).values({ slug, title }).returning()
   return m
 }
 
 async function seedPageMeta(slug = 'pg1', title = 'PG1') {
-  const [m] = await db.insert(pageMetaTable).values({ slug, title }).returning()
+  const [m] = await sqliteOf(db).insert(pageMetaTable).values({ slug, title }).returning()
   return m
 }
 
 describe('content/repos/mutate — saveDraftRevision', () => {
   it('throws NOT_FOUND when the meta row does not exist', async () => {
-    await expect(
+    expect(() =>
       saveDraftRevision(db, 'post', {
         ownerId: 999,
         body,
@@ -43,7 +45,7 @@ describe('content/repos/mutate — saveDraftRevision', () => {
         headings: [],
         authorId: null,
       }),
-    ).rejects.toBeInstanceOf(DomainError)
+    ).toThrow(MissingContentOwnerError)
   })
 
   it('inserts a new draft when none exists', async () => {
@@ -74,7 +76,7 @@ describe('content/repos/mutate — saveDraftRevision', () => {
     })
     expect(second.status).toBe('saved')
     if (second.status === 'saved') {
-      const rows = await db.select().from(contentTable)
+      const rows = await sqliteOf(db).select().from(contentTable)
       expect(rows).toHaveLength(1)
       expect(second.row.imageSources).toEqual(['/new.png'])
     }
@@ -162,7 +164,7 @@ describe('content/repos/mutate — publishLatestRevision', () => {
       expect(result.row.status).toBe('published')
       expect(result.row.revisionNo).toBe(1)
     }
-    const updated = await db.select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
+    const updated = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
     expect(updated[0]!.published).toBe(true)
   })
 
@@ -217,11 +219,11 @@ describe('content/repos/query — basic lookups', () => {
   })
 
   it('findContentsByIds returns matching rows', async () => {
-    const [a] = await db
+    const [a] = await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'post', ownerId: 1, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] })
       .returning()
-    const [b] = await db
+    const [b] = await sqliteOf(db)
       .insert(contentTable)
       .values({
         type: 'post',
@@ -238,21 +240,25 @@ describe('content/repos/query — basic lookups', () => {
   })
 
   it('findLatestRevision returns the highest revisionNo', async () => {
-    await db.insert(contentTable).values([
-      { type: 'post', ownerId: 5, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5, revisionNo: 3, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
-    ])
+    await sqliteOf(db)
+      .insert(contentTable)
+      .values([
+        { type: 'post', ownerId: 5, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
+        { type: 'post', ownerId: 5, revisionNo: 3, status: 'published', body: [], imageSources: [], headings: [] },
+        { type: 'post', ownerId: 5, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      ])
     const latest = await findLatestRevision(db, 'post', 5)
     expect(latest).not.toBeNull()
     expect(latest!.revisionNo).toBe(3)
   })
 
   it('findLatestDraft returns the latest draft only', async () => {
-    await db.insert(contentTable).values([
-      { type: 'page', ownerId: 7, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'page', ownerId: 7, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
-    ])
+    await sqliteOf(db)
+      .insert(contentTable)
+      .values([
+        { type: 'page', ownerId: 7, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
+        { type: 'page', ownerId: 7, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      ])
     const draft = await findLatestDraft(db, 'page', 7)
     expect(draft).not.toBeNull()
     expect(draft!.status).toBe('draft')
@@ -260,11 +266,13 @@ describe('content/repos/query — basic lookups', () => {
   })
 
   it('listRevisions returns revisions in descending order with limit', async () => {
-    await db.insert(contentTable).values([
-      { type: 'post', ownerId: 9, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9, revisionNo: 2, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9, revisionNo: 3, status: 'draft', body: [], imageSources: [], headings: [] },
-    ])
+    await sqliteOf(db)
+      .insert(contentTable)
+      .values([
+        { type: 'post', ownerId: 9, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
+        { type: 'post', ownerId: 9, revisionNo: 2, status: 'published', body: [], imageSources: [], headings: [] },
+        { type: 'post', ownerId: 9, revisionNo: 3, status: 'draft', body: [], imageSources: [], headings: [] },
+      ])
     const list = await listRevisions(db, 'post', 9, 2)
     expect(list).toHaveLength(2)
     expect(list[0]!.revisionNo).toBe(3)

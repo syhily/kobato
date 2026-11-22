@@ -8,7 +8,6 @@ import { SEARCH_KEYWORD_MAX_LENGTH } from '@kobato/api/contracts/content'
 import { toClientPost, toListingPostCard } from '@kobato/catalog/projection'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { pagePath, searchRootPath } from '@kobato/server/domains/content/urls'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
 import { getClientPostsWithMetadata, getPostsBySlugs } from '@kobato/server/domains/posts/services/public-query'
 import { searchPostOptions, searchPosts } from '@kobato/server/domains/posts/services/search-query'
 import { parseListingPage } from '@kobato/server/http/loaders/pagination'
@@ -37,8 +36,7 @@ export async function searchLoader(
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content', settings).pagination.search
-  const liveWhere = livePostWhere()
-  const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
+  const { hits, page, totalPages } = await searchPosts(db, query, pageSize, (pageNum - 1) * pageSize)
   if (auditContext !== undefined && query.length > 0 && query.length <= SEARCH_KEYWORD_MAX_LENGTH) {
     recordAuditEventFromContext(auditContext, {
       action: 'search',

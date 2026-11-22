@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user } from '@kobato/db/schema/user'
@@ -26,7 +27,7 @@ afterEach(async () => {
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Test User',
@@ -48,14 +49,14 @@ beforeEach(async () => {
 })
 
 async function findSessionRow(sid: string) {
-  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
   return rows[0]
 }
 
 describe('establishLoginSession', () => {
   it('writes a session row stamped with the user and login meta', async () => {
     const userId = await seedUser()
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -76,7 +77,7 @@ describe('establishLoginSession', () => {
 
   it('supports revocation via revokeAllSessionsOfUser', async () => {
     const userId = await seedUser({ email: 'revoke@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -94,7 +95,7 @@ describe('establishLoginSession', () => {
 
   it('emits an audit event on successful login', async () => {
     const userId = await seedUser({ email: 'audit@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -105,7 +106,7 @@ describe('establishLoginSession', () => {
 
     await flushAuditLog()
 
-    const events = await db.select().from(auditLog).where(eq(auditLog.resourceId, result.sid)).limit(1)
+    const events = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.resourceId, result.sid)).limit(1)
     expect(events).toHaveLength(1)
     expect(events[0].action).toBe('login')
     expect(events[0].resourceType).toBe('session')
@@ -116,7 +117,7 @@ describe('establishLoginSession', () => {
 
   it('revokes existing sessions when revokeOtherSessions is set', async () => {
     const userId = await seedUser({ email: 'rotate@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -137,7 +138,7 @@ describe('establishLoginSession', () => {
 
   it('throws when the user has no role', async () => {
     const userId = await seedUser({ email: 'no-role@example.com', role: null })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))

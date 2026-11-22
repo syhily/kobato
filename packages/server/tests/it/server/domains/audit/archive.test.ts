@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -32,7 +33,9 @@ const db = getTestDb()
 const OLD_DAY = new Date('2026-01-01T12:00:00Z')
 
 async function seedAuditRow(overrides: Partial<typeof auditLog.$inferInsert> = {}): Promise<void> {
-  await db.insert(auditLog).values({ action: 'login', resourceType: 'session', createdAt: OLD_DAY, ...overrides })
+  await sqliteOf(db)
+    .insert(auditLog)
+    .values({ action: 'login', resourceType: 'session', createdAt: OLD_DAY, ...overrides })
 }
 
 type StorageOverrides = Partial<NonNullable<(typeof TEST_BLOG_SETTINGS_BUNDLE)['assets']>['storage']>
@@ -74,7 +77,7 @@ describe('audit/archive', () => {
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 0 })
       expect(sendMock).not.toHaveBeenCalled()
-      expect(await db.select().from(auditLog)).toHaveLength(1)
+      expect(await sqliteOf(db).select().from(auditLog)).toHaveLength(1)
     })
 
     it('archives expired rows and deletes them after a successful upload', async () => {
@@ -91,7 +94,7 @@ describe('audit/archive', () => {
       expect(input.ContentType).toBe('application/gzip')
       expect(input.CacheControl).toContain('private')
 
-      const remaining = await db.select().from(auditLog)
+      const remaining = await sqliteOf(db).select().from(auditLog)
       expect(remaining).toHaveLength(1)
       expect(remaining[0]?.action).toBe('fresh')
     })
@@ -105,7 +108,7 @@ describe('audit/archive', () => {
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 2 })
       expect(sendMock).not.toHaveBeenCalled()
-      const remaining = await db.select().from(auditLog)
+      const remaining = await sqliteOf(db).select().from(auditLog)
       expect(remaining).toHaveLength(1)
       expect(remaining[0]?.action).toBe('fresh')
     })
@@ -117,7 +120,7 @@ describe('audit/archive', () => {
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 1 })
       expect(sendMock).not.toHaveBeenCalled()
-      expect(await db.select().from(auditLog)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(auditLog)).toHaveLength(0)
     })
 
     it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
@@ -127,7 +130,7 @@ describe('audit/archive', () => {
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 1 })
       expect(sendMock).not.toHaveBeenCalled()
-      expect(await db.select().from(auditLog)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(auditLog)).toHaveLength(0)
       expect(__logCaptureForTests().filter((e) => e.level === 'warn')).toHaveLength(1)
       expect(__logCaptureForTests()).toContainEqual(
         expect.objectContaining({
@@ -144,19 +147,19 @@ describe('audit/archive', () => {
       for (let i = 0; i < 5; i++) {
         await seedAuditRow()
       }
-      const ids = (await db.select({ id: auditLog.id }).from(auditLog)).map((row) => row.id)
+      const ids = (await sqliteOf(db).select({ id: auditLog.id }).from(auditLog)).map((row) => row.id)
       expect(ids).toHaveLength(5)
-      const deleteSpy = vi.spyOn(db, 'delete')
+      const deleteSpy = vi.spyOn(sqliteOf(db), 'delete')
 
       const deleted = await deleteArchivedRows(db, ids, 2)
 
       expect(deleted).toBe(5)
       expect(deleteSpy).toHaveBeenCalledTimes(3)
-      expect(await db.select().from(auditLog)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(auditLog)).toHaveLength(0)
     })
 
     it('deletes nothing for an empty id list', async () => {
-      const deleteSpy = vi.spyOn(db, 'delete')
+      const deleteSpy = vi.spyOn(sqliteOf(db), 'delete')
 
       expect(await deleteArchivedRows(db, [])).toBe(0)
       expect(deleteSpy).not.toHaveBeenCalled()

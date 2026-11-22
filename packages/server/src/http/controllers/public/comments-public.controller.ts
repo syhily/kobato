@@ -1,6 +1,7 @@
 import type { CommentReq } from '@kobato/api/contracts/comments'
 
 import { commentsPublicContract } from '@kobato/api/rpc/public/comments'
+import { findCommentWithUserById } from '@kobato/db/operations/comment'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { verifyCommentAccess } from '@kobato/server/domains/comments/services/access'
@@ -8,7 +9,6 @@ import {
   parseCommentTokensCookie,
   serializeCommentTokensCookie,
 } from '@kobato/server/domains/comments/services/comment-token'
-import { findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup'
 import { applyOwnCommentEdit } from '@kobato/server/domains/comments/services/moderate'
 import { createComment } from '@kobato/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@kobato/server/domains/comments/services/public-query'

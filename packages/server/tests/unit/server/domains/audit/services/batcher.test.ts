@@ -1,5 +1,6 @@
 import type { DatabaseHandle } from '@kobato/db/database'
 
+import { databaseOf, sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -32,8 +33,11 @@ describe('audit batcher', () => {
     vi.clearAllMocks()
     resetAllBatchers()
     handle = getDatabaseHandle()
-    await clearAllTables(handle.db)
-    handle.db.insert(user).values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' }).run()
+    await clearAllTables(databaseOf(handle))
+    sqliteOf(databaseOf(handle))
+      .insert(user)
+      .values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' })
+      .run()
     initAllBatchers(handle)
   })
 
@@ -51,7 +55,7 @@ describe('audit batcher', () => {
     const result = await flushAuditLog()
     expect(result).toEqual({ committed: 1, deadLettered: 0 })
 
-    const rows = handle.db.select().from(auditLog).all()
+    const rows = sqliteOf(databaseOf(handle)).select().from(auditLog).all()
     expect(rows).toHaveLength(1)
     expect(rows[0]!.action).toBe('post.create')
     expect(rows[0]!.actorId).toBe(1)
@@ -62,7 +66,7 @@ describe('audit batcher', () => {
     pushAuditEvent(makeEvent({ action: 'b' }))
     const result = await flushAuditLog()
     expect(result).toEqual({ committed: 2, deadLettered: 0 })
-    expect(handle.db.select().from(auditLog).all()).toHaveLength(2)
+    expect(sqliteOf(databaseOf(handle)).select().from(auditLog).all()).toHaveLength(2)
   })
 
   it('falls back to per-row inserts when the batch fails (bad row dead-letters, good row commits)', async () => {
@@ -73,7 +77,7 @@ describe('audit batcher', () => {
 
     expect(result.committed).toBe(1)
     expect(result.deadLettered).toBe(1)
-    const rows = handle.db.select().from(auditLog).all()
+    const rows = sqliteOf(databaseOf(handle)).select().from(auditLog).all()
     expect(rows).toHaveLength(1)
     expect(rows[0]!.action).toBe('good.action')
   })

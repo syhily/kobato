@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { session } from '@kobato/db/schema/session'
 import { user } from '@kobato/db/schema/user'
@@ -23,14 +24,18 @@ describe('sweepExpiredKvEntries', () => {
     await setItem('feed', 'k:expired', { json: 1 }, { ttlSeconds: -60 })
     await setItem('feed', 'k:live', { json: 2 }, { ttlSeconds: 3600 })
     await setItem('feed', 'k:immortal', { json: 3 })
-    await db.insert(oneTimeToken).values([
-      { key: 'comment:token:expired', payload: { json: {} }, expiresAt: past() },
-      { key: 'comment:token:live', payload: { json: {} }, expiresAt: future() },
-    ])
-    await db.insert(session).values([
-      { id: 'expired-sid', data: { json: {} }, expiresAt: past() },
-      { id: 'live-sid', data: { json: {} }, expiresAt: future() },
-    ])
+    await sqliteOf(db)
+      .insert(oneTimeToken)
+      .values([
+        { key: 'comment:token:expired', payload: { json: {} }, expiresAt: past() },
+        { key: 'comment:token:live', payload: { json: {} }, expiresAt: future() },
+      ])
+    await sqliteOf(db)
+      .insert(session)
+      .values([
+        { id: 'expired-sid', data: { json: {} }, expiresAt: past() },
+        { id: 'live-sid', data: { json: {} }, expiresAt: future() },
+      ])
 
     await sweepExpiredKvEntries(db)
 
@@ -38,10 +43,10 @@ describe('sweepExpiredKvEntries', () => {
     await expect(getItemWithExpiry('feed', 'k:expired')).resolves.toBeNull()
     await expect(getItemWithExpiry('feed', 'k:live')).resolves.toMatchObject({ value: { json: 2 } })
     await expect(getItemWithExpiry('feed', 'k:immortal')).resolves.toMatchObject({ value: { json: 3 } })
-    expect((await db.select({ key: oneTimeToken.key }).from(oneTimeToken)).map((row) => row.key)).toEqual([
+    expect((await sqliteOf(db).select({ key: oneTimeToken.key }).from(oneTimeToken)).map((row) => row.key)).toEqual([
       'comment:token:live',
     ])
-    expect((await db.select({ id: session.id }).from(session)).map((row) => row.id)).toEqual(['live-sid'])
+    expect((await sqliteOf(db).select({ id: session.id }).from(session)).map((row) => row.id)).toEqual(['live-sid'])
   })
 
   it('reaps aged _tmp orphans and trash dirs, leaving young ones alone', async () => {
@@ -69,22 +74,24 @@ describe('sweepExpiredKvEntries', () => {
 
   it('is a no-op on empty storage', async () => {
     await sweepExpiredKvEntries(db)
-    expect(await db.select().from(oneTimeToken)).toEqual([])
-    expect(await db.select().from(session)).toEqual([])
+    expect(await sqliteOf(db).select().from(oneTimeToken)).toEqual([])
+    expect(await sqliteOf(db).select().from(session)).toEqual([])
     expect(await countEntryFiles('feed')).toBe(0)
   })
 })
 
 describe('session table — user FK cascade', () => {
   it('deletes the session rows when their user is deleted', async () => {
-    const [admin] = await db
+    const [admin] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
       .returning({ id: user.id })
-    await db.insert(session).values({ id: 'owned-sid', userId: admin.id, data: { json: {} }, expiresAt: future() })
+    await sqliteOf(db)
+      .insert(session)
+      .values({ id: 'owned-sid', userId: admin.id, data: { json: {} }, expiresAt: future() })
 
-    await db.delete(user)
+    await sqliteOf(db).delete(user)
 
-    expect(await db.select().from(session)).toEqual([])
+    expect(await sqliteOf(db).select().from(session)).toEqual([])
   })
 })

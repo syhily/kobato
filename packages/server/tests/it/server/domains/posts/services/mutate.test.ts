@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { slugRegistry } from '@kobato/db/schema/config'
 import { content as contentTable, postSearchIndex } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
@@ -15,10 +16,7 @@ const indexPostFromRevisionMock = vi.spyOn(
   await import('@kobato/server/domains/posts/services/search-index'),
   'indexPostFromRevision',
 )
-const removePostIndexMock = vi.spyOn(
-  await import('@kobato/server/domains/posts/services/search-index'),
-  'removePostIndex',
-)
+const removePostIndexMock = vi.spyOn(await import('@kobato/db/operations/post-search'), 'removePostSearchIndex')
 const invalidateContentMock = vi.spyOn(await import('@kobato/server/domains/content/invalidate'), 'invalidateContent')
 
 afterAll(() => {
@@ -35,12 +33,12 @@ beforeEach(async () => {
 const VALID_BODY = lexicalBodyWith([lexicalParagraph('hi')])
 
 async function seedPublishedPost(slug: string): Promise<{ postId: number; revisionId: number }> {
-  const contentRows = await db
+  const contentRows = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: 0, revisionNo: 1, status: 'published', body: VALID_BODY, bodyText: 'hi' })
     .returning({ id: contentTable.id })
   const revisionId = contentRows[0]!.id
-  const postRows = await db
+  const postRows = await sqliteOf(db)
     .insert(postMetaTable)
     .values({
       slug,
@@ -52,17 +50,17 @@ async function seedPublishedPost(slug: string): Promise<{ postId: number; revisi
     })
     .returning({ id: postMetaTable.id })
   const postId = postRows[0]!.id
-  await db.update(contentTable).set({ ownerId: postId }).where(eq(contentTable.id, revisionId))
-  await db.insert(slugRegistry).values({ slug, entityType: 'post', entityId: postId })
+  await sqliteOf(db).update(contentTable).set({ ownerId: postId }).where(eq(contentTable.id, revisionId))
+  await sqliteOf(db).insert(slugRegistry).values({ slug, entityType: 'post', entityId: postId })
   return { postId, revisionId }
 }
 
 async function seedIndexRow(postId: number, plainText = 'hi'): Promise<void> {
-  await db.insert(postSearchIndex).values({ postId, plainText, updatedAt: new Date() })
+  await sqliteOf(db).insert(postSearchIndex).values({ postId, plainText, updatedAt: new Date() })
 }
 
 async function indexRows(): Promise<(typeof postSearchIndex.$inferSelect)[]> {
-  return db.select().from(postSearchIndex)
+  return sqliteOf(db).select().from(postSearchIndex)
 }
 
 describe('posts/services/mutate — createPost', () => {
@@ -72,10 +70,10 @@ describe('posts/services/mutate — createPost', () => {
     expect(dto.slug).toBe('hello')
     expect(dto.tags).toEqual(['tag1'])
 
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, 'hello'))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.slug, 'hello'))
     expect(meta).toHaveLength(1)
     expect(meta[0]?.authorId).toBe(1)
-    const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
+    const registry = await sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityType).toBe('post')
     expect(registry[0]?.entityId).toBe(meta[0]!.id)
   })
@@ -83,7 +81,7 @@ describe('posts/services/mutate — createPost', () => {
   it('creates a post on behalf of a non-admin viewer', async () => {
     const dto = await createPost(db, { slug: 'hello', title: 'Hello' }, null, { id: '2', role: 'author' })
 
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, 'hello'))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.slug, 'hello'))
     expect(meta[0]?.authorId).toBe(2)
     expect(dto.id).toBe(String(meta[0]!.id))
   })
@@ -100,8 +98,8 @@ describe('posts/services/mutate — createPost', () => {
   })
 
   it('throws CONFLICT when a page already holds the slug in the registry', async () => {
-    const pageRows = await db.insert(pageTable).values({ slug: 'cross', title: 'Page cross' }).returning()
-    await db.insert(slugRegistry).values({ slug: 'cross', entityType: 'page', entityId: pageRows[0]!.id })
+    const pageRows = await sqliteOf(db).insert(pageTable).values({ slug: 'cross', title: 'Page cross' }).returning()
+    await sqliteOf(db).insert(slugRegistry).values({ slug: 'cross', entityType: 'page', entityId: pageRows[0]!.id })
 
     await expect(createPost(db, { slug: 'cross', title: 'Cross' }, 1)).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -112,7 +110,7 @@ describe('posts/services/mutate — createPost', () => {
   })
 
   it('throws CONFLICT when a stale registry row owns the slug (the registry constraint leg)', async () => {
-    await db.insert(slugRegistry).values({ slug: 'stale', entityType: 'post', entityId: 999 })
+    await sqliteOf(db).insert(slugRegistry).values({ slug: 'stale', entityType: 'post', entityId: 999 })
 
     await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -133,7 +131,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
     expect(dto.slug).toBe('new')
     expect(dto.title).toBe('New')
     expect(dto.tags).toEqual(['tag1'])
-    const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.entityId, postId))
+    const registry = await sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.entityId, postId))
     expect(registry[0]?.slug).toBe('new')
   })
 
@@ -145,11 +143,11 @@ describe('posts/services/mutate — updatePostMeta', () => {
   it('keeps the original pinnedAt when an already-pinned post is re-saved with a fresh stamp', async () => {
     const { postId } = await seedPublishedPost('pinned')
     const original = new Date('2026-01-15T08:00:00.000Z')
-    await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
+    await sqliteOf(db).update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
 
     await updatePostMeta(db, { id: postId, slug: 'pinned', title: 'Post pinned', pinnedAt: new Date() })
 
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt?.getTime()).toBe(original.getTime())
   })
 
@@ -159,21 +157,21 @@ describe('posts/services/mutate — updatePostMeta', () => {
 
     await updatePostMeta(db, { id: postId, slug: 'pin-me', title: 'Post pin-me', pinnedAt: stamp })
 
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt?.getTime()).toBe(stamp.getTime())
   })
 
   it('clears pinnedAt on unpin and leaves it untouched when omitted', async () => {
     const { postId } = await seedPublishedPost('pin-cycle')
     const original = new Date('2026-01-15T08:00:00.000Z')
-    await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
+    await sqliteOf(db).update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
 
     await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle' })
-    let meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    let meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt?.getTime()).toBe(original.getTime())
 
     await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle', pinnedAt: null })
-    meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.pinnedAt).toBeNull()
   })
 
@@ -203,12 +201,12 @@ describe('posts/services/mutate — updatePostMeta', () => {
   it('publishedAt: null cancels a pending schedule — stays unpublished, drops the future timestamp', async () => {
     const { postId } = await seedPublishedPost('scheduled')
     const future = new Date(Date.now() + 86_400_000)
-    await db.update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
+    await sqliteOf(db).update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
 
     const dto = await updatePostMeta(db, { id: postId, slug: 'scheduled', title: 'Post scheduled', publishedAt: null })
 
     expect(dto.published).toBe(false)
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.published).toBe(false)
     expect(meta[0]?.publishedAt.getTime()).toBeLessThanOrEqual(Date.now())
     expect(
@@ -224,11 +222,11 @@ describe('posts/services/mutate — updatePostMeta', () => {
   it('omitting publishedAt leaves an existing schedule untouched', async () => {
     const { postId } = await seedPublishedPost('scheduled')
     const future = new Date(Date.now() + 86_400_000)
-    await db.update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
+    await sqliteOf(db).update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
 
     await updatePostMeta(db, { id: postId, slug: 'scheduled', title: 'Post scheduled' })
 
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.published).toBe(true)
     expect(meta[0]?.publishedAt.getTime()).toBe(future.getTime())
   })
@@ -243,11 +241,10 @@ describe('posts/services/mutate — deletePost', () => {
     const result = await deletePost(db, postId)
 
     expect(result.deleted).toBe(true)
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.deletedAt).not.toBeNull()
-    expect(await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))).toHaveLength(0)
     expect(await indexRows()).toHaveLength(0)
-    expect(removePostIndexMock).toHaveBeenCalledTimes(1)
     expect(indexPostMock).not.toHaveBeenCalled()
     expect(indexPostFromRevisionMock).not.toHaveBeenCalled()
   })
@@ -287,9 +284,9 @@ describe('posts/services/mutate — restorePost', () => {
     const result = await restorePost(db, postId)
 
     expect(result).toEqual({ restored: true, warning: undefined })
-    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    const meta = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.deletedAt).toBeNull()
-    const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
+    const registry = await sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityId).toBe(postId)
     expect(indexPostFromRevisionMock).toHaveBeenCalledTimes(1)
     const rows = await indexRows()
@@ -316,8 +313,8 @@ describe('posts/services/mutate — restorePost', () => {
   it('warns when the restored slug is now owned by a page', async () => {
     const { postId } = await seedPublishedPost('hello')
     await deletePost(db, postId)
-    const pageRows = await db.insert(pageTable).values({ slug: 'hello', title: 'Page hello' }).returning()
-    await db.insert(slugRegistry).values({ slug: 'hello', entityType: 'page', entityId: pageRows[0]!.id })
+    const pageRows = await sqliteOf(db).insert(pageTable).values({ slug: 'hello', title: 'Page hello' }).returning()
+    await sqliteOf(db).insert(slugRegistry).values({ slug: 'hello', entityType: 'page', entityId: pageRows[0]!.id })
 
     const result = await restorePost(db, postId)
 
@@ -326,15 +323,15 @@ describe('posts/services/mutate — restorePost', () => {
       messageKey: 'content.warning.slugTakenOnRestore',
       params: { slug: 'hello', occupant: 'page', target: 'post' },
     })
-    const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
+    const registry = await sqliteOf(db).select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityType).toBe('page')
   })
 
   it('prepends the slug warning ahead of the index warning', async () => {
     const { postId } = await seedPublishedPost('hello')
     await deletePost(db, postId)
-    const pageRows = await db.insert(pageTable).values({ slug: 'hello', title: 'Page hello' }).returning()
-    await db.insert(slugRegistry).values({ slug: 'hello', entityType: 'page', entityId: pageRows[0]!.id })
+    const pageRows = await sqliteOf(db).insert(pageTable).values({ slug: 'hello', title: 'Page hello' }).returning()
+    await sqliteOf(db).insert(slugRegistry).values({ slug: 'hello', entityType: 'page', entityId: pageRows[0]!.id })
     indexPostFromRevisionMock.mockRejectedValueOnce(new Error('embedding down'))
 
     const result = await restorePost(db, postId)

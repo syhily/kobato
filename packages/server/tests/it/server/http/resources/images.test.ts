@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { post as postTable } from '@kobato/db/schema/post'
@@ -39,7 +40,7 @@ function requestImages(url: string, headers?: Record<string, string>) {
 }
 
 async function seedLivePost(slug: string): Promise<void> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug,
@@ -52,15 +53,18 @@ async function seedLivePost(slug: string): Promise<void> {
       visible: true,
     })
     .returning({ id: postTable.id })
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, rows[0]!.id))
+  await sqliteOf(db)
+    .update(postTable)
+    .set({ publishedRevisionId: revisions[0]!.id })
+    .where(eq(postTable.id, rows[0]!.id))
 }
 
 async function seedLivePage(slug: string): Promise<void> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug,
@@ -72,11 +76,14 @@ async function seedLivePage(slug: string): Promise<void> {
       firstPublishedAt: new Date('2024-01-01'),
     })
     .returning({ id: pageTable.id })
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'page', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, rows[0]!.id))
+  await sqliteOf(db)
+    .update(pageTable)
+    .set({ publishedRevisionId: revisions[0]!.id })
+    .where(eq(pageTable.id, rows[0]!.id))
 }
 
 const coverDataUri = `data:image/png;base64,${(
@@ -136,7 +143,9 @@ describe('images resource', () => {
   })
 
   it('renders an OG image for a category', async () => {
-    await db.insert(categoryTable).values({ name: 'Code', slug: 'code', description: '', cover: coverDataUri })
+    await sqliteOf(db)
+      .insert(categoryTable)
+      .values({ name: 'Code', slug: 'code', description: '', cover: coverDataUri })
     const res = await requestImages('http://localhost/images/og/cats/code.png')
     expect(res.status).toBe(200)
   })

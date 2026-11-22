@@ -1,8 +1,7 @@
 import type { Database } from '@kobato/db/database'
 
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
+import { findLiveOneTimeToken, deleteOneTimeToken, upsertOneTimeToken } from '@kobato/db/operations/one-time-token'
 import { boxLog } from '@kobato/server/infra/logger/box-console'
-import { and, eq, gt } from 'drizzle-orm'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 
 const TOKEN_KEY = 'setup_token'
@@ -11,12 +10,7 @@ const TTL_SECONDS = 7 * 24 * 60 * 60
 let tokenInvalidated = false
 
 async function readSetupToken(db: Database): Promise<string | null> {
-  const rows = await db
-    .select({ payload: oneTimeToken.payload })
-    .from(oneTimeToken)
-    .where(and(eq(oneTimeToken.key, TOKEN_KEY), gt(oneTimeToken.expiresAt, new Date())))
-    .limit(1)
-  const payload = rows[0]?.payload
+  const payload = await findLiveOneTimeToken(db, TOKEN_KEY)
   try {
     return typeof payload === 'string' ? payload : null
   } catch {
@@ -33,10 +27,7 @@ export async function getSetupToken(db: Database): Promise<string> {
     token = randomBytes(32).toString('hex')
     const payload = token
     const expiresAt = new Date(Date.now() + TTL_SECONDS * 1000)
-    await db.insert(oneTimeToken).values({ key: TOKEN_KEY, payload, expiresAt }).onConflictDoUpdate({
-      target: oneTimeToken.key,
-      set: { payload, expiresAt },
-    })
+    await upsertOneTimeToken(db, { key: TOKEN_KEY, payload, expiresAt })
   }
   boxLog(['Setup token generated (valid until first admin is created):', token], { style: 'bold', align: 'center' })
   return token
@@ -44,7 +35,7 @@ export async function getSetupToken(db: Database): Promise<string> {
 
 export async function invalidateSetupToken(db: Database): Promise<void> {
   tokenInvalidated = true
-  await db.delete(oneTimeToken).where(eq(oneTimeToken.key, TOKEN_KEY))
+  await deleteOneTimeToken(db, TOKEN_KEY)
 }
 
 export function __resetSetupTokenForTests(): void {

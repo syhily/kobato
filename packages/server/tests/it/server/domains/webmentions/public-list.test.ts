@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { ensureMetric } from '@kobato/db/operations/metric'
 import { setWebmentionStatus, upsertWebmention } from '@kobato/db/operations/webmention'
 import { post } from '@kobato/db/schema/post'
@@ -15,7 +16,7 @@ const db = getTestDb()
 const TARGET_URL = 'https://example.com/posts/wm-target/'
 
 async function seedLivePost(overrides: Partial<typeof post.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug: 'wm-target',
@@ -61,7 +62,10 @@ async function seedMention(
 }
 
 async function approvedIds(): Promise<number[]> {
-  const rows = await db.select({ id: webmention.id }).from(webmention).where(eq(webmention.status, 'approved'))
+  const rows = await sqliteOf(db)
+    .select({ id: webmention.id })
+    .from(webmention)
+    .where(eq(webmention.status, 'approved'))
   return rows.map((row) => row.id).sort((a, b) => a - b)
 }
 

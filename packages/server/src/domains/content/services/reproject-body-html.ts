@@ -1,10 +1,13 @@
 import type { Database } from '@kobato/db/database'
 
-import { content } from '@kobato/db/schema/content'
+import {
+  countContentRows,
+  listContentProjectionRows,
+  updateContentProjections,
+} from '@kobato/db/operations/entity-asset'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger } from '@kobato/server/infra/logger'
-import { count, eq } from 'drizzle-orm'
 
 const log = getLogger('content.reproject-body-html')
 
@@ -29,24 +32,8 @@ export async function reprojectBodyHtmlBatch(
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50
 
-  const rows = await db
-    .select({
-      id: content.id,
-      type: content.type,
-      ownerId: content.ownerId,
-      revisionNo: content.revisionNo,
-      body: content.body,
-      bodyHtml: content.bodyHtml,
-      bodyText: content.bodyText,
-      bodyHtmlFeed: content.bodyHtmlFeed,
-    })
-    .from(content)
-    .orderBy(content.id)
-    .limit(batchSize)
-    .offset(offset)
-
-  const totalRows = await db.select({ count: count() }).from(content)
-  const total = totalRows[0].count
+  const rows = await listContentProjectionRows(db, offset, batchSize)
+  const total = await countContentRows(db)
 
   let processed = 0
   let failed = 0
@@ -64,14 +51,7 @@ export async function reprojectBodyHtmlBatch(
         projections.bodyText !== row.bodyText ||
         projections.bodyHtmlFeed !== row.bodyHtmlFeed
       ) {
-        await db
-          .update(content)
-          .set({
-            bodyHtml: projections.bodyHtml,
-            bodyText: projections.bodyText,
-            bodyHtmlFeed: projections.bodyHtmlFeed,
-          })
-          .where(eq(content.id, row.id))
+        await updateContentProjections(db, row.id, projections)
         rewritten++
       }
     } catch (err) {

@@ -11,10 +11,17 @@ import type {
 
 import { isValidPasskeyDomain } from '@kobato/auth/network'
 import { isUniqueConstraintError } from '@kobato/db/errors'
+import { consumeLiveOneTimeToken, upsertOneTimeToken } from '@kobato/db/operations/one-time-token'
+import {
+  deletePasskeyCredentialsAndMaybeRevertLogin,
+  findPasskeyByCredentialId,
+  insertPasskeyCredential,
+  listCredentialIdsForUser,
+  listCredentialMetasForUser,
+  setUserLoginMethod,
+  updatePasskeyCounter,
+} from '@kobato/db/operations/passkey'
 import { findSafeUserById, findUserByEmail } from '@kobato/db/operations/user'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
-import { passkeyCredential } from '@kobato/db/schema/passkey'
-import { user } from '@kobato/db/schema/user'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
@@ -28,7 +35,6 @@ import {
   verifyAuthenticationResponse as swaVerifyAuthenticationResponse,
   verifyRegistrationResponse as swaVerifyRegistrationResponse,
 } from '@simplewebauthn/server'
-import { and, eq, gt } from 'drizzle-orm'
 
 const log = getLogger('auth.passkey')
 
@@ -55,13 +61,7 @@ async function storeChallenge(
 ): Promise<void> {
   const payload = data
   const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000)
-  await db
-    .insert(oneTimeToken)
-    .values({ key: `${prefix}${challenge}`, payload, expiresAt })
-    .onConflictDoUpdate({
-      target: oneTimeToken.key,
-      set: { payload, expiresAt },
-    })
+  await upsertOneTimeToken(db, { key: `${prefix}${challenge}`, payload, expiresAt })
 }
 
 async function consumeChallenge(
@@ -71,11 +71,7 @@ async function consumeChallenge(
 ): Promise<Record<string, unknown> | null> {
   const key = `${prefix}${challenge}`
   try {
-    const rows = await db
-      .delete(oneTimeToken)
-      .where(and(eq(oneTimeToken.key, key), gt(oneTimeToken.expiresAt, new Date())))
-      .returning({ payload: oneTimeToken.payload })
-    const payload = rows[0]?.payload
+    const payload = await consumeLiveOneTimeToken(db, key)
     return isRecord(payload) ? payload : null
   } catch (error) {
     log.error('Failed to consume passkey challenge', { key, error })
@@ -93,10 +89,7 @@ export async function generateRegistrationOptions(
   deviceName?: string,
 ): Promise<RegistrationBeginResult> {
   const { rpID, rpName } = rpConfig()
-  const existing = await db
-    .select({ credentialId: passkeyCredential.credentialId, transports: passkeyCredential.transports })
-    .from(passkeyCredential)
-    .where(eq(passkeyCredential.userId, dbUser.id))
+  const existing = await listCredentialIdsForUser(db, dbUser.id)
 
   const options = await swaGenerateRegistrationOptions({
     rpName,
@@ -157,18 +150,15 @@ export async function verifyRegistrationResponse(
   const { credential } = verification.registrationInfo
 
   try {
-    const [inserted] = await db
-      .insert(passkeyCredential)
-      .values({
-        userId: dbUser.id,
-        credentialId: credential.id,
-        publicKey: Buffer.from(credential.publicKey),
-        counter: credential.counter,
-        transports: unsafeCast<string[] | undefined>(credential.transports) ?? [],
-        deviceName: input.deviceName ?? null,
-        backedUp: verification.registrationInfo.credentialBackedUp ?? false,
-      })
-      .returning()
+    const inserted = await insertPasskeyCredential(db, {
+      userId: dbUser.id,
+      credentialId: credential.id,
+      publicKey: Buffer.from(credential.publicKey),
+      counter: credential.counter,
+      transports: unsafeCast<string[] | undefined>(credential.transports) ?? [],
+      deviceName: input.deviceName ?? null,
+      backedUp: verification.registrationInfo.credentialBackedUp ?? false,
+    })
 
     if (!inserted) {
       throw new DomainError('INTERNAL', descriptorFor('auth.passkey.error.saveFailed'))
@@ -194,10 +184,7 @@ export async function generateAuthenticationOptions(db: Database, email?: string
   if (email) {
     const targetUser = await findUserByEmail(db, email)
     if (targetUser) {
-      const creds = await db
-        .select({ credentialId: passkeyCredential.credentialId, transports: passkeyCredential.transports })
-        .from(passkeyCredential)
-        .where(eq(passkeyCredential.userId, targetUser.id))
+      const creds = await listCredentialIdsForUser(db, targetUser.id)
       allowCredentials = creds.map((c) => ({
         id: c.credentialId,
         transports: unsafeCast<('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined>(c.transports) ?? [],
@@ -236,11 +223,7 @@ export async function verifyAuthenticationResponse(
   }
 
   const credentialId = response.id
-  const [cred] = await db
-    .select()
-    .from(passkeyCredential)
-    .where(eq(passkeyCredential.credentialId, credentialId))
-    .limit(1)
+  const cred = await findPasskeyByCredentialId(db, credentialId)
 
   if (!cred) {
     throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.credentialNotFound'))
@@ -269,10 +252,7 @@ export async function verifyAuthenticationResponse(
     throw new DomainError('BAD_REQUEST', descriptorFor('auth.signin.error.accountCannotSignIn'))
   }
 
-  await db
-    .update(passkeyCredential)
-    .set({ counter: verification.authenticationInfo.newCounter, updatedAt: new Date() })
-    .where(eq(passkeyCredential.id, cred.id))
+  await updatePasskeyCounter(db, cred.id, verification.authenticationInfo.newCounter)
 
   return { user: dbUser, authMethod: 'passkey' }
 }
@@ -285,17 +265,7 @@ export interface CredentialMeta {
 }
 
 export async function listCredentials(db: Database, userId: number): Promise<CredentialMeta[]> {
-  const rows = await db
-    .select({
-      id: passkeyCredential.id,
-      credentialId: passkeyCredential.credentialId,
-      deviceName: passkeyCredential.deviceName,
-      createdAt: passkeyCredential.createdAt,
-      backedUp: passkeyCredential.backedUp,
-    })
-    .from(passkeyCredential)
-    .where(eq(passkeyCredential.userId, userId))
-    .orderBy(passkeyCredential.createdAt)
+  const rows = await listCredentialMetasForUser(db, userId)
 
   return rows.map((r) => ({
     id: r.credentialId,
@@ -305,51 +275,21 @@ export async function listCredentials(db: Database, userId: number): Promise<Cre
   }))
 }
 
-async function revertMethodWhenNoCredentials(db: Database, userId: number): Promise<void> {
-  const remaining = await db
-    .select({ id: passkeyCredential.id })
-    .from(passkeyCredential)
-    .where(eq(passkeyCredential.userId, userId))
-    .limit(1)
-  if (remaining.length === 0) {
-    await db
-      .update(user)
-      .set({ loginMethod: 'password' })
-      .where(and(eq(user.id, userId), eq(user.loginMethod, 'passkey')))
-  }
-}
-
 export async function deleteCredential(db: Database, credentialId: string, userId: number): Promise<boolean> {
-  const result = await db
-    .delete(passkeyCredential)
-    .where(and(eq(passkeyCredential.credentialId, credentialId), eq(passkeyCredential.userId, userId)))
-    .returning({ id: passkeyCredential.id })
-  if (result.length === 0) {
-    return false
-  }
-  await revertMethodWhenNoCredentials(db, userId)
-  return true
+  return deletePasskeyCredentialsAndMaybeRevertLogin(db, { credentialId, userId }) > 0
 }
 
 export async function deleteAllCredentials(db: Database, userId: number): Promise<number> {
-  const result = await db
-    .delete(passkeyCredential)
-    .where(eq(passkeyCredential.userId, userId))
-    .returning({ id: passkeyCredential.id })
-  await revertMethodWhenNoCredentials(db, userId)
-  return result.length
+  return deletePasskeyCredentialsAndMaybeRevertLogin(db, { userId })
 }
 
 export async function setLoginMethod(db: Database, userId: number, method: LoginMethod): Promise<void> {
   if (method === 'passkey') {
-    const credentials = await db
-      .select({ id: passkeyCredential.id })
-      .from(passkeyCredential)
-      .where(eq(passkeyCredential.userId, userId))
-      .limit(1)
-    if (credentials.length === 0) {
+    const outcome = setUserLoginMethod(db, userId, method)
+    if (!outcome.ok) {
       throw new DomainError('BAD_REQUEST', descriptorFor('auth.passkey.error.requireOne'))
     }
+    return
   }
-  await db.update(user).set({ loginMethod: method }).where(eq(user.id, userId))
+  setUserLoginMethod(db, userId, method)
 }

@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { post as postTable } from '@kobato/db/schema/post'
@@ -36,7 +37,7 @@ async function seedPost(opts: {
   publishedAt?: Date
   withRevision?: boolean
 }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -51,17 +52,17 @@ async function seedPost(opts: {
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
   if (opts.withRevision ?? true) {
-    const revisions = await db
+    const revisions = await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
       .returning({ id: contentTable.id })
-    await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+    await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   }
   return postId
 }
 
 async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug: opts.slug,
@@ -73,11 +74,11 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
     })
     .returning({ id: pageTable.id })
   const pageId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   return pageId
 }
 

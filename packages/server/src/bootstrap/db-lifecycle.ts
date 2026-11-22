@@ -1,7 +1,7 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
 import { NOTIFICATION_SOURCES } from '@kobato/api/contracts/notifications'
-import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/database'
 import { migrateDatabase } from '@kobato/db/migrate'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
 import {
@@ -144,13 +144,13 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
     postSwitchBackfill: async (db) => backfillStorageAssetUrls(db),
   })
   initAllBatchers(handle)
-  startLikeTokenSweep(handle.db)
+  startLikeTokenSweep(databaseOf(handle))
   return handle
 }
 
 async function initDatabase(): Promise<void> {
   const handle = wireDatabase(await engine.init())
-  sweepOrphanedJobRuns(handle.db)
+  sweepOrphanedJobRuns(databaseOf(handle))
 }
 
 if (!isVitest()) {
@@ -230,17 +230,17 @@ export async function reopenDatabase(): Promise<DatabaseHandle> {
     return open
   }
   const handle = wireDatabase(await engine.init())
-  await initAnalyticsDatabase(handle.db)
+  await initAnalyticsDatabase(databaseOf(handle))
   return handle
 }
 
 export async function reopenDatabaseAndGetDb(): Promise<Database> {
   const handle = await reopenDatabase()
-  return handle.db
+  return databaseOf(handle)
 }
 
 export function getDb(): Database {
-  return engine.get().db
+  return databaseOf(engine.get())
 }
 
 export function getDatabaseHandle(): DatabaseHandle {

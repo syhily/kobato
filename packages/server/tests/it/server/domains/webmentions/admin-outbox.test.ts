@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
 import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import { adminWebmentionsRouter } from '@kobato/server/http/controllers/admin/webmentions.controller'
@@ -17,8 +18,8 @@ describe('integration / admin webmentions outbox', () => {
   it('lists rows with per-status counts, newest first', async () => {
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/1' })
     await upsertWebmentionOutbox(db, { sourceUrl: 'https://example.com/posts/a/', targetUrl: 'https://x.dev/2' })
-    const rows = await db.select().from(webmentionOutbox)
-    await db
+    const rows = await sqliteOf(db).select().from(webmentionOutbox)
+    await sqliteOf(db)
       .update(webmentionOutbox)
       .set({ status: 'sent', endpoint: 'https://x.dev/wm', sentAt: new Date() })
       .where(eq(webmentionOutbox.id, rows[0]!.id))

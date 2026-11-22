@@ -1,6 +1,8 @@
 import type { Database } from '@kobato/db/database'
-import type { AnalyticsHandle, DuckDBLogger } from '@kobato/db/duckdb/database'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
+import type { DuckDBLogger } from '@kobato/db/duckdb/database'
 
+import { engineOf } from '@kobato/db/duckdb/connection'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
 
 const BOOT_FLAG_SCOPE = 'system.analytics-blob-migration'
@@ -41,7 +43,7 @@ FROM access_log
 `
 
 async function legacyTableExists(handle: AnalyticsHandle): Promise<boolean> {
-  const result = await handle.reader.runAndReadAll(
+  const result = await engineOf(handle).reader.runAndReadAll(
     `SELECT count(*) AS c FROM duckdb_tables() WHERE table_name = 'access_log'`,
   )
   return Number(result.getRowObjects()[0]?.c ?? 0) > 0
@@ -51,15 +53,16 @@ export async function migrateLegacyAccessLog(handle: AnalyticsHandle): Promise<n
   if (!(await legacyTableExists(handle))) {
     return null
   }
-  await handle.writer.run('BEGIN TRANSACTION')
+  const { writer } = engineOf(handle)
+  await writer.run('BEGIN TRANSACTION')
   try {
-    await handle.writer.run(MIGRATION_SQL)
-    const count = await handle.writer.runAndReadAll('SELECT count(*) AS c FROM access_log')
-    await handle.writer.run('DROP TABLE access_log')
-    await handle.writer.run('COMMIT')
+    await writer.run(MIGRATION_SQL)
+    const count = await writer.runAndReadAll('SELECT count(*) AS c FROM access_log')
+    await writer.run('DROP TABLE access_log')
+    await writer.run('COMMIT')
     return Number(count.getRowObjects()[0]?.c ?? 0)
   } catch (error) {
-    await handle.writer.run('ROLLBACK').catch(() => undefined)
+    await writer.run('ROLLBACK').catch(() => undefined)
     throw error
   }
 }

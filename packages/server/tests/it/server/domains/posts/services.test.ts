@@ -1,6 +1,8 @@
+import type { Database } from '@kobato/db/database'
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
 import type { SidebarSettings } from '@kobato/settings/types'
 
+import { sqliteEngineOf, sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postMetaTable } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
@@ -15,6 +17,7 @@ import {
 } from '@kobato/server/tests/utils/lexical'
 import { adminUser } from '@kobato/server/tests/utils/session'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -42,7 +45,7 @@ beforeEach(async () => {
 })
 
 async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postMetaTable)
     .values({
       slug: opts.slug ?? `post-${Math.random().toString(36).slice(2)}`,
@@ -58,7 +61,7 @@ async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): 
 }
 
 async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: opts.type ?? 'post',
@@ -73,7 +76,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
 }
 
 async function seedCategory(name: string, slug?: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(categoryTable)
     .values({ name, slug: slug ?? name.toLowerCase(), cover: '' })
     .returning({ id: categoryTable.id })
@@ -81,7 +84,7 @@ async function seedCategory(name: string, slug?: string): Promise<number> {
 }
 
 async function seedTag(name: string, slug?: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(tagTable)
     .values({ name, slug: slug ?? name.toLowerCase() })
     .returning({ id: tagTable.id })
@@ -89,7 +92,7 @@ async function seedTag(name: string, slug?: string): Promise<number> {
 }
 
 async function linkTag(postId: number, tagId: number): Promise<void> {
-  await db.insert(postTag).values({ postId, tagId })
+  await sqliteOf(db).insert(postTag).values({ postId, tagId })
 }
 
 describe('posts/services/admin-query — listPostsForAdmin', () => {
@@ -279,7 +282,7 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
   it('unpublishes a published post', async () => {
     const { createPost, unpublishPost } = await import('@kobato/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Unpublish' }, null)
-    await db
+    await sqliteOf(db)
       .update(postMetaTable)
       .set({ published: true, publishedRevisionId: 1 })
       .where(eq(postMetaTable.id, Number(created.id)))
@@ -368,7 +371,7 @@ describe('posts/services/search-index — indexPost', () => {
     const { indexPost } = await import('@kobato/server/domains/posts/services/search-index')
     await indexPost(db, pid, 'Title', 'Summary', 'body')
     const { postSearchIndex } = await import('@kobato/db/schema/content')
-    const rows = await db.select().from(postSearchIndex)
+    const rows = await sqliteOf(db).select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('body')
   })
@@ -636,12 +639,12 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     const { drizzle } = await import('drizzle-orm/node-sqlite')
     const queries: string[] = []
     const counting = drizzle({
-      client: getDatabaseHandle().client,
+      client: sqliteEngineOf(getDatabaseHandle()).client,
       logger: { logQuery: (query) => queries.push(query) },
     })
     const { selectSidebarPosts } = await import('@kobato/server/domains/posts/services/featured')
 
-    const rows = await selectSidebarPosts(counting, sidebarSelection('post:1|2026-11-08|1', 5))
+    const rows = await selectSidebarPosts(unsafeCast<Database>(counting), sidebarSelection('post:1|2026-11-08|1', 5))
 
     expect(rows).toHaveLength(5)
     expect(new Set(rows.map((r) => r.slug)).size).toBe(5)

@@ -4,7 +4,7 @@ export const vitestTestBase = {
   environment: 'node',
   pool: 'threads',
   maxWorkers: 4,
-  isolate: false,
+  isolate: true,
   testTimeout: Number(process.env.VITEST_TEST_TIMEOUT ?? 10_000),
   unstubGlobals: true,
   unstubEnvs: true,

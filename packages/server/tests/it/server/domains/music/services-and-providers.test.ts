@@ -1,5 +1,6 @@
 import type { StorageBackend } from '@kobato/server/infra/storage/backend'
 
+import { sqliteOf } from '@kobato/db/database'
 import { music } from '@kobato/db/schema/media'
 import { user } from '@kobato/db/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
@@ -60,7 +61,7 @@ afterEach(() => {
 })
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(music)
     .values({
       source: overrides.source ?? 'netease',
@@ -78,7 +79,7 @@ async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
 }
 
 async function seedUploader() {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Up', email: `up-${Math.random().toString(36).slice(2)}@example.com`, password: 'x' })
     .returning()
@@ -238,7 +239,7 @@ describe('music/services/write/delete — deleteMusic', () => {
   it('soft-deletes the row', async () => {
     const m = await seedMusic()
     await deleteMod.deleteMusic(db, m.id, { id: '1', role: 'admin' })
-    const rows = await db.select().from(music).where(eq(music.id, m.id))
+    const rows = await sqliteOf(db).select().from(music).where(eq(music.id, m.id))
     expect(rows[0].deletedAt).not.toBeNull()
   })
 
@@ -350,7 +351,7 @@ describe('music/services/write/add — addMusic', () => {
     expect(second.id).toBe(first.id)
     expect(second.playerId).toBe(first.playerId)
     expect(second.name).toBe('Song Remastered')
-    const rows = await db.select().from(music)
+    const rows = await sqliteOf(db).select().from(music)
     expect(rows).toHaveLength(1)
     expect(rows[0].deletedAt).toBeNull()
     expect(second.audioStoragePath).toBe(first.audioStoragePath)
@@ -390,7 +391,7 @@ describe('music/services/write/add — addMusic', () => {
       vi.fn(async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } })),
     )
     vi.spyOn(musicOps, 'restoreMusic').mockImplementationOnce(async () => {
-      await db.update(music).set({ deletedAt: null }).where(eq(music.id, row.id))
+      await sqliteOf(db).update(music).set({ deletedAt: null }).where(eq(music.id, row.id))
       throw new Error('independent database error')
     })
 

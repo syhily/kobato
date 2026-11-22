@@ -1,6 +1,7 @@
 import type { ContentRow } from '@kobato/db/types'
 import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postMetaTable } from '@kobato/db/schema/post'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
@@ -22,7 +23,7 @@ const syncLibraryImageBlocks = vi.spyOn(
   await import('@kobato/server/domains/content/services/image-sync'),
   'syncLibraryImageBlocks',
 )
-const findLatestRevision = vi.spyOn(await import('@kobato/server/domains/content/revisions'), 'findLatestRevision')
+const findLatestRevision = vi.spyOn(await import('@kobato/db/operations/entity-revision'), 'findLatestRevision')
 const computeBodyProjections = vi.spyOn(
   await import('@kobato/server/infra/lexical/lexical-projection'),
   'computeBodyProjections',
@@ -73,7 +74,7 @@ beforeEach(async () => {
 })
 
 async function seedPost(): Promise<typeof postMetaTable.$inferSelect> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postMetaTable)
     .values({ slug: `post-${Math.random().toString(36).slice(2)}`, title: 'Test', published: false })
     .returning()
@@ -84,7 +85,7 @@ async function seedRevision(
   ownerId: number,
   overrides: Partial<typeof contentTable.$inferInsert> = {},
 ): Promise<ContentRow> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'post',
@@ -101,11 +102,15 @@ async function seedRevision(
 }
 
 async function revisionsOf(ownerId: number): Promise<ContentRow[]> {
-  return db.select().from(contentTable).where(eq(contentTable.ownerId, ownerId)).orderBy(asc(contentTable.revisionNo))
+  return sqliteOf(db)
+    .select()
+    .from(contentTable)
+    .where(eq(contentTable.ownerId, ownerId))
+    .orderBy(asc(contentTable.revisionNo))
 }
 
 async function allRevisions(): Promise<ContentRow[]> {
-  return db.select().from(contentTable)
+  return sqliteOf(db).select().from(contentTable)
 }
 
 describe('content/lifecycle — saveBody validation', () => {
@@ -300,7 +305,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('published')
-    const metaRows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
+    const metaRows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
     expect(metaRows[0]!.published).toBe(true)
     expect(metaRows[0]!.publishedRevisionId).toBe(rows[0]!.id)
   })
@@ -320,7 +325,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('draft')
-    const metaRows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
+    const metaRows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
     expect(metaRows[0]!.publishedRevisionId).toBeNull()
   })
 })

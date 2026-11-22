@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { font } from '@kobato/db/schema/font'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
@@ -15,7 +16,7 @@ const ETAG = `deadbeef${'0'.repeat(56)}`
 const VERSION = 3735928559
 
 async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(font)
     .values({
       id: 'font-1',

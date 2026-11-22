@@ -1,13 +1,14 @@
 import type { Database } from '@kobato/db/database'
 import type { CategoryRow, NewCategory } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { likeEscape } from '@kobato/db/like-escape'
 import { assembleWhere } from '@kobato/db/operations/admin-list'
 import { category } from '@kobato/db/schema/taxonomy'
 import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 
 export async function listPublicCategoryRows(db: Database): Promise<CategoryRow[]> {
-  return db.select().from(category).orderBy(asc(category.sortOrder), asc(category.id))
+  return sqliteOf(db).select().from(category).orderBy(asc(category.sortOrder), asc(category.id))
 }
 
 export interface AdminCategoriesListFilters {
@@ -27,19 +28,19 @@ export async function listAdminCategoryRows(
     }
   }
   const where = assembleWhere(conditions)
-  const query = db.select().from(category)
+  const query = sqliteOf(db).select().from(category)
   return where
     ? query.where(where).orderBy(asc(category.sortOrder), asc(category.id))
     : query.orderBy(asc(category.sortOrder), asc(category.id))
 }
 
 export async function findCategoryById(db: Database, id: number): Promise<CategoryRow | null> {
-  const rows = await db.select().from(category).where(eq(category.id, id)).limit(1)
+  const rows = await sqliteOf(db).select().from(category).where(eq(category.id, id)).limit(1)
   return rows[0] ?? null
 }
 
 export async function findCategoryByName(db: Database, name: string): Promise<CategoryRow | null> {
-  const rows = await db.select().from(category).where(eq(category.name, name)).limit(1)
+  const rows = await sqliteOf(db).select().from(category).where(eq(category.name, name)).limit(1)
   return rows[0] ?? null
 }
 
@@ -49,7 +50,7 @@ export async function findCategoryNamesByIds(db: Database, ids: readonly number[
     return map
   }
   const unique = [...new Set(ids)]
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ id: category.id, name: category.name })
     .from(category)
     .where(inArray(category.id, unique))
@@ -61,7 +62,7 @@ export async function findCategoryNamesByIds(db: Database, ids: readonly number[
 
 export async function insertCategory(db: Database, values: NewCategory): Promise<CategoryRow> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(category)
     .values({ ...values, createdAt: now, updatedAt: now })
     .returning()
@@ -73,7 +74,7 @@ export async function updateCategory(
   id: number,
   values: Partial<NewCategory>,
 ): Promise<CategoryRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(category)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(category.id, id))
@@ -82,7 +83,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(db: Database, id: number): Promise<boolean> {
-  const result = await db.delete(category).where(eq(category.id, id)).returning({ id: category.id })
+  const result = await sqliteOf(db).delete(category).where(eq(category.id, id)).returning({ id: category.id })
   return result.length > 0
 }
 
@@ -95,7 +96,7 @@ export async function reorderCategories(db: Database, orderedIds: readonly numbe
     orderedIds.map((id, i) => sql`WHEN ${category.id} = ${id} THEN ${i}`),
     sql` `,
   )
-  return db.transaction((tx) => {
+  return sqliteOf(db).transaction((tx) => {
     const rows = tx
       .update(category)
       .set({ sortOrder: sql`CASE ${whens} END`, updatedAt: now })
@@ -112,5 +113,24 @@ export async function findCategoriesByNames(db: Database, names: readonly string
     return []
   }
   const unique = [...new Set(names)]
-  return db.select().from(category).where(inArray(category.name, unique))
+  return sqliteOf(db).select().from(category).where(inArray(category.name, unique))
+}
+
+export async function findCategoryBySlug(db: Database, slug: string): Promise<CategoryRow | null> {
+  const rows = await sqliteOf(db).select().from(category).where(eq(category.slug, slug)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function findCategoryNameSlugByNames(
+  db: Database,
+  names: readonly string[],
+): Promise<Array<{ name: string; slug: string }>> {
+  if (names.length === 0) {
+    return []
+  }
+  const unique = [...new Set(names)]
+  return sqliteOf(db)
+    .select({ name: category.name, slug: category.slug })
+    .from(category)
+    .where(inArray(category.name, unique))
 }

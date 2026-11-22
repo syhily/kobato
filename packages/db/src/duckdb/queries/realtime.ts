@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { sql } from 'kysely'

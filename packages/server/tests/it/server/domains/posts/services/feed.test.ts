@@ -1,5 +1,6 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
@@ -32,7 +33,7 @@ async function seedPost(opts: {
   categoryId?: number
   body?: LexicalEditorState
 }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -47,7 +48,7 @@ async function seedPost(opts: {
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
   const bodyText = `body of ${opts.slug}`
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'post',
@@ -60,7 +61,7 @@ async function seedPost(opts: {
       bodyHtmlFeed: `<p>${bodyText}</p>`,
     })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
@@ -93,7 +94,9 @@ describe('selectFeedPosts — feed-channel visibility policy', () => {
 
 describe('selectFeedPosts — category/tag scoping', () => {
   it('filters by the resolved category', async () => {
-    const tech = (await db.insert(categoryTable).values({ name: 'Tech', slug: 'tech', cover: '' }).returning())[0]!
+    const tech = (
+      await sqliteOf(db).insert(categoryTable).values({ name: 'Tech', slug: 'tech', cover: '' }).returning()
+    )[0]!
     await seedPost({ slug: 'in-tech', categoryId: tech.id })
     await seedPost({ slug: 'elsewhere' })
 
@@ -111,9 +114,9 @@ describe('selectFeedPosts — category/tag scoping', () => {
   })
 
   it('filters by the resolved tag', async () => {
-    const react = (await db.insert(tagTable).values({ name: 'React', slug: 'react' }).returning())[0]!
+    const react = (await sqliteOf(db).insert(tagTable).values({ name: 'React', slug: 'react' }).returning())[0]!
     const tagged = await seedPost({ slug: 'tagged' })
-    await db.insert(postTag).values({ postId: tagged, tagId: react.id })
+    await sqliteOf(db).insert(postTag).values({ postId: tagged, tagId: react.id })
     await seedPost({ slug: 'untagged' })
 
     const posts = await selectFeedPosts(db, { tag: 'react', limit: 20 }, RESOLVERS)
@@ -130,8 +133,10 @@ describe('selectFeedPosts — category/tag scoping', () => {
   })
 
   it('lets the category scope win when both are given', async () => {
-    const tech = (await db.insert(categoryTable).values({ name: 'Tech', slug: 'tech', cover: '' }).returning())[0]!
-    await db.insert(tagTable).values({ name: 'React', slug: 'react' })
+    const tech = (
+      await sqliteOf(db).insert(categoryTable).values({ name: 'Tech', slug: 'tech', cover: '' }).returning()
+    )[0]!
+    await sqliteOf(db).insert(tagTable).values({ name: 'React', slug: 'react' })
     await seedPost({ slug: 'in-tech', categoryId: tech.id })
     await seedPost({ slug: 'elsewhere' })
 

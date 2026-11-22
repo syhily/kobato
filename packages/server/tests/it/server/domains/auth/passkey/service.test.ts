@@ -1,5 +1,6 @@
 import type { SafeUser } from '@kobato/db/operations/user'
 
+import { sqliteOf } from '@kobato/db/database'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
 import { user } from '@kobato/db/schema/user'
@@ -40,7 +41,7 @@ const passkeyService = await import('@kobato/server/domains/auth/passkey/service
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Test User',
@@ -62,7 +63,7 @@ beforeEach(async () => {
 describe('passkey — registration round-trip', () => {
   it('begins registration and stores a challenge', async () => {
     const userId = await seedUser()
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -78,7 +79,7 @@ describe('passkey — registration round-trip', () => {
 
     expect(result.options.challenge).toBe('reg-challenge-1')
 
-    const tokens = await db
+    const tokens = await sqliteOf(db)
       .select()
       .from(oneTimeToken)
       .where(eq(oneTimeToken.key, 'passkey:reg-challenge:reg-challenge-1'))
@@ -90,19 +91,21 @@ describe('passkey — registration round-trip', () => {
 
   it('passes excludeCredentials with the stored transports', async () => {
     const userId = await seedUser({ email: 'exclude@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId: 'cred-existing',
-      publicKey: Buffer.from([9, 9, 9]),
-      counter: 0,
-      transports: ['internal'],
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId,
+        credentialId: 'cred-existing',
+        publicKey: Buffer.from([9, 9, 9]),
+        counter: 0,
+        transports: ['internal'],
+      })
 
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'reg-challenge-exclude',
@@ -118,7 +121,7 @@ describe('passkey — registration round-trip', () => {
 
   it('finishes registration and persists the credential', async () => {
     const userId = await seedUser()
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -160,7 +163,7 @@ describe('passkey — registration round-trip', () => {
     expect(result.credentialId).toBe('cred-abc')
     expect(result.deviceName).toBe('My Phone')
 
-    const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    const creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
     expect(creds[0].credentialId).toBe('cred-abc')
   })
@@ -189,7 +192,7 @@ describe('passkey — registration failure branches', () => {
 
   it('rejects an expired challenge', async () => {
     const userId = await seedUser({ email: 'reg-expired@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -197,7 +200,7 @@ describe('passkey — registration failure branches', () => {
       .then((r) => r[0])
     await beginRegistration(dbUser, 'reg-expired')
 
-    await db
+    await sqliteOf(db)
       .update(oneTimeToken)
       .set({ expiresAt: new Date(Date.now() - 1000) })
       .where(eq(oneTimeToken.key, 'passkey:reg-challenge:reg-expired'))
@@ -216,13 +219,13 @@ describe('passkey — registration failure branches', () => {
   it('rejects a challenge that belongs to a different user', async () => {
     const ownerId = await seedUser({ email: 'reg-owner@example.com' })
     const otherId = await seedUser({ email: 'reg-other@example.com' })
-    const owner = await db
+    const owner = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, ownerId))
       .limit(1)
       .then((r) => r[0])
-    const other = await db
+    const other = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, otherId))
@@ -243,7 +246,7 @@ describe('passkey — registration failure branches', () => {
 
   it('maps a duplicate credential to a CONFLICT DomainError (real unique constraint)', async () => {
     const userId = await seedUser({ email: 'reg-dup@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -280,13 +283,13 @@ describe('passkey — registration failure branches', () => {
       descriptor: { messageKey: 'auth.passkey.error.alreadyRegistered' },
     })
 
-    const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    const creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
   })
 
   it('rejects when SWA verification returns verified: false', async () => {
     const userId = await seedUser({ email: 'reg-unverified@example.com' })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -305,7 +308,7 @@ describe('passkey — registration failure branches', () => {
       descriptor: { messageKey: 'auth.passkey.error.registrationFailed' },
     })
 
-    const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    const creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(0)
   })
 })
@@ -323,7 +326,7 @@ describe('passkey — authentication round-trip', () => {
 
     const callArg = swaMocks.generateAuthenticationOptions.mock.calls[0]![0]
     expect(callArg.allowCredentials).toBeUndefined()
-    const tokens = await db
+    const tokens = await sqliteOf(db)
       .select()
       .from(oneTimeToken)
       .where(eq(oneTimeToken.key, 'passkey:auth-challenge:auth-challenge-1'))
@@ -333,13 +336,15 @@ describe('passkey — authentication round-trip', () => {
 
   it('passes allowCredentials for a known email', async () => {
     const userId = await seedUser({ email: 'known@example.com' })
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId: 'cred-known',
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 0,
-      transports: ['internal'],
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId,
+        credentialId: 'cred-known',
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 0,
+        transports: ['internal'],
+      })
 
     swaMocks.generateAuthenticationOptions.mockResolvedValue({
       challenge: 'auth-challenge-known',
@@ -351,7 +356,7 @@ describe('passkey — authentication round-trip', () => {
     expect(result.options.challenge).toBe('auth-challenge-known')
     const callArg = swaMocks.generateAuthenticationOptions.mock.calls[0]![0]
     expect(callArg.allowCredentials).toEqual([{ id: 'cred-known', transports: ['internal'] }])
-    const tokens = await db
+    const tokens = await sqliteOf(db)
       .select()
       .from(oneTimeToken)
       .where(eq(oneTimeToken.key, 'passkey:auth-challenge:auth-challenge-known'))
@@ -365,7 +370,7 @@ describe('passkey — authentication round-trip', () => {
       challenge: 'reg-challenge-auth',
       rp: { name: 'Test', id: 'example.com' },
     })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -433,7 +438,7 @@ describe('passkey — authentication round-trip', () => {
     expect(result.user).not.toHaveProperty('lastIp')
     expect(result.user).not.toHaveProperty('lastUa')
 
-    const cred = await db
+    const cred = await sqliteOf(db)
       .select()
       .from(passkeyCredential)
       .where(eq(passkeyCredential.credentialId, 'cred-auth'))
@@ -472,13 +477,15 @@ describe('passkey — authentication failure branches', () => {
 
   it('rejects when SWA verification returns verified: false and leaves the counter untouched', async () => {
     const userId = await seedUser({ email: 'auth-unverified@example.com' })
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId: 'cred-unverified',
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 3,
-      transports: ['internal'],
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId,
+        credentialId: 'cred-unverified',
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 3,
+        transports: ['internal'],
+      })
     await beginAuthentication('auth-unverified')
     swaMocks.verifyAuthenticationResponse.mockResolvedValue({ verified: false })
 
@@ -489,7 +496,7 @@ describe('passkey — authentication failure branches', () => {
       descriptor: { messageKey: 'auth.passkey.error.verifyFailedGeneric' },
     })
 
-    const cred = await db
+    const cred = await sqliteOf(db)
       .select()
       .from(passkeyCredential)
       .where(eq(passkeyCredential.credentialId, 'cred-unverified'))
@@ -501,18 +508,20 @@ describe('passkey — authentication failure branches', () => {
 
 describe('passkey — credential management', () => {
   async function seedCredential(userId: number, credentialId: string, overrides: Record<string, unknown> = {}) {
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId,
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 0,
-      transports: [],
-      ...overrides,
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId,
+        credentialId,
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 0,
+        transports: [],
+        ...overrides,
+      })
   }
 
   async function loginMethodOf(userId: number): Promise<string | null> {
-    const row = await db
+    const row = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -551,7 +560,7 @@ describe('passkey — credential management', () => {
 
     expect(result).toBe(true)
     expect(await loginMethodOf(userId)).toBe('passkey')
-    const creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    const creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds.map((c) => c.credentialId)).toEqual(['cred-2'])
   })
 
@@ -564,7 +573,9 @@ describe('passkey — credential management', () => {
 
     expect(count).toBe(2)
     expect(await loginMethodOf(userId)).toBe('password')
-    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
+    expect(
+      await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId)),
+    ).toHaveLength(0)
   })
 
   it('setLoginMethod rejects passkey when no credentials exist', async () => {
@@ -592,7 +603,7 @@ describe('passkey — credential management', () => {
 describe('passkey — rpConfig validation', () => {
   async function freshUser() {
     const userId = await seedUser({ email: `rp-${crypto.randomUUID()}@example.com` })
-    return db
+    return sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -664,26 +675,28 @@ describe('passkey — password reset clears passkeys', () => {
   it('deletes all credentials and resets loginMethod on password reset', async () => {
     const userId = await seedUser({ loginMethod: 'passkey' })
 
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId: 'cred-reset',
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 0,
-      transports: [],
-      deviceName: null,
-      backedUp: false,
-    })
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
+        userId,
+        credentialId: 'cred-reset',
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 0,
+        transports: [],
+        deviceName: null,
+        backedUp: false,
+      })
 
-    let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    let creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
 
-    await db.update(user).set({ loginMethod: 'password' }).where(eq(user.id, userId))
+    await sqliteOf(db).update(user).set({ loginMethod: 'password' }).where(eq(user.id, userId))
     await passkeyService.deleteAllCredentials(db, userId)
 
-    creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(0)
 
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -701,7 +714,7 @@ describe('passkey — deleting last credential reverts to password login', () =>
       challenge: 'reg-c-force',
       rp: { name: 'Test', id: 'example.com' },
     })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -732,10 +745,10 @@ describe('passkey — deleting last credential reverts to password login', () =>
       challenge: 'reg-c-force',
     })
 
-    let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    let creds = await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
 
-    let dbUserRow = await db
+    let dbUserRow = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -746,7 +759,7 @@ describe('passkey — deleting last credential reverts to password login', () =>
     const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
     expect(ok).toBe(true)
 
-    dbUserRow = await db
+    dbUserRow = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))
@@ -764,7 +777,7 @@ describe('passkey — replay attack prevention', () => {
       challenge: 'replay-reg-c',
       rp: { name: 'Test', id: 'example.com' },
     })
-    const dbUser = await db
+    const dbUser = await sqliteOf(db)
       .select()
       .from(user)
       .where(eq(user.id, userId))

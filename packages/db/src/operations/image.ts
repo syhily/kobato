@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { ImageRow, NewImage } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { likeEscape } from '@kobato/db/like-escape'
 import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list'
 import { image } from '@kobato/db/schema/media'
@@ -87,13 +88,13 @@ export async function findAdminImageRowById(db: Database, id: number): Promise<A
 export async function countAdminImages(db: Database, filters: AdminImagesListFilters = {}): Promise<number> {
   const where = assembleWhere(buildAdminImageConditions(filters))
   const rows = where
-    ? await db.select({ value: count() }).from(image).where(where)
-    : await db.select({ value: count() }).from(image)
+    ? await sqliteOf(db).select({ value: count() }).from(image).where(where)
+    : await sqliteOf(db).select({ value: count() }).from(image)
   return rows[0]?.value ?? 0
 }
 
 export async function findImageById(db: Database, id: number): Promise<ImageRow | null> {
-  const rows = await db.select().from(image).where(eq(image.id, id)).limit(1)
+  const rows = await sqliteOf(db).select().from(image).where(eq(image.id, id)).limit(1)
   return rows[0] ?? null
 }
 
@@ -101,7 +102,7 @@ export async function findImagesByIds(db: Database, ids: readonly number[]): Pro
   if (ids.length === 0) {
     return []
   }
-  return db
+  return sqliteOf(db)
     .select()
     .from(image)
     .where(inArray(image.id, [...ids]))
@@ -111,7 +112,7 @@ export async function findImagesByStoragePaths(db: Database, paths: readonly str
   if (paths.length === 0) {
     return []
   }
-  return db
+  return sqliteOf(db)
     .select()
     .from(image)
     .where(and(inArray(image.storagePath, [...paths]), isNull(image.deletedAt)))
@@ -119,7 +120,7 @@ export async function findImagesByStoragePaths(db: Database, paths: readonly str
 
 export async function insertImage(db: Database, values: NewImage): Promise<ImageRow> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(image)
     .values({ ...values, createdAt: now, updatedAt: now })
     .returning()
@@ -128,7 +129,7 @@ export async function insertImage(db: Database, values: NewImage): Promise<Image
 
 export async function upsertImageByStoragePath(db: Database, values: NewImage): Promise<ImageRow> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(image)
     .values({ ...values, createdAt: now, updatedAt: now, deletedAt: null })
     .onConflictDoUpdate({
@@ -150,7 +151,7 @@ export async function upsertImageByStoragePath(db: Database, values: NewImage): 
 }
 
 export async function softDeleteImage(db: Database, id: number): Promise<ImageRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(image)
     .set({ deletedAt: new Date(), updatedAt: new Date() })
     .where(eq(image.id, id))
@@ -159,7 +160,7 @@ export async function softDeleteImage(db: Database, id: number): Promise<ImageRo
 }
 
 export async function updateImageNote(db: Database, id: number, note: string | null): Promise<ImageRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(image)
     .set({ note: note?.trim() === '' ? null : note, updatedAt: new Date() })
     .where(eq(image.id, id))
@@ -176,12 +177,20 @@ export async function updateImageNoteWithUploader(
 }
 
 export async function updateImageStoragePath(db: Database, id: number, storagePath: string): Promise<ImageRow | null> {
-  const rows = await db.update(image).set({ storagePath, updatedAt: new Date() }).where(eq(image.id, id)).returning()
+  const rows = await sqliteOf(db)
+    .update(image)
+    .set({ storagePath, updatedAt: new Date() })
+    .where(eq(image.id, id))
+    .returning()
   return rows[0] ?? null
 }
 
 export async function updateImageThumbhash(db: Database, id: number, thumbhash: string): Promise<ImageRow | null> {
-  const rows = await db.update(image).set({ thumbhash, updatedAt: new Date() }).where(eq(image.id, id)).returning()
+  const rows = await sqliteOf(db)
+    .update(image)
+    .set({ thumbhash, updatedAt: new Date() })
+    .where(eq(image.id, id))
+    .returning()
   return rows[0] ?? null
 }
 

@@ -22,7 +22,7 @@ graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-
 ## Design tokens
 
 - Every custom property behind a utility must be declared in `@theme inline` in `tailwind.css` AND registered in
-  `packages/ui/src/lib/cn.ts` (`packages/ui/tests/contract/tailwind-tokens.test.ts`).
+  `packages/ui/src/lib/cn.ts` (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
 - No arbitrary-value syntax for design-system or size tokens — declare a named token and its merge group instead.
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark` rebind handles the switch. Adjacent dark surface tiers stay
   3–8 L apart; no `--line-*` token shares a value with a `--surface-*` token.
@@ -42,5 +42,5 @@ graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-
 `shadow-card` (public content cards), `shadow-raised` (admin cards/stat tiles), `shadow-popover` (menus), `shadow-modal`
 (dialogs/sheets). Do not mix card and raised silhouettes in one view.
 
-`packages/ui/tests/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and additional
+`packages/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and additional
 product styles in this directory.

@@ -1,7 +1,7 @@
 import type { DeviceEnvBeacon } from '@kobato/api/contracts/analytics'
+import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvClientRow } from '@kobato/db/duckdb/device-env'
 
-import { type DuckDBConnection } from '@duckdb/node-api'
 import { appendDeviceEnvClientRows, existingDeviceEnvEventIds } from '@kobato/db/duckdb/device-env'
 import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
@@ -59,23 +59,20 @@ function deserializeFromDeadLetter(line: string): DeviceEnvClientRow | null {
   })
 }
 
-let resolveWriter: (() => DuckDBConnection) | null = null
+let resolveWriter: (() => AnalyticsWriter) | null = null
 
-export function wireDeviceEnvBeaconBatcher(deps: { getWriter: () => DuckDBConnection }): void {
+export function wireDeviceEnvBeaconBatcher(deps: { getWriter: () => AnalyticsWriter }): void {
   resolveWriter = deps.getWriter
 }
 
-function requireWriter(): DuckDBConnection {
+function requireWriter(): AnalyticsWriter {
   if (resolveWriter === null) {
     throw new Error('DeviceEnvBeaconBatcher used before wireDeviceEnvBeaconBatcher')
   }
   return resolveWriter()
 }
 
-async function filterAlreadyStored(
-  writer: DuckDBConnection,
-  rows: DeviceEnvClientRow[],
-): Promise<DeviceEnvClientRow[]> {
+async function filterAlreadyStored(writer: AnalyticsWriter, rows: DeviceEnvClientRow[]): Promise<DeviceEnvClientRow[]> {
   if (rows.length === 0) {
     return rows
   }
@@ -93,12 +90,12 @@ async function filterAlreadyStored(
   return fresh
 }
 
-class DeviceEnvBeaconBatcher extends InsertBatcher<DeviceEnvClientRow, DuckDBConnection> {
+class DeviceEnvBeaconBatcher extends InsertBatcher<DeviceEnvClientRow, AnalyticsWriter> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.env-beacon', requireWriter)
   }
 
-  protected async insertBatch(writer: DuckDBConnection, rows: DeviceEnvClientRow[]): Promise<void> {
+  protected async insertBatch(writer: AnalyticsWriter, rows: DeviceEnvClientRow[]): Promise<void> {
     const fresh = await filterAlreadyStored(writer, rows)
     if (fresh.length === 0) {
       return

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { verification, user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -55,17 +56,19 @@ afterEach(async () => {
 })
 
 async function seedUser(role: 'admin' | 'visitor' | 'author' = 'admin', email = 'a@example.com') {
-  const [u] = await db.insert(user).values({ name: 'T', email, password: 'hashed', role }).returning()
+  const [u] = await sqliteOf(db).insert(user).values({ name: 'T', email, password: 'hashed', role }).returning()
   return u
 }
 
 async function seedSessionRow(sid: string, userId: number | null, expiresAt?: Date) {
-  await db.insert(sessionTable).values({
-    id: sid,
-    userId,
-    data: {},
-    expiresAt: expiresAt ?? new Date(Date.now() + 60 * 60 * 1000),
-  })
+  await sqliteOf(db)
+    .insert(sessionTable)
+    .values({
+      id: sid,
+      userId,
+      data: {},
+      expiresAt: expiresAt ?? new Date(Date.now() + 60 * 60 * 1000),
+    })
 }
 
 describe('auth/verification-tokens — issueResetToken', () => {
@@ -110,7 +113,7 @@ describe('auth/verification-tokens — issueResetToken', () => {
     const past = new Date(Date.now() - 60 * 60 * 1000)
     const raw = '0'.repeat(43)
     const value = await (await import('node:crypto')).createHash('sha256').update(raw).digest('hex')
-    await db.insert(verification).values({
+    await sqliteOf(db).insert(verification).values({
       id: 'expiredtokenid1234567890ab',
       purpose: 'password-reset',
       userId: u.id,
@@ -172,22 +175,24 @@ describe('auth/verification-tokens — revokeTokensFor', () => {
 describe('auth/verification-tokens — purgeExpired', () => {
   it('deletes verification rows that are older than 1 day past expiry', async () => {
     const stale = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-    await db.insert(verification).values([
-      {
-        id: 'staleid000000000000001',
-        purpose: 'password-reset',
-        userId: 1,
-        value: 'stalevalue1',
-        expiresAt: stale,
-      },
-      {
-        id: 'staleid000000000000002',
-        purpose: 'password-reset',
-        userId: 2,
-        value: 'stalevalue2',
-        expiresAt: stale,
-      },
-    ])
+    await sqliteOf(db)
+      .insert(verification)
+      .values([
+        {
+          id: 'staleid000000000000001',
+          purpose: 'password-reset',
+          userId: 1,
+          value: 'stalevalue1',
+          expiresAt: stale,
+        },
+        {
+          id: 'staleid000000000000002',
+          purpose: 'password-reset',
+          userId: 2,
+          value: 'stalevalue2',
+          expiresAt: stale,
+        },
+      ])
     const deleted = await purgeExpired(db)
     expect(deleted).toBeGreaterThanOrEqual(2)
   })
@@ -221,7 +226,7 @@ describe('auth/verification-tokens — OTP', () => {
     const { otpCode } = await issueOtpToken(db, u.id)
     const { and, eq } = await import('drizzle-orm')
     const past = new Date(Date.now() - 60 * 60 * 1000)
-    await db
+    await sqliteOf(db)
       .update(verification)
       .set({ expiresAt: past })
       .where(and(eq(verification.userId, u.id), eq(verification.purpose, 'signin-otp')))
@@ -337,7 +342,7 @@ describe('auth/repo — session meta', () => {
     await revokeSessionById(db, sid, u.id)
 
     expect(await findSessionMeta(db, sid)).toBeNull()
-    const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+    const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
     expect(rows).toHaveLength(0)
   })
 
@@ -453,7 +458,7 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
 
 describe('auth/primitives — establishLoginSession & logout', () => {
   it('throws when the user has no role', async () => {
-    const [u] = await db
+    const [u] = await sqliteOf(db)
       .insert(user)
       .values({ name: 'N', email: 'norole@example.com', password: 'h', role: null })
       .returning()
@@ -472,7 +477,7 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     expect(result.sid).toMatch(/^[0-9a-f-]+$/)
     expect(result.setCookie).toContain('__session=')
 
-    const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, result.sid))
+    const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, result.sid))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.userId).toBe(u.id)
 
@@ -494,8 +499,8 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     })
 
     expect(second.sid).not.toBe(first.sid)
-    expect(await db.select().from(sessionTable).where(eq(sessionTable.id, first.sid))).toHaveLength(0)
-    expect(await db.select().from(sessionTable).where(eq(sessionTable.id, second.sid))).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, first.sid))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, second.sid))).toHaveLength(1)
   })
 })
 

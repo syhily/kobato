@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'
@@ -13,15 +14,15 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
 
-  const [commenter] = await db
+  const [commenter] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Alice', email: 'alice@example.com', password: 'hashed', role: 'visitor' })
     .returning({ id: user.id })
-  const [p] = await db
+  const [p] = await sqliteOf(db)
     .insert(post)
     .values({ slug: 'hello', title: 'Hello', summary: '', published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
-  await db.insert(comment).values({
+  await sqliteOf(db).insert(comment).values({
     type: 'post',
     ownerId: p.id,
     userId: commenter.id,

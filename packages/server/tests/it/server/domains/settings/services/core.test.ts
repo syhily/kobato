@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
@@ -25,39 +26,41 @@ beforeEach(async () => {
   resetBlogSettingsForTests()
   __clearSectionChangeHandlersForTests()
   __clearLogCaptureForTests()
-  await db.insert(setting).values([
-    {
-      scope: 'blog.general',
-      data: {
-        title: 'Test Blog',
-        description: 'A test blog',
-        website: 'https://example.com',
-        keywords: ['test'],
-        author: { name: 'Test Author', email: 'test@example.com', url: 'https://example.com' },
-        locale: 'zh-CN',
-        timeZone: 'Asia/Shanghai',
-        timeFormat: 'relative',
-        initialYear: 2024,
-      },
-    },
-    {
-      scope: 'blog.assets',
-      data: {
-        asset: { host: 'cdn.example.com', scheme: 'https' },
-        storage: {
-          enabled: false,
-          endpoint: '',
-          region: '',
-          bucket: '',
-          accessKeyId: '',
-          secretAccessKey: '',
-          forcePathStyle: false,
-          urlTemplate: '',
+  await sqliteOf(db)
+    .insert(setting)
+    .values([
+      {
+        scope: 'blog.general',
+        data: {
+          title: 'Test Blog',
+          description: 'A test blog',
+          website: 'https://example.com',
+          keywords: ['test'],
+          author: { name: 'Test Author', email: 'test@example.com', url: 'https://example.com' },
+          locale: 'zh-CN',
+          timeZone: 'Asia/Shanghai',
+          timeFormat: 'relative',
+          initialYear: 2024,
         },
-        upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
       },
-    },
-  ])
+      {
+        scope: 'blog.assets',
+        data: {
+          asset: { host: 'cdn.example.com', scheme: 'https' },
+          storage: {
+            enabled: false,
+            endpoint: '',
+            region: '',
+            bucket: '',
+            accessKeyId: '',
+            secretAccessKey: '',
+            forcePathStyle: false,
+            urlTemplate: '',
+          },
+          upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
+        },
+      },
+    ])
 })
 
 describe('server/domains/settings/services/core', () => {
@@ -77,7 +80,7 @@ describe('server/domains/settings/services/core', () => {
       mutableRegistry.limits = original
     }
 
-    const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.limits'))
+    const rows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.limits'))
     expect(rows).toHaveLength(0)
   })
 
@@ -130,7 +133,7 @@ describe('server/domains/settings/services/core', () => {
         ctx: { section: 'limits', error: String(error) },
       }),
     )
-    const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.limits'))
+    const rows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.limits'))
     expect(rows).toHaveLength(1)
     expect(rows[0].data).toMatchObject({ maxRequestBodySize: 2048 })
   })
@@ -206,7 +209,7 @@ describe('server/domains/settings/services/core — assets write-path URL rules'
   })
 
   it('keeps hydrating a stored http:// endpoint (the rule is write-only)', async () => {
-    await db
+    await sqliteOf(db)
       .update(setting)
       .set({
         data: {

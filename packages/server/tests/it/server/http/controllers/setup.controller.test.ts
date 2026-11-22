@@ -1,6 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
+import { sqliteOf } from '@kobato/db/database'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -56,11 +57,11 @@ function verifiedSession(extra: Record<string, unknown> = {}): BlogSession {
 }
 
 async function tokenRows() {
-  return db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
+  return sqliteOf(db).select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
 }
 
 async function adminRows() {
-  return db.select().from(userTable).where(eq(userTable.role, 'admin'))
+  return sqliteOf(db).select().from(userTable).where(eq(userTable.role, 'admin'))
 }
 
 const INSTALL_INPUT = {
@@ -193,11 +194,13 @@ describe('account setup controller — install', () => {
   })
 
   it('answers tokenExpired when the setup token row is no longer live', async () => {
-    await db.insert(oneTimeToken).values({
-      key: 'setup_token',
-      payload: 'expired-token',
-      expiresAt: new Date(Date.now() - 1000),
-    })
+    await sqliteOf(db)
+      .insert(oneTimeToken)
+      .values({
+        key: 'setup_token',
+        payload: 'expired-token',
+        expiresAt: new Date(Date.now() - 1000),
+      })
 
     const result = await call(setupRouter.install, INSTALL_INPUT, {
       context: ctxWithSession(verifiedSession()),
@@ -228,7 +231,7 @@ describe('account setup controller — install', () => {
 
   it('answers adminExists without re-installing when an admin already exists', async () => {
     await getSetupToken(db)
-    await db.insert(userTable).values({
+    await sqliteOf(db).insert(userTable).values({
       name: 'Existing',
       email: 'existing@example.com',
       password: 'not-a-real-hash',

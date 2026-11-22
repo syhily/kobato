@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -22,7 +23,7 @@ afterEach(() => {
 })
 
 async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: opts.name ?? 'Alice',
@@ -36,7 +37,7 @@ async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Prom
 }
 
 async function userRow(id: number): Promise<typeof userTable.$inferSelect> {
-  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  const rows = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, id))
   return rows[0]!
 }
 
@@ -57,7 +58,7 @@ describe('admin users-crud controller', () => {
       expect(row.link).toBe('https://example.com')
 
       await flushAuditLog()
-      const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'user_updated'))
+      const auditRows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'user_updated'))
       expect(auditRows).toHaveLength(1)
       expect(auditRows[0]!.resourceId).toBe(String(id))
     })

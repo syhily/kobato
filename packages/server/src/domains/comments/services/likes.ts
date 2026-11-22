@@ -4,14 +4,13 @@ import type { EntityTarget } from '@kobato/db/target'
 import { makeToken } from '@kobato/auth/security'
 import {
   commentCountsByOwnerIds,
-  consumeActiveLikeToken,
+  consumeLikeAndDecrement,
   existsActiveLikeToken,
   metricsByOwnerIds,
   metricVoteUp,
   purgeOldLikeTokens,
   recordLikeAndCount,
 } from '@kobato/db/operations/like'
-import { decrementMetricVotes } from '@kobato/db/operations/metric'
 import { targetKey } from '@kobato/db/target'
 import { pendingViewDelta } from '@kobato/server/domains/analytics/services/pv-batcher'
 import { getLogger } from '@kobato/server/infra/logger'
@@ -26,13 +25,7 @@ export async function increaseLikes(db: Database, target: EntityTarget): Promise
 }
 
 export async function decreaseLikes(db: Database, target: EntityTarget, token: string): Promise<boolean> {
-  return db.transaction((tx) => {
-    const consumed = consumeActiveLikeToken(tx, target, token)
-    if (consumed) {
-      decrementMetricVotes(tx, target)
-    }
-    return consumed
-  })
+  return consumeLikeAndDecrement(db, target, token)
 }
 
 export async function queryLikes(db: Database, target: EntityTarget): Promise<number> {

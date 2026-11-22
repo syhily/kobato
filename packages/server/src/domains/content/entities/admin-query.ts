@@ -6,14 +6,21 @@ import type {
   MetaRowBase,
   UpsertMetaInputBase,
 } from '@kobato/server/domains/content/entities/descriptor'
-import type { MetaListQueries } from '@kobato/server/domains/content/entities/meta-repo'
 import type { LimitOffset } from '@kobato/server/domains/content/pagination'
 import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list'
 
+import { findContentById, findLatestRevision, listRevisions } from '@kobato/db/operations/entity-revision'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
-import { findContentById, findLatestRevision, listRevisions } from '@kobato/server/domains/content/revisions'
 import { listForAdmin } from '@kobato/server/domains/content/services/admin-list'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
+
+export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset> {
+  listMetas: (
+    db: import('@kobato/db/database').Database,
+    filters: TFilters,
+  ) => Promise<(TMeta & { authorName: string | null })[]>
+  countMetas: (db: import('@kobato/db/database').Database, filters: TFilters) => Promise<number>
+}
 
 export interface EntityAdminDetail<TAdminDto> {
   meta: TAdminDto

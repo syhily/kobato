@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { image } from '@kobato/db/schema/media'
 import { post } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
@@ -13,7 +14,7 @@ beforeEach(async () => {
 
 describe('listAllCategories', () => {
   it('returns categories with permalink format /cats/slug', async () => {
-    await db.insert(category).values({
+    await sqliteOf(db).insert(category).values({
       name: 'Tech',
       slug: 'tech',
       cover: '/tech.jpg',
@@ -30,14 +31,14 @@ describe('listAllCategories', () => {
   })
 
   it('hydrates category cover images', async () => {
-    await db.insert(category).values({
+    await sqliteOf(db).insert(category).values({
       name: 'A',
       slug: 'a',
       cover: '/storage/images/categories/coding.jpg',
       description: '',
       sortOrder: 0,
     })
-    const [row] = await db
+    const [row] = await sqliteOf(db)
       .insert(image)
       .values({
         storagePath: 'images/categories/coding.jpg',
@@ -63,21 +64,23 @@ describe('listAllCategories', () => {
   })
 
   it('counts only live posts per category (scheduled and revision-less excluded)', async () => {
-    const [gatedCat] = await db
+    const [gatedCat] = await sqliteOf(db)
       .insert(category)
       .values({ name: 'GatedCat', slug: 'gated-cat', cover: '', description: '', sortOrder: 0 })
       .returning()
-    await db.insert(post).values([
-      { slug: 'live-c', title: 'Live', categoryId: gatedCat.id, publishedRevisionId: 1 },
-      {
-        slug: 'sched-c',
-        title: 'Sched',
-        categoryId: gatedCat.id,
-        publishedRevisionId: 2,
-        publishedAt: new Date(Date.now() + 86_400_000),
-      },
-      { slug: 'norev-c', title: 'NoRev', categoryId: gatedCat.id },
-    ])
+    await sqliteOf(db)
+      .insert(post)
+      .values([
+        { slug: 'live-c', title: 'Live', categoryId: gatedCat.id, publishedRevisionId: 1 },
+        {
+          slug: 'sched-c',
+          title: 'Sched',
+          categoryId: gatedCat.id,
+          publishedRevisionId: 2,
+          publishedAt: new Date(Date.now() + 86_400_000),
+        },
+        { slug: 'norev-c', title: 'NoRev', categoryId: gatedCat.id },
+      ])
 
     const { listAllCategories } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const cats = await listAllCategories(db)
@@ -87,10 +90,12 @@ describe('listAllCategories', () => {
 
 describe('getCategoryLinks', () => {
   it('returns Record<name, link> for matched names', async () => {
-    await db.insert(category).values([
-      { name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 },
-      { name: 'Life', slug: 'life', cover: '', description: '', sortOrder: 0 },
-    ])
+    await sqliteOf(db)
+      .insert(category)
+      .values([
+        { name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 },
+        { name: 'Life', slug: 'life', cover: '', description: '', sortOrder: 0 },
+      ])
 
     const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['Tech', 'Life'])
@@ -106,7 +111,7 @@ describe('getCategoryLinks', () => {
   })
 
   it('deduplicates names', async () => {
-    await db.insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
+    await sqliteOf(db).insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
 
     const { getCategoryLinks } = await import('@kobato/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['Tech', 'Tech', 'Tech'])
@@ -121,7 +126,7 @@ describe('listAllTags', () => {
   })
 
   it('returns tags with permalink /tags/slug', async () => {
-    await db.insert(tag).values({ name: 'React', slug: 'react' })
+    await sqliteOf(db).insert(tag).values({ name: 'React', slug: 'react' })
 
     const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
@@ -131,7 +136,7 @@ describe('listAllTags', () => {
   })
 
   it('tags with zero posts have counts = 0', async () => {
-    await db.insert(tag).values({ name: 'Rust', slug: 'rust' })
+    await sqliteOf(db).insert(tag).values({ name: 'Rust', slug: 'rust' })
 
     const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
@@ -140,12 +145,12 @@ describe('listAllTags', () => {
   })
 
   it('counts only live posts per tag (scheduled and revision-less excluded)', async () => {
-    const [tagRow] = await db.insert(tag).values({ name: 'Gated', slug: 'gated' }).returning()
-    const [livePost] = await db
+    const [tagRow] = await sqliteOf(db).insert(tag).values({ name: 'Gated', slug: 'gated' }).returning()
+    const [livePost] = await sqliteOf(db)
       .insert(post)
       .values({ slug: 'live-t', title: 'Live', publishedRevisionId: 1 })
       .returning()
-    const [schedPost] = await db
+    const [schedPost] = await sqliteOf(db)
       .insert(post)
       .values({
         slug: 'sched-t',
@@ -154,12 +159,14 @@ describe('listAllTags', () => {
         publishedAt: new Date(Date.now() + 86_400_000),
       })
       .returning()
-    const [noRevPost] = await db.insert(post).values({ slug: 'norev-t', title: 'NoRev' }).returning()
-    await db.insert(postTag).values([
-      { postId: livePost.id, tagId: tagRow.id },
-      { postId: schedPost.id, tagId: tagRow.id },
-      { postId: noRevPost.id, tagId: tagRow.id },
-    ])
+    const [noRevPost] = await sqliteOf(db).insert(post).values({ slug: 'norev-t', title: 'NoRev' }).returning()
+    await sqliteOf(db)
+      .insert(postTag)
+      .values([
+        { postId: livePost.id, tagId: tagRow.id },
+        { postId: schedPost.id, tagId: tagRow.id },
+        { postId: noRevPost.id, tagId: tagRow.id },
+      ])
 
     const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
@@ -169,10 +176,12 @@ describe('listAllTags', () => {
 
 describe('getTagsByNames', () => {
   it('returns tags in input name order', async () => {
-    await db.insert(tag).values([
-      { name: 'Vue', slug: 'vue' },
-      { name: 'React', slug: 'react' },
-    ])
+    await sqliteOf(db)
+      .insert(tag)
+      .values([
+        { name: 'Vue', slug: 'vue' },
+        { name: 'React', slug: 'react' },
+      ])
 
     const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['Vue', 'React'])
@@ -194,7 +203,7 @@ describe('getTagsByNames', () => {
   })
 
   it('deduplicates input names', async () => {
-    await db.insert(tag).values({ name: 'React', slug: 'react' })
+    await sqliteOf(db).insert(tag).values({ name: 'React', slug: 'react' })
 
     const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['React', 'React', 'React'])
@@ -206,14 +215,16 @@ describe('getTagsByNames', () => {
 
 describe('countPostsByTaxonomy — names narrowing', () => {
   it('counts only the requested terms, not the whole taxonomy', async () => {
-    const [react] = await db.insert(tag).values({ name: 'React', slug: 'react' }).returning()
-    const [vue] = await db.insert(tag).values({ name: 'Vue', slug: 'vue' }).returning()
-    const [p1] = await db.insert(post).values({ slug: 'p1', title: 'P1', publishedRevisionId: 1 }).returning()
-    const [p2] = await db.insert(post).values({ slug: 'p2', title: 'P2', publishedRevisionId: 2 }).returning()
-    await db.insert(postTag).values([
-      { postId: p1.id, tagId: react.id },
-      { postId: p2.id, tagId: vue.id },
-    ])
+    const [react] = await sqliteOf(db).insert(tag).values({ name: 'React', slug: 'react' }).returning()
+    const [vue] = await sqliteOf(db).insert(tag).values({ name: 'Vue', slug: 'vue' }).returning()
+    const [p1] = await sqliteOf(db).insert(post).values({ slug: 'p1', title: 'P1', publishedRevisionId: 1 }).returning()
+    const [p2] = await sqliteOf(db).insert(post).values({ slug: 'p2', title: 'P2', publishedRevisionId: 2 }).returning()
+    await sqliteOf(db)
+      .insert(postTag)
+      .values([
+        { postId: p1.id, tagId: react.id },
+        { postId: p2.id, tagId: vue.id },
+      ])
 
     const { countPostsByTaxonomy } = await import('@kobato/server/domains/posts/services/taxonomy')
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: ['React'] })

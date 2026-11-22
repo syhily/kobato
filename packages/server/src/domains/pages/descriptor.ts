@@ -3,22 +3,22 @@ import type { Page } from '@kobato/catalog/model'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
+import {
+  findEntityMetaById,
+  findEntityMetaBySlug,
+  findPublicEntityMetaBySlug,
+  insertEntityMeta,
+  restoreEntityMeta,
+  softDeleteEntityMeta,
+  updateEntityMetaById,
+} from '@kobato/db/operations/entity-meta'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { toAdminPageDto, toCmsPage } from '@kobato/server/domains/pages/projection'
-import {
-  findPageMetaById,
-  findPageMetaBySlug,
-  findPageMetaBySlugForUpdate,
-  insertPageMeta,
-  restorePageMeta,
-  softDeletePageMeta,
-  updatePageMetaById,
-} from '@kobato/server/domains/pages/repo'
-import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query'
 import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 function pageOgTarget(meta: PageMetaRow) {
   return {
@@ -39,14 +39,14 @@ export const pageDescriptor: MetaEntityDescriptor<
 > = {
   entityType: 'page',
   repos: {
-    findMetaById: findPageMetaById,
-    findMetaBySlug: findPageMetaBySlug,
-    findMetaBySlugForUpdate: findPageMetaBySlugForUpdate,
-    findPublicMetaBySlug: findPublicPageMetaBySlug,
-    insertMeta: insertPageMeta,
-    updateMetaById: updatePageMetaById,
-    softDeleteMeta: softDeletePageMeta,
-    restoreMeta: restorePageMeta,
+    findMetaById: (db, id) => unsafeCast<PageMetaRow | null>(findEntityMetaById(db, 'page', id)),
+    findMetaBySlug: (db, slug) => unsafeCast<PageMetaRow | null>(findEntityMetaBySlug(db, 'page', slug)),
+    findMetaBySlugForUpdate: (db, slug) => unsafeCast<PageMetaRow | null>(findEntityMetaBySlug(db, 'page', slug)),
+    findPublicMetaBySlug: (db, slug) => unsafeCast<PageMetaRow | null>(findPublicEntityMetaBySlug(db, 'page', slug)),
+    insertMeta: (db, values) => unsafeCast<PageMetaRow>(insertEntityMeta(db, 'page', values)),
+    updateMetaById: (db, id, patch) => unsafeCast<PageMetaRow | null>(updateEntityMetaById(db, 'page', id, patch)),
+    softDeleteMeta: (db, id) => softDeleteEntityMeta(db, 'page', id),
+    restoreMeta: (db, id) => restoreEntityMeta(db, 'page', id),
   },
   defaultAdminListLimit: 100,
   access: {

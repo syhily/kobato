@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'

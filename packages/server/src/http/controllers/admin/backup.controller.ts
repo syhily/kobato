@@ -1,9 +1,10 @@
 import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
-import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
+import { consumeRestoreJobReport, withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
 import {
   beginStagingProgress,
   endStagingProgress,
+  peekRestoreProgress,
   reportStagingProgress,
 } from '@kobato/server/domains/backup/restore-progress'
 import {
@@ -21,7 +22,8 @@ import {
   restoreFromStagedBackup,
   stageBackup,
 } from '@kobato/server/domains/backup/services/restore'
-import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { decryptParkedUploadAndRestore } from '@kobato/server/domains/backup/upload-restore'
+import { implementAdmin, rateLimitByIp } from '@kobato/server/http/orpc-base'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
@@ -31,7 +33,22 @@ import { rmSync } from 'node:fs'
 
 const log = getLogger('backup.controller')
 
-const impl = implementAdmin(adminBackupContract)
+const DECRYPT_RATE_LIMIT_BUCKET = { windowSeconds: 3600, maxAttempts: 30 }
+
+// The decrypt procedure rides its own implementer: router-level `.use` re-positions input validation AFTER the
+// leading middlewares, so the limiter burns the budget before parsing (procedure-level `.use` would not).
+const impl = implementAdmin({
+  status: adminBackupContract.status,
+  list: adminBackupContract.list,
+  create: adminBackupContract.create,
+  restore: adminBackupContract.restore,
+  delete: adminBackupContract.delete,
+  restoreStatus: adminBackupContract.restoreStatus,
+  restoreProgress: adminBackupContract.restoreProgress,
+})
+const decryptImpl = implementAdmin({ uploadRestoreDecrypt: adminBackupContract.uploadRestoreDecrypt }).use(
+  rateLimitByIp('backupRestoreDecrypt', DECRYPT_RATE_LIMIT_BUCKET),
+)
 
 const status = impl.status.handler(async () => {
   return { primaryDriver: activeBackend().driver }
@@ -133,4 +150,27 @@ const restore = impl.restore.handler(async ({ input, context }) => {
   return { accepted: true }
 })
 
-export const adminBackupRouter = impl.router({ status, list, create, restore, delete: delete_ })
+const restoreStatus = impl.restoreStatus.handler(async () => {
+  return consumeRestoreJobReport()
+})
+
+const restoreProgress = impl.restoreProgress.handler(async () => {
+  return peekRestoreProgress()
+})
+
+const uploadRestoreDecrypt = decryptImpl.uploadRestoreDecrypt.handler(async ({ input, context }) => {
+  return decryptParkedUploadAndRestore(input, {
+    afterReopen: (_db, fileName) => {
+      recordAuditEventFromContext(context, {
+        action: 'backup_restored',
+        resourceType: 'backup',
+        resourceId: fileName,
+      })
+    },
+  })
+})
+
+export const adminBackupRouter = {
+  ...impl.router({ status, list, create, restore, delete: delete_, restoreStatus, restoreProgress }),
+  ...decryptImpl.router({ uploadRestoreDecrypt }),
+}

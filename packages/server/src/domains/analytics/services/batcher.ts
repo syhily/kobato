@@ -1,7 +1,7 @@
 import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
+import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 
-import { type DuckDBConnection } from '@duckdb/node-api'
 import { appendAccessEvents } from '@kobato/db/duckdb/access-events'
 import { appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
@@ -51,25 +51,25 @@ function deserializeFromDeadLetter(line: string): AccessLogItem | null {
   })
 }
 
-let resolveWriter: (() => DuckDBConnection) | null = null
+let resolveWriter: (() => AnalyticsWriter) | null = null
 
-export function wireAccessLogBatcher(deps: { getWriter: () => DuckDBConnection }): void {
+export function wireAccessLogBatcher(deps: { getWriter: () => AnalyticsWriter }): void {
   resolveWriter = deps.getWriter
 }
 
-function requireWriter(): DuckDBConnection {
+function requireWriter(): AnalyticsWriter {
   if (resolveWriter === null) {
     throw new Error('AccessLogBatcher used before wireAccessLogBatcher')
   }
   return resolveWriter()
 }
 
-class AccessLogBatcher extends InsertBatcher<AccessLogItem, DuckDBConnection> {
+class AccessLogBatcher extends InsertBatcher<AccessLogItem, AnalyticsWriter> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', requireWriter)
   }
 
-  protected async insertBatch(writer: DuckDBConnection, items: AccessLogItem[]): Promise<void> {
+  protected async insertBatch(writer: AnalyticsWriter, items: AccessLogItem[]): Promise<void> {
     await appendAccessEvents(
       writer,
       items.map((item) => item.event),

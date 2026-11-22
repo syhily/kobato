@@ -1,6 +1,5 @@
-import '@kobato/test/setup/unit'
+import '@kobato/test/setup/dom'
 import { installWebStreamGlobals } from '@kobato/test/web-streams'
-import { afterEach, vi } from 'vitest'
 
 installWebStreamGlobals()
 
@@ -50,7 +49,3 @@ if (typeof globalThis.localStorage?.setItem !== 'function') {
     writable: true,
   })
 }
-
-afterEach(() => {
-  vi.useRealTimers()
-})

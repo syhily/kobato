@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { metric } from '@kobato/db/schema/metric'
 import { post } from '@kobato/db/schema/post'
@@ -42,7 +43,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -55,7 +56,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -69,12 +70,12 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedMetricRow(type: 'post' | 'page', ownerId: number, publicId: string): Promise<string> {
-  await db.insert(metric).values({ type, ownerId, publicId, voteUp: 0, pv: 0 })
+  await sqliteOf(db).insert(metric).values({ type, ownerId, publicId, voteUp: 0, pv: 0 })
   return publicId
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
@@ -119,7 +120,7 @@ async function makeTokenCtx(commentId: number, userId: number): Promise<ReturnTy
 }
 
 async function readComment(id: number) {
-  const [row] = await db.select().from(comment).where(eq(comment.id, id))
+  const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, id))
   return row
 }
 
@@ -278,7 +279,7 @@ describe('commentsRouter.replyComment', () => {
 
     expect(res.comment).toMatchObject({ name: 'Alice', link: 'https://example.test/about' })
     expect(res.comment.isPending).toBe(true)
-    const rows = await db.select().from(comment)
+    const rows = await sqliteOf(db).select().from(comment)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.ownerId).toBe(pid)
     expect(rows[0]?.content).toContain('hello')

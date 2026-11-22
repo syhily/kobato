@@ -26,7 +26,6 @@ export const webUnitProjects = [
       ...vitestTestBase,
       name: 'web-tz-unit',
       pool: 'forks',
-      isolate: true,
       environment: 'happy-dom',
       setupFiles: [SETUP_FILE],
       include: [TIME_LABELS_TEST],

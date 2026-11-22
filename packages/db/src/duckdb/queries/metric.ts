@@ -1,5 +1,6 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsDatabase, AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { AnalyticsDatabase } from '@kobato/db/duckdb/query'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { METRIC_DIMENSIONS } from '@kobato/db/duckdb/queries/metric-dimensions'

@@ -2,6 +2,8 @@ import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { AppLocalization } from '@kobato/settings/app-localization'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
+import { updateCommentBodyAndContent } from '@kobato/db/operations/comment'
 import { comment as commentTable } from '@kobato/db/schema/comment'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { metric as metricTable } from '@kobato/db/schema/metric'
@@ -11,7 +13,6 @@ import { postTag } from '@kobato/db/schema/post-tag'
 import { tag as tagTable } from '@kobato/db/schema/taxonomy'
 import { user as userTable } from '@kobato/db/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
-import { updateCommentBodyAndContent } from '@kobato/server/domains/comments/repos/mutate'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
@@ -71,7 +72,7 @@ const LOCALIZATION: AppLocalization = {
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug,
@@ -84,20 +85,20 @@ async function seedPost(slug: string): Promise<number> {
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 async function seedComment(postId: number, content = 'first comment'): Promise<number> {
-  const userRows = await db
+  const userRows = await sqliteOf(db)
     .insert(userTable)
     .values({ name: 'Commenter', email: `commenter-${randomUUID()}@example.com`, password: 'hashed' })
     .returning({ id: userTable.id })
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(commentTable)
     .values({
       type: 'post',
@@ -114,7 +115,7 @@ async function seedComment(postId: number, content = 'first comment'): Promise<n
 }
 
 async function seedPage(slug: string, draftBody?: LexicalEditorState): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug,
@@ -125,13 +126,13 @@ async function seedPage(slug: string, draftBody?: LexicalEditorState): Promise<n
     })
     .returning({ id: pageTable.id })
   const pageId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body })
     .returning({ id: contentTable.id })
-  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   if (draftBody !== undefined) {
-    await db.insert(contentTable).values({
+    await sqliteOf(db).insert(contentTable).values({
       type: 'page',
       ownerId: pageId,
       revisionNo: 2,
@@ -257,11 +258,11 @@ describe('detail representation ETags', () => {
     const postId = await seedPost('etag-post')
 
     for (let i = 0; i < 10; i++) {
-      const tagRows = await db
+      const tagRows = await sqliteOf(db)
         .insert(tagTable)
         .values({ name: `tag-${i}`, slug: `tag-${i}` })
         .returning({ id: tagTable.id })
-      await db.insert(postTag).values({ postId, tagId: tagRows[0]!.id })
+      await sqliteOf(db).insert(postTag).values({ postId, tagId: tagRows[0]!.id })
     }
 
     const first = await readPost('etag-post')
@@ -279,8 +280,11 @@ describe('detail representation ETags', () => {
 
   it('post: sidebar widgets read the request-pinned settings, not the global snapshot', async () => {
     const postId = await seedPost('etag-post')
-    const tagRows = await db.insert(tagTable).values({ name: 'pinned', slug: 'pinned' }).returning({ id: tagTable.id })
-    await db.insert(postTag).values({ postId, tagId: tagRows[0]!.id })
+    const tagRows = await sqliteOf(db)
+      .insert(tagTable)
+      .values({ name: 'pinned', slug: 'pinned' })
+      .returning({ id: tagTable.id })
+    await sqliteOf(db).insert(postTag).values({ postId, tagId: tagRows[0]!.id })
 
     const pinned = sidebarBundle({ recentPosts: 0, randomTags: 0 })
     const res = await callRpc(
@@ -322,12 +326,12 @@ describe('detail representation ETags', () => {
     expect(withSidebar.etag).not.toBe(base.etag)
 
     const metricWhere = and(eq(metricTable.type, 'post'), eq(metricTable.ownerId, postId))
-    await db.update(metricTable).set({ voteUp: 4 }).where(metricWhere)
+    await sqliteOf(db).update(metricTable).set({ voteUp: 4 }).where(metricWhere)
     const withLikes = await readPost('etag-post', { ifNoneMatch: withSidebar.etag! })
     expect(withLikes.kind).toBe('ok')
     expect(withLikes.etag).not.toBe(withSidebar.etag)
 
-    await db.update(metricTable).set({ publicId: randomUUID() }).where(metricWhere)
+    await sqliteOf(db).update(metricTable).set({ publicId: randomUUID() }).where(metricWhere)
     const withNewKey = await readPost('etag-post', { ifNoneMatch: withLikes.etag! })
     expect(withNewKey.kind).toBe('ok')
     expect(withNewKey.etag).not.toBe(withLikes.etag)
@@ -406,11 +410,11 @@ describe('detail representation ETags', () => {
   })
 
   it('post: a draft preview never carries or honours the published ETag', async () => {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(postTable)
       .values({ slug: 'secret', title: 'Secret', published: false, visible: false, authorId: 1 })
       .returning({ id: postTable.id })
-    await db.insert(contentTable).values({
+    await sqliteOf(db).insert(contentTable).values({
       type: 'post',
       ownerId: rows[0]!.id,
       revisionNo: 1,
@@ -464,11 +468,11 @@ describe('detail representation ETags', () => {
     const pageId = await seedPage('etag-page')
     const base = await readPage('etag-page')
 
-    const revisions = await db
+    const revisions = await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'page', ownerId: pageId, revisionNo: 2, status: 'published', body: [] })
       .returning({ id: contentTable.id })
-    await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+    await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
 
     const republished = await readPage('etag-page', { ifNoneMatch: base.etag! })
     expect(republished.kind).toBe('ok')

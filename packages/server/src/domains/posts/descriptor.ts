@@ -7,35 +7,33 @@ import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entiti
 
 import { hasAtLeast } from '@kobato/auth/roles'
 import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/operations/category'
-import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@kobato/db/operations/post-tag'
-import { findTagsByNames, seedTagsIfMissing } from '@kobato/db/operations/tag'
+import {
+  findEntityMetaById,
+  findEntityMetaBySlug,
+  findPublicEntityMetaBySlug,
+  insertEntityMeta,
+  restoreEntityMeta,
+  softDeleteEntityMeta,
+  updateEntityMetaById,
+} from '@kobato/db/operations/entity-meta'
+import { findContentById } from '@kobato/db/operations/entity-revision'
+import { removePostSearchIndex } from '@kobato/db/operations/post-search'
+import { findTagNamesByPostId, findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
 import { canEditPost } from '@kobato/server/domains/auth/rbac'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
-import { findContentById } from '@kobato/server/domains/content/revisions'
 import { isLive, isPromoted } from '@kobato/server/domains/content/schemas/live-gate'
 import { toAdminPostDto, toCmsPost } from '@kobato/server/domains/posts/projection'
 import { runPostPublishHooks } from '@kobato/server/domains/posts/publish-hooks'
-import {
-  insertPostMeta,
-  restorePostMeta,
-  softDeletePostMeta,
-  updatePostMetaById,
-} from '@kobato/server/domains/posts/repos/write'
-import { indexPost, indexPostFromRevision, removePostIndex } from '@kobato/server/domains/posts/services/search-index'
+import { indexPost, indexPostFromRevision } from '@kobato/server/domains/posts/services/search-index'
 import { assertOwnPostOr404, type PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared'
-import {
-  findPostMetaById,
-  findPostMetaBySlug,
-  findPostMetaBySlugForUpdate,
-  findPublicPostMetaBySlug,
-} from '@kobato/server/domains/posts/services/single'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger } from '@kobato/server/infra/logger'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
 import { idFromString } from '@kobato/utils/id'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('posts.service')
 
@@ -49,25 +47,6 @@ interface IndexablePostData {
   title: string
   summary: string
   revision: ContentRow
-}
-
-function ensureTagsExist(db: Database, tagNames: string[]): void {
-  if (tagNames.length === 0) {
-    return
-  }
-  seedTagsIfMissing(
-    db,
-    tagNames.map((name) => ({ name, slug: resolveSlug(undefined, name, { entity: 'taxonomy' }) })),
-  )
-}
-
-function resolveTagIdsForNames(db: Database, names: string[]): number[] {
-  if (names.length === 0) {
-    return []
-  }
-  const rows = findTagsByNames(db, names)
-  const byName = new Map(rows.map((r) => [r.name, r.id]))
-  return names.map((name) => byName.get(name)).filter((id): id is number => id !== undefined)
 }
 
 async function resolveCategoryName(db: Database, categoryId: number | null): Promise<string> {
@@ -94,14 +73,14 @@ export const postDescriptor: MetaEntityDescriptor<
 > = {
   entityType: 'post',
   repos: {
-    findMetaById: findPostMetaById,
-    findMetaBySlug: findPostMetaBySlug,
-    findMetaBySlugForUpdate: findPostMetaBySlugForUpdate,
-    findPublicMetaBySlug: findPublicPostMetaBySlug,
-    insertMeta: insertPostMeta,
-    updateMetaById: updatePostMetaById,
-    softDeleteMeta: softDeletePostMeta,
-    restoreMeta: restorePostMeta,
+    findMetaById: (db, id) => unsafeCast<PostMetaRow | null>(findEntityMetaById(db, 'post', id)),
+    findMetaBySlug: (db, slug) => unsafeCast<PostMetaRow | null>(findEntityMetaBySlug(db, 'post', slug)),
+    findMetaBySlugForUpdate: (db, slug) => unsafeCast<PostMetaRow | null>(findEntityMetaBySlug(db, 'post', slug)),
+    findPublicMetaBySlug: (db, slug) => unsafeCast<PostMetaRow | null>(findPublicEntityMetaBySlug(db, 'post', slug)),
+    insertMeta: (db, values) => unsafeCast<PostMetaRow>(insertEntityMeta(db, 'post', values)),
+    updateMetaById: (db, id, patch) => unsafeCast<PostMetaRow | null>(updateEntityMetaById(db, 'post', id, patch)),
+    softDeleteMeta: (db, id) => softDeleteEntityMeta(db, 'post', id),
+    restoreMeta: (db, id) => restoreEntityMeta(db, 'post', id),
   },
   defaultAdminListLimit: 20,
   access: {
@@ -186,14 +165,8 @@ export const postDescriptor: MetaEntityDescriptor<
       categoryId: input.categoryId === undefined ? existing.categoryId : input.categoryId,
       alias: input.alias ?? existing.alias,
     }),
-    syncRelations(tx, metaId, input) {
-      const tagNames = input.tags ?? []
-      ensureTagsExist(tx, tagNames)
-      const tagIds = resolveTagIdsForNames(tx, tagNames)
-      setPostTags(tx, metaId, tagIds)
-    },
-    deleteRelations(tx, metaId) {
-      removePostIndex(tx, metaId)
+    tagSeedsFor(input) {
+      return (input.tags ?? []).map((name) => ({ name, slug: resolveSlug(undefined, name, { entity: 'taxonomy' }) }))
     },
     async mutationExtras(db, meta, source) {
       const [tags, categoryName] = await Promise.all([
@@ -217,7 +190,7 @@ export const postDescriptor: MetaEntityDescriptor<
       }
       if (event === 'unpublish') {
         try {
-          removePostIndex(db, meta.id)
+          removePostSearchIndex(db, meta.id)
         } catch (err: unknown) {
           log.warn('remove post index failed', { postId: meta.id, error: err })
         }
@@ -240,15 +213,12 @@ export const postDescriptor: MetaEntityDescriptor<
         }
       }
     },
-    prepareRestore(tx, meta) {
-      if (!isPromoted(meta)) {
+    buildRestoreContext(result) {
+      if (result.meta === null || !isPromoted(result.meta) || result.publishedRevision === null) {
         return null
       }
-      const revision = findContentById(tx, meta.publishedRevisionId)
-      if (revision === null) {
-        return null
-      }
-      return { id: meta.id, title: meta.title, summary: meta.summary, revision }
+      const meta = unsafeCast<PostMetaRow>(result.meta)
+      return { id: meta.id, title: meta.title, summary: meta.summary, revision: result.publishedRevision }
     },
     async afterRestore(db, indexable) {
       invalidateContent({ entity: 'post' })

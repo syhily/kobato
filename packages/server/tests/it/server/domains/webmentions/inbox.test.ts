@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import {
   listWebmentionInbox,
   markWebmentionInboxRetry,
@@ -26,7 +27,7 @@ const linkingHtml = (href: string) =>
   `<body><p>I wrote about <a href="${href}">this post</a>.</p></body></html>`
 
 async function seedLivePost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({ slug, title: 'Mentioned Post', published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
@@ -72,7 +73,7 @@ describe('integration / webmention inbox worker', () => {
     expect(await runWebmentionInboxBatch(db)).toBe(1)
 
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
     expect(rows[0]!.type).toBe('mention')
@@ -90,7 +91,7 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
 
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
     expect(rows[0]!.verificationStatus).toBe('failed')
@@ -109,7 +110,7 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
 
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.verificationStatus).toBe('failed')
     expect(rows[0]!.lastError).toBe('source document is not HTML')
@@ -124,7 +125,7 @@ describe('integration / webmention inbox worker', () => {
 
     expect(mockFetch.calls).toHaveLength(0)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    const rows = await db.select().from(webmention)
+    const rows = await sqliteOf(db).select().from(webmention)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.verificationStatus).toBe('failed')
     expect(rows[0]!.lastError).toBe('source URL points at a blocked host')
@@ -137,7 +138,7 @@ describe('integration / webmention inbox worker', () => {
 
     expect(mockFetch.calls).toHaveLength(0)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(0)
   })
 
   it('records the failure on a permanent HTTP refusal (4xx), no retry', async () => {
@@ -149,7 +150,7 @@ describe('integration / webmention inbox worker', () => {
 
     const rows = await listWebmentionInbox(db)
     expect(rows).toHaveLength(0)
-    const mentions = await db.select().from(webmention)
+    const mentions = await sqliteOf(db).select().from(webmention)
     expect(mentions).toHaveLength(1)
     expect(mentions[0]!.verificationStatus).toBe('failed')
     expect(mentions[0]!.lastError).toBe('source could not be fetched (HTTP 404)')
@@ -182,7 +183,7 @@ describe('integration / webmention inbox worker', () => {
     })
     await processWebmentionInboxRow(db, row!)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    const mentions = await db.select().from(webmention)
+    const mentions = await sqliteOf(db).select().from(webmention)
     expect(mentions).toHaveLength(1)
     expect(mentions[0]!.verificationStatus).toBe('failed')
     expect(mentions[0]!.lastError).toContain('source could not be fetched')
@@ -198,7 +199,7 @@ describe('integration / webmention inbox worker', () => {
 
     await enqueue()
     const [queued] = await listWebmentionInbox(db)
-    await db
+    await sqliteOf(db)
       .update(webmentionInbox)
       .set({ nextRetryAt: new Date(Date.now() - 1000) })
       .where(eq(webmentionInbox.id, queued!.id))
@@ -206,7 +207,7 @@ describe('integration / webmention inbox worker', () => {
 
     await runWebmentionInboxBatch(db)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
   })
 
   it('drains the queue without fetching when receiving is switched off', async () => {
@@ -221,7 +222,7 @@ describe('integration / webmention inbox worker', () => {
 
     expect(mockFetch.calls).toHaveLength(0)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(0)
   })
 })
 

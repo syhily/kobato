@@ -1,6 +1,7 @@
+import { sqliteOf } from '@kobato/db/database'
+import { findEntitySlugTitle, resolveEntitiesForComments } from '@kobato/db/operations/entity-asset'
 import { page } from '@kobato/db/schema/page'
 import { post } from '@kobato/db/schema/post'
-import { findEntitySlugTitle, resolveEntitiesForComments } from '@kobato/server/domains/content/entities/slug-title'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -11,7 +12,7 @@ beforeEach(async () => {
 })
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -25,7 +26,7 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedPageEntity(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(page)
     .values({ slug, title: `Page ${slug}` })
     .returning({ id: page.id })

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { image as imageTable } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
@@ -16,7 +17,7 @@ beforeEach(async () => {
 })
 
 async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(imageTable)
     .values({
       storagePath: 'images/test.jpg',

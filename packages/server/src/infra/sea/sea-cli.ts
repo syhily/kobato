@@ -35,7 +35,7 @@ Usage:
   kobato --version, -v     Print the version and exit
   kobato --help, -h        Print this help and exit
   kobato --smoke-natives   Extract and load the native packages (sharp,
-                           @napi-rs/canvas, @duckdb/node-api), run a tiny
+                           @napi-rs/canvas, the DuckDB engine), run a tiny
                            render + a tiny aggregate, and exit
   kobato --smoke-worker    Round-trip a real sharp job through the
                            worker_threads image pool and exit. Requires
@@ -104,18 +104,8 @@ async function smokeNatives(quiet = false): Promise<void> {
     throw new Error('@napi-rs/canvas PNG encode produced an empty buffer')
   }
 
-  const { DuckDBInstance } = await import('@duckdb/node-api')
-  const duckdb = await DuckDBInstance.create()
-  const connection = await duckdb.connect()
-  await connection.run('CREATE TABLE smoke (n INTEGER)')
-  await connection.run('INSERT INTO smoke VALUES (1), (2), (3)')
-  const result = await connection.runAndReadAll('SELECT sum(n) AS total FROM smoke')
-  const total = result.getRowObjects()[0]?.total
-  connection.closeSync()
-  duckdb.closeSync()
-  if (Number(total) !== 6) {
-    throw new Error(`@duckdb/node-api aggregate returned ${String(total)}, expected 6`)
-  }
+  const { runDuckDbSelfCheck } = await import('@kobato/db/duckdb/self-check')
+  await runDuckDbSelfCheck()
 
   if (!quiet) {
     process.stdout.write(`SEA natives smoke passed: ${process.platform}-${process.arch}\n`)

@@ -1,16 +1,63 @@
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { drizzle, type NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
-export type Database = NodeSQLiteDatabase
+declare const databaseBrand: unique symbol
+declare const databaseHandleBrand: unique symbol
 
+/**
+ * Opaque content-database engine token. Carries no query surface — only `@kobato/db` unwraps it into the Drizzle
+ * engine; `@kobato/server` holds the token and passes it back into db operations (mirrors the DuckDB
+ * `AnalyticsHandle`).
+ */
+export interface Database {
+  readonly [databaseBrand]: true
+}
+
+/**
+ * Opaque content-database lifecycle handle. Lifecycle metadata only — no native client or Drizzle engine fields.
+ */
 export interface DatabaseHandle {
-  db: Database
+  readonly [databaseHandleBrand]: true
+  readonly path: string
+  readonly inMemory: boolean
+  closed: boolean
+}
+
+/**
+ * The SQLite anatomy behind the opaque tokens (Drizzle engine + native client). Db-plane only: never part of a
+ * `@kobato/server` signature. Tests reach it through `sqliteEngineOf`.
+ */
+export interface SqliteEngine {
+  db: NodeSQLiteDatabase
   client: DatabaseSync
   path: string
   inMemory: boolean
   closed: boolean
+}
+
+/**
+ * The single sanctioned unwrap seam from the opaque `Database` token to the Drizzle engine. Db-plane only — never
+ * import this from `@kobato/server`.
+ */
+export function sqliteOf(database: Database): NodeSQLiteDatabase {
+  return unsafeCast<NodeSQLiteDatabase>(database)
+}
+
+/**
+ * The single sanctioned unwrap seam from the opaque `DatabaseHandle` to the engine anatomy. Db-plane only.
+ */
+export function sqliteEngineOf(handle: DatabaseHandle): SqliteEngine {
+  return unsafeCast<SqliteEngine>(handle)
+}
+
+/**
+ * Extract the opaque engine token from a lifecycle handle. Safe for any plane — the result is still opaque.
+ */
+export function databaseOf(handle: DatabaseHandle): Database {
+  return unsafeCast<Database>(sqliteEngineOf(handle).db)
 }
 
 export function isInMemoryPath(p: string): boolean {
@@ -38,17 +85,19 @@ export function openDatabase(databasePath: string): DatabaseHandle {
   client.exec('PRAGMA cache_size = -20000')
   client.exec('PRAGMA temp_store = MEMORY')
   client.exec('PRAGMA mmap_size = 268435456')
-  return { db: drizzle({ client }), client, path: databasePath, inMemory, closed: false }
+  const engine: SqliteEngine = { db: drizzle({ client }), client, path: databasePath, inMemory, closed: false }
+  return unsafeCast<DatabaseHandle>(engine)
 }
 
 export function closeDatabase(handle: DatabaseHandle): void {
-  if (handle.closed) {
+  const engine = sqliteEngineOf(handle)
+  if (engine.closed) {
     return
   }
-  handle.closed = true
-  handle.client.exec('PRAGMA optimize')
-  if (!handle.inMemory) {
-    handle.client.exec('PRAGMA wal_checkpoint(TRUNCATE)')
+  engine.closed = true
+  engine.client.exec('PRAGMA optimize')
+  if (!engine.inMemory) {
+    engine.client.exec('PRAGMA wal_checkpoint(TRUNCATE)')
   }
-  handle.client.close()
+  engine.client.close()
 }

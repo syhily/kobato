@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { lexicalBodyWith, lexicalHeading, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
@@ -20,7 +21,7 @@ beforeEach(async () => {
 })
 
 async function seedAboutPage(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug: 'about',
@@ -34,7 +35,7 @@ async function seedAboutPage(): Promise<number> {
     })
     .returning({ id: pageTable.id })
   const pageId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'page',
@@ -46,7 +47,7 @@ async function seedAboutPage(): Promise<number> {
       headings: dbPageHeadings,
     })
     .returning({ id: contentTable.id })
-  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   return pageId
 }
 

@@ -1,9 +1,9 @@
 import type { Database } from '@kobato/db/database'
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { AnalyticsHandle, AnalyticsReader } from '@kobato/db/duckdb/connection'
 
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration'
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
+import { analyticsReaderOf, analyticsWriterOf } from '@kobato/db/duckdb/connection'
+import { checkpointAnalyticsDatabase, closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { runAccessLogRetention } from '@kobato/db/duckdb/maintenance'
 import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine'
@@ -24,8 +24,8 @@ const engine = new ManagedEngine<AnalyticsHandle>(
   'analyticsHandle',
 )
 
-wireAccessLogBatcher({ getWriter: () => engine.get().writer })
-wireDeviceEnvBeaconBatcher({ getWriter: () => engine.get().writer })
+wireAccessLogBatcher({ getWriter: () => analyticsWriterOf(engine.get()) })
+wireDeviceEnvBeaconBatcher({ getWriter: () => analyticsWriterOf(engine.get()) })
 
 let maintenanceJob: ScheduledJob | null = null
 
@@ -85,7 +85,7 @@ export function __resetAnalyticsEngineForTests(): void {
 }
 
 export function getAnalyticsReader(): AnalyticsReader {
-  return getAnalyticsHandle().reader
+  return analyticsReaderOf(getAnalyticsHandle())
 }
 
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
@@ -99,7 +99,7 @@ export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean>
       await batcher?.pause?.()
     }
     try {
-      await handle.writer.run('CHECKPOINT')
+      await checkpointAnalyticsDatabase(handle)
       await copyFile(handle.path, stagingPath)
     } finally {
       for (const batcher of batchers) {

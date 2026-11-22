@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findSlugRegistryBySlug } from '@kobato/db/operations/slug-registry'
 import { slugRegistry } from '@kobato/db/schema/config'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -26,7 +27,7 @@ describe('integration / admin posts restore', () => {
     const deleteRes = await callRpc('/admin/posts/delete', { id: a.post.id }, ctx)
     expect(deleteRes.status).toBe(200)
 
-    await db.insert(slugRegistry).values({
+    await sqliteOf(db).insert(slugRegistry).values({
       slug: 'shared-slug',
       entityType: 'post',
       entityId: 999999,

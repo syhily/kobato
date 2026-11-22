@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { image } from '@kobato/db/schema/media'
 import { buildObjectKey } from '@kobato/server/domains/images/key'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
@@ -76,7 +77,7 @@ function avif(brand = 'avif'): Buffer {
 }
 
 async function allImageRows() {
-  return db.select().from(image)
+  return sqliteOf(db).select().from(image)
 }
 
 describe('images/services/upload — pure validation + mime detection', () => {
@@ -218,7 +219,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
       try {
         vi.setSystemTime(new Date('2026-07-30T12:34:56.789Z'))
         const key = buildObjectKey({ kind: 'generic', now: new Date() })
-        await db.insert(image).values({
+        await sqliteOf(db).insert(image).values({
           storagePath: key,
           storageDriver: 's3',
           mimeType: 'image/jpeg',
@@ -342,7 +343,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
         uploader: null,
       })
       expect(dto.note).toBe('hello')
-      const rows = await db.select().from(image).where(eq(image.storagePath, dto.storagePath))
+      const rows = await sqliteOf(db).select().from(image).where(eq(image.storagePath, dto.storagePath))
       expect(rows[0].note).toBe('hello')
     })
 
@@ -381,7 +382,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
       })
       expect(dto.uploaderId).toBe('42')
       expect(dto.uploaderName).toBe('alice')
-      const rows = await db.select().from(image).where(eq(image.storagePath, dto.storagePath))
+      const rows = await sqliteOf(db).select().from(image).where(eq(image.storagePath, dto.storagePath))
       expect(rows[0].uploaderId).toBe(42)
     })
 

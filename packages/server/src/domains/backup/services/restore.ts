@@ -1,6 +1,7 @@
 import type { Readable } from 'node:stream'
 
 import { isInMemoryPath } from '@kobato/db/database'
+import { stagedContentDbHasLiveAdmin } from '@kobato/db/operations/backup'
 import {
   BackupDecryptionError,
   createBackupDecipher,
@@ -33,7 +34,6 @@ import {
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
@@ -305,18 +305,8 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
   if (staged.content === null) {
     throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
   }
-  const db = new DatabaseSync(staged.content, { readOnly: true })
-  try {
-    const row: unknown = db
-      .prepare(`SELECT count(*) AS admins FROM "user" WHERE "role" = 'admin' AND "deleted_at" IS NULL`)
-      .get()
-    const admins =
-      row !== null && typeof row === 'object' && 'admins' in row && typeof row.admins === 'number' ? row.admins : 0
-    if (admins < 1) {
-      throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
-    }
-  } finally {
-    db.close()
+  if (!stagedContentDbHasLiveAdmin(staged.content)) {
+    throw new ActionFailure(400, descriptorFor('backup.error.noAdmin'))
   }
 }
 

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { image as imageTable } from '@kobato/db/schema/media'
 import { post as postMetaTable } from '@kobato/db/schema/post'
@@ -14,7 +15,7 @@ beforeEach(async () => {
 })
 
 async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postMetaTable)
     .values({
       slug: opts.slug ?? `post-${Math.random().toString(36).slice(2)}`,
@@ -33,7 +34,7 @@ async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): 
 }
 
 async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: opts.type ?? 'post',
@@ -48,7 +49,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
 }
 
 async function seedTag(name: string, slug?: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(tagTable)
     .values({ name, slug: slug ?? name.toLowerCase() })
     .returning({ id: tagTable.id })
@@ -56,7 +57,7 @@ async function seedTag(name: string, slug?: string): Promise<number> {
 }
 
 async function seedCategory(name: string, slug?: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(categoryTable)
     .values({ name, slug: slug ?? name.toLowerCase(), cover: '' })
     .returning({ id: categoryTable.id })
@@ -64,11 +65,11 @@ async function seedCategory(name: string, slug?: string): Promise<number> {
 }
 
 async function linkTag(postId: number, tagId: number): Promise<void> {
-  await db.insert(postTag).values({ postId, tagId })
+  await sqliteOf(db).insert(postTag).values({ postId, tagId })
 }
 
 async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(imageTable)
     .values({
       storagePath: 'images/cover.png',
@@ -90,13 +91,13 @@ function coverUrl(row: typeof imageTable.$inferSelect): string {
 
 describe('posts/repos/shared — buildPostsWhere', () => {
   it('returns undefined when no filter is supplied', async () => {
-    const { buildPostsWhere } = await import('@kobato/server/domains/posts/repos/shared')
-    expect(buildPostsWhere({})).toBeUndefined()
+    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    await expect(listPostMetas(db, {})).resolves.toEqual([])
   })
   it('stacks deletedStatus / q / category / tag / flags / lifecycle', async () => {
-    const { buildPostsWhere } = await import('@kobato/server/domains/posts/repos/shared')
-    expect(
-      buildPostsWhere({
+    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    await expect(
+      listPostMetas(db, {
         deletedStatus: 'normal',
         q: 'foo',
         categoryId: 1,
@@ -105,24 +106,24 @@ describe('posts/repos/shared — buildPostsWhere', () => {
         visible: true,
         lifecycle: 'published',
       }),
-    ).toBeDefined()
-    expect(
-      buildPostsWhere({
+    ).resolves.toEqual([])
+    await expect(
+      listPostMetas(db, {
         deletedStatus: 'deleted',
         lifecycle: 'draft',
       }),
-    ).toBeDefined()
+    ).resolves.toEqual([])
   })
 })
 
 describe('posts/repos/shared — buildPostsOrderBy', () => {
   it('falls back to firstPublishedAt desc', async () => {
-    const { buildPostsOrderBy } = await import('@kobato/server/domains/posts/repos/shared')
-    expect(buildPostsOrderBy({})).toBeDefined()
+    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    await expect(listPostMetas(db, {})).resolves.toEqual([])
   })
   it('switches to updatedAt asc', async () => {
-    const { buildPostsOrderBy } = await import('@kobato/server/domains/posts/repos/shared')
-    expect(buildPostsOrderBy({ sortBy: 'updatedAt', sortOrder: 'asc' })).toBeDefined()
+    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    await expect(listPostMetas(db, { sortBy: 'updatedAt', sortOrder: 'asc' })).resolves.toEqual([])
   })
 })
 
@@ -164,9 +165,9 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
 
 describe('posts/repos/shared — buildPublicPostsWhere', () => {
   it('always narrows to published, non-deleted rows', async () => {
-    const { buildPublicPostsWhere } = await import('@kobato/server/domains/posts/repos/shared')
-    expect(buildPublicPostsWhere({})).toBeDefined()
-    expect(buildPublicPostsWhere({ includeHidden: true, includeScheduled: true })).toBeDefined()
+    const { listPublicPostMetas } = await import('@kobato/db/operations/post')
+    await expect(listPublicPostMetas(db)).resolves.toEqual([])
+    await expect(listPublicPostMetas(db, { includeHidden: true, includeScheduled: true })).resolves.toEqual([])
   })
   it('excludes scheduled rows unless includeScheduled is set', async () => {
     await seedPost({ slug: 'live-now', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
@@ -182,21 +183,21 @@ describe('posts/repos/shared — buildPublicPostsWhere', () => {
 describe('posts/repos/write — updatePostMetaById / softDelete / restore', () => {
   it('updates fields by id', async () => {
     const id = await seedPost({ slug: 'u', title: 'Old' })
-    const { updatePostMetaById } = await import('@kobato/server/domains/posts/repos/write')
-    const updated = await updatePostMetaById(db, id, { title: 'New' })
+    const { updateEntityMetaById } = await import('@kobato/db/operations/entity-meta')
+    const updated = await updateEntityMetaById(db, 'post', id, { title: 'New' })
     expect(updated?.title).toBe('New')
   })
   it('soft-deletes then restores', async () => {
     const id = await seedPost({ slug: 'sd', title: 'X' })
-    const { softDeletePostMeta, restorePostMeta } = await import('@kobato/server/domains/posts/repos/write')
-    expect(await softDeletePostMeta(db, id)).toBe(true)
-    expect(await restorePostMeta(db, id)).toBe(true)
+    const { softDeleteEntityMeta, restoreEntityMeta } = await import('@kobato/db/operations/entity-meta')
+    expect(await softDeleteEntityMeta(db, 'post', id)).toBe(true)
+    expect(await restoreEntityMeta(db, 'post', id)).toBe(true)
   })
   it('soft-delete returns false when already deleted', async () => {
     const id = await seedPost({ slug: 'sd2', title: 'X' })
-    const { softDeletePostMeta } = await import('@kobato/server/domains/posts/repos/write')
-    await softDeletePostMeta(db, id)
-    expect(await softDeletePostMeta(db, id)).toBe(false)
+    const { softDeleteEntityMeta } = await import('@kobato/db/operations/entity-meta')
+    await softDeleteEntityMeta(db, 'post', id)
+    expect(await softDeleteEntityMeta(db, 'post', id)).toBe(false)
   })
 })
 
@@ -249,7 +250,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const tid = await seedTag('React')
     const pid = await seedPost({ slug: 'h-list', publishedRevisionId: 1 })
     await linkTag(pid, tid)
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows)
     expect(posts).toHaveLength(1)
@@ -260,7 +261,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
   it('joins published revisions when revision: published', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'h-full', publishedRevisionId: revId })
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { revision: 'published' })
     expect(posts).toHaveLength(1)
@@ -268,7 +269,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
   })
   it('skips cover hydration when images: false', async () => {
     const pid = await seedPost({ slug: 'h-noimg', publishedRevisionId: 1, cover: '/c.png' })
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { images: false })
     expect(posts[0]?.cover).toBe('/c.png')
@@ -278,7 +279,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const imageRow = await seedImage()
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'h-cover', publishedRevisionId: revId, cover: '/images/cover.png' })
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows)
     expect(posts[0]?.cover).toBe(coverUrl(imageRow))
@@ -295,13 +296,13 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     await seedPost({ slug: 'h-cat', categoryId: techId })
     await seedPost({ slug: 'h-cat-null', categoryId: null })
     await seedPost({ slug: 'h-cat-dangling', categoryId: ghostId })
-    db.run(sql`PRAGMA foreign_keys = OFF`)
+    sqliteOf(db).run(sql`PRAGMA foreign_keys = OFF`)
     try {
-      await db.delete(categoryTable).where(eq(categoryTable.id, ghostId))
+      await sqliteOf(db).delete(categoryTable).where(eq(categoryTable.id, ghostId))
     } finally {
-      db.run(sql`PRAGMA foreign_keys = ON`)
+      sqliteOf(db).run(sql`PRAGMA foreign_keys = ON`)
     }
-    const rows = await db.select().from(postMetaTable)
+    const rows = await sqliteOf(db).select().from(postMetaTable)
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows)
     const bySlug = new Map(posts.map((p) => [p.slug, p]))
@@ -322,7 +323,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     })
     await seedPost({ slug: 'h-rev', publishedRevisionId: revId })
     await seedPost({ slug: 'h-rev-none', publishedRevisionId: null })
-    const rows = await db.select().from(postMetaTable)
+    const rows = await sqliteOf(db).select().from(postMetaTable)
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { revision: 'published' })
     const bySlug = new Map(posts.map((p) => [p.slug, p]))
@@ -336,7 +337,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
   it('joins revisions but skips covers with revision: published + images: false', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'h-rev-noimg', publishedRevisionId: revId, cover: '/images/cover.png' })
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@kobato/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { revision: 'published', images: false })
     expect(posts[0]?.cover).toBe('/images/cover.png')

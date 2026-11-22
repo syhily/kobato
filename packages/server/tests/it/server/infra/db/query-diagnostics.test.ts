@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { startQueryDiagnostics, stopQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -32,7 +33,7 @@ beforeEach(() => {
 
 describe("'sqlite.db.query' diagnostics channel", () => {
   it('publishes { sql, database, duration } per statement through the drizzle handle', () => {
-    getTestDb().all(sql`SELECT ${'probe-value'} AS v`)
+    sqliteOf(getTestDb()).all(sql`SELECT ${'probe-value'} AS v`)
 
     const hit = messages.find((m) => typeof m.sql === 'string' && m.sql.includes('probe-value'))
     expect(hit).toBeDefined()
@@ -43,7 +44,7 @@ describe("'sqlite.db.query' diagnostics channel", () => {
   it('forwards timings to the debug log with bound values redacted (opt-in under vitest)', () => {
     startQueryDiagnostics({ enabledInTests: true })
 
-    getTestDb().all(sql`SELECT ${'s3cret-bound-value'} AS v, ${42} AS n`)
+    sqliteOf(getTestDb()).all(sql`SELECT ${'s3cret-bound-value'} AS v, ${42} AS n`)
 
     const entry = __logCaptureForTests().find((e) => e.scope === 'db.query' && e.msg === 'sqlite query')
     expect(entry).toBeDefined()
@@ -59,7 +60,7 @@ describe("'sqlite.db.query' diagnostics channel", () => {
   it('stays silent without the explicit opt-in (the boot wiring is a vitest no-op)', () => {
     startQueryDiagnostics()
 
-    getTestDb().all(sql`SELECT ${'should-not-be-logged'} AS v`)
+    sqliteOf(getTestDb()).all(sql`SELECT ${'should-not-be-logged'} AS v`)
 
     expect(__logCaptureForTests().filter((e) => e.scope === 'db.query')).toEqual([])
   })

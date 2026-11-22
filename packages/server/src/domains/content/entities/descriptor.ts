@@ -1,5 +1,6 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { Database } from '@kobato/db/database'
+import type { RestoreEntityResult } from '@kobato/db/operations/entity-meta'
 import type { ContentRow } from '@kobato/db/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
@@ -107,11 +108,10 @@ export interface MetaEntityDescriptor<
     preflightUpsert?: (db: Database, input: TInput) => Promise<void>
     insertExtras: (input: TInput) => Partial<TNew>
     updateExtras: (input: TInput, existing: TMeta) => Partial<TNew>
-    syncRelations?: (tx: Database, metaId: number, input: TInput) => void
-    deleteRelations?: (tx: Database, metaId: number) => void
+    tagSeedsFor?: (input: TInput) => Array<{ name: string; slug: string }>
     mutationExtras?: (db: Database, meta: TMeta, source: MutationExtrasSource<TInput>) => Promise<TExtras>
     afterMutation?: (db: Database, meta: TMeta, event: MetaMutationEvent) => Promise<void>
-    prepareRestore?: (tx: Database, meta: TMeta) => TRestore | null
+    buildRestoreContext?: (result: RestoreEntityResult) => TRestore | null
     afterRestore?: (db: Database, ctx: TRestore) => Promise<ErrorMessageDescriptor | undefined>
   }
 }

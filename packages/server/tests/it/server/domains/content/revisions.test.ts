@@ -1,8 +1,9 @@
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const query = await import('@kobato/server/domains/content/revisions')
+const query = await import('@kobato/db/operations/entity-revision')
 
 const db = getTestDb()
 
@@ -19,7 +20,7 @@ async function seedContent(overrides: {
   imageSources?: string[]
   headings?: unknown
 }) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: overrides.type,

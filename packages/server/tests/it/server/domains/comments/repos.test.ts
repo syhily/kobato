@@ -1,55 +1,40 @@
+import { sqliteOf } from '@kobato/db/database'
+import {
+  adminUserIds,
+  commentFingerprintRows,
+  commentsByIds,
+  countAdminComments,
+  countAllComments,
+  countApprovedCommentsByUser,
+  countApprovedRepliesOfComment,
+  countCommentsAndRoots,
+  findChildComments,
+  findCommentRootId,
+  findCommentsByIds,
+  findCommentWithUserAndTarget,
+  findCommentWithUserById,
+  findParentCommentsByIds,
+  findRootComments,
+  insertComment,
+  latestDistinctCommentIds,
+  latestDistinctCommentIdsQuery,
+  listAdminComments,
+  listAdminPendingDashboard,
+  listMyComments,
+  pendingComments,
+  recentCommentsForUserDedupe,
+  searchCommentAuthors,
+  searchPages,
+  updateCommentBodyAndContent,
+  updateOwnCommentBody,
+  updateOwnCommentBodyAndPending,
+} from '@kobato/db/operations/comment'
 import { comment } from '@kobato/db/schema/comment'
 import { metric } from '@kobato/db/schema/metric'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
-import {
-  countAllComments,
-  countAdminComments,
-  findCommentWithUserAndTarget,
-  listAdminComments,
-  listAdminPendingDashboard,
-  listMyComments,
-  searchCommentAuthors,
-  searchPages,
-} from '@kobato/server/domains/comments/repos/admin-query'
-import {
-  insertComment,
-  updateCommentBodyAndContent,
-  updateOwnCommentBody,
-  updateOwnCommentBodyAndPending,
-} from '@kobato/server/domains/comments/repos/mutate'
-import {
-  countApprovedCommentsByUser,
-  findParentCommentsByIds,
-  recentCommentsForUserDedupe,
-} from '@kobato/server/domains/comments/repos/public-query/by-id'
-import {
-  adminUserIds,
-  commentsByIds,
-  latestDistinctCommentIds,
-  latestDistinctCommentIdsQuery,
-  pendingComments,
-} from '@kobato/server/domains/comments/repos/public-query/digest'
-import {
-  countCommentsAndRoots,
-  findChildComments,
-  findCommentRootId,
-  findRootComments,
-} from '@kobato/server/domains/comments/repos/public-query/threads'
-import {
-  adminPendingWhere,
-  buildAdminListConditions,
-  mineWhere,
-  targetSlugTitleSubquery,
-  whereTarget,
-} from '@kobato/server/domains/comments/repos/shared'
 import { countAdminPendingDashboard } from '@kobato/server/domains/comments/services/admin-query'
-import {
-  countApprovedRepliesOfComment,
-  findCommentsByIds,
-  findCommentWithUserById,
-} from '@kobato/server/domains/comments/services/lookup'
 import { countMyComments, listMyCommentEntities } from '@kobato/server/domains/comments/services/mine-comments'
 import {
   adminClearDeleteRequest,
@@ -64,7 +49,7 @@ import {
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
@@ -73,7 +58,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -87,7 +72,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -101,12 +86,12 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedMetricRow(type: 'post' | 'page', ownerId: number, publicId: string = randomUUID()): Promise<string> {
-  await db.insert(metric).values({ type, ownerId, publicId })
+  await sqliteOf(db).insert(metric).values({ type, ownerId, publicId })
   return publicId
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
@@ -123,62 +108,57 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-beforeAll(async () => {
-  targetSlugTitleSubquery(db)
-})
-
 describe('comments/repos/shared — whereTarget', () => {
-  it('builds an AND condition over type and ownerId', () => {
-    const cond = whereTarget({ type: 'post', ownerId: 5 })
-    expect(cond).toBeDefined()
+  it('builds an AND condition over type and ownerId', async () => {
+    await expect(commentFingerprintRows(db, { type: 'post', ownerId: 5 })).resolves.toEqual([])
   })
 })
 
 describe('comments/repos/shared — buildAdminListConditions', () => {
-  it('returns only the deletedAt guard by default', () => {
-    const conds = buildAdminListConditions({})
-    expect(conds).toHaveLength(1)
+  it('returns only the deletedAt guard by default', async () => {
+    await expect(countAllComments(db, {})).resolves.toBe(0)
   })
 
-  it('stacks status, target, user, q, match and date bounds', () => {
-    const conds = buildAdminListConditions({
-      target: { type: 'post', ownerId: 1 },
-      userId: 7,
-      status: 'pending',
-      q: 'foo',
-      match: 'does-not-contain',
-      createdAfter: new Date('2026-01-01'),
-      createdBefore: new Date('2026-12-31'),
-    })
-    expect(conds.length).toBeGreaterThan(1)
+  it('stacks status, target, user, q, match and date bounds', async () => {
+    await expect(
+      listAdminComments(db, 0, 10, {
+        target: { type: 'post', ownerId: 1 },
+        userId: 7,
+        status: 'pending',
+        q: 'foo',
+        match: 'does-not-contain',
+        createdAfter: new Date('2026-01-01'),
+        createdBefore: new Date('2026-12-31'),
+      }),
+    ).resolves.toEqual([])
   })
 })
 
 describe('comments/repos/shared — adminPendingWhere', () => {
-  it('approval kind → only pending with no delete-request', () => {
-    expect(adminPendingWhere('approval')).toBeDefined()
+  it('approval kind → only pending with no delete-request', async () => {
+    await expect(listAdminPendingDashboard(db, 'approval', 0, 10)).resolves.toEqual([])
   })
-  it('deletion kind → only delete-requested', () => {
-    expect(adminPendingWhere('deletion')).toBeDefined()
+  it('deletion kind → only delete-requested', async () => {
+    await expect(listAdminPendingDashboard(db, 'deletion', 0, 10)).resolves.toEqual([])
   })
-  it('all kind → pending OR delete-requested', () => {
-    expect(adminPendingWhere('all')).toBeDefined()
+  it('all kind → pending OR delete-requested', async () => {
+    await expect(listAdminPendingDashboard(db, 'all', 0, 10)).resolves.toEqual([])
   })
 })
 
 describe('comments/repos/shared — mineWhere', () => {
-  it('applies only the visible-clause by default', () => {
-    expect(mineWhere(1)).toBeDefined()
+  it('applies only the visible-clause by default', async () => {
+    await expect(listMyComments(db, 1, 0, 10)).resolves.toEqual([])
   })
 
-  it('narrowes by status, entity and q when supplied', () => {
-    expect(
-      mineWhere(1, {
+  it('narrowes by status, entity and q when supplied', async () => {
+    await expect(
+      listMyComments(db, 1, 0, 10, {
         status: 'pending',
         entity: { type: 'post', ownerId: 2 },
         q: 'foo',
       }),
-    ).toBeDefined()
+    ).resolves.toEqual([])
   })
 })
 
@@ -186,7 +166,7 @@ describe('comments/services/moderate — approveCommentById', () => {
   it('flips is_pending to false', async () => {
     const id = await seedComment({ isPending: true })
     await approveCommentById(db, id)
-    const rows = await db.select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
+    const rows = await sqliteOf(db).select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
     expect(rows[0]?.isPending).toBe(false)
   })
 })
@@ -195,7 +175,7 @@ describe('comments/services/moderate — deleteCommentById', () => {
   it('removes the row', async () => {
     const id = await seedComment()
     await deleteCommentById(db, id)
-    const rows = await db.select({ id: comment.id }).from(comment).where(eq(comment.id, id))
+    const rows = await sqliteOf(db).select({ id: comment.id }).from(comment).where(eq(comment.id, id))
     expect(rows).toHaveLength(0)
   })
 })
@@ -204,7 +184,7 @@ describe('comments/services/moderate — softDeleteCommentById', () => {
   it('sets deleted_at', async () => {
     const id = await seedComment()
     await softDeleteCommentById(db, id)
-    const rows = await db.select({ deletedAt: comment.deletedAt }).from(comment).where(eq(comment.id, id))
+    const rows = await sqliteOf(db).select({ deletedAt: comment.deletedAt }).from(comment).where(eq(comment.id, id))
     expect(rows[0]?.deletedAt).not.toBeNull()
   })
 })
@@ -239,7 +219,7 @@ describe('comments/services/moderate — requestDeleteComment', () => {
     const pid = await seedPost('p3')
     const id = await seedComment({ userId: u1, ownerId: pid })
     await requestDeleteComment(db, id, u1)
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select({ deleteRequestedBy: comment.deleteRequestedBy })
       .from(comment)
       .where(eq(comment.id, id))
@@ -292,7 +272,7 @@ describe('comments/repos/mutate — updateCommentBodyAndContent', () => {
   it('rewrites body + content', async () => {
     const id = await seedComment({ content: 'old' })
     await updateCommentBodyAndContent(db, id, EMPTY_COMMENT_EDITOR_STATE, 'rewritten')
-    const rows = await db.select({ content: comment.content }).from(comment).where(eq(comment.id, id))
+    const rows = await sqliteOf(db).select({ content: comment.content }).from(comment).where(eq(comment.id, id))
     expect(rows[0]?.content).toBe('rewritten')
   })
 })
@@ -304,7 +284,7 @@ describe('comments/repos/mutate — updateOwnCommentBody', () => {
     expect(n).toBe(0)
   })
   it('returns 1 when the optimistic lock matches', async () => {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(comment)
       .values({
         type: 'post',
@@ -323,7 +303,7 @@ describe('comments/repos/mutate — updateOwnCommentBody', () => {
 
 describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
   it('re-pends the comment when the lock matches', async () => {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(comment)
       .values({
         type: 'post',
@@ -338,7 +318,7 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
     const id = rows[0]!.id
     const n = await updateOwnCommentBodyAndPending(db, id, EMPTY_COMMENT_EDITOR_STATE, 'y', new Date('2025-01-01'))
     expect(n).toBe(1)
-    const after = await db.select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
+    const after = await sqliteOf(db).select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
     expect(after[0]?.isPending).toBe(true)
   })
 })
@@ -487,7 +467,7 @@ describe('comments/repos/public-query/digest — latestDistinctCommentIds', () =
   })
 
   it('pins the access path: deleted_at index search, no full table scan', () => {
-    const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${latestDistinctCommentIdsQuery([1], 10)}`)
+    const plan = sqliteOf(db).all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${latestDistinctCommentIdsQuery([1], 10)}`)
     const details = plan.map((r) => r.detail)
     expect(details.some((d) => d.includes('SEARCH comment USING INDEX idx_comment_deleted_at'))).toBe(true)
     expect(details.some((d) => /^SCAN comment(?! USING)/.test(d))).toBe(false)

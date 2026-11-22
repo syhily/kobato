@@ -1,11 +1,10 @@
 import type { Database } from '@kobato/db/database'
+import type { ContentRow } from '@kobato/db/types'
 
-import { content } from '@kobato/db/schema/content'
-import { post } from '@kobato/db/schema/post'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
+import { findContentsByIds } from '@kobato/db/operations/entity-revision'
+import { listLivePostReindexBatch } from '@kobato/db/operations/post'
 import { indexPostFromRevision } from '@kobato/server/domains/posts/services/search-index'
 import { getLogger } from '@kobato/server/infra/logger'
-import { count, inArray } from 'drizzle-orm'
 
 const log = getLogger('search.reindex')
 
@@ -26,29 +25,11 @@ export async function reindexSearchBatch(db: Database, input: ReindexBatchInput 
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50
 
-  const liveIncludingScheduled = livePostWhere({ includeScheduled: true })
-
-  const rows = await db
-    .select({
-      id: post.id,
-      title: post.title,
-      summary: post.summary,
-      publishedRevisionId: post.publishedRevisionId,
-    })
-    .from(post)
-    .where(liveIncludingScheduled)
-    .orderBy(post.id)
-    .limit(batchSize)
-    .offset(offset)
-
-  const totalRows = await db.select({ count: count() }).from(post).where(liveIncludingScheduled)
-  const total = totalRows[0].count
-
-  const batch = rows
+  const { rows: batch, total } = await listLivePostReindexBatch(db, offset, batchSize)
 
   const revisionIds = batch.map((r) => r.publishedRevisionId!).filter(Boolean)
-  const contents = revisionIds.length > 0 ? await db.select().from(content).where(inArray(content.id, revisionIds)) : []
-  const contentMap = new Map(contents.map((c) => [c.id, c]))
+  const contents = revisionIds.length > 0 ? await findContentsByIds(db, revisionIds) : []
+  const contentMap = new Map<number, ContentRow>(contents.map((c) => [c.id, c]))
 
   let processed = 0
   let failed = 0

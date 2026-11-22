@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
@@ -14,7 +15,7 @@ async function freshBatcher() {
 }
 
 function failMetricUpdates(): void {
-  db.run(sql`
+  sqliteOf(db).run(sql`
     CREATE TEMP TRIGGER it_fail_metric_update
     BEFORE UPDATE ON metric
     BEGIN
@@ -24,7 +25,7 @@ function failMetricUpdates(): void {
 }
 
 function healMetricUpdates(): void {
-  db.run(sql`DROP TRIGGER IF EXISTS it_fail_metric_update`)
+  sqliteOf(db).run(sql`DROP TRIGGER IF EXISTS it_fail_metric_update`)
 }
 
 async function pvOf(type: 'post' | 'page', ownerId: number): Promise<number> {

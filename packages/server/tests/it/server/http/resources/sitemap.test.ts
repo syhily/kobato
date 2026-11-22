@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { onErrorHandler } from '@kobato/server/http/errors'
@@ -49,15 +50,15 @@ async function makeApp() {
 }
 
 async function seedPublishedPost(slug: string): Promise<void> {
-  const [meta] = await db
+  const [meta] = await sqliteOf(db)
     .insert(postTable)
     .values({ slug, title: slug, summary: '', published: true, publishedAt: new Date('2020-01-01'), visible: true })
     .returning({ id: postTable.id })
-  const [revision] = await db
+  const [revision] = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: meta!.id, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revision!.id }).where(eq(postTable.id, meta!.id))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revision!.id }).where(eq(postTable.id, meta!.id))
 }
 
 beforeEach(async () => {

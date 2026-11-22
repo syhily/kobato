@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -70,7 +71,9 @@ afterEach(async () => {
 
 describe('adminUploadRoute', () => {
   it('owns parsing, file validation, audit context, logging, and success response', async () => {
-    await db.insert(userTable).values({ id: 1, name: 'admin', email: 'admin@example.com', password: 'hashed' })
+    await sqliteOf(db)
+      .insert(userTable)
+      .values({ id: 1, name: 'admin', email: 'admin@example.com', password: 'hashed' })
     const form = new FormData()
     form.append('kind', 'avatar')
     form.append('file', new File(['abc'], 'avatar.png'))
@@ -81,7 +84,7 @@ describe('adminUploadRoute', () => {
     await expect(response.json()).resolves.toEqual({ kind: 'avatar', size: 3 })
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'test_uploaded'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'test_uploaded'))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
       actorId: 1,

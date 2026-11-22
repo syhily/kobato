@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { post as postMetaTable } from '@kobato/db/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
@@ -17,7 +18,7 @@ describe('cms/posts/service — createPost published guard', () => {
 
     expect(dto.published).toBe(false)
 
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, 'test'))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.slug, 'test'))
     expect(rows[0]?.published).toBe(false)
   })
 
@@ -26,7 +27,7 @@ describe('cms/posts/service — createPost published guard', () => {
 
     expect(dto.published).toBe(false)
 
-    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, 'test'))
+    const rows = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.slug, 'test'))
     expect(rows[0]?.published).toBe(false)
   })
 })
@@ -34,7 +35,7 @@ describe('cms/posts/service — createPost published guard', () => {
 describe('cms/posts/service — updatePostMeta ignores published', () => {
   it('leaves existing status=published untouched even when input says false', async () => {
     const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
-    await db
+    await sqliteOf(db)
       .update(postMetaTable)
       .set({ published: true })
       .where(eq(postMetaTable.id, Number(created.id)))
@@ -47,7 +48,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     })
     expect(dto.title).toBe('Updated')
 
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select()
       .from(postMetaTable)
       .where(eq(postMetaTable.id, Number(created.id)))
@@ -65,7 +66,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     })
     expect(dto.title).toBe('Updated')
 
-    const rows = await db
+    const rows = await sqliteOf(db)
       .select()
       .from(postMetaTable)
       .where(eq(postMetaTable.id, Number(created.id)))

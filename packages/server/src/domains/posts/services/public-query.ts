@@ -3,25 +3,29 @@ import type { Database } from '@kobato/db/database'
 import type { PostMetaRow } from '@kobato/db/types'
 
 import { toListingPostCard } from '@kobato/catalog/projection'
-import { post as postMetaTable } from '@kobato/db/schema/post'
+import {
+  countPublicPosts as countPublicPostsOp,
+  listPostMetasBySlugs,
+  listPublicPostMetas,
+  listSitemapPosts as listSitemapPostsOp,
+  type PublicPostFilters,
+  type SitemapPostRow,
+} from '@kobato/db/operations/post'
 import { queryMetadata } from '@kobato/server/domains/comments/services/likes'
-import { applyLimitOffset } from '@kobato/server/domains/content/pagination'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'
-import { buildPublicPostsWhere, type ListPublicPostsFilters } from '@kobato/server/domains/posts/repos/shared'
 import { idFromString } from '@kobato/utils/id'
-import { and, desc, inArray, isNull, sql } from 'drizzle-orm'
+
+export type { PublicPostFilters, SitemapPostRow }
+
+export type ListPublicPostsFilters = PublicPostFilters
 
 export async function listPublicPosts(
   db: Database,
   filters: ListPublicPostsFilters = {},
   now = new Date(),
 ): Promise<PostMetaRow[]> {
-  const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
-  const where = buildPublicPostsWhere(filters, now)
-  const q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
-  return applyLimitOffset(q, filters)
+  return listPublicPostMetas(db, filters, now)
 }
 
 export async function countPublicPosts(
@@ -29,12 +33,11 @@ export async function countPublicPosts(
   filters: Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> = {},
   now = new Date(),
 ): Promise<number> {
-  const where = buildPublicPostsWhere(filters, now)
-  const rows = await db
-    .select({ count: sql<number>`count(*)`.mapWith(Number) })
-    .from(postMetaTable)
-    .where(where)
-  return rows[0]?.count ?? 0
+  return countPublicPostsOp(db, filters, now)
+}
+
+export async function listSitemapPosts(db: Database, now = new Date()): Promise<SitemapPostRow[]> {
+  return listSitemapPostsOp(db, now)
 }
 
 export async function listPublicPostCardsPaginated(
@@ -91,24 +94,6 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
   })
 }
 
-interface SitemapPostRow {
-  slug: string
-  firstPublishedAt: Date | null
-  publishedAt: Date
-}
-
-export async function listSitemapPosts(db: Database, now = new Date()): Promise<SitemapPostRow[]> {
-  return db
-    .select({
-      slug: postMetaTable.slug,
-      firstPublishedAt: postMetaTable.firstPublishedAt,
-      publishedAt: postMetaTable.publishedAt,
-    })
-    .from(postMetaTable)
-    .where(livePostWhere({ asOf: now }))
-    .orderBy(desc(postMetaTable.firstPublishedAt))
-}
-
 export async function getPostsBySlugs(
   db: Database,
   slugs: readonly string[],
@@ -118,10 +103,7 @@ export async function getPostsBySlugs(
     return []
   }
   const filters = buildPublicPostFilters(options)
-  const rows = await db
-    .select()
-    .from(postMetaTable)
-    .where(and(inArray(postMetaTable.slug, [...slugs]), isNull(postMetaTable.deletedAt)))
+  const rows = await listPostMetasBySlugs(db, slugs)
 
   const now = new Date()
   const filteredRows = rows.filter((meta) => {

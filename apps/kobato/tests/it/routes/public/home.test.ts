@@ -1,6 +1,7 @@
 import type { HomeExtra } from '@kobato/api/contracts/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
@@ -18,12 +19,15 @@ beforeEach(async () => {
 })
 
 async function seedCategory(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
+  const rows = await sqliteOf(db)
+    .insert(categoryTable)
+    .values({ name, slug, cover: '' })
+    .returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
 async function seedTag(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
+  const rows = await sqliteOf(db).insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
   return rows[0]!.id
 }
 
@@ -34,7 +38,7 @@ async function seedPost(opts: {
   day?: number
 }): Promise<number> {
   const date = new Date(Date.UTC(2024, 0, opts.day ?? 1))
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -47,11 +51,11 @@ async function seedPost(opts: {
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { user, verification } from '@kobato/db/schema/user'
 import { SmtpCapture } from '@kobato/harness/smtp'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
@@ -63,7 +64,7 @@ afterEach(() => {
 })
 
 async function findUserRow(email: string) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({
       id: user.id,
       role: user.role,
@@ -76,7 +77,10 @@ async function findUserRow(email: string) {
 }
 
 async function countSetupTokensFor(userId: number): Promise<number> {
-  const rows = await db.select({ id: verification.id }).from(verification).where(eq(verification.userId, userId))
+  const rows = await sqliteOf(db)
+    .select({ id: verification.id })
+    .from(verification)
+    .where(eq(verification.userId, userId))
   return rows.length
 }
 
@@ -140,11 +144,11 @@ describe('integration / inviteAuthorWithRollback', () => {
   })
 
   it('preserves atomicity when the token store fails mid-transaction', async () => {
-    const ddlRows = await db.all<{ type: string; name: string; sql: string }>(
+    const ddlRows = await sqliteOf(db).all<{ type: string; name: string; sql: string }>(
       sql`SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'verification' AND sql IS NOT NULL ORDER BY type = 'index', name`,
     )
     expect(ddlRows.length).toBeGreaterThan(1)
-    await db.run(sql`DROP TABLE verification`)
+    await sqliteOf(db).run(sql`DROP TABLE verification`)
 
     try {
       await expect(
@@ -155,7 +159,7 @@ describe('integration / inviteAuthorWithRollback', () => {
       expect(row).toBeNull()
     } finally {
       for (const row of ddlRows) {
-        await db.run(sql.raw(row.sql))
+        await sqliteOf(db).run(sql.raw(row.sql))
       }
     }
   })

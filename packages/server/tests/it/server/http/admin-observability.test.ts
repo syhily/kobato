@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog, setting } from '@kobato/db/schema/config'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -121,7 +122,7 @@ async function storedObservability(): Promise<{
   verifiedFingerprint?: string
   provisionedFingerprint?: string
 }> {
-  const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.observability'))
+  const rows = await sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.observability'))
   const data = rows[0]?.data as { observability?: Record<string, unknown> } | undefined
   const observability = data?.observability
   return {
@@ -146,7 +147,7 @@ beforeEach(async () => {
   runtimeMock.stopTraceRuntime.mockResolvedValue(undefined)
   registerSectionChangeHandler('observability', syncObservabilityRuntime)
 
-  await db.insert(userTable).values({
+  await sqliteOf(db).insert(userTable).values({
     id: 1,
     name: 'Admin',
     email: 'admin@example.com',
@@ -224,12 +225,21 @@ describe('admin.observability.testConnection', () => {
     expect(runtimeMock.startTraceRuntime).toHaveBeenCalled()
 
     await flushAuditLog()
-    const tested = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_connection_tested'))
+    const tested = await sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'observability_connection_tested'))
     expect(tested).toHaveLength(1)
     expect(tested[0]?.details).toMatchObject({ provision: 'failed' })
-    const failed = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_provisioning_failed'))
+    const failed = await sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'observability_provisioning_failed'))
     expect(failed).toHaveLength(1)
-    const provisioned = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_assets_provisioned'))
+    const provisioned = await sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'observability_assets_provisioned'))
     expect(provisioned).toHaveLength(0)
   })
 
@@ -262,7 +272,10 @@ describe('admin.observability.testConnection', () => {
     expect(response.status).toBe(200)
     await flushAuditLog()
 
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_connection_tested'))
+    const rows = await sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'observability_connection_tested'))
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ resourceType: 'observability', resourceId: 'my-site' })
     expect(rows[0]?.details).toMatchObject({ provision: 'succeeded', dashboards: 4, rumToken: 'created' })
@@ -303,7 +316,10 @@ describe('admin.observability.provision', () => {
     expect(site?.provisionedFingerprint).toBe(result.provisionedFingerprint)
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'observability_assets_provisioned'))
+    const rows = await sqliteOf(db)
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'observability_assets_provisioned'))
     expect(rows).toHaveLength(1)
   })
 })

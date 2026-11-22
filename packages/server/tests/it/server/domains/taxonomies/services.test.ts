@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { post as postMetaTable } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
@@ -12,7 +13,7 @@ beforeEach(async () => {
 })
 
 async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(categoryTable)
     .values({
       name: opts.name ?? `Cat-${Math.random().toString(36).slice(2)}`,
@@ -27,7 +28,7 @@ async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {
 }
 
 async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(tagTable)
     .values({
       name: opts.name ?? `Tag-${Math.random().toString(36).slice(2)}`,
@@ -42,7 +43,7 @@ async function seedPublishedPost(
   categoryId?: number | null,
   opts: { title?: string; visible?: boolean; publishedAt?: Date } = {},
 ): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postMetaTable)
     .values({
       slug: `p-${Math.random().toString(36).slice(2)}`,
@@ -245,7 +246,7 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
   it('refuses to delete when posts reference the tag', async () => {
     const id = await seedTag({ name: 'Ref', slug: 'ref' })
     const pid = await seedPublishedPost()
-    await db.insert(postTag).values({ postId: pid, tagId: id })
+    await sqliteOf(db).insert(postTag).values({ postId: pid, tagId: id })
     const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     await expect(deleteAdminTag(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
@@ -256,10 +257,12 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
       title: 'Scheduled Post',
       publishedAt: new Date('2099-01-01'),
     })
-    await db.insert(postTag).values([
-      { postId: hiddenPid, tagId: id },
-      { postId: scheduledPid, tagId: id },
-    ])
+    await sqliteOf(db)
+      .insert(postTag)
+      .values([
+        { postId: hiddenPid, tagId: id },
+        { postId: scheduledPid, tagId: id },
+      ])
     const { deleteAdminTag } = await import('@kobato/server/domains/taxonomies/tags/service')
     const error = await deleteAdminTag(db, id).catch((e: unknown) => e)
     expect(error).toMatchObject({ code: 'CONFLICT' })
@@ -276,7 +279,7 @@ describe('taxonomies/tags/service — listAllTags', () => {
   it('returns tags with post counts', async () => {
     const t1 = await seedTag({ name: 'React', slug: 'react' })
     const pid = await seedPublishedPost()
-    await db.insert(postTag).values({ postId: pid, tagId: t1 })
+    await sqliteOf(db).insert(postTag).values({ postId: pid, tagId: t1 })
     const { listAllTags } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await listAllTags(db)
     expect(tags[0]?.name).toBe('React')
@@ -292,7 +295,7 @@ describe('taxonomies/tags/service — getTagsByNames', () => {
   it('returns tags filtered by names with counts', async () => {
     const t1 = await seedTag({ name: 'React', slug: 'react' })
     const pid = await seedPublishedPost()
-    await db.insert(postTag).values({ postId: pid, tagId: t1 })
+    await sqliteOf(db).insert(postTag).values({ postId: pid, tagId: t1 })
     const { getTagsByNames } = await import('@kobato/server/domains/taxonomies/tags/service')
     const tags = await getTagsByNames(db, ['React', 'Unknown'])
     expect(tags).toHaveLength(1)
@@ -411,7 +414,7 @@ describe('taxonomies/categories — rename cascades to posts with zero post writ
   it('projects the new name through the id join without touching the post row', async () => {
     const id = await seedCategory({ name: 'Old', slug: 'rename-me' })
     const pid = await seedPublishedPost(id, { title: 'Rename Probe' })
-    const before = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const before = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { upsertAdminCategory } = await import('@kobato/server/domains/taxonomies/categories/services/mutate')
     await upsertAdminCategory(db, { id, name: 'New', cover: '', description: '' })
     const { listPublicPosts } = await import('@kobato/server/domains/posts/services/public-query')
@@ -419,7 +422,7 @@ describe('taxonomies/categories — rename cascades to posts with zero post writ
     const metas = await listPublicPosts(db, { categoryId: id })
     const posts = await hydratePostList(db, metas)
     expect(posts[0]?.category).toBe('New')
-    const after = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const after = await sqliteOf(db).select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     expect(after[0]?.categoryId).toBe(id)
     expect(after[0]?.updatedAt).toEqual(before[0]?.updatedAt)
   })

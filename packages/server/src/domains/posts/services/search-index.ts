@@ -1,10 +1,9 @@
 import type { Database } from '@kobato/db/database'
 import type { ContentRow } from '@kobato/db/types'
 
-import { postSearchIndex } from '@kobato/db/schema/content'
+import { removePostSearchIndex, upsertPostSearchIndex } from '@kobato/db/operations/post-search'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection'
-import { eq } from 'drizzle-orm'
 
 export async function indexPost(
   db: Database,
@@ -13,20 +12,7 @@ export async function indexPost(
   summary: string,
   plainText: string,
 ): Promise<void> {
-  await db
-    .insert(postSearchIndex)
-    .values({
-      postId,
-      plainText,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: postSearchIndex.postId,
-      set: {
-        plainText,
-        updatedAt: new Date(),
-      },
-    })
+  upsertPostSearchIndex(db, postId, plainText)
 }
 
 export async function indexPostFromRevision(
@@ -48,6 +34,4 @@ export async function indexPostFromRevision(
   return true
 }
 
-export function removePostIndex(db: Database, postId: number): void {
-  db.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId)).run()
-}
+export { removePostSearchIndex as removePostIndex }

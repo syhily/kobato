@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { ResolvedAnalyticsQuery, ViewsPoint, ViewsSeries } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
 import type { TimeUnit } from '@kobato/utils/date-range'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'

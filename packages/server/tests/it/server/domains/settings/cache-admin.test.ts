@@ -1,5 +1,6 @@
 import type { ClearCacheTarget } from '@kobato/cache/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { session } from '@kobato/db/schema/session'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops'
 import { countEntryFiles, readGeneration, resolveCacheRoot, setItem } from '@kobato/server/infra/cache/file-store'
@@ -124,11 +125,13 @@ describe('service: cache admin', () => {
     await seedEntry('avatar', 'avatar:abc')
     await seedEntry('avatar', 'avatar:def')
     await seedEntry('calendar', 'calendar:2026-04-30')
-    await db.insert(session).values({
-      id: 'session-1',
-      data: {},
-      expiresAt: new Date(Date.now() + 3_600_000),
-    })
+    await sqliteOf(db)
+      .insert(session)
+      .values({
+        id: 'session-1',
+        data: {},
+        expiresAt: new Date(Date.now() + 3_600_000),
+      })
 
     const result = await clearAdminCache(db, 'all')
 
@@ -193,10 +196,12 @@ describe('service: cache admin', () => {
   )
 
   it('reports live session rows in the reserved bucket stats', async () => {
-    await db.insert(session).values([
-      { id: 'session-live', data: {}, expiresAt: new Date(Date.now() + 3_600_000) },
-      { id: 'session-expired', data: {}, expiresAt: new Date(Date.now() - 1000) },
-    ])
+    await sqliteOf(db)
+      .insert(session)
+      .values([
+        { id: 'session-live', data: {}, expiresAt: new Date(Date.now() + 3_600_000) },
+        { id: 'session-expired', data: {}, expiresAt: new Date(Date.now() - 1000) },
+      ])
 
     const stats = await getAdminCacheStats(db)
     const sessionBucket = stats.reserved.find((bucket) => bucket.id === 'session')

@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { backup as backupTable } from '@kobato/db/schema/backup'
 import { image, music } from '@kobato/db/schema/media'
 import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats'
@@ -26,7 +27,7 @@ function nextRowId(): number {
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
   const n = nextRowId()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(image)
     .values({
       storagePath: `images/stats-${n}.jpg`,
@@ -43,7 +44,7 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
   const n = nextRowId()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(music)
     .values({
       source: 'netease',
@@ -63,7 +64,7 @@ async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
 
 async function seedBackup(overrides: Partial<typeof backupTable.$inferInsert> = {}) {
   const n = nextRowId()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(backupTable)
     .values({
       timestamp: `2026-07-15T00-00-${String(n).padStart(2, '0')}`,

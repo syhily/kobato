@@ -6,20 +6,18 @@ import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domai
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { hasAtLeast } from '@kobato/auth/roles'
-import { userSession } from '@kobato/server/domains/auth/primitives'
-import { toLatestComment } from '@kobato/server/domains/comments/projection'
-import { countApprovedCommentsByUser } from '@kobato/server/domains/comments/repos/public-query/by-id'
 import {
   adminUserIds,
-  commentsByIds,
-  latestDistinctCommentIds,
-} from '@kobato/server/domains/comments/repos/public-query/digest'
-import {
   commentFingerprintRows,
+  commentsByIds,
+  countApprovedCommentsByUser,
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
-} from '@kobato/server/domains/comments/repos/public-query/threads'
+  latestDistinctCommentIds,
+} from '@kobato/db/operations/comment'
+import { userSession } from '@kobato/server/domains/auth/primitives'
+import { toLatestComment } from '@kobato/server/domains/comments/projection'
 import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'

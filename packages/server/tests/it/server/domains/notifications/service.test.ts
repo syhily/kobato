@@ -1,6 +1,7 @@
 import type { Role } from '@kobato/auth/roles'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
+import { sqliteEngineOf, sqliteOf } from '@kobato/db/database'
 import {
   createNotificationWithRecipients,
   listThreadParticipantIds,
@@ -38,7 +39,7 @@ const SYSTEM_NOTICE = {
 let seq = 0
 async function seedUser(role: Role, name: string): Promise<number> {
   seq += 1
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `${name}-${seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })
@@ -88,7 +89,7 @@ describe('notifications / producers', () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')
 
-    db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId)).run()
+    sqliteOf(db).update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId)).run()
     for (const targetId of [9999, visitorId]) {
       const error = captureError(() => sendDirectMessage(db, adminId, targetId, { title: 't', body: 'b' }))
       expect(error).toBeInstanceOf(DomainError)
@@ -106,7 +107,7 @@ describe('notifications / producers', () => {
 
     const row = sendBroadcast(db, adminId, { title: '清缓存公告', body: '请刷新页面', replyable: false })
 
-    const rows = db
+    const rows = sqliteOf(db)
       .select({ userId: notificationRecipient.userId, readAt: notificationRecipient.readAt })
       .from(notificationRecipient)
       .where(eq(notificationRecipient.notificationId, row.id))
@@ -233,14 +234,14 @@ describe('notifications / inbox', () => {
     const adminId = await seedUser('admin', 'admin')
     const visitorId = await seedUser('visitor', 'visitor')
     sendDirectMessage(db, adminId, visitorId, { title: '私信', body: 'hello' })
-    await db.delete(user).where(eq(user.id, adminId))
+    await sqliteOf(db).delete(user).where(eq(user.id, adminId))
 
     const inbox = await listInbox(db, visitorId, { tab: 'all', limit: 10 })
     expect(inbox.items[0]!.sender).toBeNull()
   })
 
   it('pins the inbox access path: index-fed ordering, no temp B-tree', () => {
-    const client = getDatabaseHandle().client
+    const client = sqliteEngineOf(getDatabaseHandle()).client
     const cases = [
       { label: 'all', filters: { limit: 20 } },
       { label: 'unread', filters: { unreadOnly: true, limit: 20 } },
@@ -287,7 +288,7 @@ describe('notifications / threads & replies', () => {
     const visitorId = await seedUser('visitor', 'visitor')
     const root = sendDirectMessage(db, adminId, visitorId, { title: '合作', body: '有兴趣吗' })
 
-    await db.update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId))
+    await sqliteOf(db).update(user).set({ deletedAt: new Date() }).where(eq(user.id, visitorId))
 
     expect(listThreadParticipantIds(db, root.threadId)).toEqual([adminId])
     await expect(
@@ -387,7 +388,7 @@ describe('notifications / threads & replies', () => {
     const adminId = await seedUser('admin', 'admin')
     const v1 = await seedUser('visitor', 'visitor')
     const root = sendBroadcast(db, adminId, { title: '公告', body: 'b', replyable: true })
-    await db.update(user).set({ role: 'visitor' }).where(eq(user.id, adminId))
+    await sqliteOf(db).update(user).set({ role: 'visitor' }).where(eq(user.id, adminId))
     await expect(
       replyToThread(db, viewer(v1, 'visitor', 'v1'), { threadId: root.threadId, body: 'x' }),
     ).rejects.toThrow(DomainError)
@@ -588,7 +589,7 @@ describe('notifications / localized system messages', () => {
     const adminId = await seedUser('admin', 'admin')
     const id = postSystemNotice()
 
-    const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+    const stored = sqliteOf(db).select().from(notification).where(eq(notification.id, id)).all()[0]!
     expect(stored.title).toBe('Background task failed: backup')
     expect(stored.body).toBe('Task backup failed on its most recent run. Open the Tasks page for details.')
     expect(stored.titleKey).toBe('notification.job.failed.title')
@@ -654,7 +655,7 @@ describe('notifications / localized system messages', () => {
   it.each(SUPPORTED_LOCALES)('translates inbox title and thread detail in %s', async (locale) => {
     const adminId = await seedUser('admin', 'admin')
     const id = postSystemNotice()
-    const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+    const stored = sqliteOf(db).select().from(notification).where(eq(notification.id, id)).all()[0]!
     const expected = DETAIL_BY_LOCALE[locale]
 
     const inbox = await listInbox(db, adminId, { tab: 'all', limit: 10, locale })
@@ -698,7 +699,7 @@ describe('notifications / localized system messages', () => {
     const broadcast = sendBroadcast(db, adminId, { title: '公告', body: '广播原文', replyable: false })
 
     for (const id of [direct.id, broadcast.id]) {
-      const stored = db.select().from(notification).where(eq(notification.id, id)).all()[0]!
+      const stored = sqliteOf(db).select().from(notification).where(eq(notification.id, id)).all()[0]!
       expect(stored.titleKey).toBeNull()
       expect(stored.bodyKey).toBeNull()
       expect(stored.titleParams).toBeNull()

@@ -1,7 +1,14 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
-import { buildCspHeader, configureMiddleware, buildLoadContext } from '@kobato/server/http/middleware-pipeline'
+import {
+  buildCspHeader,
+  buildLoadContext,
+  configureMiddleware,
+  REQUEST_TIMEOUT_OVERRIDES,
+} from '@kobato/server/http/middleware-pipeline'
+import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
 import { requestContext } from '@kobato/server/http/request-context'
 import { getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
@@ -144,9 +151,9 @@ describe('anonymous session writes (P1-4)', () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
     const db = getTestDb()
-    const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const rowsBefore = await sqliteOf(db).select({ id: sessionTable.id }).from(sessionTable)
     const res = await app.request('/health')
-    const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const rowsAfter = await sqliteOf(db).select({ id: sessionTable.id }).from(sessionTable)
     expect(rowsAfter.length).toBe(rowsBefore.length)
 
     const setCookies = res.headers.getSetCookie()
@@ -158,9 +165,9 @@ describe('anonymous session writes (P1-4)', () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
     const db = getTestDb()
-    const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const rowsBefore = await sqliteOf(db).select({ id: sessionTable.id }).from(sessionTable)
     const res = await app.request('/health', { method: 'POST' })
-    const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const rowsAfter = await sqliteOf(db).select({ id: sessionTable.id }).from(sessionTable)
     expect(rowsAfter.length).toBe(rowsBefore.length)
 
     const setCookies = res.headers.getSetCookie()
@@ -210,5 +217,48 @@ describe('buildLoadContext', () => {
     })
     expect(context).toBeDefined()
     expect(context.get(requestContext)).toBe(rc)
+  })
+})
+
+describe('request-timeout restore exemptions', () => {
+  function probeApp() {
+    const app = new Hono<Env>()
+    app.use(requestTimeout(30_000, REQUEST_TIMEOUT_OVERRIDES))
+    app.use('*', async (c) => {
+      await new Promise<void>((resolve) => {
+        c.req.raw.signal.addEventListener('abort', () => resolve(), { once: true })
+        setTimeout(resolve, 31_000)
+      })
+      return c.json({ aborted: c.req.raw.signal.aborted })
+    })
+    return app
+  }
+
+  it('pins the exempt restore endpoints: Hono upload/setup plus the canonical decrypt RPC path', () => {
+    expect([...REQUEST_TIMEOUT_OVERRIDES].sort((a, b) => a.prefix.localeCompare(b.prefix))).toEqual([
+      { prefix: '/api/admin/backup/upload-restore', timeoutMs: 1_800_000 },
+      { prefix: '/api/setup/restore', timeoutMs: 1_800_000 },
+      { prefix: '/rpc/admin/backup/uploadRestoreDecrypt', timeoutMs: 1_800_000 },
+    ])
+  })
+
+  it.each([
+    ['/api/admin/backup/upload-restore', false],
+    ['/api/admin/backup/upload-restore/decrypt', false],
+    ['/rpc/admin/backup/uploadRestoreDecrypt', false],
+    ['/rpc/admin/backup/uploadRestoreDecrypt/timeout-probe', false],
+    ['/api/setup/restore', false],
+    ['/rpc/timeout-control-probe', true],
+  ])('budgets %s — default-abort=%s', async (path, expectDefaultAbort) => {
+    vi.useFakeTimers()
+    try {
+      const pending = probeApp().request(path, { method: 'POST' })
+      await vi.advanceTimersByTimeAsync(31_000)
+      const res = await pending
+      expect(res.status).toBe(200)
+      expect(((await res.json()) as { aborted: boolean }).aborted).toBe(expectDefaultAbort)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

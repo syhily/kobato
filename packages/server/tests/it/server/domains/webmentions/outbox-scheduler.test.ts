@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
 import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import { OUTBOX_BATCH_SIZE } from '@kobato/server/domains/webmentions/outbox'
@@ -36,7 +37,7 @@ async function seedDueRow(nextRetryAt?: Date): Promise<void> {
 }
 
 function statusCount(status: 'pending' | 'no-endpoint'): number {
-  return db.select().from(webmentionOutbox).where(eq(webmentionOutbox.status, status)).all().length
+  return sqliteOf(db).select().from(webmentionOutbox).where(eq(webmentionOutbox.status, status)).all().length
 }
 
 beforeEach(async () => {

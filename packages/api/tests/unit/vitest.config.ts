@@ -1,3 +1,4 @@
+import { API_UNIT_INCLUDE } from '@kobato/test/projects/unit-includes'
 import { REPO_ROOT } from '@kobato/test/repo-root'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
@@ -12,8 +13,8 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'api-unit',
-    include: ['packages/api/tests/unit/**/*.test.{ts,tsx}'],
+    include: [...API_UNIT_INCLUDE],
     exclude: [...configDefaults.exclude],
-    setupFiles: ['@kobato/test/setup/unit'],
+    setupFiles: ['@kobato/test/setup/node'],
   },
 })

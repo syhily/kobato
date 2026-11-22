@@ -1,9 +1,10 @@
-import type { RestoreProgressDto, RestoreProgressStage } from '@kobato/api/contracts/backup'
+import type { RestoreProgressDto } from '@kobato/api/contracts/backup'
 import type { RestoreStep } from '@kobato/web-admin/ui/settings/backup/RestoreProgressPanel'
 import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 
 import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { orpc } from '@kobato/web-client/api/client'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -11,6 +12,17 @@ import { toast } from 'sonner'
 const PROGRESS_POLL_MS = 500
 const READY_POLL_MS = 2000
 const READY_MAX_ATTEMPTS = 150
+
+/** oRPC rejections carry the wire status; anything else (network, abort) has none. */
+function orpcErrorStatus(error: unknown): number | undefined {
+  if (error instanceof Error && 'status' in error) {
+    const status: unknown = error.status
+    if (typeof status === 'number') {
+      return status
+    }
+  }
+  return undefined
+}
 
 interface XhrResult {
   status: number
@@ -70,28 +82,7 @@ function readEncryptedToken(json: unknown): string | null {
   return null
 }
 
-const PROGRESS_STAGES: readonly RestoreProgressStage[] = [
-  'decrypting',
-  'extracting',
-  'draining',
-  'restoring',
-  'completed',
-  'failed',
-  'idle',
-]
-
-function parseRestoreProgressDto(json: unknown): RestoreProgressDto | null {
-  if (typeof json !== 'object' || json === null || !('stage' in json)) {
-    return null
-  }
-  const stage = PROGRESS_STAGES.find((value) => value === json.stage)
-  if (stage === undefined) {
-    return null
-  }
-  const percent = 'percent' in json && typeof json.percent === 'number' ? json.percent : null
-  const error = 'error' in json && typeof json.error === 'string' ? json.error : undefined
-  return { stage, percent, error }
-}
+const MACHINE_ACTIVE_STAGES: ReadonlySet<string> = new Set(['draining', 'restoring', 'completed'])
 
 async function pollRestoreProgress(
   signal: AbortSignal,
@@ -101,16 +92,9 @@ async function pollRestoreProgress(
   let failures = 0
   while (!signal.aborted) {
     try {
-      const res = await fetch('/api/admin/backup/restore-progress', { cache: 'no-store', signal })
-      if (!res.ok) {
-        failures += 1
-      } else {
-        const dto = parseRestoreProgressDto(await res.json())
-        if (dto !== null) {
-          failures = 0
-          onDto(dto)
-        }
-      }
+      const dto = await orpc.admin.backup.restoreProgress(undefined, { signal })
+      failures = 0
+      onDto(dto)
     } catch {
       if (!signal.aborted) {
         failures += 1
@@ -126,12 +110,8 @@ async function pollRestoreProgress(
 
 async function probeRestoreMachineActive(signal: AbortSignal): Promise<boolean> {
   try {
-    const res = await fetch('/api/admin/backup/restore-progress', { cache: 'no-store', signal })
-    if (!res.ok) {
-      return false
-    }
-    const dto = parseRestoreProgressDto(await res.json())
-    return dto !== null && (dto.stage === 'draining' || dto.stage === 'restoring' || dto.stage === 'completed')
+    const dto = await orpc.admin.backup.restoreProgress(undefined, { signal })
+    return MACHINE_ACTIVE_STAGES.has(dto.stage)
   } catch {
     return false
   }
@@ -148,27 +128,19 @@ export async function waitForRestartAndReport(signal: AbortSignal, t: ToastTrans
         let reported = false
         for (let read = 0; read < 5 && !reported && !signal.aborted; read++) {
           try {
-            const statusRes = await fetch('/api/admin/backup/restore-status', { cache: 'no-store', signal })
-            if (statusRes.ok) {
-              const status: unknown = await statusRes.json()
-              if (typeof status === 'object' && status !== null && 'phase' in status) {
-                if (status.phase === 'completed') {
-                  const configApplied =
-                    'configApplied' in status && typeof status.configApplied === 'boolean' && status.configApplied
-                  toast.success(
-                    t(
-                      configApplied
-                        ? 'admin.settings.backup.restore.configApplied'
-                        : 'admin.settings.backup.restore.done',
-                    ),
-                  )
-                  reported = true
-                } else if (status.phase === 'failed') {
-                  const error = 'error' in status && typeof status.error === 'string' ? status.error : undefined
-                  toastApiError(error, 'admin.toast.restoreFailed', t)
-                  reported = true
-                }
-              }
+            const status = await orpc.admin.backup.restoreStatus(undefined, { signal })
+            if (status.phase === 'completed') {
+              toast.success(
+                t(
+                  status.configApplied === true
+                    ? 'admin.settings.backup.restore.configApplied'
+                    : 'admin.settings.backup.restore.done',
+                ),
+              )
+              reported = true
+            } else if (status.phase === 'failed') {
+              toastApiError(status.error, 'admin.toast.restoreFailed', t)
+              reported = true
             }
           } catch {}
           if (!reported) {
@@ -362,22 +334,24 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
       const signal = abortRef.current.signal
       startPolling()
       void (async () => {
-        let res: Response
+        let result: { accepted: boolean }
         try {
-          res = await fetch('/api/admin/backup/upload-restore/decrypt', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
-            },
-            body: JSON.stringify({ token, password }),
-            signal,
-          })
+          result = await orpc.admin.backup.uploadRestoreDecrypt({ token, password }, { signal })
         } catch (error) {
           if (signal.aborted) {
             return
           }
           stopPolling()
+          const wireStatus = orpcErrorStatus(error)
+          if (wireStatus !== undefined) {
+            toastApiError(error, 'admin.toast.restoreFailed', t)
+            if (wireStatus === 410) {
+              reset()
+              return
+            }
+            setState((current) => (current.active ? { ...current, passwordPending: false } : current))
+            return
+          }
           if (await probeRestoreMachineActive(signal)) {
             enterTail()
             return
@@ -386,30 +360,16 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
           reset()
           return
         }
-        const json: unknown = await res.json().catch(() => null)
-        if (res.ok && isUploadAccepted(json)) {
+        if (result.accepted) {
           enterTail()
           return
         }
         stopPolling()
-        if (res.status === 410) {
-          toastApiError(
-            new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.expired')),
-            'admin.toast.restoreFailed',
-            t,
-          )
-          reset()
-          return
-        }
-        toastApiError(
-          new Error(extractApiErrorMessage(json) ?? t('admin.settings.backup.restore.failed')),
-          'admin.toast.restoreFailed',
-          t,
-        )
+        toastApiError(new Error(t('admin.settings.backup.restore.failed')), 'admin.toast.restoreFailed', t)
         setState((current) => (current.active ? { ...current, passwordPending: false } : current))
       })()
     },
-    [csrfToken, enterTail, reset, startPolling, stopPolling, t],
+    [enterTail, reset, startPolling, stopPolling, t],
   )
 
   const cancelPending = useCallback(() => {

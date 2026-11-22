@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { WebmentionOutboxRow } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { webmentionOutbox } from '@kobato/db/schema/webmention'
 import { and, asc, count, desc, eq, inArray, isNull, lt, lte, or } from 'drizzle-orm'
 
@@ -13,7 +14,7 @@ export async function upsertWebmentionOutbox(
   values: { sourceUrl: string; targetUrl: string; nextRetryAt?: Date | null },
 ): Promise<void> {
   const now = new Date()
-  await db
+  await sqliteOf(db)
     .insert(webmentionOutbox)
     .values({
       sourceUrl: values.sourceUrl,
@@ -28,7 +29,7 @@ export async function upsertWebmentionOutbox(
       setWhere: inArray(webmentionOutbox.status, ['no-endpoint', 'failed']),
     })
   if (values.nextRetryAt !== null && values.nextRetryAt !== undefined) {
-    await db
+    await sqliteOf(db)
       .update(webmentionOutbox)
       .set({ nextRetryAt: values.nextRetryAt, updatedAt: now })
       .where(
@@ -43,7 +44,7 @@ export async function upsertWebmentionOutbox(
 }
 
 export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: number): Promise<WebmentionOutboxRow[]> {
-  return db
+  return sqliteOf(db)
     .select()
     .from(webmentionOutbox)
     .where(
@@ -57,7 +58,7 @@ export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: nu
 }
 
 export function findNextWebmentionOutboxDueAt(db: Database): Date | 'now' | null {
-  const rows = db
+  const rows = sqliteOf(db)
     .select({ nextRetryAt: webmentionOutbox.nextRetryAt })
     .from(webmentionOutbox)
     .where(eq(webmentionOutbox.status, 'pending'))
@@ -72,12 +73,15 @@ export function findNextWebmentionOutboxDueAt(db: Database): Date | 'now' | null
 }
 
 export async function setWebmentionOutboxEndpoint(db: Database, id: number, endpoint: string): Promise<void> {
-  await db.update(webmentionOutbox).set({ endpoint, updatedAt: new Date() }).where(eq(webmentionOutbox.id, id))
+  await sqliteOf(db)
+    .update(webmentionOutbox)
+    .set({ endpoint, updatedAt: new Date() })
+    .where(eq(webmentionOutbox.id, id))
 }
 
 export async function markWebmentionOutboxSent(db: Database, id: number): Promise<void> {
   const now = new Date()
-  await db
+  await sqliteOf(db)
     .update(webmentionOutbox)
     .set({ status: 'sent', sentAt: now, lastError: null, updatedAt: now })
     .where(eq(webmentionOutbox.id, id))
@@ -90,7 +94,7 @@ export async function markWebmentionOutboxRetry(
   nextRetryAt: Date,
   lastError: string,
 ): Promise<void> {
-  await db
+  await sqliteOf(db)
     .update(webmentionOutbox)
     .set({ attempts, nextRetryAt, lastError, updatedAt: new Date() })
     .where(eq(webmentionOutbox.id, id))
@@ -103,7 +107,7 @@ export async function markWebmentionOutboxTerminal(
   lastError?: string,
   attempts?: number,
 ): Promise<void> {
-  await db
+  await sqliteOf(db)
     .update(webmentionOutbox)
     .set({
       status,
@@ -120,7 +124,7 @@ export async function listWebmentionOutboxForAdmin(
   offset: number,
   limit: number,
 ): Promise<WebmentionOutboxRow[]> {
-  return db
+  return sqliteOf(db)
     .select()
     .from(webmentionOutbox)
     .where(status === undefined ? undefined : eq(webmentionOutbox.status, status))
@@ -130,7 +134,7 @@ export async function listWebmentionOutboxForAdmin(
 }
 
 export async function countWebmentionOutboxByStatus(db: Database): Promise<WebmentionOutboxStatusCounts> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select({ status: webmentionOutbox.status, count: count() })
     .from(webmentionOutbox)
     .groupBy(webmentionOutbox.status)

@@ -7,6 +7,10 @@ import {
   adminBackupRestoreInput,
   adminBackupRestoreOutputDto,
   adminBackupStatusOutputDto,
+  adminBackupUploadRestoreDecryptInput,
+  adminBackupUploadRestoreDecryptOutputDto,
+  restoreJobStatusDto,
+  restoreProgressDto,
 } from '@kobato/api/contracts/backup'
 import { successDto } from '@kobato/api/contracts/primitives'
 import { oc } from '@orpc/contract'
@@ -26,4 +30,10 @@ export const adminBackupContract = {
     .input(adminBackupRestoreInput)
     .output(adminBackupRestoreOutputDto),
   delete: oc.route({ method: 'POST', path: '/admin/backup/delete' }).input(adminBackupDeleteInput).output(successDto),
+  restoreStatus: oc.route({ method: 'GET', path: '/admin/backup/restore-status' }).output(restoreJobStatusDto),
+  restoreProgress: oc.route({ method: 'GET', path: '/admin/backup/restore-progress' }).output(restoreProgressDto),
+  uploadRestoreDecrypt: oc
+    .route({ method: 'POST', path: '/admin/backup/upload-restore/decrypt' })
+    .input(adminBackupUploadRestoreDecryptInput)
+    .output(adminBackupUploadRestoreDecryptOutputDto),
 }

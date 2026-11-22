@@ -1,69 +1,11 @@
 import type { ClientPost } from '@kobato/catalog/model'
 import type { PostMetaRow } from '@kobato/db/types'
 
-import { post as postMetaTable } from '@kobato/db/schema/post'
-import { postTag } from '@kobato/db/schema/post-tag'
-import { tag } from '@kobato/db/schema/taxonomy'
-import { buildMetaListWhere, type MetaListFiltersBase } from '@kobato/server/domains/content/entities/meta-repo'
-import { livePostWhere, promotedPostWhere } from '@kobato/server/domains/posts/live-gate'
 import { readStringArray } from '@kobato/server/infra/coerce'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
-import { and, asc, desc, eq, not, sql, type SQL } from 'drizzle-orm'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
-
-export interface ListPostsFilters extends MetaListFiltersBase {
-  categoryId?: number
-  tag?: string
-  visible?: boolean
-  sortBy?: 'publishedAt' | 'updatedAt'
-  sortOrder?: 'asc' | 'desc'
-  lifecycle?: 'draft' | 'published'
-}
-
-export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
-  const extras: SQL[] = []
-  if (filters.categoryId !== undefined) {
-    extras.push(eq(postMetaTable.categoryId, filters.categoryId))
-  }
-  if (filters.tag) {
-    extras.push(
-      sql`EXISTS (
-        SELECT 1 FROM ${postTag}
-        INNER JOIN ${tag} ON ${eq(postTag.tagId, tag.id)}
-        WHERE ${eq(postTag.postId, postMetaTable.id)} AND ${eq(tag.name, filters.tag)}
-      )`,
-    )
-  }
-  if (filters.visible !== undefined) {
-    extras.push(eq(postMetaTable.visible, filters.visible))
-  }
-  if (filters.lifecycle === 'published') {
-    extras.push(promotedPostWhere())
-  } else if (filters.lifecycle === 'draft') {
-    const notPromoted = not(promotedPostWhere())
-    if (notPromoted) {
-      extras.push(notPromoted)
-    }
-  }
-  return buildMetaListWhere(postMetaTable, filters, extras)
-}
-
-export function buildPostsOrderBy(filters: ListPostsFilters) {
-  const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
-  return filters.sortOrder === 'asc' ? asc(col) : desc(col)
-}
-
-export interface ListPublicPostsFilters {
-  categoryId?: number
-  tag?: string
-  includeHidden?: boolean
-  includeScheduled?: boolean
-  sortBy?: 'publishedAt' | 'updatedAt'
-  limit?: number
-  offset?: number
-}
 
 function defaultOpenGraphSuffix(): string {
   return brandingVersionSuffix(getBlogSettingsBundleSync()?.assets?.branding?.openGraph)
@@ -93,26 +35,4 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], cat
     headings: [],
     pinnedAt: meta.pinnedAt ?? undefined,
   }
-}
-
-export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new Date()): SQL {
-  const conditions: SQL[] = [livePostWhere({ asOf: now, includeScheduled: filters.includeScheduled })]
-
-  if (!filters.includeHidden) {
-    conditions.push(eq(postMetaTable.visible, true))
-  }
-  if (filters.categoryId !== undefined) {
-    conditions.push(eq(postMetaTable.categoryId, filters.categoryId))
-  }
-  if (filters.tag) {
-    conditions.push(
-      sql`EXISTS (
-        SELECT 1 FROM ${postTag}
-        INNER JOIN ${tag} ON ${eq(postTag.tagId, tag.id)}
-        WHERE ${eq(postTag.postId, postMetaTable.id)} AND ${eq(tag.name, filters.tag)}
-      )`,
-    )
-  }
-
-  return and(...conditions)!
 }

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
@@ -36,38 +37,40 @@ beforeEach(async () => {
   await clearAllTables(db)
   resetBlogSettingsForTests()
 
-  await db.insert(setting).values([
-    {
-      scope: 'blog.general',
-      data: {
-        title: 'Test Blog',
-        description: 'A test blog',
-        website: 'https://example.com',
-        keywords: ['test'],
-        author: { name: 'Test Author', email: 'test@example.com', url: 'https://example.com' },
-        locale: 'zh-CN',
-        timeZone: 'Asia/Shanghai',
-        timeFormat: 'relative',
-        initialYear: 2024,
+  await sqliteOf(db)
+    .insert(setting)
+    .values([
+      {
+        scope: 'blog.general',
+        data: {
+          title: 'Test Blog',
+          description: 'A test blog',
+          website: 'https://example.com',
+          keywords: ['test'],
+          author: { name: 'Test Author', email: 'test@example.com', url: 'https://example.com' },
+          locale: 'zh-CN',
+          timeZone: 'Asia/Shanghai',
+          timeFormat: 'relative',
+          initialYear: 2024,
+        },
       },
-    },
-    {
-      scope: 'blog.assets',
-      data: {
-        ...ASSETS_BASE,
-        branding: { faviconSvg: SAMPLE_REF, logoSvg: SAMPLE_REF },
+      {
+        scope: 'blog.assets',
+        data: {
+          ...ASSETS_BASE,
+          branding: { faviconSvg: SAMPLE_REF, logoSvg: SAMPLE_REF },
+        },
       },
-    },
-    {
-      scope: 'blog.limits',
-      data: {
-        maxRequestBodySize: 10 * 1024 * 1024,
-        sessionMaxAge: 60 * 60 * 24 * 30,
-        auditLogDbRetentionDays: 30,
-        auditLogArchiveRetentionDays: 180,
+      {
+        scope: 'blog.limits',
+        data: {
+          maxRequestBodySize: 10 * 1024 * 1024,
+          sessionMaxAge: 60 * 60 * 24 * 30,
+          auditLogDbRetentionDays: 30,
+          auditLogArchiveRetentionDays: 180,
+        },
       },
-    },
-  ])
+    ])
 })
 
 describe('integration / branding settings', () => {

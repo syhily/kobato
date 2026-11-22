@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { post } from '@kobato/db/schema/post'
 import { user } from '@kobato/db/schema/user'
@@ -28,7 +29,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'reader',
@@ -41,7 +42,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -59,7 +60,7 @@ const OLD_BODY = makeCommentBody('old')
 const NEW_BODY = makeCommentBody('edited')
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: 'post',
@@ -77,7 +78,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 }
 
 async function readRow(id: number) {
-  const rows = await db.select().from(comment).where(eq(comment.id, id))
+  const rows = await sqliteOf(db).select().from(comment).where(eq(comment.id, id))
   return rows[0]
 }
 
@@ -154,7 +155,7 @@ describe('updateOwnComment — persistence edges', () => {
 
     expect(result).toBeNull()
     expect(emails.sendNewComment).not.toHaveBeenCalled()
-    const rows = await db.select({ id: comment.id }).from(comment)
+    const rows = await sqliteOf(db).select({ id: comment.id }).from(comment)
     expect(rows).toHaveLength(0)
   })
 })

@@ -1,5 +1,6 @@
 import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { metric } from '@kobato/db/schema/metric'
 import { post } from '@kobato/db/schema/post'
@@ -16,7 +17,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -29,7 +30,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
 }
 
 async function seedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -43,7 +44,7 @@ async function seedPost(slug: string): Promise<number> {
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
@@ -61,7 +62,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 }
 
 async function seedMetricRow(type: 'post' | 'page', ownerId: number, publicId: string): Promise<string> {
-  await db.insert(metric).values({ type, ownerId, publicId })
+  await sqliteOf(db).insert(metric).values({ type, ownerId, publicId })
   return publicId
 }
 

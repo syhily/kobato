@@ -241,7 +241,7 @@ const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'apps/kobato/tests/arch/client-bundle.test.ts',
   'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
   'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
-  'packages/ui/tests/contract/dark-variant.test.ts',
+  'packages/ui/tests/unit/contract/dark-variant.test.ts',
 ])
 
 function isAllowedRelativeImport(file: string, specifier: string): boolean {

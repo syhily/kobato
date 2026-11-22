@@ -1,8 +1,9 @@
 import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
-import type { AnalyticsHandle } from '@kobato/db/duckdb/database'
+import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 
 import { appendAccessEvents } from '@kobato/db/duckdb/access-events'
+import { analyticsWriterOf, engineOf } from '@kobato/db/duckdb/connection'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
 import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
@@ -94,11 +95,11 @@ export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAcce
     deviceType: e.deviceType ?? null,
     isBot: e.isBot ?? false,
   }))
-  await appendAccessEvents(handle.writer, enriched)
+  await appendAccessEvents(analyticsWriterOf(handle), enriched)
 }
 
 export async function clearAccessEvents(handle: AnalyticsHandle): Promise<void> {
-  await handle.writer.run('DELETE FROM access_events')
+  await engineOf(handle).writer.run('DELETE FROM access_events')
 }
 
 export type SeedDeviceEnvServerRow = Pick<DeviceEnvServerRow, 'eventId' | 'timestamp'> &
@@ -106,7 +107,7 @@ export type SeedDeviceEnvServerRow = Pick<DeviceEnvServerRow, 'eventId' | 'times
 
 export async function seedDeviceEnvServerRows(handle: AnalyticsHandle, rows: SeedDeviceEnvServerRow[]): Promise<void> {
   await appendDeviceEnvServerRows(
-    handle.writer,
+    analyticsWriterOf(handle),
     rows.map((row) => ({
       uaFullVersion: '',
       platform: '',
@@ -128,7 +129,7 @@ export type SeedDeviceEnvClientRow = Pick<DeviceEnvClientRow, 'eventId' | 'times
 
 export async function seedDeviceEnvClientRows(handle: AnalyticsHandle, rows: SeedDeviceEnvClientRow[]): Promise<void> {
   await appendDeviceEnvClientRows(
-    handle.writer,
+    analyticsWriterOf(handle),
     rows.map((row) => ({
       screenW: null,
       screenH: null,

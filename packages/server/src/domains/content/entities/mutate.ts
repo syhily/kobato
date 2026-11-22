@@ -1,5 +1,6 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { Database } from '@kobato/db/database'
+import type { NewPageMeta, NewPostMeta } from '@kobato/db/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
@@ -8,17 +9,18 @@ import type {
 } from '@kobato/server/domains/content/entities/descriptor'
 
 import {
-  deleteSlugRegistryByEntity,
-  insertSlugRegistry,
-  updateSlugRegistryByEntity,
-} from '@kobato/db/operations/slug-registry'
+  createEntityWithSlug,
+  SlugOccupiedError,
+  restoreEntityReclaimingSlug,
+  softDeleteEntityWithSlug,
+  updateEntityMetaById,
+  updateEntityWithSlug,
+} from '@kobato/db/operations/entity-meta'
 import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish'
 import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields'
 import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict'
-import { reclaimSlugOnRestore } from '@kobato/server/domains/content/slug-reclaim'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
-import { reserveSlugInTransaction } from '@kobato/server/infra/slug/reservation'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
@@ -46,8 +48,21 @@ export function makeEntityMutations<
 ): EntityMutations<TInput, TAdminDto> {
   const { repos, mutations } = descriptor
 
-  function syncTransaction<T>(db: Database, fn: (tx: Database) => T): T {
-    return unsafeCast<(fn: (tx: Database) => T) => T>(db.transaction.bind(db))(fn)
+  function tagSeedsFor(input: TInput): { name: string; slug: string }[] | undefined {
+    if (mutations.tagSeedsFor === undefined) {
+      return undefined
+    }
+    return mutations.tagSeedsFor(input)
+  }
+
+  function mapSlugOccupied(err: unknown, entityType: 'post' | 'page', slug: string): never {
+    if (err instanceof SlugOccupiedError) {
+      throw new DomainError(
+        'CONFLICT',
+        descriptorFor('content.error.slugTakenByEntity', { slug, entity: err.occupantType }),
+      )
+    }
+    rethrowSlugConflict(err, entityType, slug)
   }
 
   async function create(
@@ -62,13 +77,11 @@ export function makeEntityMutations<
     await mutations.preflightUpsert?.(db, input)
     const now = new Date()
     try {
-      const row = syncTransaction(db, (tx) => {
-        reserveSlugInTransaction(tx, descriptor.entityType, slug, undefined, {
-          findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
-        })
-        const inserted = repos.insertMeta(
-          tx,
-          unsafeCast<TNew>({
+      const row = unsafeCast<TMeta>(
+        createEntityWithSlug(db, {
+          entityType: descriptor.entityType,
+          slug,
+          values: unsafeCast<NewPostMeta | NewPageMeta>({
             slug,
             title: input.title,
             summary: input.summary ?? '',
@@ -84,16 +97,14 @@ export function makeEntityMutations<
             authorId: resolvedAuthorId,
             ...mutations.insertExtras(input),
           }),
-        )
-        mutations.syncRelations?.(tx, inserted.id, input)
-        insertSlugRegistry(tx, { slug, entityType: descriptor.entityType, entityId: inserted.id })
-        return inserted
-      })
+          tagSeeds: tagSeedsFor(input),
+        }),
+      )
       await mutations.afterMutation?.(db, row, 'create')
       const extras = await mutations.mutationExtras?.(db, row, { kind: 'upsert', input })
       return descriptor.adminDto.project(row, extras)
     } catch (err) {
-      rethrowSlugConflict(err, descriptor.entityType, slug)
+      mapSlugOccupied(err, descriptor.entityType, slug)
     }
   }
 
@@ -106,35 +117,30 @@ export function makeEntityMutations<
     await mutations.preflightUpsert?.(db, input)
     const now = new Date()
     try {
-      const updated = syncTransaction(db, (tx) => {
-        if (existing.slug !== slug) {
-          reserveSlugInTransaction(tx, descriptor.entityType, slug, id, {
-            findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
-          })
-        }
-        const result = repos.updateMetaById(tx, id, {
+      const updated = unsafeCast<TMeta | null>(
+        updateEntityWithSlug(db, {
+          entityType: descriptor.entityType,
+          id,
           slug,
-          title: input.title,
-          summary: input.summary ?? existing.summary,
-          cover: input.cover ?? existing.cover,
-          og: input.og === undefined ? existing.og : input.og,
-          commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
-          webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
-          showToc: input.showToc ?? existing.showToc,
-          showUpdated: input.showUpdated ?? existing.showUpdated,
-          contentLanguage: contentLanguage === undefined ? existing.contentLanguage : contentLanguage,
-          publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
-          ...(input.publishedAt === null ? { published: false } : {}),
-          ...mutations.updateExtras(input, existing),
-        } as Partial<Omit<TNew, 'id' | 'createdAt'>>)
-        if (result !== null) {
-          mutations.syncRelations?.(tx, id, input)
-          if (existing.slug !== slug) {
-            updateSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id, slug })
-          }
-        }
-        return result
-      })
+          slugChanged: existing.slug !== slug,
+          patch: unsafeCast<Partial<NewPostMeta> | Partial<NewPageMeta>>({
+            slug,
+            title: input.title,
+            summary: input.summary ?? existing.summary,
+            cover: input.cover ?? existing.cover,
+            og: input.og === undefined ? existing.og : input.og,
+            commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+            webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
+            showToc: input.showToc ?? existing.showToc,
+            showUpdated: input.showUpdated ?? existing.showUpdated,
+            contentLanguage: contentLanguage === undefined ? existing.contentLanguage : contentLanguage,
+            publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
+            ...(input.publishedAt === null ? { published: false } : {}),
+            ...mutations.updateExtras(input, existing),
+          }),
+          tagSeeds: tagSeedsFor(input),
+        }),
+      )
       if (updated === null) {
         throw new DomainError(
           'NOT_FOUND',
@@ -146,21 +152,14 @@ export function makeEntityMutations<
       const extras = await mutations.mutationExtras?.(db, updated, { kind: 'upsert', input })
       return descriptor.adminDto.project(updated, extras)
     } catch (err) {
-      rethrowSlugConflict(err, descriptor.entityType, slug)
+      mapSlugOccupied(err, descriptor.entityType, slug)
     }
   }
 
   async function remove(db: Database, id: number, viewer?: ViewerIdentity): Promise<{ deleted: boolean }> {
     const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
-    const deleted = db.transaction((tx) => {
-      const ok = repos.softDeleteMeta(tx, id)
-      if (ok) {
-        mutations.deleteRelations?.(tx, id)
-        deleteSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id })
-      }
-      return ok
-    })
+    const deleted = softDeleteEntityWithSlug(db, descriptor.entityType, id)
     if (deleted) {
       await mutations.afterMutation?.(db, meta, 'delete')
       rescheduleScheduledPublish()
@@ -176,38 +175,45 @@ export function makeEntityMutations<
     const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
 
-    const { restored, slugWarning, ctx } = db.transaction((tx) => {
-      const ok = repos.restoreMeta(tx, id)
-      let slugConflict: ErrorMessageDescriptor | undefined
-      let restoreCtx: TRestore | null | undefined
-      if (ok) {
-        const restoredMeta = repos.findMetaById(tx, id)
-        if (restoredMeta !== null) {
-          slugConflict = reclaimSlugOnRestore(tx, descriptor.entityType, id, restoredMeta.slug)
-          restoreCtx = mutations.prepareRestore?.(tx, restoredMeta)
-        }
-      }
-      return { restored: ok, slugWarning: slugConflict, ctx: restoreCtx }
-    })
+    const result = restoreEntityReclaimingSlug(db, descriptor.entityType, id)
 
+    let slugWarning: ErrorMessageDescriptor | undefined
     let restoreWarning: ErrorMessageDescriptor | undefined
-    if (restored) {
+    if (result.restored && result.meta !== null) {
+      const restoredMeta = unsafeCast<TMeta>(result.meta)
+      if (result.slugConflict !== undefined) {
+        slugWarning = descriptorFor('content.warning.slugTakenOnRestore', {
+          slug: restoredMeta.slug,
+          occupant: result.slugConflict.occupantType,
+          target: descriptor.entityType,
+        })
+      } else if (result.slugStolen === true) {
+        slugWarning = descriptorFor('content.warning.slugStolenOnRestore', {
+          slug: restoredMeta.slug,
+          target: descriptor.entityType,
+        })
+      }
+      const ctx = mutations.buildRestoreContext?.(result) ?? null
       restoreWarning = await mutations.afterRestore?.(db, unsafeCast<TRestore>(ctx))
       rescheduleScheduledPublish()
     }
+
     const warningDescriptors = [slugWarning, restoreWarning].filter(
       (part): part is ErrorMessageDescriptor => part !== undefined,
     )
-    return { restored, ...(warningDescriptors.length === 0 ? {} : { warningDescriptors }) }
+    return { restored: result.restored, ...(warningDescriptors.length === 0 ? {} : { warningDescriptors }) }
   }
 
   async function unpublish(db: Database, id: number, viewer?: ViewerIdentity): Promise<TAdminDto> {
     const existing = repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
-    const updated = repos.updateMetaById(
-      db,
-      id,
-      unsafeCast<Partial<Omit<TNew, 'id' | 'createdAt'>>>({ published: false }),
+    const updated = unsafeCast<TMeta | null>(
+      updateEntityMetaById(
+        db,
+        descriptor.entityType,
+        id,
+        unsafeCast<Partial<NewPostMeta> | Partial<NewPageMeta>>({ published: false }),
+      ),
     )
     if (updated === null) {
       throw new DomainError(

@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
 import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { wipeCache } from '@kobato/server/infra/cache/file-store'
@@ -16,14 +16,14 @@ const openHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
 
 export function getTestDb(): Database {
-  return getDatabaseHandle().db
+  return databaseOf(getDatabaseHandle())
 }
 
 export function createTestDatabaseFile(): DatabaseHandle {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-it-'))
   tempDirs.push(dir)
   const handle = openDatabase(join(dir, 'test.db'))
-  migrateDatabase(handle.db)
+  migrateDatabase(databaseOf(handle))
   openHandles.push(handle)
   return handle
 }
@@ -44,7 +44,8 @@ afterAll(() => {
 })
 
 export async function clearAllTables(db: Database): Promise<void> {
-  const rows = db.all<{ name: string }>(sql`
+  const sdb = sqliteOf(db)
+  const rows = sdb.all<{ name: string }>(sql`
     SELECT name
     FROM sqlite_master
     WHERE type = 'table'
@@ -52,14 +53,14 @@ export async function clearAllTables(db: Database): Promise<void> {
       AND name != ${MIGRATIONS_TABLE}
     ORDER BY name
   `)
-  db.run(sql`PRAGMA foreign_keys = OFF`)
+  sdb.run(sql`PRAGMA foreign_keys = OFF`)
   try {
     for (const { name } of rows) {
-      db.run(sql.raw(`DELETE FROM "${name}"`))
+      sdb.run(sql.raw(`DELETE FROM "${name}"`))
     }
-    db.run(sql`DELETE FROM sqlite_sequence`)
+    sdb.run(sql`DELETE FROM sqlite_sequence`)
   } finally {
-    db.run(sql`PRAGMA foreign_keys = ON`)
+    sdb.run(sql`PRAGMA foreign_keys = ON`)
   }
   await wipeCache()
   __resetMemoryCacheForTests()

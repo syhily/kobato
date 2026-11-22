@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { category } from '@kobato/db/schema/taxonomy'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -15,7 +16,7 @@ const db = getTestDb()
 let adminId = 0
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -27,7 +28,7 @@ function adminCtx() {
 }
 
 async function seedCategory(name: string, sortOrder = 0): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(category)
     .values({ name, slug: name.toLowerCase(), cover: `https://example.com/${name.toLowerCase()}.jpg`, sortOrder })
     .returning({ id: category.id })
@@ -71,7 +72,7 @@ describe('adminCategoriesRouter.upsert', () => {
     )
 
     expect(res.category).toMatchObject({ name: 'Tech', slug: 'tech', cover: 'https://example.com/cover.jpg' })
-    const rows = await db.select().from(category).where(eq(category.name, 'Tech'))
+    const rows = await sqliteOf(db).select().from(category).where(eq(category.name, 'Tech'))
     expect(rows).toHaveLength(1)
   })
 })
@@ -83,7 +84,7 @@ describe('adminCategoriesRouter.delete', () => {
     const res = await call(adminCategoriesRouter.delete, { id: String(id) }, { context: adminCtx() })
     expect(res).toBeUndefined()
 
-    const remaining = await db.select().from(category).where(eq(category.id, id))
+    const remaining = await sqliteOf(db).select().from(category).where(eq(category.id, id))
     expect(remaining).toHaveLength(0)
   })
 
@@ -109,7 +110,7 @@ describe('adminCategoriesRouter.reorder', () => {
     expect(res.categories.map((c) => c.id)).toEqual([String(gamma), String(alpha), String(beta)])
     expect(res.categories.map((c) => c.sortOrder)).toEqual([0, 1, 2])
 
-    const rows = await db.select().from(category).orderBy(asc(category.sortOrder))
+    const rows = await sqliteOf(db).select().from(category).orderBy(asc(category.sortOrder))
     expect(rows.map((row) => row.id)).toEqual([gamma, alpha, beta])
   })
 })

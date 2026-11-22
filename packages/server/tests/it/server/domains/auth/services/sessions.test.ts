@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user } from '@kobato/db/schema/user'
 import { listAllSessions, revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
@@ -12,7 +13,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(role: 'admin' | 'visitor' = 'admin', email = 'a@example.com') {
-  const [u] = await db.insert(user).values({ name: 'T', email, password: 'hashed', role }).returning()
+  const [u] = await sqliteOf(db).insert(user).values({ name: 'T', email, password: 'hashed', role }).returning()
   return u!
 }
 
@@ -33,32 +34,34 @@ function liveSessionRow(sid: string, userId: number, opts: { ip?: string; userAg
 describe('auth/services/sessions — revokeAllSessionsOfUser', () => {
   it('deletes every session but the except one and returns the deleted count', async () => {
     const u = await seedUser('admin', 'except@example.com')
-    await db
+    await sqliteOf(db)
       .insert(sessionTable)
       .values([liveSessionRow('sid-1', u.id), liveSessionRow('sid-2', u.id), liveSessionRow('sid-keep', u.id)])
 
     const deleted = await revokeAllSessionsOfUser(db, u.id, 'sid-keep')
 
     expect(deleted).toBe(2)
-    const remaining = await db.select().from(sessionTable)
+    const remaining = await sqliteOf(db).select().from(sessionTable)
     expect(remaining.map((r) => r.id)).toEqual(['sid-keep'])
   })
 
   it('deletes all sessions when no except id is given', async () => {
     const u = await seedUser('admin', 'all@example.com')
-    await db.insert(sessionTable).values([liveSessionRow('sid-1', u.id), liveSessionRow('sid-2', u.id)])
+    await sqliteOf(db)
+      .insert(sessionTable)
+      .values([liveSessionRow('sid-1', u.id), liveSessionRow('sid-2', u.id)])
 
     const deleted = await revokeAllSessionsOfUser(db, u.id)
 
     expect(deleted).toBe(2)
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 })
 
 describe('auth/services/sessions — listAllSessions', () => {
   it('returns one entry per session when a user has several live sessions', async () => {
     const alice = await seedUser('admin', 'alice@example.com')
-    await db
+    await sqliteOf(db)
       .insert(sessionTable)
       .values([liveSessionRow('sid-a1', alice.id), liveSessionRow('sid-a2', alice.id, { ip: '2.2.2.2' })])
 
@@ -74,12 +77,14 @@ describe('auth/services/sessions — listAllSessions', () => {
 
   it('uses the deleted-user fallback when no user row matches the session owner', async () => {
     const u = await seedUser('admin', 'gone@example.com')
-    await db.insert(sessionTable).values(liveSessionRow('sid-orphan', u.id, { ip: '3.3.3.3' }))
-    db.run(sql`PRAGMA foreign_keys = OFF`)
+    await sqliteOf(db)
+      .insert(sessionTable)
+      .values(liveSessionRow('sid-orphan', u.id, { ip: '3.3.3.3' }))
+    sqliteOf(db).run(sql`PRAGMA foreign_keys = OFF`)
     try {
-      await db.delete(user)
+      await sqliteOf(db).delete(user)
     } finally {
-      db.run(sql`PRAGMA foreign_keys = ON`)
+      sqliteOf(db).run(sql`PRAGMA foreign_keys = ON`)
     }
 
     const list = await listAllSessions(db)
@@ -99,7 +104,7 @@ describe('auth/services/sessions — listAllSessions', () => {
       const batch = Array.from({ length: Math.min(batchSize, total - start) }, (_, i) =>
         liveSessionRow(`sid-${start + i}`, u.id),
       )
-      await db.insert(sessionTable).values(batch)
+      await sqliteOf(db).insert(sessionTable).values(batch)
     }
 
     const list = await listAllSessions(db)

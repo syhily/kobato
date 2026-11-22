@@ -1,7 +1,6 @@
-import type { AnalyticsReader } from '@kobato/db/duckdb/query'
+import type { AnalyticsQuery, AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { ServerTraceRuntimeConfig, TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace'
-import type { Compilable } from 'kysely'
 
 import { runAnalyticsQuery } from '@kobato/server/domains/analytics/services/analytics-sql'
 import { __resetTraceFacadeForTests, withSpanAsync } from '@kobato/server/infra/trace/facade'
@@ -29,7 +28,7 @@ function resolution(): TraceConfigResolution {
 
 const QUERY = {
   compile: () => ({ sql: 'SELECT secret_column FROM access_events WHERE blob1 = ?', parameters: ['secret-param'] }),
-} as unknown as Compilable
+} as unknown as AnalyticsQuery
 
 function readerWith(run: () => Promise<{ getRowObjects: () => Record<string, unknown>[] }>): AnalyticsReader {
   return { runAndReadAll: vi.fn(run) } as unknown as AnalyticsReader

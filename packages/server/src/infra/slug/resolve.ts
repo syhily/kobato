@@ -1,8 +1,20 @@
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { deriveSlug } from '@kobato/server/infra/slug/derive'
-import { RESERVED_SLUGS } from '@kobato/server/infra/slug/reservation'
 import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug'
+
+export const RESERVED_SLUGS = new Set<string>([
+  'posts',
+  'cats',
+  'tags',
+  'archives',
+  'search',
+  'admin',
+  'api',
+  'feed',
+  'sitemap.xml',
+  'robots.txt',
+])
 
 export type SlugEntity = 'post' | 'page' | 'taxonomy'
 

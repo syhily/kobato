@@ -1,12 +1,11 @@
 import type { Database } from '@kobato/db/database'
 
 import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
-import { session } from '@kobato/db/schema/session'
+import { purgeExpiredOneTimeTokens } from '@kobato/db/operations/one-time-token'
+import { purgeExpiredSessions } from '@kobato/db/operations/session'
 import { sweepBucket } from '@kobato/server/infra/cache/file-store'
 import { jobDb, registerJob } from '@kobato/server/infra/job-registry'
 import { getLogger } from '@kobato/server/infra/logger'
-import { lt } from 'drizzle-orm'
 
 const log = getLogger('kv.maintenance')
 
@@ -14,8 +13,8 @@ const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   const now = new Date()
-  await db.delete(oneTimeToken).where(lt(oneTimeToken.expiresAt, now))
-  await db.delete(session).where(lt(session.expiresAt, now))
+  await purgeExpiredOneTimeTokens(db, now)
+  await purgeExpiredSessions(db, now)
   await sweepFileCache()
 }
 

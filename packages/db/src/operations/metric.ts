@@ -1,7 +1,9 @@
 import type { Database } from '@kobato/db/database'
 import type { EntityTarget } from '@kobato/db/target'
 import type { MetricRow, NewMetric } from '@kobato/db/types'
+import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 
+import { sqliteOf } from '@kobato/db/database'
 import { metric } from '@kobato/db/schema/metric'
 import { and, eq, sql } from 'drizzle-orm'
 
@@ -21,7 +23,7 @@ export async function ensureMetric(db: Database, target: EntityTarget): Promise<
     voteDown: 0,
     pv: 0,
   }
-  const result = await db
+  const result = await sqliteOf(db)
     .insert(metric)
     .values(np)
     .onConflictDoUpdate({
@@ -43,7 +45,7 @@ export async function ensureMetricsBatch(db: Database, targets: EntityTarget[]):
     voteDown: 0,
     pv: 0,
   }))
-  return db
+  return sqliteOf(db)
     .insert(metric)
     .values(values)
     .onConflictDoUpdate({
@@ -54,12 +56,12 @@ export async function ensureMetricsBatch(db: Database, targets: EntityTarget[]):
 }
 
 export async function findMetricByPublicId(db: Database, publicId: string): Promise<MetricRow | null> {
-  const rows = await db.select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
+  const rows = await sqliteOf(db).select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
   return rows[0] ?? null
 }
 
 export async function findMetricByTarget(db: Database, target: EntityTarget): Promise<MetricRow | null> {
-  const rows = await db.select().from(metric).where(whereTarget(target)).limit(1)
+  const rows = await sqliteOf(db).select().from(metric).where(whereTarget(target)).limit(1)
   return rows[0] ?? null
 }
 
@@ -84,7 +86,7 @@ export async function incrementMetricPvBatch(db: Database, deltas: Map<string, n
     return
   }
 
-  db.transaction((tx) => {
+  sqliteOf(db).transaction((tx) => {
     for (const [type, ownerId, delta] of positive) {
       tx.update(metric)
         .set({ pv: sql`COALESCE(${metric.pv}, 0) + ${delta}` })
@@ -94,8 +96,8 @@ export async function incrementMetricPvBatch(db: Database, deltas: Map<string, n
   })
 }
 
-export function decrementMetricVotes(db: Database, target: EntityTarget): void {
-  db.update(metric)
+export function decrementMetricVotesTx(tx: NodeSQLiteDatabase, target: EntityTarget): void {
+  tx.update(metric)
     .set({ voteUp: sql`MAX(${metric.voteUp} - 1, 0)` })
     .where(whereTarget(target))
     .run()

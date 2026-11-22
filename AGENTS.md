@@ -68,7 +68,8 @@ generated probe JavaScript, and import-scanner test fixtures. Enforcement: `apps
 ## Layering
 
 Dependency declarations are the enforcement; the graphs are pinned by the arch tests in `apps/kobato/tests/arch/`
-(`package-dag`, `web-direction`, `server-layers`, `admin-feature-graph`, `server-public-surface`, `module-cycles`).
+(`package-dag`, `web-direction`, `server-layers`, `admin-feature-graph`, `server-public-surface`, `module-cycles`,
+`api-resource-surface`, `persistence-ownership`).
 
 - `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/api`. `catalog` and the
   api `contracts/` layer reach the Lexical document model only via `@kobato/inkling/headless` (catalog type-only).
@@ -79,7 +80,11 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
   integration stays at the web-client seam. The server implements through the `implement{Public,Authed,Author,Admin}`
   bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
-- `@kobato/db` → `settings`, `utils`, inkling headless; owns row/query models, never wire shapes.
+  Production source never imports SQLite/Drizzle/DuckDB/Kysely drivers, builds SQL, or unwraps native handles;
+  `apps/kobato/tests/arch/persistence-ownership.test.ts` pins it. First-party JSON operations use oRPC, with only the
+  audited stream/upload/protocol resources in `apps/kobato/tests/arch/api-resource-surface.test.ts`.
+- `@kobato/db` → `settings`, `utils`, inkling headless; owns every query, transaction, native connection, and row model,
+  never wire shapes. Server passes opaque `Database`/`AnalyticsHandle` tokens to semantic operations.
 - Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`. Web leaves never
   import `@kobato/server` (admin allows it tests-only). The browser oRPC client is typed exclusively through
   `@kobato/api`.
@@ -105,18 +110,29 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
 Tests live next to the covered package — no root-level test tree.
 
 - Single-purpose rule: unit (pure logic, mocks) → `tests/unit/<mirrored-path>.test.ts`; integration (DB / real RPC) →
-  `tests/it/`; snapshots → `tests/snaps/`. One file never mixes purposes.
+  `tests/it/`; snapshots → `tests/snaps/`. One file never mixes purposes. Tests that spin up the real DuckDB engine live
+  in `tests/it/` named `*.duckdb.test.ts` — the suffix routes them into the owning package's `-duckdb` project
+  (`pnpm test:duckdb`; they also run under `pnpm test`).
+- Project registration: the root `vitest.config.ts` spreads `allTestProjects` from `@kobato/test/projects/registry` —
+  the explicit, ordered project table (factories in `@kobato/test/projects/*`; single-project packages keep a
+  package-local `tests/**/vitest.config.ts` — inkling/demo own the React/SVGR Vite plugins, api/pack/trace consume the
+  shared include constants — referenced by path). No config glob discovery; every test file is matched exactly once and
+  `e2e`/`browser` are registered nowhere — pinned by `apps/kobato/tests/arch/vitest-project-registry.test.ts`.
 - Import `describe`, `it`, `expect`, `vi` from `vitest`; run through the root `test*` scripts; `pnpm test <path>` for
   path filters; never select Vitest projects on the command line.
 - Pool/isolation: every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `pool: 'threads'`,
-  `maxWorkers: 4` (`--maxWorkers=<n>` for more cores), `isolate: false`. DOM-heavy trees override `pool: 'vmThreads'`
-  (`web-unit`, `web-snaps`, `ui-unit`, `demo-unit`, `inkling-unit`/`inkling-iso-unit`). `isolate: true` stays on the iso
-  halves of the merged `app`/`server`/`inkling` trees and on `duckdb`. `web-tz-unit` runs forks for its runtime
-  `process.env.TZ` write.
+  `maxWorkers: 4` (`--maxWorkers=<n>` for more cores), and `isolate: true` uniformly: `vi.mock` holders, product global
+  state, and native engines all get a fresh module registry per file, so there is no mock-file scanning and no
+  shared/isolated project split. DOM-heavy trees override `pool: 'vmThreads'` (`web-unit`, `web-snaps`, `ui-unit`,
+  `demo-unit`, `inkling-unit`). `web-tz-unit` runs forks for its runtime `process.env.TZ` write.
 - Hygiene: no `process.chdir()` (spy on `process.cwd`), no runtime `process.env.TZ` writes outside the forks project,
   "no browser globals" tests declare `@vitest-environment node`, realm-safe DOM comparisons use identity (`!==`).
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative. `any`,
   `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks.
+- Coverage measures the backend/app runtime surface plus `@kobato/web-client` — `apps/kobato/src`, `api`, `db`,
+  `server`, `shared/*`, and `web/client`. The product UI trees — `web-admin`/`web-public` (their `src` is entirely
+  `src/ui`), `@kobato/ui`, and `@kobato/inkling` — are exercised by their own suites and sit outside the workspace
+  coverage thresholds by design.
 
 ## Git
 
@@ -155,7 +171,8 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
 - Every version lives in the root `pnpm-workspace.yaml` `catalog:` table; `taze` edits it in place. Range-less entries
   are locked; every other entry carries `^`.
 - Each package declares every external package it imports — an undeclared import fails typecheck. Workspace links are
-  `"workspace:*"`.
+  `"workspace:*"`. The server/app `drizzle-orm` devDependencies are test-only for seed/assertion code; production source
+  must not import them.
 - Only native-dynamic-library packages required at production runtime belong in the ROOT `package.json` `dependencies`:
   `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`. Everything else is a devDependencies entry of the importing package —
   the SEA binary builds from the full dev install.

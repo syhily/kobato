@@ -2,12 +2,14 @@ import type { Database } from '@kobato/db/database'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
 import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import {
+  listContentBodies,
+  listNonEmptyCoverRows,
+  updateContentBody,
+  updateEntityCover,
+  type CoverOwnerEntity,
+} from '@kobato/db/operations/entity-asset'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
-import { content } from '@kobato/db/schema/content'
-import { friend } from '@kobato/db/schema/friend'
-import { page } from '@kobato/db/schema/page'
-import { post } from '@kobato/db/schema/post'
-import { category } from '@kobato/db/schema/taxonomy'
 import { SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/inkling/headless/node-whitelist'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { resolveSrcToStoragePath } from '@kobato/server/domains/images/services/resolve'
@@ -17,7 +19,6 @@ import { getLogger } from '@kobato/server/infra/logger'
 import { getPublicBaseUrl, parseAssetUrl } from '@kobato/server/infra/storage/public-url'
 import { isRecord } from '@kobato/utils/type-guards'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { eq, ne } from 'drizzle-orm'
 
 const log = getLogger('content.asset-url-backfill')
 
@@ -160,19 +161,7 @@ async function persistRewrittenLexicalRow(db: Database, id: number, state: Lexic
   } catch (error) {
     log.warn('Projection re-derivation failed; writing the rewritten body only', { id, error: String(error) })
   }
-  await db
-    .update(content)
-    .set(
-      projections === null
-        ? { body: state }
-        : {
-            body: state,
-            bodyHtml: projections.bodyHtml,
-            bodyText: projections.bodyText,
-            bodyHtmlFeed: projections.bodyHtmlFeed,
-          },
-    )
-    .where(eq(content.id, id))
+  await updateContentBody(db, id, { body: state, projections })
 }
 
 export function rewriteAssetReference(url: string, publicBaseUrl: string | null): string | null {
@@ -207,7 +196,7 @@ export async function backfillStorageAssetUrls(db: Database): Promise<AssetUrlBa
     skippedContentRows: 0,
   }
 
-  const contentRows = await db.select({ id: content.id, body: content.body }).from(content)
+  const contentRows = await listContentBodies(db)
   for (const row of contentRows) {
     try {
       if (isLexicalBody(row.body)) {
@@ -226,59 +215,32 @@ export async function backfillStorageAssetUrls(db: Database): Promise<AssetUrlBa
     }
   }
 
-  result.posts = await rewritePostCovers(db, publicBaseUrl)
-  result.pages = await rewritePageCovers(db, publicBaseUrl)
-  result.friends = await rewriteFriendPosters(db, publicBaseUrl)
-  result.categories = await rewriteCategoryCovers(db, publicBaseUrl)
+  result.posts = await rewriteCoversFor(db, 'post', publicBaseUrl)
+  result.pages = await rewriteCoversFor(db, 'page', publicBaseUrl)
+  result.friends = await rewriteCoversFor(db, 'friend', publicBaseUrl)
+  result.categories = await rewriteCoversFor(db, 'category', publicBaseUrl)
   return result
 }
 
 async function rewriteUrlRows(
+  db: Database,
+  entity: CoverOwnerEntity,
   rows: { id: number; url: string }[],
   publicBaseUrl: string | null,
-  write: (id: number, next: string) => Promise<unknown>,
 ): Promise<number> {
   let count = 0
   for (const row of rows) {
     const next = rewriteAssetReference(row.url, publicBaseUrl)
     if (next !== null) {
-      await write(row.id, next)
+      await updateEntityCover(db, entity, row.id, next)
       count += 1
     }
   }
   return count
 }
 
-async function rewritePostCovers(db: Database, publicBaseUrl: string | null): Promise<number> {
-  return rewriteUrlRows(
-    await db.select({ id: post.id, url: post.cover }).from(post).where(ne(post.cover, '')),
-    publicBaseUrl,
-    (id, next) => db.update(post).set({ cover: next }).where(eq(post.id, id)),
-  )
-}
-
-async function rewritePageCovers(db: Database, publicBaseUrl: string | null): Promise<number> {
-  return rewriteUrlRows(
-    await db.select({ id: page.id, url: page.cover }).from(page).where(ne(page.cover, '')),
-    publicBaseUrl,
-    (id, next) => db.update(page).set({ cover: next }).where(eq(page.id, id)),
-  )
-}
-
-async function rewriteFriendPosters(db: Database, publicBaseUrl: string | null): Promise<number> {
-  return rewriteUrlRows(
-    await db.select({ id: friend.id, url: friend.poster }).from(friend).where(ne(friend.poster, '')),
-    publicBaseUrl,
-    (id, next) => db.update(friend).set({ poster: next }).where(eq(friend.id, id)),
-  )
-}
-
-async function rewriteCategoryCovers(db: Database, publicBaseUrl: string | null): Promise<number> {
-  return rewriteUrlRows(
-    await db.select({ id: category.id, url: category.cover }).from(category).where(ne(category.cover, '')),
-    publicBaseUrl,
-    (id, next) => db.update(category).set({ cover: next }).where(eq(category.id, id)),
-  )
+async function rewriteCoversFor(db: Database, entity: CoverOwnerEntity, publicBaseUrl: string | null): Promise<number> {
+  return rewriteUrlRows(db, entity, await listNonEmptyCoverRows(db, entity), publicBaseUrl)
 }
 
 export async function runAssetUrlBackfillOnceAtBoot(db: Database): Promise<void> {

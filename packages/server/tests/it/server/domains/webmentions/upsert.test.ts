@@ -1,5 +1,6 @@
 import type { NewWebmention } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import {
   setWebmentionStatus,
   upsertWebmention,
@@ -32,7 +33,7 @@ function mentionValues(overrides: Partial<NewWebmention> = {}): NewWebmention {
 }
 
 async function rowOf(id: number) {
-  const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+  const rows = await sqliteOf(db).select().from(webmention).where(eq(webmention.id, id))
   return rows[0]!
 }
 
@@ -41,7 +42,7 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     const { row, outcome } = await upsertWebmention(db, mentionValues())
     expect(outcome).toBe('inserted')
     expect(row.status).toBe('pending')
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
   })
 
   it('refreshes a pending row in place and reports `updated`', async () => {
@@ -53,7 +54,7 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
 
     expect(second.outcome).toBe('updated')
     expect(second.row.id).toBe(first.row.id)
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
 
     const row = await rowOf(first.row.id)
     expect(row.status).toBe('pending')
@@ -148,7 +149,7 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     const outcomes = [a.outcome, b.outcome].sort()
     expect(outcomes).toEqual(['inserted', 'updated'])
     expect(a.row.id).toBe(b.row.id)
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
   })
 })
 
@@ -180,7 +181,7 @@ describe('integration / upsertWebmentionVerificationFailure (terminal receive-ti
     const second = await upsertWebmentionVerificationFailure(db, failureValues('second failure'))
 
     expect(second.id).toBe(first.id)
-    expect(await db.select().from(webmention)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(webmention)).toHaveLength(1)
     const row = await rowOf(first.id)
     expect(row.lastError).toBe('second failure')
     expect(row.status).toBe('pending')

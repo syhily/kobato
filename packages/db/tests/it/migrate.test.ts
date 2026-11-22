@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
-import { closeDatabase, openDatabase } from '@kobato/db/database'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
 import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
 import { createTestDatabaseFile } from '@kobato/db/tests/utils/integration-db'
 import { sql } from 'drizzle-orm'
@@ -30,14 +30,14 @@ function soleMigrationSql(): string {
 }
 
 function readDbShape(db: Database): DbShape {
-  const tables = db
+  const tables = sqliteOf(db)
     .all<{ name: string }>(sql`
       SELECT name FROM sqlite_master
       WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
       ORDER BY name
     `)
     .map((r) => r.name)
-  const migrations = db.all<MigrationRow>(sql`
+  const migrations = sqliteOf(db).all<MigrationRow>(sql`
     SELECT hash, created_at, name FROM ${sql.raw(`"${MIGRATIONS_TABLE}"`)} ORDER BY id
   `)
   return { tables, migrations }
@@ -54,9 +54,9 @@ describe('folder migrations (sqlite)', () => {
   it('applies the full drizzle tree and records every migration', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrateDatabase(handle.db)
+    migrateDatabase(databaseOf(handle))
 
-    const shape = readDbShape(handle.db)
+    const shape = readDbShape(databaseOf(handle))
     expect(shape.tables.length).toBeGreaterThan(0)
     expect(shape.migrations.length).toBeGreaterThan(0)
     expect(shape.tables).not.toContain('kv_cache')
@@ -65,19 +65,19 @@ describe('folder migrations (sqlite)', () => {
   it('is idempotent — a second run applies nothing', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrateDatabase(handle.db)
-    const before = readDbShape(handle.db)
-    migrateDatabase(handle.db)
-    expect(readDbShape(handle.db)).toEqual(before)
+    migrateDatabase(databaseOf(handle))
+    const before = readDbShape(databaseOf(handle))
+    migrateDatabase(databaseOf(handle))
+    expect(readDbShape(databaseOf(handle))).toEqual(before)
   })
 
   it('adds the nullable notification i18n descriptor columns', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrateDatabase(handle.db)
+    migrateDatabase(databaseOf(handle))
 
     const columns = Object.fromEntries(
-      handle.db
+      sqliteOf(databaseOf(handle))
         .all<{ name: string; notnull: number }>(sql`PRAGMA table_info(notification)`)
         .map((column) => [column.name, column.notnull]),
     )
@@ -95,10 +95,10 @@ describe('folder migrations (sqlite)', () => {
   it('adds the nullable content-language columns with no backfill', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrateDatabase(handle.db)
+    migrateDatabase(databaseOf(handle))
 
     for (const table of ['post', 'page']) {
-      const column = handle.db
+      const column = sqliteOf(databaseOf(handle))
         .all<{ name: string; notnull: number; dflt_value: string | null }>(sql`PRAGMA table_info(${sql.raw(table)})`)
         .find((entry) => entry.name === 'content_language')
       expect(column).toMatchObject({ name: 'content_language', notnull: 0, dflt_value: null })
@@ -123,11 +123,11 @@ describe('folder migrations (sqlite)', () => {
   it('no-ops on a database that already holds the final schema', () => {
     const handle = openDatabase(':memory:')
     handles.push(handle)
-    migrateDatabase(handle.db)
-    const before = readDbShape(handle.db)
-    handle.db.run(sql`DELETE FROM ${sql.raw(`"${MIGRATIONS_TABLE}"`)}`)
-    migrateDatabase(handle.db)
-    const after = readDbShape(handle.db)
+    migrateDatabase(databaseOf(handle))
+    const before = readDbShape(databaseOf(handle))
+    sqliteOf(databaseOf(handle)).run(sql`DELETE FROM ${sql.raw(`"${MIGRATIONS_TABLE}"`)}`)
+    migrateDatabase(databaseOf(handle))
+    const after = readDbShape(databaseOf(handle))
     expect(after.tables).toEqual(before.tables)
     expect(after.migrations.length).toBe(before.migrations.length)
   })
@@ -142,8 +142,8 @@ describe('folder migrations (sqlite)', () => {
 
   it('applies the pragma set the runtime relies on', () => {
     const handle = createTestDatabaseFile()
-    expect(handle.db.get(sql`PRAGMA auto_vacuum`)).toEqual({ auto_vacuum: 2 })
-    expect(handle.db.get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: 'wal' })
-    expect(handle.db.get(sql`PRAGMA foreign_keys`)).toEqual({ foreign_keys: 1 })
+    expect(sqliteOf(databaseOf(handle)).get(sql`PRAGMA auto_vacuum`)).toEqual({ auto_vacuum: 2 })
+    expect(sqliteOf(databaseOf(handle)).get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: 'wal' })
+    expect(sqliteOf(databaseOf(handle)).get(sql`PRAGMA foreign_keys`)).toEqual({ foreign_keys: 1 })
   })
 })

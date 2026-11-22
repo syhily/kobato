@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { auditLog } from '@kobato/db/schema/config'
 import { metric } from '@kobato/db/schema/metric'
@@ -31,7 +32,7 @@ afterEach(async () => {
 let seq = 0
 
 async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -49,7 +50,7 @@ async function seedAdmin(): Promise<number> {
 }
 
 async function seedPost(title: string, slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -63,12 +64,12 @@ async function seedPost(title: string, slug: string): Promise<number> {
 }
 
 async function seedMetricRow(ownerId: number, publicId: string): Promise<string> {
-  await db.insert(metric).values({ type: 'post', ownerId, publicId })
+  await sqliteOf(db).insert(metric).values({ type: 'post', ownerId, publicId })
   return publicId
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
@@ -91,7 +92,7 @@ function adminCtx(adminId: number) {
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 describe('adminCommentsRouter.approve', () => {
@@ -104,7 +105,7 @@ describe('adminCommentsRouter.approve', () => {
     const res = await call(adminCommentsRouter.approve, { commentId: String(cid) }, { context: adminCtx(admin) })
 
     expect(res).toBeUndefined()
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.isPending).toBe(false)
 
     const rows = await auditRowsFor('comment_approved')
@@ -125,7 +126,7 @@ describe('adminCommentsRouter.delete', () => {
     const res = await call(adminCommentsRouter.delete, { commentId: String(cid) }, { context: adminCtx(admin) })
 
     expect(res).toBeUndefined()
-    const remaining = await db.select().from(comment).where(eq(comment.id, cid))
+    const remaining = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(remaining).toHaveLength(0)
 
     const rows = await auditRowsFor('comment_deleted')
@@ -159,7 +160,7 @@ describe('adminCommentsRouter.edit', () => {
 
     expect(res.comment.id).toBe(String(cid))
     expect(res.comment.isPending).toBe(false)
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.isPending).toBe(false)
     expect(row!.content).toContain('moderated')
 
@@ -401,7 +402,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
     )
 
     expect(res).toEqual({ success: true })
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).not.toBeNull()
 
     const rows = await auditRowsFor('comment_delete_request_approved')
@@ -429,7 +430,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
     )
 
     expect(res).toEqual({ success: true })
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(row!.deleteRequestedAt).toBeNull()
     expect(row!.deleteRequestedBy).toBeNull()
@@ -466,7 +467,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
       ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_request_approved')).toHaveLength(0)
   })

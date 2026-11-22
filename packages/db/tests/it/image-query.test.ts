@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { upsertImageByStoragePath } from '@kobato/db/operations/image'
 import { image } from '@kobato/db/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
@@ -40,7 +41,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
       note: null,
     })
 
-    await db.update(image).set({ deletedAt: new Date() }).where(eq(image.id, first.id))
+    await sqliteOf(db).update(image).set({ deletedAt: new Date() }).where(eq(image.id, first.id))
 
     const second = await upsertImageByStoragePath(db, {
       storagePath: 'images/2026/05/bar.jpg',

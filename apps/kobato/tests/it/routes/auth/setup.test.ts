@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
 import { user } from '@kobato/db/schema/user'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token'
@@ -71,7 +72,7 @@ async function mintSetupToken(): Promise<string> {
 }
 
 async function seedAdminRow() {
-  await db.insert(user).values({
+  await sqliteOf(db).insert(user).values({
     name: 'Admin',
     email: 'admin@example.com',
     password: 'not-a-real-hash',
@@ -271,11 +272,13 @@ describe('routes/setup', () => {
     })
 
     it('returns error when setup token has expired', async () => {
-      await db.insert(oneTimeToken).values({
-        key: 'setup_token',
-        payload: 'expired-token',
-        expiresAt: new Date(Date.now() - 1000),
-      })
+      await sqliteOf(db)
+        .insert(oneTimeToken)
+        .values({
+          key: 'setup_token',
+          payload: 'expired-token',
+          expiresAt: new Date(Date.now() - 1000),
+        })
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -633,7 +636,7 @@ describe('routes/setup', () => {
       expect(payload?.error).toBe('安全校验失败，请刷新页面后重试。')
       expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
       expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
-      expect(await db.select().from(user)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(user)).toHaveLength(0)
     })
 
     it('answers unknownAction for an unrecognized intent', async () => {

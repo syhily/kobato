@@ -1,5 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/database'
 
+import { databaseOf } from '@kobato/db/database'
 import { getLogger } from '@kobato/server/infra/logger'
 import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@kobato/server/infra/scheduler-utils'
 
@@ -42,7 +43,7 @@ export function jobHandle(): DatabaseHandle {
 }
 
 export function jobDb(): Database {
-  return jobHandle().db
+  return databaseOf(jobHandle())
 }
 
 function arm(entry: JobEntry): void {

@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { auditLog } from '@kobato/db/schema/config'
 import { post } from '@kobato/db/schema/post'
@@ -29,7 +30,7 @@ afterEach(() => {
 })
 
 async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: opts.name ?? 'Alice',
@@ -43,7 +44,7 @@ async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promis
 }
 
 async function seedPost(title: string, slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({
       slug,
@@ -57,7 +58,7 @@ async function seedPost(title: string, slug: string): Promise<number> {
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
@@ -95,7 +96,7 @@ const EDITED_BODY = makeCommentBody('edited body')
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 describe('editOwnComment — update-own flow with the reply edit lock', () => {
@@ -160,7 +161,7 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
       descriptor: { messageKey: 'comments.error.hasReplies' },
     })
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.content).toBe('hello')
     expect(await auditRowsFor('comment_own_updated')).toHaveLength(0)
   })
@@ -201,7 +202,7 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
     const admin = await seedAdmin()
     await resolveCommentDeleteRequest(db, String(cid), true, adminCtxFor(admin))
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).not.toBeNull()
     expect(row!.deleteRequestedAt).not.toBeNull()
 
@@ -225,7 +226,7 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
     const admin = await seedAdmin()
     await resolveCommentDeleteRequest(db, String(cid), false, adminCtxFor(admin))
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(row!.deleteRequestedAt).toBeNull()
     expect(row!.deleteRequestedBy).toBeNull()
@@ -255,7 +256,7 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
       descriptor: { messageKey: 'comments.error.noPendingDelete' },
     })
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_request_approved')).toHaveLength(0)
   })
@@ -306,7 +307,7 @@ describe('requestOwnCommentDeletion — visitor delete-request flow', () => {
       descriptor: { messageKey: 'error.api.notFound' },
     })
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deleteRequestedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_requested')).toHaveLength(0)
   })
@@ -364,7 +365,7 @@ describe('cancelOwnCommentDeletion — visitor cancel-delete-request flow', () =
       descriptor: { messageKey: 'error.api.notFound' },
     })
 
-    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    const [row] = await sqliteOf(db).select().from(comment).where(eq(comment.id, cid))
     expect(row!.deleteRequestedAt).not.toBeNull()
     expect(await auditRowsFor('comment_delete_request_cancelled')).toHaveLength(0)
   })

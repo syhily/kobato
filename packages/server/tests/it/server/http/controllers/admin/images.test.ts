@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { image } from '@kobato/db/schema/media'
 import { user } from '@kobato/db/schema/user'
@@ -55,7 +56,7 @@ afterEach(async () => {
 let seq = 0
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -63,7 +64,7 @@ async function seedAdmin(): Promise<number> {
 }
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(image)
     .values({
       storagePath: `images/generic/img-${++seq}.jpg`,
@@ -112,13 +113,13 @@ describe('adminImagesRouter.delete', () => {
 
     expect(res).toBeUndefined()
 
-    const [row] = await db.select().from(image).where(eq(image.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(image).where(eq(image.id, seeded.id))
     expect(row!.deletedAt).not.toBeNull()
     expect(memory.deletedKeys).toContain(seeded.storagePath)
     expect(memory.store.has(seeded.storagePath)).toBe(false)
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'image_deleted'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'image_deleted'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('image')
     expect(rows[0]!.resourceId).toBe(String(seeded.id))
@@ -138,11 +139,11 @@ describe('adminImagesRouter.updateNote', () => {
     )
 
     expect(res.image.note).toBe('Updated note')
-    const [row] = await db.select().from(image).where(eq(image.id, seeded.id))
+    const [row] = await sqliteOf(db).select().from(image).where(eq(image.id, seeded.id))
     expect(row!.note).toBe('Updated note')
 
     await flushAuditLog()
-    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'image_note_updated'))
+    const rows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'image_note_updated'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('image')
     expect(rows[0]!.resourceId).toBe(String(seeded.id))
@@ -235,7 +236,7 @@ describe('adminImagesRouter.upload', () => {
   })
 
   it('rejects category/friend kinds for authors (site-global state keys are admin-only)', async () => {
-    const author = await db
+    const author = await sqliteOf(db)
       .insert(user)
       .values({ name: 'Author', email: `author-${++seq}@example.com`, password: 'hashed', role: 'author' })
       .returning({ id: user.id })

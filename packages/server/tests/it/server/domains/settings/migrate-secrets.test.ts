@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findSettingByScope } from '@kobato/db/operations/setting'
 import { setting } from '@kobato/db/schema/config'
 import { serverConfig } from '@kobato/server/infra/config'
@@ -20,7 +21,7 @@ function encryptLegacy(plaintext: string, key: string): string {
 }
 
 async function seedSetting(scope: string, data: Record<string, unknown>): Promise<void> {
-  await db.insert(setting).values({ scope, data })
+  await sqliteOf(db).insert(setting).values({ scope, data })
 }
 
 async function readData(scope: string): Promise<Record<string, unknown>> {

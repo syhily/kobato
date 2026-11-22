@@ -1,6 +1,7 @@
 import type { Role } from '@kobato/auth/roles'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
+import { sqliteOf } from '@kobato/db/database'
 import { user } from '@kobato/db/schema/user'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import {
@@ -61,7 +62,7 @@ const fetchMock = vi.fn<typeof fetch>()
 let seq = 0
 async function seedUser(role: Role, name: string): Promise<number> {
   seq += 1
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `${name}-${seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })
@@ -388,7 +389,7 @@ describe('notifications email — descriptor resolution', () => {
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
     const { createNotificationWithRecipients } = await import('@kobato/db/operations/notification')
     const { sendNotificationEmail } = await import('@kobato/server/domains/notifications/email')
-    const adminRows = db.select().from(user).all()
+    const adminRows = sqliteOf(db).select().from(user).all()
 
     const row = createNotificationWithRecipients(
       db,

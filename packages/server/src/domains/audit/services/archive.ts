@@ -1,13 +1,17 @@
 import type { Database } from '@kobato/db/database'
 import type { ArchiveResult, CleanupResult } from '@kobato/server/domains/audit/types'
 
-import { auditLog } from '@kobato/db/schema/config'
+import {
+  deleteAuditLogsByIds,
+  listAuditArchiveDaysBefore,
+  listAuditLogPageForArchive,
+  purgeAuditLogsBefore,
+} from '@kobato/db/operations/audit-log'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { toJsonSafe } from '@kobato/server/infra/json'
 import { getLogger } from '@kobato/server/infra/logger'
 import { backendFor } from '@kobato/server/infra/storage/registry'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
 
 const log = getLogger('audit.archive')
@@ -38,21 +42,12 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
   if (!s3ArchiveAvailable()) {
     log.warn('S3 storage unavailable; purging expired audit logs without archiving')
 
-    const deleteResult = await db.delete(auditLog).where(lt(auditLog.createdAt, cutoff))
-    const deleted = Number(deleteResult.changes)
+    const deleted = await purgeAuditLogsBefore(db, cutoff)
     log.info('Purge-only mode completed', { deletedRows: deleted })
     return { archivedDays: 0, archivedRows: 0, deletedRows: deleted }
   }
 
-  const dayRows = await db
-    .select({
-      day: sql<string>`date(${auditLog.createdAt} / 1000, 'unixepoch')`,
-      count: sql<number>`count(*)`.mapWith(Number),
-    })
-    .from(auditLog)
-    .where(lt(auditLog.createdAt, cutoff))
-    .groupBy(sql`date(${auditLog.createdAt} / 1000, 'unixepoch')`)
-    .orderBy(sql`date(${auditLog.createdAt} / 1000, 'unixepoch')`)
+  const dayRows = await listAuditArchiveDaysBefore(db, cutoff)
 
   if (dayRows.length === 0) {
     log.info('No audit logs to archive')
@@ -104,17 +99,12 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
   const archivedIds: number[] = []
 
   for (;;) {
-    const conditions = [gte(auditLog.createdAt, dayStart), lt(auditLog.createdAt, dayEnd)]
-    if (cursorId) {
-      conditions.push(gt(auditLog.id, cursorId))
-    }
-
-    const rows = await db
-      .select()
-      .from(auditLog)
-      .where(and(...conditions))
-      .orderBy(auditLog.createdAt, auditLog.id)
-      .limit(ARCHIVE_PAGE_SIZE)
+    const rows = await listAuditLogPageForArchive(db, {
+      dayStart,
+      dayEnd,
+      afterId: cursorId,
+      limit: ARCHIVE_PAGE_SIZE,
+    })
 
     if (rows.length === 0) {
       break
@@ -170,12 +160,7 @@ export async function deleteArchivedRows(
   ids: readonly number[],
   batchSize = DELETE_BATCH_SIZE,
 ): Promise<number> {
-  let deleted = 0
-  for (let start = 0; start < ids.length; start += batchSize) {
-    const result = await db.delete(auditLog).where(inArray(auditLog.id, ids.slice(start, start + batchSize)))
-    deleted += Number(result.changes)
-  }
-  return deleted
+  return deleteAuditLogsByIds(db, ids, batchSize)
 }
 
 export async function cleanupExpiredArchives(): Promise<CleanupResult> {

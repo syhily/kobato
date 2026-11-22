@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { MusicRow, NewMusic } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { likeEscape } from '@kobato/db/like-escape'
 import { applyPage, assembleWhere, withUploader } from '@kobato/db/operations/admin-list'
 import { music } from '@kobato/db/schema/media'
@@ -96,18 +97,18 @@ export async function findAdminMusicRowById(db: Database, id: number): Promise<A
 export async function countAdminMusic(db: Database, filters: AdminMusicListFilters = {}): Promise<number> {
   const where = assembleWhere(buildAdminMusicConditions(filters))
   const rows = where
-    ? await db.select({ value: count() }).from(music).where(where)
-    : await db.select({ value: count() }).from(music)
+    ? await sqliteOf(db).select({ value: count() }).from(music).where(where)
+    : await sqliteOf(db).select({ value: count() }).from(music)
   return rows[0]?.value ?? 0
 }
 
 export async function findMusicById(db: Database, id: number): Promise<MusicRow | null> {
-  const rows = await db.select().from(music).where(eq(music.id, id)).limit(1)
+  const rows = await sqliteOf(db).select().from(music).where(eq(music.id, id)).limit(1)
   return rows[0] ?? null
 }
 
 export async function findMusicByPlayerId(db: Database, playerId: string): Promise<MusicRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(music)
     .where(and(eq(music.playerId, playerId), isNull(music.deletedAt)))
@@ -116,7 +117,7 @@ export async function findMusicByPlayerId(db: Database, playerId: string): Promi
 }
 
 export async function findMusicBySourceAndId(db: Database, source: string, sourceId: string): Promise<MusicRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(music)
     .where(and(eq(music.source, source), eq(music.sourceId, sourceId)))
@@ -130,7 +131,7 @@ export async function findMusicByPlayerIds(db: Database, playerIds: readonly str
   }
   const conditions = playerIds.map((id) => eq(music.playerId, id))
   const where = conditions.length === 1 ? conditions[0] : or(...conditions)
-  return db
+  return sqliteOf(db)
     .select()
     .from(music)
     .where(and(where, isNull(music.deletedAt)))
@@ -138,7 +139,7 @@ export async function findMusicByPlayerIds(db: Database, playerIds: readonly str
 
 export async function insertMusic(db: Database, values: NewMusic): Promise<MusicRow> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(music)
     .values({ ...values, createdAt: now, updatedAt: now })
     .returning()
@@ -146,7 +147,7 @@ export async function insertMusic(db: Database, values: NewMusic): Promise<Music
 }
 
 export async function updateMusic(db: Database, id: number, values: Partial<NewMusic>): Promise<MusicRow | null> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(music)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(music.id, id))
@@ -156,7 +157,11 @@ export async function updateMusic(db: Database, id: number, values: Partial<NewM
 
 export async function softDeleteMusic(db: Database, id: number): Promise<MusicRow | null> {
   const now = new Date()
-  const rows = await db.update(music).set({ deletedAt: now, updatedAt: now }).where(eq(music.id, id)).returning()
+  const rows = await sqliteOf(db)
+    .update(music)
+    .set({ deletedAt: now, updatedAt: now })
+    .where(eq(music.id, id))
+    .returning()
   return rows[0] ?? null
 }
 
@@ -166,7 +171,7 @@ export async function restoreMusic(
   values: Pick<NewMusic, 'name' | 'artist' | 'album' | 'lyric' | 'uploaderId'>,
 ): Promise<MusicRow | null> {
   const now = new Date()
-  const rows = await db
+  const rows = await sqliteOf(db)
     .update(music)
     .set({ ...values, deletedAt: null, updatedAt: now })
     .where(eq(music.id, id))

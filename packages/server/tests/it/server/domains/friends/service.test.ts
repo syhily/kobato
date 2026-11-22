@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { friend } from '@kobato/db/schema/friend'
 import { image } from '@kobato/db/schema/media'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
@@ -20,7 +21,7 @@ afterEach(() => {
 })
 
 async function seedFriend(opts: Partial<typeof friend.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(friend)
     .values({
       website: opts.website ?? 'Site',
@@ -40,7 +41,7 @@ function posterFor(homepage: string): string {
 
 async function seedUploadedPoster(homepage: string, body = Buffer.from('friend poster')): Promise<void> {
   const storagePath = `images/links/${new URL(homepage).hostname}.jpg`
-  await db.insert(image).values({
+  await sqliteOf(db).insert(image).values({
     storagePath,
     storageDriver: 's3',
     mimeType: 'image/jpeg',
@@ -296,7 +297,7 @@ describe('friends/service — upsertAdminFriend (update)', () => {
     expect(dto.poster).toBe('/storage/images/links/new.example.com.jpg?v=123')
     expect(mem.store.has('images/links/old.example.com.jpg')).toBe(false)
     expect(mem.store.get('images/links/new.example.com.jpg')?.body.toString()).toBe('friend poster')
-    const images = await db.select().from(image)
+    const images = await sqliteOf(db).select().from(image)
     expect(images).toHaveLength(1)
     expect(images[0]?.storagePath).toBe('images/links/new.example.com.jpg')
   })
@@ -336,7 +337,7 @@ describe('friends/service — upsertAdminFriend (update)', () => {
         visible: true,
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND', descriptor: { messageKey: 'images.error.objectMissing' } })
-    const [unchanged] = await db.select().from(friend).where(eq(friend.id, id))
+    const [unchanged] = await sqliteOf(db).select().from(friend).where(eq(friend.id, id))
     expect(unchanged?.homepage).toBe(previousHomepage)
   })
 })

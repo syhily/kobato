@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { APP_VERSION } from '@kobato/distribution/app'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
@@ -42,8 +43,8 @@ function seedInstalledSite(): void {
   if (!built.ok) {
     throw new Error(built.descriptor.fallbackMessage)
   }
-  db.transaction((tx) => {
-    seedInstallSections(tx, built.rows, null)
+  sqliteOf(db).transaction(() => {
+    seedInstallSections(db, built.rows, null)
   })
 }
 

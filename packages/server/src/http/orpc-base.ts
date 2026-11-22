@@ -5,7 +5,7 @@ import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/sessi
 import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 import type { AppLocalization } from '@kobato/settings/app-localization'
-import type { BlogSettingsBundle } from '@kobato/settings/types'
+import type { BlogSettingsBundle, RateLimitBucket } from '@kobato/settings/types'
 import type { AnyContractRouter } from '@orpc/contract'
 import type { z } from 'zod'
 
@@ -26,6 +26,7 @@ import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import {
   tryCommentPostRateLimit,
+  tryKeyedRateLimit,
   tryNotificationReplyRateLimit,
   tryResourceRateLimit,
 } from '@kobato/server/infra/rate-limit'
@@ -182,6 +183,20 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   }
   return next({})
 })
+
+/**
+ * The oRPC twin of the Hono `rateLimitByIp` middleware: rides the implementer so the budget is consumed BEFORE
+ * input parsing, under the same `rate-limit:<key>:<clientAddress>` key space as the Hono routes.
+ */
+export function rateLimitByIp(key: string, bucket: RateLimitBucket) {
+  return root.middleware(async ({ context, next }) => {
+    const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${context.clientAddress}`, bucket)
+    if (exceeded) {
+      throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.rateLimited')
+    }
+    return next({})
+  })
+}
 
 export const commentPostRateLimit = root.middleware(async ({ context, next }) => {
   if (context.viewer?.role === 'admin') {

@@ -2,14 +2,13 @@ import type { Role } from '@kobato/auth/roles'
 import type { Database } from '@kobato/db/database'
 import type { Session } from 'react-router'
 
-import { session as sessionTable } from '@kobato/db/schema/session'
+import { deleteSessionById, readLiveSessionData, upsertSession } from '@kobato/db/operations/session'
 import { serverConfig } from '@kobato/server/infra/config'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { idFromString } from '@kobato/utils/id'
 import { isRecord } from '@kobato/utils/type-guards'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { and, eq, gt } from 'drizzle-orm'
 import { createSession, createSessionStorage } from 'react-router'
 
 const log = getLogger('auth.session-storage')
@@ -85,20 +84,15 @@ const storage = createSessionStorage<BlogSessionData>({
     return id
   },
   async readData(id) {
-    const rows = await requireDb()
-      .select({ data: sessionTable.data })
-      .from(sessionTable)
-      .where(and(eq(sessionTable.id, id), gt(sessionTable.expiresAt, new Date())))
-      .limit(1)
-    const row = rows[0]
-    if (!row) {
+    const data = await readLiveSessionData(requireDb(), id)
+    if (data === null) {
       return null
     }
     try {
-      if (!isRecord(row.data)) {
+      if (!isRecord(data)) {
         return null
       }
-      return unsafeCast<BlogSessionData>(row.data)
+      return unsafeCast<BlogSessionData>(data)
     } catch {
       log.warn('session parse failed', { id })
       return null
@@ -108,22 +102,15 @@ const storage = createSessionStorage<BlogSessionData>({
     await writeSession(id, data, expires)
   },
   async deleteData(id) {
-    await requireDb().delete(sessionTable).where(eq(sessionTable.id, id))
+    await deleteSessionById(requireDb(), id)
   },
 })
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
-  const db = requireDb()
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
   const userId = data.user ? idFromString(data.user.id) : null
-  await db
-    .insert(sessionTable)
-    .values({ id, userId, data: payload, expiresAt })
-    .onConflictDoUpdate({
-      target: sessionTable.id,
-      set: { userId, data: payload, expiresAt },
-    })
+  await upsertSession(requireDb(), { id, userId, data: payload, expiresAt })
 }
 
 export const { getSession, commitSession, destroySession } = storage

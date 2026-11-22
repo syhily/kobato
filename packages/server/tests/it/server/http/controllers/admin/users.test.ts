@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user as userTable } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -30,7 +31,7 @@ afterAll(async () => {
 })
 
 async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: opts.name ?? 'Alice',
@@ -44,25 +45,27 @@ async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Prom
 }
 
 async function userRow(id: number): Promise<typeof userTable.$inferSelect> {
-  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  const rows = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, id))
   return rows[0]!
 }
 
 async function seedSession(sid: string, userId: number): Promise<void> {
-  await db.insert(sessionTable).values({
-    id: sid,
-    userId,
-    data: {},
-    userAgent: 'vitest',
-    ip: '127.0.0.1',
-    loginAt: new Date(),
-    lastActiveAt: new Date(),
-    expiresAt: new Date(Date.now() + 3_600_000),
-  })
+  await sqliteOf(db)
+    .insert(sessionTable)
+    .values({
+      id: sid,
+      userId,
+      data: {},
+      userAgent: 'vitest',
+      ip: '127.0.0.1',
+      loginAt: new Date(),
+      lastActiveAt: new Date(),
+      expiresAt: new Date(Date.now() + 3_600_000),
+    })
 }
 
 async function sessionRow(sid: string): Promise<typeof sessionTable.$inferSelect | undefined> {
-  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
   return rows[0]
 }
 

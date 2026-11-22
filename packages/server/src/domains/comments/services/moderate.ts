@@ -3,19 +3,27 @@ import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { comment } from '@kobato/db/schema/comment'
-import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
-import { isCommentOwner } from '@kobato/server/domains/auth/rbac'
-import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
-import { findCommentWithUserAndTarget } from '@kobato/server/domains/comments/repos/admin-query'
 import {
+  adminClearDeleteRequest as adminClearDeleteRequestOp,
+  approveCommentById as approveCommentByIdOp,
+  bulkApprovePendingByUser as bulkApprovePendingByUserOp,
+  bulkSoftDeleteCommentsByUser as bulkSoftDeleteCommentsByUserOp,
+  clearDeleteRequest as clearDeleteRequestOp,
+  countApprovedRepliesOfComment,
+  deleteCommentById as deleteCommentByIdOp,
+  findCommentWithUserAndTarget,
+  findCommentWithUserById,
+  requestDeleteComment as requestDeleteCommentOp,
+  softDeleteCommentById as softDeleteCommentByIdOp,
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@kobato/server/domains/comments/repos/mutate'
+} from '@kobato/db/operations/comment'
+import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { isCommentOwner } from '@kobato/server/domains/auth/rbac'
+import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { sendApprovedComment, sendNewComment } from '@kobato/server/domains/comments/services/email'
-import { countApprovedRepliesOfComment, findCommentWithUserById } from '@kobato/server/domains/comments/services/lookup'
 import { decideOwnEdit } from '@kobato/server/domains/comments/services/policy'
 import { asCommentTarget } from '@kobato/server/domains/comments/services/shared'
 import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'
@@ -23,70 +31,39 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 import { idFromString } from '@kobato/utils/id'
-import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
 const adminLog = getLogger('comments.admin')
 
 export async function approveCommentById(db: Database, id: number): Promise<void> {
-  await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
+  await approveCommentByIdOp(db, id)
 }
 
 export async function deleteCommentById(db: Database, id: number): Promise<void> {
-  await db.delete(comment).where(eq(comment.id, id))
+  await deleteCommentByIdOp(db, id)
 }
 
 export async function softDeleteCommentById(db: Database, id: number): Promise<void> {
-  await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
+  await softDeleteCommentByIdOp(db, id)
 }
 
 export async function bulkApprovePendingByUser(db: Database, userId: number): Promise<number> {
-  const updated = await db
-    .update(comment)
-    .set({ isPending: false })
-    .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
-    .returning({ id: comment.id })
-  return updated.length
+  return bulkApprovePendingByUserOp(db, userId)
 }
 
 export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number): Promise<number> {
-  const updated = await db
-    .update(comment)
-    .set({ deletedAt: new Date() })
-    .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
-    .returning({ id: comment.id })
-  return updated.length
+  return bulkSoftDeleteCommentsByUserOp(db, userId)
 }
 
 export async function requestDeleteComment(db: Database, id: number, userId: number): Promise<void> {
-  await db
-    .update(comment)
-    .set({ deleteRequestedAt: new Date(), deleteRequestedBy: userId })
-    .where(and(eq(comment.id, id), isNull(comment.deletedAt)))
+  await requestDeleteCommentOp(db, id, userId)
 }
 
 export async function clearDeleteRequest(db: Database, id: number, userId: number): Promise<boolean> {
-  const updated = await db
-    .update(comment)
-    .set({ deleteRequestedAt: null, deleteRequestedBy: null })
-    .where(
-      and(
-        eq(comment.id, id),
-        eq(comment.deleteRequestedBy, userId),
-        isNull(comment.deletedAt),
-        isNotNull(comment.deleteRequestedAt),
-      ),
-    )
-    .returning({ id: comment.id })
-  return updated.length > 0
+  return clearDeleteRequestOp(db, id, userId)
 }
 
 export async function adminClearDeleteRequest(db: Database, id: number): Promise<boolean> {
-  const updated = await db
-    .update(comment)
-    .set({ deleteRequestedAt: null, deleteRequestedBy: null })
-    .where(and(eq(comment.id, id), isNotNull(comment.deleteRequestedAt)))
-    .returning({ id: comment.id })
-  return updated.length > 0
+  return adminClearDeleteRequestOp(db, id)
 }
 
 export async function resolveCommentDeleteRequest(

@@ -1,8 +1,3 @@
-import type { page as pageMetaTable } from '@kobato/db/schema/page'
-import type { post as postMetaTable } from '@kobato/db/schema/post'
-
-import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
-
 export interface LiveMeta {
   deletedAt: Date | null
   published: boolean
@@ -15,6 +10,10 @@ export interface LiveContentOptions {
   includeScheduled?: boolean
 }
 
+/**
+ * Pure in-memory draft gate; the SQL counterpart lives in `@kobato/db/operations/entity-meta`
+ * (`liveEntityWhere`). Keep the two value-identical (pinned by parity tests).
+ */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
     return false
@@ -34,26 +33,6 @@ export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolea
   return true
 }
 
-export interface LiveContentColumns {
-  deletedAt: typeof postMetaTable.deletedAt | typeof pageMetaTable.deletedAt
-  published: typeof postMetaTable.published | typeof pageMetaTable.published
-  publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId
-  publishedAt: typeof postMetaTable.publishedAt | typeof pageMetaTable.publishedAt
-}
-
-export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
-  const conditions: SQL[] = [
-    isNull(columns.deletedAt),
-    eq(columns.published, true),
-    isNotNull(columns.publishedRevisionId),
-  ]
-  if (!options.includeScheduled) {
-    const asOf = options.asOf ?? new Date()
-    conditions.push(sql`${columns.publishedAt} <= ${asOf.getTime()}`)
-  }
-  return and(...conditions)!
-}
-
 export interface PromotedMeta {
   published: boolean
   publishedRevisionId: number | null
@@ -61,13 +40,4 @@ export interface PromotedMeta {
 
 export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: number } {
   return meta.published && meta.publishedRevisionId !== null
-}
-
-export interface PromotedContentColumns {
-  published: typeof postMetaTable.published | typeof pageMetaTable.published
-  publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId
-}
-
-export function promotedContentWhere(columns: PromotedContentColumns): SQL {
-  return and(eq(columns.published, true), isNotNull(columns.publishedRevisionId))!
 }

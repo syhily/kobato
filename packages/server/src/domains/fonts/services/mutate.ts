@@ -3,15 +3,14 @@ import type { Database } from '@kobato/db/database'
 import type { FontRow } from '@kobato/db/schema/font'
 import type { FontsSettings } from '@kobato/settings/types'
 
+import { deleteFontRowById, findFontById, findFontRowsByIds } from '@kobato/db/operations/font'
 import { findSettingByScope } from '@kobato/db/operations/setting'
-import { font } from '@kobato/db/schema/font'
 import { deleteFontPackage } from '@kobato/server/domains/fonts/storage'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { eq, inArray } from 'drizzle-orm'
 
 async function readCurrentFonts(db: Database): Promise<FontsSettings> {
   const row = findSettingByScope(db, SECTION_REGISTRY.fonts.scope)
@@ -40,8 +39,7 @@ export async function setFontSlot(
 }
 
 export async function deleteFont(db: Database, fontId: string): Promise<FontRow> {
-  const row = await db.select().from(font).where(eq(font.id, fontId)).limit(1)
-  const target = row[0]
+  const target = await findFontById(db, fontId)
   if (!target) {
     throw new DomainError('NOT_FOUND', descriptorFor('fonts.error.notFound'))
   }
@@ -67,14 +65,11 @@ async function gcFonts(db: Database, fontIds: readonly string[]): Promise<void> 
   if (fontIds.length === 0) {
     return
   }
-  const rows = await db
-    .select()
-    .from(font)
-    .where(inArray(font.id, [...fontIds]))
-  for (const row of rows) {
+  const rows = await findFontRowsByIds(db, fontIds)
+  for (const row of rows.values()) {
     try {
       await deleteFontPackage(row.hash, row.storageDriver)
     } catch {}
-    await db.delete(font).where(eq(font.id, row.id))
+    await deleteFontRowById(db, row.id)
   }
 }

@@ -1,5 +1,6 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { friend as friendTable } from '@kobato/db/schema/friend'
@@ -24,7 +25,7 @@ beforeEach(async () => {
 })
 
 async function seedPostWithBody(opts: { slug: string; cover?: string; body: unknown }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -36,21 +37,21 @@ async function seedPostWithBody(opts: { slug: string; cover?: string; body: unkn
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: opts.body })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 async function postCover(id: number): Promise<string> {
-  const rows = await db.select({ cover: postTable.cover }).from(postTable).where(eq(postTable.id, id))
+  const rows = await sqliteOf(db).select({ cover: postTable.cover }).from(postTable).where(eq(postTable.id, id))
   return rows[0]!.cover
 }
 
 function contentRowOf(postId: number) {
-  return db.select().from(contentTable).where(eq(contentTable.ownerId, postId)).all()[0]!
+  return sqliteOf(db).select().from(contentTable).where(eq(contentTable.ownerId, postId)).all()[0]!
 }
 
 async function contentBodyOf(postId: number): Promise<unknown> {
@@ -68,20 +69,24 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
         lexicalImage({ src: 'https://external.example/hotlink.jpg', width: null, height: null }),
       ]),
     })
-    await db.insert(pageTable).values({
-      slug: 'pg1',
-      title: 'pg1',
-      cover: 'https://moved.example/storage/images/page-cover.jpg',
-      published: true,
-      publishedAt: new Date('2024-01-01'),
-    })
-    await db.insert(friendTable).values({
+    await sqliteOf(db)
+      .insert(pageTable)
+      .values({
+        slug: 'pg1',
+        title: 'pg1',
+        cover: 'https://moved.example/storage/images/page-cover.jpg',
+        published: true,
+        publishedAt: new Date('2024-01-01'),
+      })
+    await sqliteOf(db).insert(friendTable).values({
       website: 'F',
       homepage: 'https://f.example',
       poster: 'https://friend.example/poster.jpg',
     })
-    await db.insert(categoryTable).values({ name: 'Cat', slug: 'cat', cover: `${CDN}/images/cat.jpg` })
-    await db.insert(categoryTable).values({ name: 'Og', slug: 'og', cover: '/images/og/cats/og.png' })
+    await sqliteOf(db)
+      .insert(categoryTable)
+      .values({ name: 'Cat', slug: 'cat', cover: `${CDN}/images/cat.jpg` })
+    await sqliteOf(db).insert(categoryTable).values({ name: 'Og', slug: 'og', cover: '/images/og/cats/og.png' })
 
     const result = await backfillStorageAssetUrls(db)
 
@@ -93,11 +98,14 @@ describe('content/services/asset-url-backfill — backfillStorageAssetUrls', () 
     expect(srcs[1]).toBe('/storage/images/resolved.jpg')
     expect(srcs[2]).toBe('https://external.example/hotlink.jpg')
 
-    const pages = await db.select({ cover: pageTable.cover }).from(pageTable)
+    const pages = await sqliteOf(db).select({ cover: pageTable.cover }).from(pageTable)
     expect(pages[0]!.cover).toBe('/storage/images/page-cover.jpg')
-    const friends = await db.select({ poster: friendTable.poster }).from(friendTable)
+    const friends = await sqliteOf(db).select({ poster: friendTable.poster }).from(friendTable)
     expect(friends[0]!.poster).toBe('https://friend.example/poster.jpg')
-    const categories = await db.select({ cover: categoryTable.cover }).from(categoryTable).orderBy(categoryTable.id)
+    const categories = await sqliteOf(db)
+      .select({ cover: categoryTable.cover })
+      .from(categoryTable)
+      .orderBy(categoryTable.id)
     expect(categories[0]!.cover).toBe('/storage/images/cat.jpg')
     expect(categories[1]!.cover).toBe('/images/og/cats/og.png')
   })
@@ -208,7 +216,7 @@ describe('content/services/asset-url-backfill — boot flag', () => {
     await runAssetUrlBackfillOnceAtBoot(db)
     expect(findFlag()).toBeNull()
 
-    await db
+    await sqliteOf(db)
       .update(contentTable)
       .set({ body: lexicalBodyWith([lexicalParagraph('repaired')]) })
       .where(eq(contentTable.ownerId, garbageId))
@@ -217,7 +225,7 @@ describe('content/services/asset-url-backfill — boot flag', () => {
   })
 
   function findFlag() {
-    const rows = db.select().from(setting).where(eq(setting.scope, FLAG_SCOPE)).all()
+    const rows = sqliteOf(db).select().from(setting).where(eq(setting.scope, FLAG_SCOPE)).all()
     return rows[0] ?? null
   }
 })

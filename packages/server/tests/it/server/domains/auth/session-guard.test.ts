@@ -1,5 +1,6 @@
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
+import { sqliteOf } from '@kobato/db/database'
 import { session as sessionTable } from '@kobato/db/schema/session'
 import { user } from '@kobato/db/schema/user'
 import { findSessionMeta, recordSessionLogin } from '@kobato/server/domains/auth/repo'
@@ -19,7 +20,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(role: 'admin' | 'visitor' = 'admin', email: string, opts: { deletedAt?: Date } = {}) {
-  const [u] = await db
+  const [u] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'T', email, password: 'hashed', role, deletedAt: opts.deletedAt ?? null })
     .returning()
@@ -27,12 +28,14 @@ async function seedUser(role: 'admin' | 'visitor' = 'admin', email: string, opts
 }
 
 async function seedLiveSession(sid: string, userId: number) {
-  await db.insert(sessionTable).values({
-    id: sid,
-    userId,
-    data: {},
-    expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-  })
+  await sqliteOf(db)
+    .insert(sessionTable)
+    .values({
+      id: sid,
+      userId,
+      data: {},
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    })
   await recordSessionLogin(db, { sid, userId, userAgent: 'ua', ip: '1.1.1.1' })
 }
 
@@ -41,7 +44,7 @@ function actor(id: number | string, role: ViewerIdentity['role'] = 'admin'): Vie
 }
 
 async function sessionRowExists(sid: string): Promise<boolean> {
-  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  const rows = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.id, sid))
   return rows.length > 0
 }
 

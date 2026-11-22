@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
 import { user as userTable, verification } from '@kobato/db/schema/user'
@@ -53,7 +54,7 @@ async function call(path: string, input: unknown, viewerId: number) {
 }
 
 async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: opts.name ?? 'Alice',
@@ -67,13 +68,13 @@ async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Prom
 }
 
 async function userRow(id: number) {
-  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  const rows = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, id))
   return rows[0]!
 }
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 function withMailEnabled(bundle: BlogSettingsBundle = TEST_BLOG_SETTINGS_BUNDLE): void {
@@ -157,11 +158,11 @@ describe('admin users-admin controller', () => {
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
 
-    const rows = await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))
+    const rows = await sqliteOf(db).select().from(userTable).where(eq(userTable.email, 'bob@example.com'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.role).toBe('author')
     expect(rows[0]!.deletedAt).toBeNull()
-    const tokens = await db.select().from(verification).where(eq(verification.userId, rows[0]!.id))
+    const tokens = await sqliteOf(db).select().from(verification).where(eq(verification.userId, rows[0]!.id))
     expect(tokens).toHaveLength(1)
 
     expect(fetchMock.calls).toHaveLength(1)
@@ -194,7 +195,7 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(429)
 
     expect(fetchMock.calls).toHaveLength(1)
-    expect(await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(userTable).where(eq(userTable.email, 'bob@example.com'))).toHaveLength(1)
   })
 
   it('sends a password reset', async () => {
@@ -209,7 +210,7 @@ describe('admin users-admin controller', () => {
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
 
-    const tokens = await db.select().from(verification).where(eq(verification.userId, id))
+    const tokens = await sqliteOf(db).select().from(verification).where(eq(verification.userId, id))
     expect(tokens).toHaveLength(1)
 
     expect(fetchMock.calls).toHaveLength(1)
@@ -232,10 +233,12 @@ describe('admin users-admin controller', () => {
       },
     })
     const id = await seedUser({ role: 'author' })
-    await db.insert(passkeyCredential).values([
-      { userId: id, credentialId: 'cred-1', publicKey: Buffer.from('k1') },
-      { userId: id, credentialId: 'cred-2', publicKey: Buffer.from('k2') },
-    ])
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values([
+        { userId: id, credentialId: 'cred-1', publicKey: Buffer.from('k1') },
+        { userId: id, credentialId: 'cred-2', publicKey: Buffer.from('k2') },
+      ])
 
     const viewerId = await seedViewer()
     const response = await call('/clearPasskeys', { id: String(id) }, viewerId)
@@ -244,7 +247,7 @@ describe('admin users-admin controller', () => {
     expect(body.user.id).toBe(String(id))
     expect(body.user.passkeyCount).toBe(0)
 
-    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, id))).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, id))).toHaveLength(0)
 
     const audit = await auditRowsFor('passkeys_cleared')
     expect(audit).toHaveLength(1)

@@ -2,6 +2,7 @@ import type { SigninFlowContext } from '@kobato/server/domains/auth/services/sha
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { passkeyCredential } from '@kobato/db/schema/passkey'
 import { session as sessionTable } from '@kobato/db/schema/session'
@@ -45,7 +46,7 @@ function withResetBucket(maxAttempts: number): BlogSettingsBundle {
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('OldPassword1', 4)
-  const [inserted] = await db
+  const [inserted] = await sqliteOf(db)
     .insert(userTable)
     .values({
       name: 'Vis',
@@ -59,12 +60,12 @@ async function seedUser(overrides: Record<string, unknown> = {}): Promise<number
 }
 
 async function userRow(id: number) {
-  const [row] = await db.select().from(userTable).where(eq(userTable.id, id))
+  const [row] = await sqliteOf(db).select().from(userTable).where(eq(userTable.id, id))
   return row
 }
 
 async function resetTokenRow(userId: number) {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .select()
     .from(verification)
     .where(and(eq(verification.purpose, 'password-reset'), eq(verification.userId, userId)))
@@ -73,7 +74,7 @@ async function resetTokenRow(userId: number) {
 
 async function auditRowsFor(action: string) {
   await flushAuditLog()
-  return db.select().from(auditLog).where(eq(auditLog.action, action))
+  return sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 function flowCtx(session: BlogSession): SigninFlowContext {
@@ -146,7 +147,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await mail.noMessage()).toBe(true)
-    expect(await db.select().from(verification)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(1)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(1)
     void userId
   })
@@ -167,7 +168,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(await mail.noMessage()).toBe(true)
-    expect(await db.select().from(verification)).toHaveLength(1)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(1)
   })
 
   it('skips the per-email bucket when the form has no email', async () => {
@@ -232,7 +233,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     )
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
     expect(await mail.noMessage()).toBe(true)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(0)
   })
@@ -243,7 +244,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'gone@example.com' }), resetDeps)
 
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
     expect(await mail.noMessage()).toBe(true)
   })
 
@@ -256,7 +257,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     expect(result).toMatchObject({ type: 'success', descriptor: { messageKey: GENERIC_KEY } })
     expect(hasApprovedComments).toHaveBeenCalledWith(db, userId)
     expect((await userRow(userId))!.role).toBeNull()
-    expect(await db.select().from(verification)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
     expect(await mail.noMessage()).toBe(true)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(0)
   })
@@ -331,7 +332,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     )
 
     expect(result).toMatchObject({ type: 'error', descriptor: { messageKey: 'auth.signin.error.invalidToken' } })
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
   it('passes the intent purpose through to the token consume (author-invite)', async () => {
@@ -374,20 +375,24 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
   it('on success: rehashes, clears passkeys, revokes other sessions, audits, redirects', async () => {
     const userId = await seedUser({ loginMethod: 'passkey' })
-    await db.insert(passkeyCredential).values({
-      userId,
-      credentialId: 'cred-1',
-      publicKey: Buffer.from([1, 2, 3]),
-      counter: 0,
-      transports: [],
-    })
-    for (const sid of ['old-sid-1', 'old-sid-2']) {
-      await db.insert(sessionTable).values({
-        id: sid,
+    await sqliteOf(db)
+      .insert(passkeyCredential)
+      .values({
         userId,
-        data: {},
-        expiresAt: new Date(Date.now() + 3_600_000),
+        credentialId: 'cred-1',
+        publicKey: Buffer.from([1, 2, 3]),
+        counter: 0,
+        transports: [],
       })
+    for (const sid of ['old-sid-1', 'old-sid-2']) {
+      await sqliteOf(db)
+        .insert(sessionTable)
+        .values({
+          id: sid,
+          userId,
+          data: {},
+          expiresAt: new Date(Date.now() + 3_600_000),
+        })
     }
     const { token } = issueResetToken(db, userId)
 
@@ -410,9 +415,11 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     expect(row.loginMethod).toBe('password')
 
-    expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
+    expect(
+      await sqliteOf(db).select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId)),
+    ).toHaveLength(0)
 
-    const sessions = await db.select().from(sessionTable)
+    const sessions = await sqliteOf(db).select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
     expect(['old-sid-1', 'old-sid-2']).not.toContain(sessions[0]!.id)
@@ -448,7 +455,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(result.type).toBe('redirect')
     expect(await peekToken(db, magicToken, 'signin-link')).toBeNull()
     expect(
-      await db
+      await sqliteOf(db)
         .select()
         .from(verification)
         .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId))),
@@ -479,11 +486,11 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
     const userId = await seedUser()
-    const ddlRows = await db.all<{ type: string; name: string; sql: string }>(
+    const ddlRows = await sqliteOf(db).all<{ type: string; name: string; sql: string }>(
       sql`SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'passkey_credential' AND sql IS NOT NULL ORDER BY type = 'index', name`,
     )
     expect(ddlRows.length).toBeGreaterThan(0)
-    await db.run(sql`DROP TABLE passkey_credential`)
+    await sqliteOf(db).run(sql`DROP TABLE passkey_credential`)
     try {
       const { token } = issueResetToken(db, userId)
 
@@ -500,7 +507,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       expect(await bcrypt.compare('LongEnough1', row.password)).toBe(true)
     } finally {
       for (const ddlRow of ddlRows) {
-        await db.run(sql.raw(ddlRow.sql))
+        await sqliteOf(db).run(sql.raw(ddlRow.sql))
       }
     }
   })
@@ -508,7 +515,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
   it('returns 账户状态异常 when the user is gone after token consume', async () => {
     const userId = await seedUser()
     const { token } = issueResetToken(db, userId)
-    await db.delete(userTable).where(eq(userTable.id, userId))
+    await sqliteOf(db).delete(userTable).where(eq(userTable.id, userId))
 
     const result = await resetPasswordWithToken(
       flowCtx(makeSession({})),
@@ -522,6 +529,6 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
       type: 'error',
       descriptor: { messageKey: 'auth.signin.error.accountCannotSignIn' },
     })
-    expect(await db.select().from(sessionTable)).toHaveLength(0)
+    expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 })

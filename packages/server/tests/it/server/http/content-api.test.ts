@@ -1,5 +1,6 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { post as postTable } from '@kobato/db/schema/post'
@@ -36,12 +37,15 @@ beforeEach(async () => {
 })
 
 async function seedCategory(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
+  const rows = await sqliteOf(db)
+    .insert(categoryTable)
+    .values({ name, slug, cover: '' })
+    .returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
 async function seedTag(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
+  const rows = await sqliteOf(db).insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
   return rows[0]!.id
 }
 
@@ -51,7 +55,7 @@ async function seedPost(
   opts: Partial<typeof postTable.$inferInsert> & { body?: LexicalEditorState } = {},
 ): Promise<number> {
   const { body, ...meta } = opts
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: meta.slug ?? `post-${Math.random().toString(36).slice(2)}`,
@@ -65,21 +69,21 @@ async function seedPost(
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? lexicalBodyWith([]) })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 async function seedDraftPost(slug: string, title: string, authorId: number | null = null): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({ slug, title, published: false, visible: false, publishedRevisionId: null, authorId })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  await db
+  await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: publishedBody })
   return postId
@@ -89,7 +93,7 @@ async function seedPage(
   opts: Partial<typeof pageTable.$inferInsert> & { body?: LexicalEditorState; draftBody?: LexicalEditorState } = {},
 ): Promise<number> {
   const { body, draftBody, ...meta } = opts
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug: meta.slug ?? `page-${Math.random().toString(36).slice(2)}`,
@@ -102,20 +106,22 @@ async function seedPage(
     .returning({ id: pageTable.id })
   const pageId = rows[0]!.id
   if (meta.published ?? true) {
-    const revisions = await db
+    const revisions = await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? lexicalBodyWith([]) })
       .returning({ id: contentTable.id })
-    await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+    await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   }
   if (draftBody !== undefined) {
-    await db.insert(contentTable).values({
-      type: 'page',
-      ownerId: pageId,
-      revisionNo: (meta.published ?? true) ? 2 : 1,
-      status: 'draft',
-      body: draftBody,
-    })
+    await sqliteOf(db)
+      .insert(contentTable)
+      .values({
+        type: 'page',
+        ownerId: pageId,
+        revisionNo: (meta.published ?? true) ? 2 : 1,
+        status: 'draft',
+        body: draftBody,
+      })
   }
   return pageId
 }
@@ -380,7 +386,7 @@ describe('content.posts.list', () => {
   it('returns the tag-scoped listing', async () => {
     const tagId = await seedTag('typescript', 'typescript')
     const postId = await seedPost({ slug: 'tagged-post' })
-    await db.insert(postTag).values({ postId, tagId })
+    await sqliteOf(db).insert(postTag).values({ postId, tagId })
 
     const res = await callRpc(
       '/public/content/posts/list',
@@ -526,7 +532,7 @@ describe('content.posts.bySlug', () => {
   })
 
   it('never 304s a draft preview against the stale published ETag (unpublish keeps published_at)', async () => {
-    const rows = await db
+    const rows = await sqliteOf(db)
       .insert(postTable)
       .values({
         slug: 'ghost',
@@ -539,7 +545,7 @@ describe('content.posts.bySlug', () => {
       })
       .returning({ id: postTable.id })
     const postId = rows[0]!.id
-    await db
+    await sqliteOf(db)
       .insert(contentTable)
       .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: publishedBody })
 
@@ -575,7 +581,7 @@ describe('content.posts.bySlug', () => {
   it('serves the saved body_html projection raw — sanitization is the render boundary', async () => {
     const raw = '<p>raw <strong>body</strong></p><form action="https://evil.example"><button>x</button></form>'
     await seedPost({ slug: 'raw-body', publishedAt: new Date('2024-01-01') })
-    await db.update(contentTable).set({ bodyHtml: raw })
+    await sqliteOf(db).update(contentTable).set({ bodyHtml: raw })
 
     const res = await callRpc('/public/content/posts/bySlug', { slug: 'raw-body' }, makePublicCtx({ db }))
     const json = await parseRpcJson<{ kind: string; payload: { bodyHtml: string } }>(res)

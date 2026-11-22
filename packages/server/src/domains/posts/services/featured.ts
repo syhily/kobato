@@ -5,15 +5,19 @@ import type { SidebarSettings } from '@kobato/settings/types'
 
 import { toSidebarPostLink } from '@kobato/catalog/projection'
 import { findCategoryNamesByIds } from '@kobato/db/operations/category'
+import {
+  listLiveVisiblePostIds,
+  listLiveVisiblePostMetasWithCover,
+  listPinnedLiveVisiblePostMetas,
+  listPostMetasByIds,
+  listVisibleLivePostIdsOrderedById,
+} from '@kobato/db/operations/post'
 import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
-import { post as postMetaTable } from '@kobato/db/schema/post'
-import { livePostWhere } from '@kobato/server/domains/posts/live-gate'
 import { hydratePostImages, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { getSidebarWidgetCount } from '@kobato/settings/presentation'
 import { shuffle } from '@kobato/utils/sampling'
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 
 const FEATURE_POST_COUNT = 3
 
@@ -28,14 +32,8 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   }
 
   const now = new Date()
-  const publicWhere = and(livePostWhere({ asOf: now }), eq(postMetaTable.visible, true))
 
-  const pinnedMetas = await db
-    .select()
-    .from(postMetaTable)
-    .where(and(publicWhere, isNotNull(postMetaTable.pinnedAt)))
-    .orderBy(desc(postMetaTable.pinnedAt))
-    .limit(FEATURE_POST_COUNT)
+  const pinnedMetas = await listPinnedLiveVisiblePostMetas(db, FEATURE_POST_COUNT, now)
 
   if (pinnedMetas.length === FEATURE_POST_COUNT) {
     const [pinnedTagMap, pinnedCategoryMap] = await Promise.all([
@@ -55,24 +53,14 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   const pageSize = content.pagination.posts
   const recentWindow = pageSize * 2
 
-  const [recentMetas, allWithCover] = await Promise.all([
-    db
-      .select({ id: postMetaTable.id })
-      .from(postMetaTable)
-      .where(publicWhere)
-      .orderBy(desc(postMetaTable.firstPublishedAt))
-      .limit(recentWindow),
-    db
-      .select()
-      .from(postMetaTable)
-      .where(and(publicWhere, sql`${postMetaTable.cover} <> ''`))
-      .orderBy(desc(postMetaTable.firstPublishedAt))
-      .limit(100),
+  const [recentIds, allWithCover] = await Promise.all([
+    listLiveVisiblePostIds(db, recentWindow, now),
+    listLiveVisiblePostMetasWithCover(db, 100, now),
   ])
 
-  const recentIds = new Set(recentMetas.map((r) => r.id))
+  const recentIdSet = new Set(recentIds)
   const pinnedSlugs = new Set(pinnedMetas.map((m) => m.slug))
-  const candidateMetas = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
+  const candidateMetas = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIdSet.has(m.id))
   const [pinnedTagMap, candidateTagMap, categoryMap] = await Promise.all([
     findTagNamesByPostIds(
       db,
@@ -118,18 +106,12 @@ export async function selectSidebarPosts(db: Database, selection: SidebarSelecti
   if (count <= 0) {
     return []
   }
-  const where = and(livePostWhere(), eq(postMetaTable.visible, true))
-  const idRows = await db
-    .select({ id: postMetaTable.id })
-    .from(postMetaTable)
-    .where(where)
-    .orderBy(asc(postMetaTable.id))
-  if (idRows.length === 0) {
+  const candidateIds = await listVisibleLivePostIdsOrderedById(db)
+  if (candidateIds.length === 0) {
     return []
   }
-  const candidateIds = idRows.map((row) => row.id)
   const picked = shuffle(candidateIds, `${selection.seed}|posts|${candidateIds.length}`).slice(0, count)
-  const metas = await db.select().from(postMetaTable).where(inArray(postMetaTable.id, picked))
+  const metas = await listPostMetasByIds(db, picked)
   const metaById = new Map(metas.map((meta) => [meta.id, meta]))
   const ordered = picked.flatMap((id) => {
     const meta = metaById.get(id)

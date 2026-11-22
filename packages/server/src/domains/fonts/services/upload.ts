@@ -1,8 +1,7 @@
 import type { AdminFontDto } from '@kobato/api/contracts/fonts'
 import type { Database } from '@kobato/db/database'
-import type { FontRow } from '@kobato/db/schema/font'
 
-import { font } from '@kobato/db/schema/font'
+import { insertFont } from '@kobato/db/operations/font'
 import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
 import { sliceFont } from '@kobato/server/domains/fonts/slice'
 import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage'
@@ -105,19 +104,15 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   const etag = sha256Hex(sliced.css)
   const cssKey = fontCssKey(hash)
 
-  const inserted = await db
-    .insert(font)
-    .values({
-      familyName: trimmedFamily,
-      sourceName,
-      hash,
-      cssKey,
-      storageDriver: driver,
-      chunkCount: sliced.chunkCount,
-      totalBytes: sliced.totalBytes,
-      etag,
-    })
-    .returning()
-  const row = inserted[0] as FontRow
+  const row = await insertFont(db, {
+    familyName: trimmedFamily,
+    sourceName,
+    hash,
+    cssKey,
+    storageDriver: driver,
+    chunkCount: sliced.chunkCount,
+    totalBytes: sliced.totalBytes,
+    etag,
+  })
   return toAdminFontDto(row)
 }

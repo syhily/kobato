@@ -39,12 +39,19 @@
 
 ## Encrypted uploads
 
-- `upload-restore` stages the raw bytes, detects the magic, parks the temp dir in `pending-uploads.ts` (10-minute token,
-  max 4 parked, LRU eviction never touches in-flight, all-busy → 429) and answers `{encrypted, token}`; the UI prompts
-  and calls `upload-restore/decrypt` (IP rate limit, 64 KB body cap, per-token mutex → 409, unknown/expired token → 410,
-  wrong password → 400 with the token kept). The setup flow's gate checks run BEFORE the rate limiter so anonymous
-  requests never burn the 5/hour budget. The stored settings password is tried first for stored-backup restores.
-  Restores audit `backup_restored`, downloads `backup_downloaded`.
+- `upload-restore` (Hono multipart resource) stages the raw bytes, detects the magic, parks the temp dir in
+  `pending-uploads.ts` (10-minute token, max 4 parked, LRU eviction never touches in-flight, all-busy → 429) and answers
+  `{encrypted, token}`; the UI prompts and calls the oRPC procedure `admin.backup.uploadRestoreDecrypt`
+  (`/rpc/admin/backup/uploadRestoreDecrypt`; oc.route `/admin/backup/upload-restore/decrypt`) — the claim/stage/restore
+  chain lives in `upload-restore.ts` (the perimeter injects the `afterReopen` hook that records the `backup_restored`
+  audit — the domain never imports audit); the controller rides `rateLimitByIp('backupRestoreDecrypt', 30/hour)` on the
+  implementer so the budget burns BEFORE input parsing, same as the old Hono middleware (per-token mutex → 409,
+  unknown/expired token → 410, wrong password → 400 with the token kept; `createApiApp` caps the canonical path at 64
+  KiB → 413 `error.api.payloadTooLarge`, and passwords over 512 chars are a 400). The setup flow's gate checks run
+  BEFORE its rate limiter so anonymous requests never burn the 5/hour budget. The stored settings password is tried
+  first for stored-backup restores. Restores audit `backup_restored`, downloads `backup_downloaded`.
 - Progress: the browser uploads via XHR and polls from the start; byte progress merges with `restore-machine.ts` phases
-  in `restore-progress.ts` behind `GET /api/admin/backup/restore-progress`. The global 30s timeout exempts the restore
-  endpoints (`/api/admin/backup/upload-restore*`, `/api/setup/restore` — 30-minute budget).
+  in `restore-progress.ts` behind the oRPC procedures `admin.backup.restoreProgress` (peek) and
+  `admin.backup.restoreStatus` (consume-once job report). The global 30s timeout exempts the restore endpoints
+  (`/api/admin/backup/upload-restore*`, `/api/setup/restore`, and the canonical decrypt RPC path
+  `/rpc/admin/backup/uploadRestoreDecrypt` — 30-minute budget).

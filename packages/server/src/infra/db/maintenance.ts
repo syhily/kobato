@@ -1,5 +1,7 @@
 import type { DatabaseHandle } from '@kobato/db/database'
 
+import { databaseOf } from '@kobato/db/database'
+import { runSqlitePragmaMaintenance } from '@kobato/db/operations/maintenance'
 import { pruneNotifications } from '@kobato/db/operations/notification'
 import { pruneJobRuns } from '@kobato/server/infra/db/job-run-recorder'
 import { jobHandle, registerJob } from '@kobato/server/infra/job-registry'
@@ -8,24 +10,12 @@ import { nextDailyMaintenanceDelayMs } from '@kobato/server/infra/scheduler-util
 
 const log = getLogger('db.maintenance')
 
-function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
-  const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
-  const value = row === undefined ? undefined : Object.values(row)[0]
-  return typeof value === 'number' ? value : Number(value ?? 0)
-}
-
-function pageStats(handle: DatabaseHandle): { pageCount: number; freelistCount: number } {
-  return { pageCount: pragmaNumber(handle, 'page_count'), freelistCount: pragmaNumber(handle, 'freelist_count') }
-}
-
 export function runDbMaintenance(handle: DatabaseHandle): void {
   try {
-    const before = pageStats(handle)
-    handle.client.exec('PRAGMA incremental_vacuum')
-    handle.client.exec('PRAGMA optimize')
-    const after = pageStats(handle)
-    const jobRunsPruned = pruneJobRuns(handle.db)
-    const { recipientsPruned: notificationRecipientsPruned, notificationsPruned } = pruneNotifications(handle.db)
+    const { before, after } = runSqlitePragmaMaintenance(handle)
+    const db = databaseOf(handle)
+    const jobRunsPruned = pruneJobRuns(db)
+    const { recipientsPruned: notificationRecipientsPruned, notificationsPruned } = pruneNotifications(db)
     log.info('database maintenance completed', {
       pagesBefore: before.pageCount,
       pagesAfter: after.pageCount,

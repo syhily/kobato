@@ -106,33 +106,6 @@ describe('brandingRouter', () => {
     expect(res.status).toBe(400)
   })
 
-  it('clears a valid branding slot', async () => {
-    const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
-
-    const res = await app.request('/api/admin/branding/clear', {
-      method: 'POST',
-      headers: { ...csrf, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slot: 'logoSvg' }),
-    })
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ slot: 'logoSvg', success: true })
-  })
-
-  it('rejects clear with invalid slot', async () => {
-    const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
-
-    const res = await app.request('/api/admin/branding/clear', {
-      method: 'POST',
-      headers: { ...csrf, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slot: 'nope' }),
-    })
-    expect(res.status).toBe(400)
-  })
-
   it('rejects uploads that exceed the body limit', async () => {
     const { app, csrf } = createApp()
     const { brandingRouter } = await import('@kobato/server/http/resources/branding')

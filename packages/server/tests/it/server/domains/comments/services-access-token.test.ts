@@ -1,4 +1,5 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { sqliteOf } from '@kobato/db/database'
 import { comment } from '@kobato/db/schema/comment'
 import { metric } from '@kobato/db/schema/metric'
 import { oneTimeToken } from '@kobato/db/schema/one-time-token'
@@ -29,7 +30,7 @@ beforeEach(async () => {
 })
 
 async function seedUser(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Alice', email: `alice-${Math.random()}@x.com`, password: 'p', role: 'visitor' })
     .returning({ id: user.id })
@@ -37,7 +38,7 @@ async function seedUser(): Promise<number> {
 }
 
 async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(comment)
     .values({
       type: 'post',
@@ -53,13 +54,13 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 
 describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
-    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup')
+    const { findCommentWithUserById } = await import('@kobato/db/operations/comment')
     expect(await findCommentWithUserById(db, 9999)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { findCommentWithUserById } = await import('@kobato/server/domains/comments/services/lookup')
+    const { findCommentWithUserById } = await import('@kobato/db/operations/comment')
     const r = await findCommentWithUserById(db, id)
     expect(r?.name).toBe('Alice')
   })
@@ -73,7 +74,7 @@ describe('comments/services/moderate — approveComment', () => {
     const { approveComment } = await import('@kobato/server/domains/comments/services/moderate')
     await approveComment(db, String(id))
 
-    const rows = await db.select({ isPending: comment.isPending }).from(comment)
+    const rows = await sqliteOf(db).select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
   })
 })
@@ -84,7 +85,7 @@ describe('comments/services/moderate — deleteCommentById', () => {
     const id = await seedComment({ userId: u1 })
     const { deleteCommentById } = await import('@kobato/server/domains/comments/services/moderate')
     await deleteCommentById(db, id)
-    const rows = await db.select({ id: comment.id }).from(comment)
+    const rows = await sqliteOf(db).select({ id: comment.id }).from(comment)
     expect(rows).toHaveLength(0)
   })
 })
@@ -97,7 +98,7 @@ describe('comments/services/moderate — updateComment', () => {
     const { updateComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
-    const rows = await db.select({ content: comment.content, body: comment.body }).from(comment)
+    const rows = await sqliteOf(db).select({ content: comment.content, body: comment.body }).from(comment)
     expect(rows[0]?.content).toBe(expected.content)
     expect(rows[0]?.body).toEqual(expected.body)
   })
@@ -119,7 +120,7 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
-    const rows = await db.select({ isPending: comment.isPending }).from(comment)
+    const rows = await sqliteOf(db).select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
   })
   it('re-pends and emails when editing outside the grace window', async () => {
@@ -129,7 +130,7 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const { updateOwnComment } = await import('@kobato/server/domains/comments/services/moderate')
     const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
-    const rows = await db.select({ isPending: comment.isPending }).from(comment)
+    const rows = await sqliteOf(db).select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(true)
     const { sendNewComment } = await import('@kobato/server/domains/comments/services/email')
     expect(sendNewComment).toHaveBeenCalled()
@@ -180,12 +181,12 @@ describe('comments/services/admin-query — loadAllComments', () => {
   })
   it('returns comments filtered by a resolved publicId', async () => {
     const u1 = await seedUser()
-    const pid = await db
+    const pid = await sqliteOf(db)
       .insert(post)
       .values({ slug: 'filter-post', title: 'Filtered', published: true, publishedRevisionId: 1 })
       .returning({ id: post.id })
     const pubId = randomUUID()
-    await db.insert(metric).values({ type: 'post', ownerId: pid[0]!.id, publicId: pubId })
+    await sqliteOf(db).insert(metric).values({ type: 'post', ownerId: pid[0]!.id, publicId: pubId })
     await seedComment({ userId: u1, ownerId: pid[0]!.id })
     const { loadAllComments } = await import('@kobato/server/domains/comments/services/admin-query')
     const r = await loadAllComments(db, { offset: 0, limit: 10, filterPublicId: pubId })
@@ -264,11 +265,13 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   it('skips entries whose stored payload is not a payload object', async () => {
     const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
-    await db.insert(oneTimeToken).values({
-      key: `comment:token:${token}`,
-      payload: 'not-a-payload-object',
-      expiresAt: new Date(Date.now() + 60_000),
-    })
+    await sqliteOf(db)
+      .insert(oneTimeToken)
+      .values({
+        key: `comment:token:${token}`,
+        payload: 'not-a-payload-object',
+        expiresAt: new Date(Date.now() + 60_000),
+      })
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
@@ -278,11 +281,13 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   it('skips entries whose stored payload fails the shape guard', async () => {
     const { cleanupExpiredTokens } = await import('@kobato/server/domains/comments/services/token-store')
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
-    await db.insert(oneTimeToken).values({
-      key: `comment:token:${token}`,
-      payload: { foo: 'bar' },
-      expiresAt: new Date(Date.now() + 60_000),
-    })
+    await sqliteOf(db)
+      .insert(oneTimeToken)
+      .values({
+        key: `comment:token:${token}`,
+        payload: { foo: 'bar' },
+        expiresAt: new Date(Date.now() + 60_000),
+      })
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })

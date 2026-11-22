@@ -4,14 +4,13 @@ import type { Database } from '@kobato/db/database'
 
 import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/cache/types'
-import { session } from '@kobato/db/schema/session'
+import { countLiveSessions } from '@kobato/db/operations/session'
 import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store'
 import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from '@kobato/server/infra/cache/registry'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { rateLimitEntryCount } from '@kobato/server/infra/rate-limit'
 import { resolveAppLocalization } from '@kobato/settings/app-localization'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { count, gt } from 'drizzle-orm'
 
 function cacheTranslator() {
   return createServerTranslator(resolveAppLocalization().locale)
@@ -68,8 +67,7 @@ export async function snapshotAllBuckets(): Promise<CacheBucketStats[]> {
 
 async function countReservedBucket(db: Database, id: ReservedCacheBucketId): Promise<number> {
   if (id === 'session') {
-    const rows = await db.select({ value: count() }).from(session).where(gt(session.expiresAt, new Date()))
-    return rows[0]?.value ?? 0
+    return countLiveSessions(db)
   }
   return rateLimitEntryCount()
 }

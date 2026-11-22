@@ -1,5 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { sqliteOf } from '@kobato/db/database'
 import { isPublicMessageKey } from '@kobato/i18n/catalog-scope'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
@@ -40,8 +41,8 @@ function seedInstalledSite(overrides: { locale: 'zh-TW'; timeZone: string; maxRe
     }
     return row
   })
-  db.transaction((tx) => {
-    seedInstallSections(tx, rows, null)
+  sqliteOf(db).transaction(() => {
+    seedInstallSections(db, rows, null)
   })
 }
 

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { friend } from '@kobato/db/schema/friend'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -53,7 +54,7 @@ async function apply(input: Record<string, unknown>): Promise<Response> {
 }
 
 async function friendRows(): Promise<(typeof friend.$inferSelect)[]> {
-  return db.select().from(friend)
+  return sqliteOf(db).select().from(friend)
 }
 
 function lastMailBody(): { to: string; subject: string; html: string } {
@@ -64,7 +65,7 @@ function lastMailBody(): { to: string; subject: string; html: string } {
 }
 
 async function seedAdmin(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({
       name: 'Admin',
@@ -214,14 +215,14 @@ describe('integration / friends apply → admin approve', () => {
       expect(mockFetch.calls).toHaveLength(1)
     })
 
-    const before = await db.select().from(friend).where(eq(friend.homepage, 'https://approve.example.com'))
+    const before = await sqliteOf(db).select().from(friend).where(eq(friend.homepage, 'https://approve.example.com'))
     expect(before).toHaveLength(1)
     expect(before[0]!.visible).toBe(false)
     expect(await listPublicFriends(db)).toEqual([])
 
     const adminId = await seedAdmin()
     const uploadedPoster = '/storage/images/links/approve.example.com.jpg'
-    await db.update(friend).set({ poster: uploadedPoster }).where(eq(friend.id, before[0]!.id))
+    await sqliteOf(db).update(friend).set({ poster: uploadedPoster }).where(eq(friend.id, before[0]!.id))
     const approveRes = await call(
       adminFriendsRouter.upsert,
       {
@@ -235,7 +236,7 @@ describe('integration / friends apply → admin approve', () => {
     )
     expect(approveRes.friend.visible).toBe(true)
 
-    const after = await db.select().from(friend).where(eq(friend.id, before[0]!.id))
+    const after = await sqliteOf(db).select().from(friend).where(eq(friend.id, before[0]!.id))
     expect(after[0]!.visible).toBe(true)
 
     const publicFriends = await listPublicFriends(db)

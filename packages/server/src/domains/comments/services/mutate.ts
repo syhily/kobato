@@ -6,16 +6,15 @@ import type { MetricTarget } from '@kobato/server/domains/comments/services/shar
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
+import {
+  findCommentRootId,
+  findCommentWithSourceUser,
+  insertCommentWithPendingGate,
+  recentCommentsForUserDedupe,
+} from '@kobato/db/operations/comment'
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@kobato/db/operations/user'
 import { userSession } from '@kobato/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
-import { insertComment } from '@kobato/server/domains/comments/repos/mutate'
-import {
-  countApprovedCommentsByUser,
-  findCommentWithSourceUser,
-  recentCommentsForUserDedupe,
-} from '@kobato/server/domains/comments/repos/public-query/by-id'
-import { findCommentRootId } from '@kobato/server/domains/comments/repos/public-query/threads'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { sendNewComment, sendNewReply } from '@kobato/server/domains/comments/services/email'
 import {
@@ -115,46 +114,40 @@ async function persistComment(
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  return db.transaction((tx) => {
-    const approvedCount = countApprovedCommentsByUser(tx, sub.user.id)
-    const isPending = approvedCount === 0
+  const newComment: NewComment = {
+    content: sub.contentSnapshot,
+    body: sub.canonicalBody,
+    type: sub.target.type,
+    ownerId: sub.target.ownerId,
+    userId: sub.user.id,
+    isVerified: sub.user.emailVerified,
+    ua,
+    ip,
+    rid: commentReq.rid || 0,
+    isCollapsed: false,
+    isPinned: false,
+    contentHash: sub.contentHash,
+    voteUp: 0,
+    voteDown: 0,
+    rootId: sub.rootId,
+  }
+  const cr = insertCommentWithPendingGate(db, newComment)
+  if (cr === null) {
+    throw new DomainError('INTERNAL', descriptorFor('comments.error.createFailed'))
+  }
 
-    const newComment: NewComment = {
-      content: sub.contentSnapshot,
-      body: sub.canonicalBody,
-      type: sub.target.type,
-      ownerId: sub.target.ownerId,
-      userId: sub.user.id,
-      isVerified: sub.user.emailVerified,
-      ua,
-      ip,
-      rid: commentReq.rid || 0,
-      isCollapsed: false,
-      isPending,
-      isPinned: false,
-      contentHash: sub.contentHash,
-      voteUp: 0,
-      voteDown: 0,
-      rootId: sub.rootId,
-    }
-    const cr = insertComment(tx, newComment)
-    if (cr === null) {
-      throw new DomainError('INTERNAL', descriptorFor('comments.error.createFailed'))
-    }
-
-    const { createdAt, deletedAt, ...commentRest } = cr
-    return withCommentBadgeTextColor({
-      ...commentRest,
-      createAt: createdAt,
-      deleteAt: deletedAt,
-      name: sub.user.name,
-      email: sub.user.email,
-      emailVerified: sub.user.emailVerified,
-      link: sub.user.link,
-      badgeName: sub.user.badgeName,
-      badgeColor: sub.user.badgeColor,
-      badgeTextColor: sub.user.badgeTextColor,
-    })
+  const { createdAt, deletedAt, ...commentRest } = cr
+  return withCommentBadgeTextColor({
+    ...commentRest,
+    createAt: createdAt,
+    deleteAt: deletedAt,
+    name: sub.user.name,
+    email: sub.user.email,
+    emailVerified: sub.user.emailVerified,
+    link: sub.user.link,
+    badgeName: sub.user.badgeName,
+    badgeColor: sub.user.badgeColor,
+    badgeTextColor: sub.user.badgeTextColor,
   })
 }
 

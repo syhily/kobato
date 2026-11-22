@@ -1,0 +1,166 @@
+import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
+
+import {
+  __adoptAnalyticsHandleForTests,
+  __resetAnalyticsEngineForTests,
+} from '@kobato/server/bootstrap/analytics-lifecycle'
+import {
+  clearAccessEvents,
+  closeTestAnalyticsDb,
+  createTestAnalyticsDb,
+  seedAccessEvents,
+} from '@kobato/server/tests/utils/analytics-db'
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { call } from '@orpc/server'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+const db = getTestDb()
+
+const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
+__adoptAnalyticsHandleForTests(analyticsHandle)
+
+const { analyticsRouter } = await import('@kobato/server/http/controllers/admin/analytics.controller')
+
+const rangeInput = { startAt: 1000, endAt: 2000 }
+
+beforeEach(async () => {
+  await clearAccessEvents(analyticsHandle)
+})
+
+afterAll(async () => {
+  __resetAnalyticsEngineForTests()
+  await closeTestAnalyticsDb(analyticsHandle)
+})
+
+async function seedViews() {
+  await seedAccessEvents(analyticsHandle, [
+    {
+      ts: new Date(1_200_000),
+      visitorHash: 'a',
+      path: '/post/hello',
+      entityType: 'post',
+      entityId: 1,
+      refererHost: 'google.com',
+      browser: 'Chrome',
+      country: 'US',
+    },
+    {
+      ts: new Date(1_300_000),
+      visitorHash: 'a',
+      path: '/post/hello',
+      entityType: 'post',
+      entityId: 1,
+      browser: 'Chrome',
+      country: 'US',
+    },
+    {
+      ts: new Date(1_400_000),
+      visitorHash: 'b',
+      path: '/post/hello',
+      entityType: 'post',
+      entityId: 1,
+      browser: 'Firefox',
+      country: 'US',
+    },
+  ])
+}
+
+describe('analyticsRouter.counters', () => {
+  it('aggregates real counters from the seeded access events', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.counters, rangeInput, { context: ctx })) as {
+      visits: number
+      visitors: number
+      referers: number
+    }
+    expect(res).toEqual({ visits: 3, visitors: 2, referers: 1 })
+  })
+
+  it('excludes geo-unknown events unless includeUnknown is passed', async () => {
+    await seedViews()
+    await seedAccessEvents(analyticsHandle, [
+      { ts: new Date(1_500_000), visitorHash: 'c', path: '/post/hello', entityType: 'post', entityId: 1, country: '' },
+    ])
+    const ctx = makeAuthedCtx({ db })
+
+    const excluded = (await call(analyticsRouter.counters, rangeInput, { context: ctx })) as { visits: number }
+    expect(excluded.visits).toBe(3)
+
+    const included = (await call(
+      analyticsRouter.counters,
+      { ...rangeInput, includeUnknown: true },
+      { context: ctx },
+    )) as {
+      visits: number
+    }
+    expect(included.visits).toBe(4)
+  })
+})
+
+describe('analyticsRouter.views', () => {
+  it('returns one real minute bucket per seeded minute', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.views, rangeInput, { context: ctx })) as {
+      unit: string
+      clientTimezone: string
+      points: { time: string; visits: number; visitors: number }[]
+    }
+    expect(res.unit).toBe('minute')
+    expect(res.clientTimezone).toBe('Etc/UTC')
+    expect(res.points).toHaveLength(3)
+    expect(res.points.reduce((sum, point) => sum + point.visits, 0)).toBe(3)
+    expect(res.points.every((point) => point.visitors === 1)).toBe(true)
+  })
+})
+
+describe('analyticsRouter.heatmap', () => {
+  it('extracts ISO weekday/hour from the real timestamps', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.heatmap, rangeInput, { context: ctx })) as {
+      weekday: number
+      hour: number
+      visits: number
+      visitors: number
+    }[]
+    expect(res).toEqual([{ weekday: 4, hour: 0, visits: 3, visitors: 2 }])
+  })
+})
+
+describe('analyticsRouter.metrics', () => {
+  it('groups real rows by browser name, ordered by visits', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.metrics, { ...rangeInput, type: 'browser' }, { context: ctx })) as {
+      name: string
+      visits: number
+      visitors: number
+    }[]
+    expect(res).toEqual([
+      { name: 'Chrome', visits: 2, visitors: 1 },
+      { name: 'Firefox', visits: 1, visitors: 1 },
+    ])
+  })
+
+  it('throws BAD_REQUEST for an unknown metric type', async () => {
+    const ctx = makeAuthedCtx({ db })
+    await expect(
+      // @ts-expect-error Intentionally passing an invalid metric type to test error handling
+      call(analyticsRouter.metrics, { preset: 'today', type: 'unknownType' }, { context: ctx }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+  })
+})
+
+describe('analyticsRouter.export', () => {
+  it('returns per-path CSV text', async () => {
+    await seedViews()
+    const ctx = makeAuthedCtx({ db })
+    const res = (await call(analyticsRouter.export, rangeInput, { context: ctx })) as string
+    expect(res).toBe(['path,views,visitors,referers', '/post/hello,3,2,1', ''].join('\r\n'))
+  })
+})

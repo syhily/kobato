@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/database'
 import type { EntityTarget } from '@kobato/db/target'
 
+import { databaseOf } from '@kobato/db/database'
 import { incrementMetricPvBatch } from '@kobato/db/operations/metric'
 import { targetKey } from '@kobato/db/target'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
@@ -85,7 +86,7 @@ registerBatcher(
         flushIntervalMs: 60_000,
         flushThreshold: 50,
       },
-      handle.db,
+      databaseOf(handle),
     ),
 )
 

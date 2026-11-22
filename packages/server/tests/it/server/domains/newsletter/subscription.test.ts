@@ -1,5 +1,6 @@
 import type { NewsletterSubscriberRow } from '@kobato/db/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { newsletterSubscriber } from '@kobato/db/schema/newsletter'
 import { signUnsubscribeId } from '@kobato/server/domains/newsletter/signing'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
@@ -46,7 +47,11 @@ beforeEach(async () => {
 })
 
 async function findRow(email: string): Promise<NewsletterSubscriberRow | null> {
-  const rows = await db.select().from(newsletterSubscriber).where(eq(newsletterSubscriber.email, email)).limit(1)
+  const rows = await sqliteOf(db)
+    .select()
+    .from(newsletterSubscriber)
+    .where(eq(newsletterSubscriber.email, email))
+    .limit(1)
   return rows[0] ?? null
 }
 
@@ -100,7 +105,7 @@ describe('integration / newsletter', () => {
     expect(resub.status).toBe(200)
     const second = await findRow('dup@example.com')
 
-    const all = await db.select().from(newsletterSubscriber)
+    const all = await sqliteOf(db).select().from(newsletterSubscriber)
     expect(all).toHaveLength(1)
     expect(second!.id).toBe(first!.id)
     expect(second!.status).toBe('pending')

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findSettingByScope } from '@kobato/db/operations/setting'
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
@@ -25,8 +26,8 @@ function seedInstalledSite(): void {
   if (!built.ok) {
     throw new Error(`expected ok rows, got: ${built.descriptor.fallbackMessage}`)
   }
-  db.transaction((tx) => {
-    seedInstallSections(tx, built.rows, null)
+  sqliteOf(db).transaction(() => {
+    seedInstallSections(db, built.rows, null)
   })
 }
 

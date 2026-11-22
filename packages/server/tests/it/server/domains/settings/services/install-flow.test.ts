@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { setting } from '@kobato/db/schema/config'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'
 import { DomainError } from '@kobato/server/infra/http/errors'
@@ -94,11 +95,11 @@ describe('server/domains/settings/services/install-flow', () => {
     it('persists every row inside the caller-supplied transaction, in order', async () => {
       const rows = builtRows()
 
-      db.transaction((tx) => {
-        seedInstallSections(tx, rows, 7)
+      sqliteOf(db).transaction(() => {
+        seedInstallSections(db, rows, 7)
       })
 
-      const stored = await db.select().from(setting).orderBy(asc(setting.id))
+      const stored = await sqliteOf(db).select().from(setting).orderBy(asc(setting.id))
       expect(stored).toHaveLength(19)
       expect(stored.map((row) => row.scope)).toEqual(rows.map((row) => row.scope))
       for (const [index, row] of stored.entries()) {
@@ -113,12 +114,12 @@ describe('server/domains/settings/services/install-flow', () => {
       const rows = [...builtRows().slice(0, 2), { scope: 'blog.mail', payload: circular }]
 
       expect(() =>
-        db.transaction((tx) => {
-          seedInstallSections(tx, rows, null)
+        sqliteOf(db).transaction(() => {
+          seedInstallSections(db, rows, null)
         }),
       ).toThrow()
 
-      expect(await db.select().from(setting)).toHaveLength(0)
+      expect(await sqliteOf(db).select().from(setting)).toHaveLength(0)
     })
   })
 })

@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { tag } from '@kobato/db/schema/taxonomy'
 import { user } from '@kobato/db/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
@@ -15,7 +16,7 @@ const db = getTestDb()
 let adminId = 0
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -27,7 +28,7 @@ function adminCtx() {
 }
 
 async function seedTag(name: string, slug: string): Promise<number> {
-  const [row] = await db.insert(tag).values({ name, slug }).returning({ id: tag.id })
+  const [row] = await sqliteOf(db).insert(tag).values({ name, slug }).returning({ id: tag.id })
   return row.id
 }
 
@@ -59,7 +60,7 @@ describe('adminTagsRouter.upsert', () => {
     const res = await call(adminTagsRouter.upsert, { name: 'Tag B' }, { context: adminCtx() })
 
     expect(res.tag).toMatchObject({ name: 'Tag B', slug: 'tag-b', postCount: 0 })
-    const rows = await db.select().from(tag).where(eq(tag.name, 'Tag B'))
+    const rows = await sqliteOf(db).select().from(tag).where(eq(tag.name, 'Tag B'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.slug).toBe('tag-b')
   })
@@ -78,7 +79,7 @@ describe('adminTagsRouter.delete', () => {
     const res = await call(adminTagsRouter.delete, { id: String(id) }, { context: adminCtx() })
     expect(res).toBeUndefined()
 
-    const remaining = await db.select().from(tag).where(eq(tag.id, id))
+    const remaining = await sqliteOf(db).select().from(tag).where(eq(tag.id, id))
     expect(remaining).toHaveLength(0)
   })
 })

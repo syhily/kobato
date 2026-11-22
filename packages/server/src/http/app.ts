@@ -11,7 +11,8 @@ import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace'
 import { adaptLegacyRpcRequest } from '@kobato/server/http/request/legacy-rpc-path'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { RPCHandler } from '@orpc/server/fetch'
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 
 const handler = new RPCHandler(apiRouter, {
   clientInterceptors: [createOrpcTraceInterceptor('http'), orpcInputValidationInterceptor],
@@ -25,6 +26,9 @@ function resolveMaxBodySize(): number {
   return typeof configured === 'number' && configured > 0 ? configured : DEFAULT_MAX_BODY_SIZE
 }
 
+const DECRYPT_RPC_PATH = '/rpc/admin/backup/uploadRestoreDecrypt'
+const DECRYPT_BODY_LIMIT = 64 * 1024
+
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
@@ -32,6 +36,14 @@ export function createApiApp(): Hono<Env> {
     await hydrateBlogSettings(c.var.requestContext.db)
     await next()
   })
+
+  app.use(
+    DECRYPT_RPC_PATH,
+    bodyLimit({
+      maxSize: DECRYPT_BODY_LIMIT,
+      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
+    }),
+  )
 
   app.use(
     dynamicBodyLimit({

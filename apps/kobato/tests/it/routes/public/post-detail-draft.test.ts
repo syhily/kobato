@@ -1,5 +1,6 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
@@ -19,7 +20,7 @@ beforeEach(async () => {
 })
 
 async function seedPublishedPost(slug: string, title: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug,
@@ -31,7 +32,7 @@ async function seedPublishedPost(slug: string, title: string): Promise<number> {
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'post',
@@ -42,7 +43,7 @@ async function seedPublishedPost(slug: string, title: string): Promise<number> {
       bodyHtml: '<p>Published body.</p>',
     })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
@@ -52,7 +53,7 @@ async function seedDraftPost(opts: {
   bodyHtml?: string | null
   authorId?: number | null
 }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: opts.slug,
@@ -64,19 +65,21 @@ async function seedDraftPost(opts: {
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  await db.insert(contentTable).values({
-    type: 'post',
-    ownerId: postId,
-    revisionNo: 1,
-    status: 'draft',
-    body: draftBody,
-    bodyHtml: opts.bodyHtml === undefined ? '<p>Draft body.</p>' : opts.bodyHtml,
-  })
+  await sqliteOf(db)
+    .insert(contentTable)
+    .values({
+      type: 'post',
+      ownerId: postId,
+      revisionNo: 1,
+      status: 'draft',
+      body: draftBody,
+      bodyHtml: opts.bodyHtml === undefined ? '<p>Draft body.</p>' : opts.bodyHtml,
+    })
   return postId
 }
 
 async function seedNeverPublishedPost(slug: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({ slug, title: slug, published: true, publishedRevisionId: null })
     .returning({ id: postTable.id })

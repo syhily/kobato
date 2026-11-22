@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { auditLog } from '@kobato/db/schema/config'
 import { content, postSearchIndex } from '@kobato/db/schema/content'
 import { post } from '@kobato/db/schema/post'
@@ -19,7 +20,7 @@ const db = getTestDb()
 let seq = 0
 
 async function seedAdmin(): Promise<number> {
-  const [row] = await db
+  const [row] = await sqliteOf(db)
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
     .returning({ id: user.id })
@@ -32,11 +33,11 @@ function adminCtx(userId: number) {
 
 async function seedPublishedPost(plainText: string): Promise<number> {
   const key = ++seq
-  const [meta] = await db
+  const [meta] = await sqliteOf(db)
     .insert(post)
     .values({ slug: `post-${key}`, title: `Post ${key}`, summary: `Summary ${key}` })
     .returning({ id: post.id })
-  const [rev] = await db
+  const [rev] = await sqliteOf(db)
     .insert(content)
     .values({
       type: 'post',
@@ -47,7 +48,7 @@ async function seedPublishedPost(plainText: string): Promise<number> {
       bodyText: plainText,
     })
     .returning({ id: content.id })
-  await db.update(post).set({ publishedRevisionId: rev.id }).where(eq(post.id, meta.id))
+  await sqliteOf(db).update(post).set({ publishedRevisionId: rev.id }).where(eq(post.id, meta.id))
   return meta.id
 }
 
@@ -120,14 +121,14 @@ describe('adminRendersRouter.reindexSearch', () => {
     )
     expect(page2).toEqual({ processed: 1, failed: 0, total: 2, nextOffset: null })
 
-    const rows = await db.select().from(postSearchIndex)
+    const rows = await sqliteOf(db).select().from(postSearchIndex)
     expect(rows).toHaveLength(2)
     const byPostId = new Map(rows.map((row) => [row.postId, row.plainText]))
     expect(byPostId.get(first)).toContain('Alpha body text')
     expect(byPostId.get(second)).toContain('Beta body text')
 
     await flushAuditLog()
-    const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'search_reindexed'))
+    const auditRows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'search_reindexed'))
     expect(auditRows).toHaveLength(2)
   })
 })
@@ -135,21 +136,25 @@ describe('adminRendersRouter.reindexSearch', () => {
 describe('adminRendersRouter.reprojectBodies', () => {
   it('rewrites drifted projection columns in real batches and records the audit rows', async () => {
     const admin = await seedAdmin()
-    await db.insert(content).values({
-      type: 'post',
-      ownerId: 1,
-      revisionNo: 1,
-      status: 'published',
-      body: lexicalBodyWith([lexicalParagraph('Alpha body text')]),
-    })
-    await db.insert(content).values({
-      type: 'post',
-      ownerId: 2,
-      revisionNo: 1,
-      status: 'published',
-      body: lexicalBodyWith([lexicalParagraph('Beta body text')]),
-      bodyHtml: '<p>stale</p>',
-    })
+    await sqliteOf(db)
+      .insert(content)
+      .values({
+        type: 'post',
+        ownerId: 1,
+        revisionNo: 1,
+        status: 'published',
+        body: lexicalBodyWith([lexicalParagraph('Alpha body text')]),
+      })
+    await sqliteOf(db)
+      .insert(content)
+      .values({
+        type: 'post',
+        ownerId: 2,
+        revisionNo: 1,
+        status: 'published',
+        body: lexicalBodyWith([lexicalParagraph('Beta body text')]),
+        bodyHtml: '<p>stale</p>',
+      })
 
     const page1 = await call(
       adminRendersRouter.reprojectBodies,
@@ -165,7 +170,7 @@ describe('adminRendersRouter.reprojectBodies', () => {
     )
     expect(page2).toEqual({ processed: 1, failed: 0, rewritten: 1, total: 2, nextOffset: null })
 
-    const rows = await db.select().from(content).orderBy(content.id)
+    const rows = await sqliteOf(db).select().from(content).orderBy(content.id)
     expect(rows.map((row) => row.bodyText)).toEqual(
       expect.arrayContaining([expect.stringContaining('Alpha body text'), expect.stringContaining('Beta body text')]),
     )
@@ -178,7 +183,7 @@ describe('adminRendersRouter.reprojectBodies', () => {
     expect(again).toEqual({ processed: 2, failed: 0, rewritten: 0, total: 2, nextOffset: null })
 
     await flushAuditLog()
-    const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'body_projection_rebuilt'))
+    const auditRows = await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'body_projection_rebuilt'))
     expect(auditRows).toHaveLength(3)
     expect(auditRows[0]!.resourceType).toBe('cache')
   })

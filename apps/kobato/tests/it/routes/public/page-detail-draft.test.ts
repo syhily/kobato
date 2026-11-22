@@ -1,5 +1,6 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { page as pageTable } from '@kobato/db/schema/page'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
@@ -25,7 +26,7 @@ async function seedRevision(opts: {
   body: unknown
   bodyHtml?: string | null
 }): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(contentTable)
     .values({
       type: 'page',
@@ -40,7 +41,7 @@ async function seedRevision(opts: {
 }
 
 async function seedPublishedPage(slug: string, title: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({
       slug,
@@ -58,12 +59,12 @@ async function seedPublishedPage(slug: string, title: string): Promise<number> {
     body: publishedBody,
     bodyHtml: '<p>Published body.</p>',
   })
-  await db.update(pageTable).set({ publishedRevisionId: revisionId }).where(eq(pageTable.id, pageId))
+  await sqliteOf(db).update(pageTable).set({ publishedRevisionId: revisionId }).where(eq(pageTable.id, pageId))
   return pageId
 }
 
 async function seedUnpublishedPage(slug: string, title: string): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(pageTable)
     .values({ slug, title, published: false, publishedRevisionId: null })
     .returning({ id: pageTable.id })

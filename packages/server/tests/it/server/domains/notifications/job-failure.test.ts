@@ -1,5 +1,6 @@
 import type { Role } from '@kobato/auth/roles'
 
+import { sqliteOf } from '@kobato/db/database'
 import { user } from '@kobato/db/schema/user'
 import { getThread, listInbox, unreadCount } from '@kobato/server/domains/notifications/service'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
@@ -11,7 +12,7 @@ const db = getTestDb()
 let seq = 0
 async function seedUser(role: Role, name: string): Promise<number> {
   seq += 1
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(user)
     .values({ name, email: `${name}-${seq}@example.com`, password: 'hashed', role })
     .returning({ id: user.id })

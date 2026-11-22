@@ -1,3 +1,4 @@
+import { sqliteOf } from '@kobato/db/database'
 import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
 import { setting } from '@kobato/db/schema/config'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
@@ -17,8 +18,8 @@ function seedInstalledSite(overrides: Record<string, unknown> = {}): void {
   if (!built.ok) {
     throw new Error(`expected ok rows, got: ${built.descriptor.fallbackMessage}`)
   }
-  db.transaction((tx) => {
-    seedInstallSections(tx, built.rows, null)
+  sqliteOf(db).transaction(() => {
+    seedInstallSections(db, built.rows, null)
   })
   if (Object.keys(overrides).length > 0) {
     const row = findSettingByScope(db, 'blog.general')
@@ -74,7 +75,7 @@ describe('server/domains/settings/services/locale-migration', () => {
 
   it('leaves an uninstalled database untouched', () => {
     expect(migrateLegacySiteIdentityLocale(db)).toEqual({ changed: false, previous: null, locale: 'zh-CN' })
-    expect(db.select().from(setting).where(eq(setting.scope, 'blog.general')).all()).toHaveLength(0)
+    expect(sqliteOf(db).select().from(setting).where(eq(setting.scope, 'blog.general')).all()).toHaveLength(0)
   })
 
   describe('hydration', () => {

@@ -1,18 +1,54 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
-import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv'
-import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight'
-import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection'
 import {
   countAuditLogs,
   fetchAuditLogActorMap,
   fetchAuditLogActors,
   listAuditLogs,
-  type AuditLogFilterInput,
-} from '@kobato/server/domains/audit/services/query'
+  type AuditLogFilter,
+} from '@kobato/db/operations/audit-log'
+import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv'
+import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight'
+import { clampDateToRetention, parseDate, toAuditLogItemDto } from '@kobato/server/domains/audit/projection'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
 import { idFromString } from '@kobato/utils/id'
+
+interface AuditLogFilterInput {
+  action?: string
+  resourceType?: string
+  actorId?: string
+  ip?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+function toAuditLogFilter(input: AuditLogFilterInput): AuditLogFilter {
+  const filter: AuditLogFilter = {}
+  if (input.action) {
+    filter.action = input.action
+  }
+  if (input.resourceType) {
+    filter.resourceType = input.resourceType
+  }
+  if (input.actorId) {
+    filter.actorId = idFromString(input.actorId)
+  }
+  if (input.ip) {
+    filter.ip = input.ip
+  }
+  const dateFrom = clampDateToRetention(parseDate(input.dateFrom))
+  if (dateFrom) {
+    filter.createdAfter = dateFrom
+  }
+  const dateTo = parseDate(input.dateTo)
+  if (dateTo) {
+    const endOfDay = new Date(dateTo)
+    endOfDay.setDate(endOfDay.getDate() + 1)
+    filter.createdBeforeExclusive = endOfDay
+  }
+  return filter
+}
 
 function assertValidActorId(context: HandlerContext, actorId: string | undefined): void {
   if (!actorId) {
@@ -34,7 +70,7 @@ const list = impl.list.handler(async ({ input, context }) => {
 
   assertValidActorId(context, input.actorId)
 
-  const filters: AuditLogFilterInput = input
+  const filters = toAuditLogFilter(input)
   const total = await countAuditLogs(db, filters)
   const rows = await listAuditLogs(db, filters, input.offset, input.limit)
   const actorMap = await fetchAuditLogActorMap(db, rows)
@@ -61,7 +97,7 @@ const exportCsv = impl.exportCsv.handler(async ({ input, context }) => {
 
   assertValidActorId(context, input.actorId)
 
-  const filters: AuditLogFilterInput = input
+  const filters = toAuditLogFilter(input)
   const total = await countAuditLogs(db, filters)
 
   if (total > EXPORT_MAX_ROWS) {

@@ -2,6 +2,7 @@ import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { AppLocalization } from '@kobato/settings/app-localization'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { content as contentTable } from '@kobato/db/schema/content'
 import { post as postTable } from '@kobato/db/schema/post'
 import { postTag } from '@kobato/db/schema/post-tag'
@@ -47,7 +48,7 @@ async function seedPost(
   opts: Partial<typeof postTable.$inferInsert> & { body?: LexicalEditorState } = {},
 ): Promise<number> {
   const { body: postBody, ...meta } = opts
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(postTable)
     .values({
       slug: meta.slug ?? `post-${Math.random().toString(36).slice(2)}`,
@@ -61,21 +62,24 @@ async function seedPost(
     })
     .returning({ id: postTable.id })
   const postId = rows[0]!.id
-  const revisions = await db
+  const revisions = await sqliteOf(db)
     .insert(contentTable)
     .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: postBody ?? body })
     .returning({ id: contentTable.id })
-  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  await sqliteOf(db).update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 async function seedCategory(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
+  const rows = await sqliteOf(db)
+    .insert(categoryTable)
+    .values({ name, slug, cover: '' })
+    .returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
 async function seedTag(name: string, slug: string): Promise<number> {
-  const rows = await db.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
+  const rows = await sqliteOf(db).insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
   return rows[0]!.id
 }
 
@@ -154,7 +158,7 @@ describe('listing representation ETags — same representation', () => {
     const categoryId = await seedCategory('general', 'general')
     const tagId = await seedTag('typescript', 'typescript')
     const postId = await seedPost({ slug: 'tagged', categoryId })
-    await db.insert(postTag).values({ postId, tagId })
+    await sqliteOf(db).insert(postTag).values({ postId, tagId })
 
     const category = await read<OkListing>('/public/content/posts/list', {
       scope: { type: 'category', slug: 'general' },
@@ -239,7 +243,7 @@ describe('listing representation ETags — a changed representation is 200', () 
     await seedPost({ slug: 'tagged', categoryId })
     const base = await read<OkListing>('/public/content/posts/list', { scope: { type: 'category', slug: 'general' } })
 
-    await db.update(categoryTable).set({ name: 'renamed' }).where(eq(categoryTable.id, categoryId))
+    await sqliteOf(db).update(categoryTable).set({ name: 'renamed' }).where(eq(categoryTable.id, categoryId))
     const after = await read<OkListing>('/public/content/posts/list', {
       scope: { type: 'category', slug: 'general' },
       ifNoneMatch: base.etag,

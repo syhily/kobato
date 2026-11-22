@@ -1,5 +1,6 @@
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'
 
+import { sqliteOf } from '@kobato/db/database'
 import { post } from '@kobato/db/schema/post'
 import { sendNewComment } from '@kobato/server/domains/comments/services/email'
 import { sendTestMail } from '@kobato/server/infra/email/sender'
@@ -34,7 +35,7 @@ function setMail(mail: Partial<MailFixture>) {
 }
 
 async function seedTargetPost(): Promise<number> {
-  const rows = await db
+  const rows = await sqliteOf(db)
     .insert(post)
     .values({ slug: 'hi', title: 'Hi', summary: '', published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })

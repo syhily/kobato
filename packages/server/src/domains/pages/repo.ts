@@ -1,32 +1,40 @@
+import type { Database } from '@kobato/db/database'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/types'
 
-import { page as pageMetaTable } from '@kobato/db/schema/page'
 import {
-  buildMetaListWhere,
-  makeMetaCrud,
-  makeMetaListQueries,
-  type MetaListFiltersBase,
-} from '@kobato/server/domains/content/entities/meta-repo'
-import { desc } from 'drizzle-orm'
+  findEntityMetaById,
+  findEntityMetaBySlug,
+  findPublicEntityMetaBySlug,
+  insertEntityMeta,
+  restoreEntityMeta,
+  softDeleteEntityMeta,
+  updateEntityMetaById,
+} from '@kobato/db/operations/entity-meta'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 
-export type ListPagesFilters = MetaListFiltersBase
+export const findPageMetaById = (db: Database, id: number): PageMetaRow | null =>
+  unsafeCast<PageMetaRow | null>(findEntityMetaById(db, 'page', id))
 
-const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
+export const findPageMetaBySlug = (db: Database, slug: string): PageMetaRow | null =>
+  unsafeCast<PageMetaRow | null>(findEntityMetaBySlug(db, 'page', slug))
 
-export const findPageMetaById = crud.findMetaById
-export const findPageMetaBySlug = crud.findMetaBySlug
-export const findPageMetaBySlugForUpdate = crud.findMetaBySlugForUpdate
-export const insertPageMeta = crud.insertMeta
-export const updatePageMetaById = crud.updateMetaById
-export const softDeletePageMeta = crud.softDeleteMeta
-export const restorePageMeta = crud.restoreMeta
+export const findPageMetaBySlugForUpdate = (db: Database, slug: string): PageMetaRow | null =>
+  unsafeCast<PageMetaRow | null>(findEntityMetaBySlug(db, 'page', slug))
 
-const listQueries = makeMetaListQueries<PageMetaRow, ListPagesFilters>(pageMetaTable, {
-  buildWhere: (filters) => buildMetaListWhere(pageMetaTable, filters),
-  orderBy: () => desc(pageMetaTable.updatedAt),
-})
+export const findPublicPageMetaBySlug = (db: Database, slug: string): PageMetaRow | null =>
+  unsafeCast<PageMetaRow | null>(findPublicEntityMetaBySlug(db, 'page', slug))
 
-export const listPageMetas = listQueries.listMetas
-export const countPageMetas = listQueries.countMetas
+export const insertPageMeta = (db: Database, values: NewPageMeta): PageMetaRow =>
+  unsafeCast<PageMetaRow>(insertEntityMeta(db, 'page', values))
+
+export const updatePageMetaById = (
+  db: Database,
+  id: number,
+  patch: Partial<Omit<NewPageMeta, 'id' | 'createdAt'>>,
+): PageMetaRow | null => unsafeCast<PageMetaRow | null>(updateEntityMetaById(db, 'page', id, patch))
+
+export const softDeletePageMeta = (db: Database, id: number): boolean => softDeleteEntityMeta(db, 'page', id)
+
+export const restorePageMeta = (db: Database, id: number): boolean => restoreEntityMeta(db, 'page', id)
