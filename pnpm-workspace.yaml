@@ -100,7 +100,7 @@ catalog:
   fast-average-color: ^9.6.0
   feed: ^6.0.0
   happy-dom: ^21.0.4
-  hono: ^4.13.19
+  hono: ^4.13.20
   hono-pino: ^0.10.3
   html-minifier-terser: ^7.2.0
   husky: ^9.1.7
@@ -109,7 +109,7 @@ catalog:
   katex: ^0.19.1
   kysely: ^0.29.9
   lexical: ^0.53.0
-  lint-staged: ^17.6.1
+  lint-staged: ^17.6.2
   lucide-react: ^1.77.0
   lunar-typescript: ^1.8.7
   markdown-it: ^15.0.3

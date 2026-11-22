@@ -441,8 +441,8 @@ catalogs:
       specifier: ^21.0.4
       version: 21.0.4
     hono:
-      specifier: ^4.13.19
-      version: 4.13.19
+      specifier: ^4.13.20
+      version: 4.13.20
     hono-pino:
       specifier: ^0.10.3
       version: 0.10.3
@@ -468,8 +468,8 @@ catalogs:
       specifier: ^0.53.0
       version: 0.53.0
     lint-staged:
-      specifier: ^17.6.1
-      version: 17.6.1
+      specifier: ^17.6.2
+      version: 17.6.2
     lucide-react:
       specifier: ^1.77.0
       version: 1.77.0
@@ -633,7 +633,7 @@ importers:
         version: 9.1.7
       lint-staged:
         specifier: 'catalog:'
-        version: 17.6.1
+        version: 17.6.2
       node:
         specifier: runtime:^26.13.1
         version: runtime:26.13.1
@@ -753,7 +753,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.11(hono@4.13.19)
+        version: 2.1.11(hono@4.13.20)
       '@kobato/api':
         specifier: workspace:*
         version: link:../../packages/api
@@ -870,7 +870,7 @@ importers:
         version: 21.0.4
       hono:
         specifier: 'catalog:'
-        version: 4.13.19
+        version: 4.13.20
       jsdom:
         specifier: 'catalog:'
         version: 31.0.1(@napi-rs/canvas@1.2.0)
@@ -1188,10 +1188,10 @@ importers:
         version: 2.0.1-r.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.11(hono@4.13.19)
+        version: 2.1.11(hono@4.13.20)
       '@hono/vite-dev-server':
         specifier: 'catalog:'
-        version: 0.26.1(hono@4.13.19)
+        version: 0.26.1(hono@4.13.20)
       '@kobato/api':
         specifier: workspace:*
         version: link:../api
@@ -1317,10 +1317,10 @@ importers:
         version: 6.0.0
       hono:
         specifier: 'catalog:'
-        version: 4.13.19
+        version: 4.13.20
       hono-pino:
         specifier: 'catalog:'
-        version: 0.10.3(hono@4.13.19)(pino@10.4.0)
+        version: 0.10.3(hono@4.13.20)(pino@10.4.0)
       katex:
         specifier: 'catalog:'
         version: 0.19.1
@@ -4494,8 +4494,8 @@ packages:
   bidi-js@1.1.0:
     resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
-  bowser@2.15.0:
-    resolution: {integrity: sha512-xic6KSZglg/I4ymp45fdM4GWfYpBK79Fxd/TOvJktlaPgQqqDxvmGwOPZl2V0dyeS3Lj5c180bLhXF43iyAjZQ==}
+  bowser@2.15.1:
+    resolution: {integrity: sha512-ma47ABeUiTsmG4McKDtGCgQSiTCatM97Mlbn13K42N1kPSFE14oN3WFMjtyL4KubhGvQTqYheKl4Qx2bJtMXLQ==}
 
   brace-expansion@2.1.8:
     resolution: {integrity: sha512-BnlDzDYQoplTsZSvPi86CNzmbcb07X8ufR8fk1zivaiEJlXJkiq1MQyDCVmlWcsWbj6aWXqHnrwwevbrm/Saig==}
@@ -5076,8 +5076,8 @@ packages:
       hono: '>=4.0.0'
       pino: '>=7.1.0'
 
-  hono@4.13.19:
-    resolution: {integrity: sha512-KmXvQAXwcAHV+muzbIwoJ23niEB5nMoDVr9WcRkU8mvjUECm/1+7v4Jgp7P7a+H6MLFrh+vXrGonGrGS+RQfkA==}
+  hono@4.13.20:
+    resolution: {integrity: sha512-xo6gecEJQ+CjTtOUUbcLHE8CdRKMeF4qITe+DT+OhFnSUmZR/ZBa9XavAfiGh4HlukmlaHFdaK4dz5tkTYFNmA==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@7.0.0:
@@ -5289,8 +5289,8 @@ packages:
   linkify-it@6.1.0:
     resolution: {integrity: sha512-wJ/TwpSDTLepCrQoYWYIExIKg5Zchex2Nn5yk2mFnB+6PtdkHtyLx742md9csRjjOnGkKIS/RrbY7l8D6gT9Vw==}
 
-  lint-staged@17.6.1:
-    resolution: {integrity: sha512-3MXgVN7BERDR/6CXZs2fDHGc+r0+hlvGAa9wqMlVbIS6RVRuaPOnb5SnN6wMXulwfEy9DXVkMVUN/8cUlpPDnw==}
+  lint-staged@17.6.2:
+    resolution: {integrity: sha512-c/JaXaXmleubmKUwwp4OAcq55RV9Z3HTUNdqdqPh2srtmP9Of3bcR6o00GoWDUye+9JhMuoYkhYqAVPIOZKcsw==}
     engines: {node: '>=22.22.1'}
     hasBin: true
 
@@ -6407,7 +6407,7 @@ snapshots:
       '@smithy/core': 3.41.0
       '@smithy/signature-v4': 5.7.5
       '@smithy/types': 4.20.0
-      bowser: 2.15.0
+      bowser: 2.15.1
       tslib: 2.9.1
 
   '@aws-sdk/credential-provider-env@3.972.85':
@@ -6904,18 +6904,18 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@1.19.19(hono@4.13.19)':
+  '@hono/node-server@1.19.19(hono@4.13.20)':
     dependencies:
-      hono: 4.13.19
+      hono: 4.13.20
 
-  '@hono/node-server@2.1.11(hono@4.13.19)':
+  '@hono/node-server@2.1.11(hono@4.13.20)':
     dependencies:
-      hono: 4.13.19
+      hono: 4.13.20
 
-  '@hono/vite-dev-server@0.26.1(hono@4.13.19)':
+  '@hono/vite-dev-server@0.26.1(hono@4.13.20)':
     dependencies:
-      '@hono/node-server': 1.19.19(hono@4.13.19)
-      hono: 4.13.19
+      '@hono/node-server': 1.19.19(hono@4.13.20)
+      hono: 4.13.20
       minimatch: 9.0.9
 
   '@img/colour@1.1.0': {}
@@ -8788,7 +8788,7 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  bowser@2.15.0: {}
+  bowser@2.15.1: {}
 
   brace-expansion@2.1.8:
     dependencies:
@@ -9158,13 +9158,13 @@ snapshots:
     dependencies:
       '@types/hast': 3.0.5
 
-  hono-pino@0.10.3(hono@4.13.19)(pino@10.4.0):
+  hono-pino@0.10.3(hono@4.13.20)(pino@10.4.0):
     dependencies:
       defu: 6.1.7
-      hono: 4.13.19
+      hono: 4.13.20
       pino: 10.4.0
 
-  hono@4.13.19: {}
+  hono@4.13.20: {}
 
   html-encoding-sniffer@7.0.0:
     dependencies:
@@ -9341,7 +9341,7 @@ snapshots:
     dependencies:
       uc.micro: 3.0.0
 
-  lint-staged@17.6.1:
+  lint-staged@17.6.2:
     dependencies:
       picomatch: 4.0.7
       string-argv: 0.4.0
