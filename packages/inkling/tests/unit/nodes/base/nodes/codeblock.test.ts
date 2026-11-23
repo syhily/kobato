@@ -3,7 +3,7 @@ import {
   $createBaseCodeBlockNode,
   $isCodeBlockNode,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -379,7 +379,7 @@ describe('BaseCodeBlockNode', function () {
           const { element } = codeBlockNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(el.outerHTML, html` <pre><code>&lt;script&gt;&lt;/script&gt;</code></pre> `)
+          await expectHtml(el.outerHTML, ` <pre><code>&lt;script&gt;&lt;/script&gt;</code></pre> `)
         },
       ),
     )
@@ -393,9 +393,9 @@ describe('BaseCodeBlockNode', function () {
           const { element } = codeBlockNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html` <pre><code class="language-javascript">&lt;script&gt;&lt;/script&gt;</code></pre> `,
+            ` <pre><code class="language-javascript">&lt;script&gt;&lt;/script&gt;</code></pre> `,
           )
         },
       ),
@@ -424,9 +424,9 @@ describe('BaseCodeBlockNode', function () {
           const { element } = codeBlockNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-code-card inkling-card-hascaption">
                 <pre><code class="language-javascript">&lt;script&gt;&lt;/script&gt;</code></pre>
                 <figcaption>A code block</figcaption>
@@ -451,9 +451,9 @@ describe('BaseCodeBlockNode', function () {
           const { element } = codeBlockNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html`
+            `
               <pre><code class="language-javascript" data-language="javascript" data-code="const a = 1"><span style="--shiki-light:#657b83">const</span> <span style="--shiki-light:#859900">a</span></code></pre>
             `,
           )
@@ -475,9 +475,9 @@ describe('BaseCodeBlockNode', function () {
           const { element } = codeBlockNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-code-card inkling-card-hascaption">
                 <pre><code class="language-javascript" data-language="javascript" data-code="const a = 1"><span style="--shiki-light:#657b83">const</span></code></pre>
                 <figcaption>A code block</figcaption>
@@ -537,7 +537,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre><code>Test code</code></pre>
             </figure>
@@ -558,7 +558,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre><code>Test code</code></pre>
               <figcaption>Test caption</figcaption>
@@ -579,7 +579,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre class="language-js"><code>Test code</code></pre>
               <figcaption>Test caption</figcaption>
@@ -600,7 +600,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre><code class="language-js">Test code</code></pre>
               <figcaption>Test caption</figcaption>
@@ -621,7 +621,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <div><span class="nothing-to-see-here"></span></div>
             </figure>
@@ -641,7 +641,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre><code>Test code</code></pre>
             </figure>
@@ -662,7 +662,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre class="language-javascript"><code>Test code</code></pre>
             </figure>
@@ -683,7 +683,7 @@ describe('BaseCodeBlockNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <pre><code class="language-ruby">Test code</code></pre>
             </figure>

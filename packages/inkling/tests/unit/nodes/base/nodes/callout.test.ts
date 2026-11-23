@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { BaseCalloutNode, $createBaseCalloutNode, $isCalloutNode } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -179,9 +179,9 @@ describe('BaseCalloutNode', function () {
           const node = $createBaseCalloutNode(dataset)
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text">
@@ -210,9 +210,9 @@ describe('BaseCalloutNode', function () {
           const node = $createBaseCalloutNode(dataset2)
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-text">
                   <b><strong>Hello!</strong></b
@@ -237,9 +237,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-white">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text">
@@ -266,9 +266,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text">
@@ -292,9 +292,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><a>x</a></div>
@@ -316,9 +316,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><a href="https://example.com">ok</a></div>
@@ -340,9 +340,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><mark>m</mark></div>
@@ -364,9 +364,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><code>x</code></div>
@@ -388,9 +388,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text">
@@ -414,9 +414,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><strong>bold</strong>alert(1)text</div>
@@ -438,9 +438,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text"><strong>keepdeep</strong></div>
@@ -462,9 +462,9 @@ describe('BaseCalloutNode', function () {
           const result = node.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-callout-card inkling-callout-card-blue">
                 <div class="inkling-callout-emoji">💡</div>
                 <div class="inkling-callout-text">alert(1)text</div>
@@ -482,7 +482,7 @@ describe('BaseCalloutNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-callout-card inkling-callout-card-red">
               <div class="inkling-callout-emoji">💡</div>
               <div class="inkling-callout-text">This is a callout</div>
@@ -502,7 +502,7 @@ describe('BaseCalloutNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-callout-card inkling-callout-card-red">
               <div class="inkling-callout-text">This is a callout</div>
             </div>

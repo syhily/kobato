@@ -1,7 +1,7 @@
 import { lexicalStateToHtml } from '@kobato/inkling-internal/html/headless-html'
 import { BaseImageNode, BaseHtmlNode } from '@kobato/inkling-internal/nodes/base'
+import { expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
-import Prettier from 'prettier'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const nodes = [BaseImageNode, BaseHtmlNode]
@@ -59,9 +59,9 @@ describe('Cards', function () {
 
     const renderedInput = await lexicalStateToHtml(JSON.stringify(lexicalState), { nodes, ...options })
 
-    const output = await Prettier.format(renderedInput, { parser: 'html' })
-
-    const expected = `<figure class="inkling-card inkling-image-card inkling-card-hascaption">
+    await expectHtml(
+      renderedInput,
+      `<figure class="inkling-card inkling-image-card inkling-card-hascaption">
   <img
     src="/content/images/2022/11/inkling-lexical.jpg"
     class="inkling-image"
@@ -70,8 +70,8 @@ describe('Cards', function () {
   />
   <figcaption>This is a caption</figcaption>
 </figure>
-`
-    expect(output).toBe(expected)
+`,
+    )
   })
 
   it('renders HTML card with unclosed tags', async function () {

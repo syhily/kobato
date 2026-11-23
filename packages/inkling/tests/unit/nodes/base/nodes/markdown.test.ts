@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
 import { MarkdownNode, $createMarkdownNode, $isMarkdownNode } from '@kobato/inkling-internal/nodes/base/index'
-import { dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot } from 'lexical'
@@ -166,9 +166,9 @@ describe('MarkdownNode', function () {
           const element = result.element as HTMLElement
 
           expect(result.type).toBe('inner')
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.innerHTML,
-            html`
+            `
               <h1 id="heading">HEADING</h1>
               <ul>
                 <li>list</li>

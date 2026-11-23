@@ -1,21 +1,9 @@
 import { createTestDom } from '@kobato/inkling/tests/utils/render-live'
-import Prettier from '@prettier/sync'
 import { minify } from 'html-minifier-terser'
 import assert from 'node:assert/strict'
+import { format } from 'oxfmt'
 
 const minifyOpts = { collapseWhitespace: true, collapseInlineTagWhitespace: true }
-
-export function html(partials: TemplateStringsArray, ...params: unknown[]) {
-  let output = ''
-  for (let i = 0; i < partials.length; i++) {
-    output += partials[i]
-    if (i < partials.length - 1) {
-      output += params[i] as string
-    }
-  }
-
-  return Prettier.format(output, { parser: 'html' })
-}
 
 export const dom = createTestDom()
 
@@ -24,10 +12,16 @@ export function createDocument(htmlString: string) {
   return parser.parseFromString(htmlString, 'text/html')
 }
 
-export async function expectPrettifiedHtml(actual: string, expected: string): Promise<void> {
-  const expectedFormatted = Prettier.format(await minify(expected, minifyOpts), { parser: 'html' })
+async function normalizeHtml(source: string): Promise<string> {
+  const result = await format('fragment.html', await minify(source, minifyOpts))
+  const parseErrors = result.errors.map((error) => error.message).join('\n')
+  assert.equal(result.errors.length, 0, `oxfmt could not parse the HTML under comparison:\n${parseErrors}`)
+  return result.code
+}
 
+export async function expectHtml(actual: string, expected: string): Promise<void> {
+  const expectedNormalized = await normalizeHtml(expected)
   assert.equal(typeof actual, 'string', 'expected a string')
-  const result = Prettier.format(await minify(actual, minifyOpts), { parser: 'html' })
-  assert.equal(result, expectedFormatted)
+  const actualNormalized = await normalizeHtml(actual)
+  assert.equal(actualNormalized, expectedNormalized)
 }

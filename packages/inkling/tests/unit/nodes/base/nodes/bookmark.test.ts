@@ -6,11 +6,10 @@ import {
   $isBookmarkNode,
   type BookmarkData,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
-import Prettier from '@prettier/sync'
 import { $getRoot } from 'lexical'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -237,9 +236,7 @@ describe('BaseBookmarkNode', function () {
                 </figure>
             `
 
-          const prettyExpectedHtml = Prettier.format(expectedHtml, { parser: 'html' })
-
-          await expectPrettifiedHtml(element.outerHTML, prettyExpectedHtml)
+          await expectHtml(element.outerHTML, expectedHtml)
         },
       ),
     )
@@ -550,20 +547,20 @@ describe('BaseBookmarkNode', function () {
         () => editor,
         async function () {
           const metadata = dataset.metadata as Record<string, unknown>
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure class="inkling-card inkling-bookmark-card inkling-card-hascaption">
               <a class="inkling-bookmark-container" href="${dataset.url}">
                 <div class="inkling-bookmark-content">
-                  <div class="inkling-bookmark-title">${metadata.title}</div>
-                  <div class="inkling-bookmark-description">${metadata.description}</div>
+                  <div class="inkling-bookmark-title">${String(metadata.title)}</div>
+                  <div class="inkling-bookmark-description">${String(metadata.description)}</div>
                   <div class="inkling-bookmark-metadata">
-                    <img class="inkling-bookmark-icon" src="${metadata.icon}" alt="" />
-                    <span class="inkling-bookmark-author">${metadata.publisher}</span>
-                    <span class="inkling-bookmark-publisher">${metadata.author}</span>
+                    <img class="inkling-bookmark-icon" src="${String(metadata.icon)}" alt="" />
+                    <span class="inkling-bookmark-author">${String(metadata.publisher)}</span>
+                    <span class="inkling-bookmark-publisher">${String(metadata.author)}</span>
                   </div>
                 </div>
                 <div class="inkling-bookmark-thumbnail">
-                  <img src="${metadata.thumbnail}" alt="" onerror="this.style.display = 'none'" />
+                  <img src="${String(metadata.thumbnail)}" alt="" onerror="this.style.display = 'none'" />
                 </div>
               </a>
               <figcaption>${dataset.caption}</figcaption>
@@ -592,7 +589,7 @@ describe('BaseBookmarkNode', function () {
           () => editor,
           async function () {
             const document = createDocument(
-              html`<div class="graf graf--mixtapeEmbed graf-after--p">
+              `<div class="graf graf--mixtapeEmbed graf-after--p">
                 <a
                   href="https://slack.engineering/typescript-at-slack-a81307fa288d"
                   data-href="https://slack.engineering/typescript-at-slack-a81307fa288d"
@@ -633,7 +630,7 @@ describe('BaseBookmarkNode', function () {
           () => editor,
           async function () {
             const document = createDocument(
-              html`<div class="graf graf--mixtapeEmbed graf-after--mixtapeEmbed">
+              `<div class="graf graf--mixtapeEmbed graf-after--mixtapeEmbed">
                 <a
                   href="https://slack.engineering/typescript-at-slack-a81307fa288d"
                   data-href="https://slack.engineering/typescript-at-slack-a81307fa288d"
@@ -673,7 +670,7 @@ describe('BaseBookmarkNode', function () {
           () => editor,
           async function () {
             const document = createDocument(
-              html`<div class="graf graf--mixtapeEmbed graf-after--p">
+              `<div class="graf graf--mixtapeEmbed graf-after--p">
                 <a
                   href="https://slack.engineering/typescript-at-slack-a81307fa288d"
                   data-href="https://slack.engineering/typescript-at-slack-a81307fa288d"

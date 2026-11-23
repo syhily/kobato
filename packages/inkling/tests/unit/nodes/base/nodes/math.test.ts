@@ -1,5 +1,5 @@
 import { BaseMathNode, $createBaseMathNode, $isMathNode } from '@kobato/inkling-internal/nodes/base/index'
-import { dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $getRoot, type LexicalEditor } from 'lexical'
@@ -260,9 +260,9 @@ describe('BaseMathNode', function () {
           const { element } = mathNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-math-card">
                 <svg viewBox="0 0 10 10"><path d="M0 0h10v10z"></path></svg>
               </div>
@@ -281,9 +281,9 @@ describe('BaseMathNode', function () {
           const { element } = mathNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             el.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-math-card">
                 <math
                   ><mi>x</mi><msup><mi>2</mi></msup></math
@@ -304,7 +304,7 @@ describe('BaseMathNode', function () {
           const { element } = mathNode.exportDOM(editor, exportOptions)
           const el = element as HTMLElement
 
-          await expectPrettifiedHtml(el.outerHTML, html` <pre><code>a &lt; b &amp; "c"</code></pre> `)
+          await expectHtml(el.outerHTML, ` <pre><code>a &lt; b &amp; "c"</code></pre> `)
         },
       ),
     )

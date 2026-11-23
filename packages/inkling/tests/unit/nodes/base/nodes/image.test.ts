@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { BaseImageNode, $createBaseImageNode, $isImageNode } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -162,9 +162,9 @@ describe('BaseImageNode', function () {
           const imageNode = $createBaseImageNode(dataset)
           const { element } = imageNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-image-card inkling-card-hascaption">
                 <img
                   src="/content/images/2022/11/inkling-lexical.jpg"
@@ -220,9 +220,9 @@ describe('BaseImageNode', function () {
           })
           const { element } = imageNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-image-card inkling-card-hascaption">
                 <a href="https://example.com"
                   ><img
@@ -276,9 +276,9 @@ describe('BaseImageNode', function () {
           const imageNode = $createBaseImageNode({ src: '/image.png' })
           const { element } = imageNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-image-card">
                 <img src="/image.png" class="inkling-image" alt="" loading="lazy" />
               </figure>
@@ -826,7 +826,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <img src="/image.png" alt="Alt text" title="Title text" width="3000" height="2000" />
           `)
           const nodes = $generateNodesFromDOM(editor, document) as BaseImageNode[]
@@ -846,7 +846,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <img src="http://example.com/test.png" alt="Alt test" title="Title test" />
             </figure>
@@ -866,7 +866,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <img src="http://example.com/test.png" />
               <figcaption>&nbsp; <strong>Caption test</strong></figcaption>
@@ -886,7 +886,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure class="inkling-card inkling-width-wide">
               <img src="http://example.com/test.png" />
             </figure>
@@ -903,7 +903,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure class="graf--layoutFillWidth">
               <img src="http://example.com/test.png" />
             </figure>
@@ -921,7 +921,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <img src="http://example.com/test.png" width="640" height="480" />
             </figure>
@@ -941,7 +941,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <img src="http://example.com/test.png" data-width="640" data-height="480" />
             </figure>
@@ -961,7 +961,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <img src="http://example.com/test.png" data-image-dimensions="640x480" />
             </figure>
@@ -981,7 +981,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure>
               <a href="https://example.com/link">
                 <img src="http://example.com/test.png" />
@@ -1002,7 +1002,7 @@ describe('BaseImageNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <a href="https://example.com/link">
               <img src="http://example.com/test.png" />
             </a>

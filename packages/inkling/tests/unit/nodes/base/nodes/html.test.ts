@@ -4,7 +4,7 @@ import {
   $isHtmlNode,
   type ExportDOMOptions,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -199,9 +199,9 @@ describe('BaseHtmlNode', function () {
           const result = htmlNode.exportDOM(editor, exportOptions)
           expect(result.type).toBe('value')
           const element = result.element as HTMLTextAreaElement
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.value,
-            html`
+            `
               <!--inkling-card-begin: html-->
               <p>Paragraph with:</p>
               <ul>
@@ -290,7 +290,7 @@ describe('BaseHtmlNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <span
               ><!--inkling-card-begin: html-->
               <p>here's html</p>
@@ -309,7 +309,7 @@ describe('BaseHtmlNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <span
               ><!--inkling-card-begin: html-->
               <p>here's html</p>
@@ -333,7 +333,7 @@ describe('BaseHtmlNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <span
               ><!--inkling-card-begin: html-->
               <p>here's html</p>
@@ -357,7 +357,7 @@ describe('BaseHtmlNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <table style="float:right">
               <tr>
                 <th>Month</th>
@@ -385,7 +385,7 @@ describe('BaseHtmlNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <table id="table1">
               <tr>
                 <th>title1</th>

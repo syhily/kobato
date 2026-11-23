@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { AsideNode, $createAsideNode, $isAsideNode } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -34,7 +34,7 @@ describe('AsideNode', function () {
       editorTest(
         () => editor,
         function () {
-          const document = createDocument(html` <blockquote class="inkling-blockquote-alt">Hello</blockquote> `)
+          const document = createDocument(` <blockquote class="inkling-blockquote-alt">Hello</blockquote> `)
           const nodes = $generateNodesFromDOM(editor, document)
 
           expect(nodes.length).toBe(1)

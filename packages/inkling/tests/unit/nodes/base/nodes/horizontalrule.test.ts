@@ -5,7 +5,7 @@ import {
   $createBaseHorizontalRuleNode,
   $isHorizontalRuleNode,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -46,7 +46,7 @@ describe('HorizontalNode', function () {
           const hrNode = $createBaseHorizontalRuleNode()
           const { element } = hrNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml((element as HTMLElement).outerHTML, html` <hr /> `)
+          await expectHtml((element as HTMLElement).outerHTML, ` <hr /> `)
         },
       ),
     )
@@ -58,7 +58,7 @@ describe('HorizontalNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html` <hr /> `)
+          const document = createDocument(` <hr /> `)
           const nodes = $generateNodesFromDOM(editor, document)
 
           expect(nodes.length).toBe(1)

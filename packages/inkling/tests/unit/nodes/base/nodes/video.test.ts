@@ -6,7 +6,7 @@ import {
   $isVideoNode,
   type ExportDOMOptions,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -305,9 +305,9 @@ describe('BaseVideoNode', function () {
           const videoNode = $createBaseVideoNode(payload)
           const { element } = videoNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure
                 class="inkling-card inkling-video-card inkling-width-regular"
                 data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -562,7 +562,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -647,7 +647,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -723,7 +723,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail=""
@@ -800,7 +800,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -836,7 +836,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-wide"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -865,7 +865,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"
@@ -894,7 +894,7 @@ describe('BaseVideoNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <figure
               class="inkling-card inkling-video-card inkling-width-regular"
               data-inkling-thumbnail="/content/images/2022/11/inkling-lexical.jpg"

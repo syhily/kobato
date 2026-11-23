@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// prettier-ignore
+// oxfmt-ignore
 const EXEMPT_CASES = [
   { path: '/assets/main.js',         desc: 'assets prefix' },
   { path: '/build/client.js',        desc: 'build prefix' },
@@ -34,7 +34,7 @@ const EXEMPT_CASES = [
   { path: '/admin/signin.data',      desc: 'RR data suffix' },
 ]
 
-// prettier-ignore
+// oxfmt-ignore
 const BLOCKED_CASES = [
   { path: '/',                       desc: 'root path' },
   { path: '/posts/hello',            desc: 'public post' },

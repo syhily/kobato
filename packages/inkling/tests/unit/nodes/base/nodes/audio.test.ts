@@ -6,7 +6,7 @@ import {
   $isAudioNode,
   type ExportDOMOptions,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -270,9 +270,9 @@ describe('BaseAudioNode', function () {
           const audioNode = $createBaseAudioNode(dataset)
           const { element } = audioNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             getHTMLElement(element).outerHTML,
-            html`<div class="inkling-card inkling-audio-card">
+            `<div class="inkling-card inkling-audio-card">
               <img
                 src="/content/images/2022/11/inkling-audio-lexical.jpg"
                 alt="audio-thumbnail"
@@ -437,7 +437,7 @@ describe('BaseAudioNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-audio-card">
               <img
                 src="/content/images/2022/11/inkling-audio-lexical.jpg"
@@ -518,7 +518,7 @@ describe('BaseAudioNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-audio-card">
               <div class="inkling-audio-player-container">
                 <audio src="/content/audio/2022/11/inkling-lexical.mp3" preload="metadata"></audio>
@@ -542,7 +542,7 @@ describe('BaseAudioNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-audio-card">
               <div class="inkling-audio-player-container">
                 <audio src="/content/audio/2022/11/inkling-lexical.mp3" preload="metadata"></audio>

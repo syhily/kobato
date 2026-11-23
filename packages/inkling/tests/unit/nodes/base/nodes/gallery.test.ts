@@ -7,7 +7,7 @@ import {
   $isGalleryNode,
   BaseImageNode,
 } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -486,7 +486,7 @@ describe('BaseGalleryNode', function () {
         editorTest(
           () => editor,
           async function () {
-            const document = createDocument(html`
+            const document = createDocument(`
               <div class="sqs-gallery-container sqs-gallery-block-stacked">
                 <div class="sqs-gallery">
                   <div class="image-wrapper" id="1234567890" data-type="image" data-animation-role="image">
@@ -586,7 +586,7 @@ describe('BaseGalleryNode', function () {
         editorTest(
           () => editor,
           async function () {
-            const document = createDocument(html`
+            const document = createDocument(`
               <div class="sqs-gallery-container sqs-gallery-block-stacked">
                 <div class="sqs-gallery">
                   <div class="image-wrapper" id="1234567890" data-type="image" data-animation-role="image">
@@ -685,7 +685,7 @@ describe('BaseGalleryNode', function () {
         editorTest(
           () => editor,
           async function () {
-            const document = createDocument(html`
+            const document = createDocument(`
               <div
                 class="sqs-gallery-container sqs-gallery-block-slideshow sqs-gallery-block-show-meta sqs-gallery-block-meta-position-bottom"
               >
@@ -797,7 +797,7 @@ describe('BaseGalleryNode', function () {
         editorTest(
           () => editor,
           async function () {
-            const document = createDocument(html`
+            const document = createDocument(`
               <div
                 class="sqs-gallery-container sqs-gallery-block-grid sqs-gallery-aspect-ratio-standard sqs-gallery-thumbnails-per-row-1"
               >
@@ -891,7 +891,7 @@ describe('BaseGalleryNode', function () {
         editorTest(
           () => editor,
           async function () {
-            const document = createDocument(html`
+            const document = createDocument(`
               <div
                 class="summary-item-thing sqs-gallery-container sqs-gallery-block-grid sqs-gallery-aspect-ratio-standard sqs-gallery-thumbnails-per-row-1"
               >
@@ -1139,9 +1139,9 @@ describe('BaseGalleryNode', function () {
           const galleryNode = $createBaseGalleryNode(dataset)
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, canTransformImage: () => false })
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-gallery-card inkling-width-wide inkling-card-hascaption">
                 <div class="inkling-gallery-container">
                   <div class="inkling-gallery-row">
@@ -1253,9 +1253,9 @@ describe('BaseGalleryNode', function () {
           })
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, canTransformImage: () => false })
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-gallery-card inkling-width-wide inkling-card-hascaption">
                 <div class="inkling-gallery-container">
                   <div class="inkling-gallery-row">
@@ -1297,9 +1297,9 @@ describe('BaseGalleryNode', function () {
           })
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, canTransformImage: () => false })
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-gallery-card inkling-width-wide inkling-card-hascaption">
                 <div class="inkling-gallery-container">
                   <div class="inkling-gallery-row">
@@ -1396,9 +1396,9 @@ describe('BaseGalleryNode', function () {
             caption: 'Test caption',
           })
           const { element } = galleryNode.exportDOM(editor, { ...exportOptions, canTransformImage: () => false })
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-gallery-card inkling-width-wide inkling-card-hascaption">
                 <div class="inkling-gallery-container">
                   <div class="inkling-gallery-row">
@@ -1546,9 +1546,9 @@ describe('BaseGalleryNode', function () {
           delete (exportOptions.imageOptimization as Record<string, unknown>).contentImageSizes
           const { element } = galleryNode.exportDOM(editor, exportOptions)
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             (element as HTMLElement).outerHTML,
-            html`
+            `
               <figure class="inkling-card inkling-gallery-card inkling-width-wide">
                 <div class="inkling-gallery-container">
                   <div class="inkling-gallery-row">
@@ -1674,9 +1674,9 @@ describe('BaseGalleryNode', function () {
             delete (exportOptions.imageOptimization as Record<string, unknown>).defaultMaxWidth
             const { element } = galleryNode.exportDOM(editor, exportOptions)
 
-            await expectPrettifiedHtml(
+            await expectHtml(
               (element as HTMLElement).outerHTML,
-              html`
+              `
                 <figure class="inkling-card inkling-gallery-card inkling-width-wide">
                   <div class="inkling-gallery-container">
                     <div class="inkling-gallery-row">
@@ -1749,9 +1749,9 @@ describe('BaseGalleryNode', function () {
             exportOptions.siteUrl = 'https://localhost:2368'
             const { element } = galleryNode.exportDOM(editor, exportOptions)
 
-            await expectPrettifiedHtml(
+            await expectHtml(
               (element as HTMLElement).outerHTML,
-              html`
+              `
                 <figure class="inkling-card inkling-gallery-card inkling-width-wide">
                   <div class="inkling-gallery-container">
                     <div class="inkling-gallery-row">

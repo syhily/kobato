@@ -74,8 +74,6 @@ Jenkinsfile     text
 .jshintrc       text
 .jshintignore   text
 .stylelintrc    text
-.prettierignore text
-.prettierrc     text
 .scalafmt.conf  text
 *.bowerrc       text
 *.conf          text

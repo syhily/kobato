@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { BaseToggleNode, $createBaseToggleNode, $isToggleNode } from '@kobato/inkling-internal/nodes/base/index'
 import { populateNestedEditor, setupNestedEditor } from '@kobato/inkling-internal/nodes/nested-editors'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -272,9 +272,9 @@ describe('BaseToggleNode', function () {
           const result = toggleNode.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`
+            `
               <div class="inkling-card inkling-toggle-card" data-inkling-toggle-state="close">
                 <div class="inkling-toggle-heading">
                   <h4 class="inkling-toggle-heading-text">Heading</h4>
@@ -307,9 +307,9 @@ describe('BaseToggleNode', function () {
             const result = toggleNode.exportDOM(editor, exportOptions)
             const element = result.element as HTMLElement
 
-            await expectPrettifiedHtml(
+            await expectHtml(
               element.outerHTML,
-              html`
+              `
                 <div class="inkling-card inkling-toggle-card" data-inkling-toggle-state="close">
                   <div class="inkling-toggle-heading">
                     <h4 class="inkling-toggle-heading-text">&lt;script&gt;alert(1)&lt;/script&gt;</h4>
@@ -371,7 +371,7 @@ describe('BaseToggleNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-toggle-card" data-inkling-toggle-state="close">
               <div class="inkling-toggle-heading">
                 <h4 class="inkling-toggle-heading-text">Heading</h4>

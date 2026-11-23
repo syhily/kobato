@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 
 import { BaseButtonNode, $createBaseButtonNode, $isButtonNode } from '@kobato/inkling-internal/nodes/base/index'
-import { createDocument, dom, expectPrettifiedHtml, html } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
+import { createDocument, dom, expectHtml } from '@kobato/inkling/tests/unit/nodes/base/test-helpers'
 import { editorTest } from '@kobato/inkling/tests/utils/test-editor'
 import { createHeadlessEditor } from '@lexical/headless'
 import { $generateNodesFromDOM } from '@lexical/html'
@@ -157,9 +157,9 @@ describe('BaseButtonNode', function () {
           const result = buttonNode.exportDOM(editor, exportOptions)
           const element = result.element as HTMLElement
 
-          await expectPrettifiedHtml(
+          await expectHtml(
             element.outerHTML,
-            html`<div class="inkling-card inkling-button-card inkling-align-center">
+            `<div class="inkling-card inkling-button-card inkling-align-center">
               <a href="http://blog.com/post1" class="inkling-btn inkling-btn-accent">click me</a>
             </div>`,
           )
@@ -308,7 +308,7 @@ describe('BaseButtonNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-button-card inkling-align-center">
               <a href="http://someblog.com/somepost" class="inkling-btn inkling-btn-accent">click me</a>
             </div>
@@ -327,7 +327,7 @@ describe('BaseButtonNode', function () {
       editorTest(
         () => editor,
         async function () {
-          const document = createDocument(html`
+          const document = createDocument(`
             <div class="inkling-card inkling-button-card inkling-align-center">
               <a href="#/portal/signup" class="inkling-btn inkling-btn-accent">Subscribe 1</a>
             </div>
