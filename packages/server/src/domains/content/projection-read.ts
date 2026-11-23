@@ -1,4 +1,4 @@
-import type { ContentRow } from '@kobato/db/types'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 

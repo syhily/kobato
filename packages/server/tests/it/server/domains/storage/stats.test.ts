@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle, BrandingObjectRef } from '@kobato/settings/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { backup as backupTable } from '@kobato/db/schema/backup'
-import { image, music } from '@kobato/db/schema/media'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { backup as backupTable } from '@kobato/db/sqlite/schema/backup'
+import { image, music } from '@kobato/db/sqlite/schema/media'
 import { getLocalStorageMigrationStats } from '@kobato/server/domains/storage/stats'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'

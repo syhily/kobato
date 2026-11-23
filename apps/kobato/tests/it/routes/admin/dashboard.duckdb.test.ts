@@ -1,8 +1,8 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
-import { sqliteOf } from '@kobato/db/database'
-import { comment as commentTable } from '@kobato/db/schema/comment'
-import { post as postTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { comment as commentTable } from '@kobato/db/sqlite/schema/comment'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,

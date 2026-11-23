@@ -2,7 +2,7 @@
 
 SQLite migrations for the content database. Layout (drizzle-kit 1.0 rc): one `<timestamp>_<name>/` folder per
 migration holding `migration.sql` + `snapshot.json`; there is NO `meta/_journal.json`. The runtime migrator
-(`@kobato/db/migrate.ts`) applies every folder's `migration.sql` in folder-name order and records it in
+(`@kobato/db/sqlite/migrate.ts`) applies every folder's `migration.sql` in folder-name order and records it in
 `__drizzle_migrations`; `snapshot.json` is drizzle-kit's diff input only (the SEA build excludes it).
 
 - Generate with `pnpm run db:gen`; never hand-write a new migration folder.

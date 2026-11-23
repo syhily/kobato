@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
-import type { ContentRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 
-import { removePostSearchIndex, upsertPostSearchIndex } from '@kobato/db/operations/post-search'
+import { removePostSearchIndex, upsertPostSearchIndex } from '@kobato/db/sqlite/operations/content/post-search'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection'
 

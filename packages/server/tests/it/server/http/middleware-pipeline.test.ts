@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { session as sessionTable } from '@kobato/db/schema/session'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
 import {
   buildCspHeader,
   buildLoadContext,

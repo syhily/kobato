@@ -1,6 +1,6 @@
 import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@kobato/api/contracts/music'
-import type { Database } from '@kobato/db/database'
-import type { MusicRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { MusicRow } from '@kobato/db/sqlite/types'
 
 import {
   type AdminMusicListFilters,
@@ -9,7 +9,7 @@ import {
   findMusicByPlayerId,
   findMusicByPlayerIds,
   listAdminMusicRows,
-} from '@kobato/db/operations/music'
+} from '@kobato/db/sqlite/operations/content/music'
 import { toAdminMusicDto } from '@kobato/server/domains/music/projection'
 import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'

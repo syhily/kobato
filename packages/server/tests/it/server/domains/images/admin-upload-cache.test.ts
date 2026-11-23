@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { image } from '@kobato/db/schema/media'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { image } from '@kobato/db/sqlite/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

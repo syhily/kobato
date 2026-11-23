@@ -9,23 +9,21 @@
   "type": "module",
   "exports": {
     "./package.json": "./package.json",
-    "./database": "./src/database.ts",
-    "./errors": "./src/errors.ts",
-    "./like-escape": "./src/like-escape.ts",
-    "./migrate": "./src/migrate.ts",
-    "./target": "./src/target.ts",
-    "./types": "./src/types.ts",
+    "./sqlite/*": [
+      "./src/sqlite/*.ts",
+      "./src/sqlite/*.tsx"
+    ],
+    "./sqlite/operations/*": [
+      "./src/sqlite/operations/*.ts",
+      "./src/sqlite/operations/*.tsx"
+    ],
+    "./sqlite/schema/*": [
+      "./src/sqlite/schema/*.ts",
+      "./src/sqlite/schema/*.tsx"
+    ],
     "./duckdb/*": [
       "./src/duckdb/*.ts",
       "./src/duckdb/*.tsx"
-    ],
-    "./operations/*": [
-      "./src/operations/*.ts",
-      "./src/operations/*.tsx"
-    ],
-    "./schema/*": [
-      "./src/schema/*.ts",
-      "./src/schema/*.tsx"
     ],
     "./drizzle/*": "./drizzle/*"
   },
@@ -35,15 +33,15 @@
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
+    "@duckdbfan/drizzle-duckdb": "catalog:",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
-    "drizzle-kit": "catalog:",
-    "drizzle-orm": "catalog:",
-    "kysely": "catalog:",
+    "drizzle-kit": "1.0.0-rc.6",
+    "drizzle-orm": "1.0.0-rc.6",
     "vitest": "catalog:"
   }
 }

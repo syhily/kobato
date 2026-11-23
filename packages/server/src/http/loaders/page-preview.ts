@@ -1,5 +1,5 @@
 import type { DetailPageShell, DraftMarker, Page } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
 import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle'

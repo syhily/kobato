@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { DEFAULT_AVATAR_SIZE } from '@kobato/assets/avatar'
 import { GRAVATAR_MIRROR_URLS, isAllowedMirrorUrl } from '@kobato/assets/gravatar'
 import { encodedEmail } from '@kobato/auth/security'
-import { findEmailById } from '@kobato/db/operations/user'
+import { findEmailById } from '@kobato/db/sqlite/operations/identity/user'
 import { type AvatarEntry, AvatarStatus, get, set, through } from '@kobato/server/infra/cache/registry'
 import { isNumeric } from '@kobato/server/infra/coerce'
 import { compressImage, imageWidth } from '@kobato/server/infra/image/compress'

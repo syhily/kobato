@@ -1,4 +1,4 @@
-import { resolveStoragePath } from '@kobato/db/database'
+import { resolveStoragePath } from '@kobato/db/sqlite/database'
 import { serverConfig } from '@kobato/server/infra/config'
 
 let testPaths: { database: string; analytics: string } | null = null

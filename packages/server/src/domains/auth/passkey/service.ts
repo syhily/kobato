@@ -1,7 +1,7 @@
 import type { LoginMethod } from '@kobato/api/contracts/users'
-import type { Database } from '@kobato/db/database'
-import type { SafeUser } from '@kobato/db/operations/user'
-import type { PasskeyCredentialRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { SafeUser } from '@kobato/db/sqlite/operations/identity/user'
+import type { PasskeyCredentialRow } from '@kobato/db/sqlite/types'
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -10,8 +10,8 @@ import type {
 } from '@simplewebauthn/server'
 
 import { isValidPasskeyDomain } from '@kobato/auth/network'
-import { isUniqueConstraintError } from '@kobato/db/errors'
-import { consumeLiveOneTimeToken, upsertOneTimeToken } from '@kobato/db/operations/one-time-token'
+import { isUniqueConstraintError } from '@kobato/db/sqlite/errors'
+import { consumeLiveOneTimeToken, upsertOneTimeToken } from '@kobato/db/sqlite/operations/identity/otp'
 import {
   deletePasskeyCredentialsAndMaybeRevertLogin,
   findPasskeyByCredentialId,
@@ -20,8 +20,8 @@ import {
   listCredentialMetasForUser,
   setUserLoginMethod,
   updatePasskeyCounter,
-} from '@kobato/db/operations/passkey'
-import { findSafeUserById, findUserByEmail } from '@kobato/db/operations/user'
+} from '@kobato/db/sqlite/operations/identity/passkey'
+import { findSafeUserById, findUserByEmail } from '@kobato/db/sqlite/operations/identity/user'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'

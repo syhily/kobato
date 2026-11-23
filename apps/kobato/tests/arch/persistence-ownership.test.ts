@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 const DB_SRC = 'packages/db/src'
 const IGNORE_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', 'tmp', '.react-router'])
-const BANNED_IMPORTS = ['node:sqlite', 'drizzle-orm', '@duckdb/node-api', 'kysely'] as const
+const BANNED_IMPORTS = ['node:sqlite', 'drizzle-orm', '@duckdb/node-api', '@duckdbfan/drizzle-duckdb'] as const
 const BANNED_UNWRAP_NAMES = /\b(?:sqliteOf|sqliteEngineOf|engineOf|DuckDbEngine)\b/
 const BANNED_QUERY_CALL =
   /\b(?:db|tx|client|handle)\.(?:select|insert|update|delete|transaction|prepare|exec|run|runAndReadAll)\s*\(/
@@ -93,7 +93,7 @@ describe('persistence ownership', () => {
       'packages/server/src/example.ts',
       [
         "import { DatabaseSync } from 'node:sqlite'",
-        "import { sqliteOf } from '@kobato/db/database'",
+        "import { sqliteOf } from '@kobato/db/sqlite/database'",
         'db.select()',
         "handle.writer.run('CHECKPOINT')",
       ].join('\n'),

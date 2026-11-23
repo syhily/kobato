@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Env } from '@kobato/server/http/hono-env'
 import type { ServerPhase } from '@kobato/server/infra/lifecycle'
 

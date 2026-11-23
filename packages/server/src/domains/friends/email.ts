@@ -1,4 +1,4 @@
-import type { FriendRow } from '@kobato/db/types'
+import type { FriendRow } from '@kobato/db/sqlite/types'
 import type { AdminNotificationRow } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
 import type { SendResult } from '@kobato/server/infra/email/types'
 

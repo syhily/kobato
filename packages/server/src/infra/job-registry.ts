@@ -1,6 +1,6 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { databaseOf } from '@kobato/db/database'
+import { databaseOf } from '@kobato/db/sqlite/database'
 import { getLogger } from '@kobato/server/infra/logger'
 import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@kobato/server/infra/scheduler-utils'
 

@@ -1,4 +1,4 @@
-import type { EntityTarget } from '@kobato/db/target'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 
 import { contentDetailContract } from '@kobato/api/rpc/public/content'
 import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html'

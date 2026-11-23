@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle, RateLimitSettings } from '@kobato/settings/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { session as sessionTable } from '@kobato/db/schema/session'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { accountRouter } from '@kobato/server/http/controllers/account/account.controller'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'

@@ -1,5 +1,5 @@
 import { adminPostsContract } from '@kobato/api/rpc/admin/posts'
-import { findTagNamesByPostId } from '@kobato/db/operations/post-tag'
+import { findTagNamesByPostId } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview'
 import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input'

@@ -1,7 +1,7 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
 import { accountSelfContract } from '@kobato/api/rpc/account/self'
-import { findSafeUserById } from '@kobato/db/operations/user'
+import { findSafeUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'

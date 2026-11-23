@@ -1,5 +1,5 @@
 import type { DuckDBConnection, DuckDBInstance } from '@duckdb/node-api'
-import type { Compilable } from 'kysely'
+import type { Query, SQLWrapper } from 'drizzle-orm'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
@@ -45,7 +45,11 @@ export interface AnalyticsReader {
   readonly [analyticsReaderBrand]: true
 }
 
-/** Opaque compiled analytics query; the runtime value is a Kysely compilable produced inside `@kobato/db`. */
+export interface AnalyticsCompilable extends SQLWrapper {
+  toSQL(): Query
+}
+
+/** Opaque compiled analytics query; the runtime value is a Drizzle query produced inside `@kobato/db`. */
 export interface AnalyticsQuery {
   readonly [analyticsQueryBrand]: true
 }
@@ -66,7 +70,7 @@ export function analyticsReaderOf(handle: AnalyticsHandle): AnalyticsReader {
   return unsafeCast<AnalyticsReader>(engineOf(handle).reader)
 }
 
-export function analyticsQueryOf(query: Compilable): AnalyticsQuery {
+export function analyticsQueryOf(query: AnalyticsCompilable): AnalyticsQuery {
   return unsafeCast<AnalyticsQuery>(query)
 }
 
@@ -78,6 +82,6 @@ export function readerConnection(reader: AnalyticsReader): DuckDBConnection {
   return unsafeCast<DuckDBConnection>(reader)
 }
 
-export function compilableQuery(query: AnalyticsQuery): Compilable {
-  return unsafeCast<Compilable>(query)
+export function compilableQuery(query: AnalyticsQuery): AnalyticsCompilable {
+  return unsafeCast<AnalyticsCompilable>(query)
 }

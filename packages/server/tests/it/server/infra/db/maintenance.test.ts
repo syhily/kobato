@@ -1,7 +1,7 @@
-import type { DatabaseHandle } from '@kobato/db/database'
+import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { databaseOf, sqliteEngineOf, sqliteOf } from '@kobato/db/database'
-import { jobRun } from '@kobato/db/schema/job-run'
+import { databaseOf, sqliteEngineOf, sqliteOf } from '@kobato/db/sqlite/database'
+import { jobRun } from '@kobato/db/sqlite/schema/job-run'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'

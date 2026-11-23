@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database'
 import type { AnalyticsHandle, AnalyticsReader } from '@kobato/db/duckdb/connection'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration'
 import { analyticsReaderOf, analyticsWriterOf } from '@kobato/db/duckdb/connection'

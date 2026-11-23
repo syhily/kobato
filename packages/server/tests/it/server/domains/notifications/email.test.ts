@@ -1,8 +1,8 @@
 import type { Role } from '@kobato/auth/roles'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { sqliteOf } from '@kobato/db/database'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import {
   notifyAdmins,
@@ -387,7 +387,7 @@ describe('notifications email — descriptor resolution', () => {
     setSiteLocale('zh-TW')
     await seedUser('admin', 'admin')
     const title = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
-    const { createNotificationWithRecipients } = await import('@kobato/db/operations/notification')
+    const { createNotificationWithRecipients } = await import('@kobato/db/sqlite/operations/engagement/notification')
     const { sendNotificationEmail } = await import('@kobato/server/domains/notifications/email')
     const adminRows = sqliteOf(db).select().from(user).all()
 

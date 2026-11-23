@@ -1,7 +1,7 @@
 import type { DetailPageComments } from '@kobato/api/contracts/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { EntityTarget } from '@kobato/db/target'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 

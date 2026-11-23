@@ -1,7 +1,7 @@
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { post } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { post } from '@kobato/db/sqlite/schema/post'
 import { sendNewComment } from '@kobato/server/domains/comments/services/email'
 import { sendTestMail } from '@kobato/server/infra/email/sender'
 import { createServerTranslator } from '@kobato/server/infra/i18n'

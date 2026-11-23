@@ -1,5 +1,5 @@
 import type { DetailPostShell, DraftMarker, Post } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
 import { toClientPost, toDetailPostShell } from '@kobato/catalog/projection'

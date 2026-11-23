@@ -8,7 +8,7 @@ import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query
 export async function queryCounters(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<CountersSummary> {
   const rows = await runAnalyticsQuery(
     reader,
-    createAnalyticsQuery().select(visitAggregates('visits')).where(buildAnalyticsFilter(input)),
+    createAnalyticsQuery(visitAggregates('visits')).where(buildAnalyticsFilter(input)),
     'counters',
   )
   const row = rows[0]

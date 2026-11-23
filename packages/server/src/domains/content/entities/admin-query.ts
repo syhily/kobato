@@ -1,5 +1,5 @@
 import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
@@ -9,17 +9,21 @@ import type {
 import type { LimitOffset } from '@kobato/server/domains/content/pagination'
 import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list'
 
-import { findContentById, findLatestRevision, listRevisions } from '@kobato/db/operations/entity-revision'
+import {
+  findContentById,
+  findLatestRevision,
+  listRevisions,
+} from '@kobato/db/sqlite/operations/content/entity-revision'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
 import { listForAdmin } from '@kobato/server/domains/content/services/admin-list'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset> {
   listMetas: (
-    db: import('@kobato/db/database').Database,
+    db: import('@kobato/db/sqlite/database').Database,
     filters: TFilters,
   ) => Promise<(TMeta & { authorName: string | null })[]>
-  countMetas: (db: import('@kobato/db/database').Database, filters: TFilters) => Promise<number>
+  countMetas: (db: import('@kobato/db/sqlite/database').Database, filters: TFilters) => Promise<number>
 }
 
 export interface EntityAdminDetail<TAdminDto> {

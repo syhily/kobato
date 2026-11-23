@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { findSettingByScope } from '@kobato/db/operations/setting'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { findSettingByScope } from '@kobato/db/sqlite/operations/system/setting'
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'

@@ -1,8 +1,8 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { sqliteOf } from '@kobato/db/database'
-import { pickDueWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
-import { webmentionOutbox } from '@kobato/db/schema/webmention'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { pickDueWebmentionOutbox } from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
+import { webmentionOutbox } from '@kobato/db/sqlite/schema/webmention'
 import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith } from '@kobato/server/tests/utils/lexical'

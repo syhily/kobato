@@ -1,6 +1,6 @@
 import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
 import { toListingPostCard } from '@kobato/catalog/projection'
 import {
@@ -10,7 +10,7 @@ import {
   listSitemapPosts as listSitemapPostsOp,
   type PublicPostFilters,
   type SitemapPostRow,
-} from '@kobato/db/operations/post'
+} from '@kobato/db/sqlite/operations/content/post'
 import { queryMetadata } from '@kobato/server/domains/comments/services/likes'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'

@@ -1,5 +1,5 @@
 import type { ClientPost } from '@kobato/catalog/model'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
 import { readStringArray } from '@kobato/server/infra/coerce'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'

@@ -1,16 +1,16 @@
-import type { Database } from '@kobato/db/database'
-import type { WebmentionRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { WebmentionRow } from '@kobato/db/sqlite/types'
 import type { WebmentionType } from '@kobato/server/domains/webmentions/classify'
 import type { SourceMetadata } from '@kobato/server/domains/webmentions/verify'
 
+import { findWebmentionById } from '@kobato/db/sqlite/operations/engagement/webmention'
 import {
   applyWebmentionReverifyFailure,
   applyWebmentionReverifySuccess,
-  findWebmentionById,
   hideExhaustedPendingWebmentions,
   pickWebmentionsDueForReverify,
   WEBMENTION_HIDE_STREAK,
-} from '@kobato/db/operations/webmention'
+} from '@kobato/db/sqlite/operations/engagement/webmention-verification'
 import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { verifyWebmentionSource } from '@kobato/server/domains/webmentions/receive'
 import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/target'

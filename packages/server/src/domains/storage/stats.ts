@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { countLocalStorageObjects } from '@kobato/db/operations/storage'
+import { countLocalStorageObjects } from '@kobato/db/sqlite/operations/system/storage'
 import { BRANDING_SLOTS } from '@kobato/server/domains/assets/services/storage'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

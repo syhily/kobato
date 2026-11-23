@@ -1,39 +1,42 @@
-import { compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { sql } from 'kysely'
+import { analyticsIdentifier, compileAnalyticsQuery, createAnalyticsQuery } from '@kobato/db/duckdb/query'
+import { accessEvents } from '@kobato/db/duckdb/schema'
+import { desc, eq, sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 
 describe('duckDB analytics SQL compiler', () => {
   it('uses the local event table and exact counts', () => {
-    const compiled = compileAnalyticsQuery(createAnalyticsQuery().select(sql<number>`COUNT(*)`.as('visits')))
-    expect(compiled.sql).toBe('select COUNT(*) as visits from access_events')
-    expect(compiled.parameters).toEqual([])
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery({ visits: sql<number>`COUNT(*)` }))
+    expect(compiled.sql).toBe('select COUNT(*) as "visits" from "access_events"')
+    expect(compiled.params).toEqual([])
   })
 
   it('keeps user values in bound parameters', () => {
     const payload = String.raw`it's \'; DROP TABLE access_events; --`
-    const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where('index1', '=', payload))
-    expect(compiled.sql).toBe('select * from access_events where index1 = ?')
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery().where(eq(accessEvents.index1, payload)))
+    expect(compiled.sql).toContain('where "access_events"."index1" = $1')
     expect(compiled.sql).not.toContain(payload)
-    expect(compiled.parameters).toEqual([payload])
+    expect(compiled.params).toEqual([payload])
   })
 
   it('binds pagination and preserves stable ordering', () => {
     const compiled = compileAnalyticsQuery(
-      createAnalyticsQuery().selectAll().orderBy('timestamp', 'desc').orderBy('event_id', 'desc').limit(10),
+      createAnalyticsQuery().orderBy(desc(accessEvents.timestamp), desc(accessEvents.eventId)).limit(10),
     )
-    expect(compiled.sql).toContain('order by timestamp desc, event_id desc limit ?')
-    expect(compiled.parameters).toEqual([10])
+    expect(compiled.sql).toContain(
+      'order by "access_events"."timestamp" desc, "access_events"."event_id" desc limit $1',
+    )
+    expect(compiled.params).toEqual([10])
   })
 
-  it.each(['invalid-column', 'column;drop', '`column`'])('rejects invalid column %s', (column) => {
-    expect(() => compileAnalyticsQuery(createAnalyticsQuery().select(sql.ref(column).as('value')))).toThrow(
-      'Invalid Analytics identifier',
-    )
-  })
+  it.each(['invalid-column', 'column;drop', '`column`', 'column.', 'column..drop'])(
+    'rejects invalid column %s',
+    (column) => {
+      expect(() => analyticsIdentifier(column)).toThrow('Invalid Analytics identifier')
+    },
+  )
 
-  it('rejects invalid result aliases', () => {
-    expect(() => compileAnalyticsQuery(createAnalyticsQuery().select(sql.ref('blob1').as('invalid-alias')))).toThrow(
-      'Invalid Analytics identifier',
-    )
+  it('quotes result aliases', () => {
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery({ 'invalid-alias': accessEvents.blob1 }))
+    expect(compiled.sql).toContain('"blob1" as "invalid-alias"')
   })
 })

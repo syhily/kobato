@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'
 
-import { databaseOf, sqliteOf } from '@kobato/db/database'
-import { user as userTable } from '@kobato/db/schema/user'
+import { databaseOf, sqliteOf } from '@kobato/db/sqlite/database'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { Hono } from 'hono'

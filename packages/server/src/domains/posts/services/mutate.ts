@@ -1,5 +1,5 @@
 import type { AdminPostDto } from '@kobato/api/contracts/posts'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type { PostMetaWriteInput } from '@kobato/server/domains/posts/services/shared'
 

@@ -1,6 +1,6 @@
 import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/api/contracts/jobs'
-import { sqliteOf } from '@kobato/db/database'
-import { jobRun } from '@kobato/db/schema/job-run'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { jobRun } from '@kobato/db/sqlite/schema/job-run'
 import {
   JOB_FAILURE_NOTIFY_DEDUPE_MS,
   JOB_RUN_KEEP_PER_TASK,

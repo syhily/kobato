@@ -1,5 +1,5 @@
 import type { ResolvedImageMeta } from '@kobato/assets/images'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { resolveImageRefs, type ResolvedImageRef } from '@kobato/server/domains/images/services/resolve'
 

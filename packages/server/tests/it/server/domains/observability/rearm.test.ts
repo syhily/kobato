@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'

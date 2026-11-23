@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { seedMetric } from '@kobato/server/tests/utils/db'
 import { regularSession } from '@kobato/server/tests/utils/session'

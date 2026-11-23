@@ -1,4 +1,4 @@
-import type { PageMetaRow } from '@kobato/db/types'
+import type { PageMetaRow } from '@kobato/db/sqlite/types'
 import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor'
 
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

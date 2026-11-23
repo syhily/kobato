@@ -1,5 +1,5 @@
 import type { ServerType } from '@hono/node-server'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Hono } from 'hono'
 
 import { serve } from '@hono/node-server'

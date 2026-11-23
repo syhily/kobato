@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { music } from '@kobato/db/schema/media'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { music } from '@kobato/db/sqlite/schema/media'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

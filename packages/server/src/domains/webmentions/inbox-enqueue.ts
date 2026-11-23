@@ -1,11 +1,11 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema'
 
 import {
   countQueuedWebmentionInbox,
   countQueuedWebmentionInboxBySourceHost,
   upsertWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox'
+} from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
 import { rescheduleWebmentionInbox } from '@kobato/server/domains/webmentions/inbox-scheduler'
 import { resolveWebmentionTargetOrThrow } from '@kobato/server/domains/webmentions/target'
 import { requireSourceKey } from '@kobato/server/domains/webmentions/verify'

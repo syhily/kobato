@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
-import { findImagesByIds, updateImageNote } from '@kobato/db/operations/image'
+import { findImagesByIds, updateImageNote } from '@kobato/db/sqlite/operations/content/image'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { idFromString } from '@kobato/utils/id'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

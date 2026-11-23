@@ -1,7 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { closeDatabase, databaseOf } from '@kobato/db/database'
-import { upsertSetting } from '@kobato/db/operations/setting'
+import { closeDatabase, databaseOf } from '@kobato/db/sqlite/database'
+import { upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { requestContext } from '@kobato/server/http/request-context'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context'

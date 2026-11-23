@@ -1,6 +1,6 @@
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/comments'
-import type { Database } from '@kobato/db/database'
-import type { AdminCommentListFilters, AdminPendingKind } from '@kobato/db/operations/comment'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { AdminCommentListFilters, AdminPendingKind } from '@kobato/db/sqlite/operations/engagement/comment-admin'
 import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'
 
 import {
@@ -10,8 +10,8 @@ import {
   listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
-} from '@kobato/db/operations/comment'
-import { findMetricByPublicId } from '@kobato/db/operations/metric'
+} from '@kobato/db/sqlite/operations/engagement/comment-admin'
+import { findMetricByPublicId } from '@kobato/db/sqlite/operations/system/metric'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { asCommentTarget } from '@kobato/server/domains/comments/services/shared'
 import { entityPermalink } from '@kobato/server/domains/content/urls'

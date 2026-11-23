@@ -1,4 +1,4 @@
-import { findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox'
+import { findNextWebmentionInboxDueAt } from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
 import { runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox'
 import { makeQueueScheduler } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { nudgeRegisteredJob } from '@kobato/server/infra/job-registry'

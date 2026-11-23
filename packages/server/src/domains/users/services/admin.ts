@@ -1,7 +1,13 @@
 import type { LoginMethod } from '@kobato/api/contracts/users'
-import type { Database } from '@kobato/db/database'
-import type { User } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { User } from '@kobato/db/sqlite/types'
 
+import {
+  countUsers as countUsersOp,
+  findUserByEmail,
+  setUserMuted,
+  softDeleteUserById,
+} from '@kobato/db/sqlite/operations/identity/user'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,
@@ -9,16 +15,12 @@ import {
   countAdminUsers,
   findAdminUserById,
   listAdminUsers,
-} from '@kobato/db/operations/admin-user'
+} from '@kobato/db/sqlite/operations/identity/user-admin'
 import {
   changeUserRoleGuarded,
-  countUsers as countUsersOp,
-  findUserByEmail,
   inviteAuthorWithVerification,
-  setUserMuted,
-  softDeleteUserById,
   softDeleteUserGuarded,
-} from '@kobato/db/operations/user'
+} from '@kobato/db/sqlite/operations/identity/user-workflow'
 import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
 import { issueResetToken, mintSetupTokenValues } from '@kobato/server/domains/auth/verification-tokens'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@kobato/server/infra/email/sender'

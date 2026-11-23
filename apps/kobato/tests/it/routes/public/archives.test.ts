@@ -1,8 +1,8 @@
 import type { ListingPostCardWithMetadata } from '@kobato/catalog/model'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { post as postTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
 import { eq } from 'drizzle-orm'

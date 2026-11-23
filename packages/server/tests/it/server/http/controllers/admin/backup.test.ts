@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { sqliteOf } from '@kobato/db/database'
-import { auditLog } from '@kobato/db/schema/config'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import {

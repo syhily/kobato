@@ -2,7 +2,8 @@ import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types'
 
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { sql } from 'kysely'
+import { accessEvents } from '@kobato/db/duckdb/schema'
+import { desc, sql } from 'drizzle-orm'
 
 function emptyToNull(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null
@@ -11,19 +12,18 @@ function emptyToNull(value: unknown): string | null {
 export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
   const rows = await runAnalyticsQuery(
     reader,
-    createAnalyticsQuery()
-      .select([
-        sql<number>`epoch_ms(${sql.ref('timestamp')})`.as('ts'),
-        sql.ref('blob1').as('path'),
-        sql.ref('blob7').as('country'),
-        sql.ref('blob9').as('city'),
-        sql.ref('blob12').as('browser'),
-        sql.ref('blob11').as('os'),
-        sql.ref('blob15').as('deviceType'),
-        sql.ref('is_bot').as('isBot'),
-      ])
-      .where(sql<boolean>`${sql.ref('timestamp')} > to_timestamp(${sinceTs.getTime() / 1000})`)
-      .orderBy('timestamp', 'desc')
+    createAnalyticsQuery({
+      ts: sql<number>`epoch_ms(${accessEvents.timestamp})`,
+      path: accessEvents.blob1,
+      country: accessEvents.blob7,
+      city: accessEvents.blob9,
+      browser: accessEvents.blob12,
+      os: accessEvents.blob11,
+      deviceType: accessEvents.blob15,
+      isBot: accessEvents.isBot,
+    })
+      .where(sql<boolean>`${accessEvents.timestamp} > to_timestamp(${sinceTs.getTime() / 1000})`)
+      .orderBy(desc(accessEvents.timestamp))
       .limit(limit),
     'realtime',
   )

@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 
-import { sqliteOf } from '@kobato/db/database'
-import { auditLog, setting } from '@kobato/db/schema/config'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog, setting } from '@kobato/db/sqlite/schema/config'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import { observabilityConnectionFingerprint } from '@kobato/server/domains/observability/config'

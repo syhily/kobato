@@ -3,26 +3,24 @@ import type { HeatmapCell, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/quer
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { sql } from 'kysely'
+import { analyticsIdentifier, createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
+import { sql } from 'drizzle-orm'
 
 export async function queryHeatmap(reader: AnalyticsReader, input: ResolvedAnalyticsQuery): Promise<HeatmapCell[]> {
   const clientTimezone = getSafeTimezone(input.clientTimezone ?? 'Etc/UTC')
-  const tzTimestamp = sql`timezone(${clientTimezone}, ${sql.ref('timestamp')})`
+  const tzTimestamp = sql`timezone(${clientTimezone}, ${analyticsIdentifier('access_events.timestamp')})`
 
   const rows = await runAnalyticsQuery(
     reader,
-    createAnalyticsQuery()
-      .select([
-        sql<number>`isodow(${tzTimestamp})`.as('weekday'),
-        sql<number>`hour(${tzTimestamp})`.as('hour'),
-        sql<number>`COUNT(*)`.as('visits'),
-        visitorsAggregate,
-      ])
+    createAnalyticsQuery({
+      weekday: sql<number>`isodow(${tzTimestamp})`,
+      hour: sql<number>`hour(${tzTimestamp})`,
+      visits: sql<number>`COUNT(*)`,
+      visitors: visitorsAggregate,
+    })
       .where(buildAnalyticsFilter(input))
-      .groupBy(['weekday', 'hour'])
-      .orderBy('weekday')
-      .orderBy('hour'),
+      .groupBy(sql`weekday`, sql`hour`)
+      .orderBy(sql`weekday`, sql`hour`),
     'heatmap',
   )
   return rows.map((row) => ({

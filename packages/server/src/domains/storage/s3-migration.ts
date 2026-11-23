@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { StorageBackend } from '@kobato/server/infra/storage/backend'
 import type { AssetsSettings, StorageDriver } from '@kobato/settings/types'
 
@@ -22,7 +22,7 @@ import {
   resumeStorageMigrationRow,
   updateStorageMigrationPhase,
   upsertStorageMigrationRow,
-} from '@kobato/db/operations/storage'
+} from '@kobato/db/sqlite/operations/system/storage'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { decryptIfNeeded, encryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'

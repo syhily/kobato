@@ -1,7 +1,7 @@
 import type { CommentReq } from '@kobato/api/contracts/comments'
 
 import { commentsPublicContract } from '@kobato/api/rpc/public/comments'
-import { findCommentWithUserById } from '@kobato/db/operations/comment'
+import { findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { verifyCommentAccess } from '@kobato/server/domains/comments/services/access'

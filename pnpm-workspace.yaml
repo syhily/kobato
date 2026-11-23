@@ -23,6 +23,7 @@ catalog:
   '@dnd-kit/sortable': ^10.0.0
   '@dnd-kit/utilities': ^3.2.2
   '@duckdb/node-api': ^2.0.1-r.1
+  '@duckdbfan/drizzle-duckdb': ^3.0.0-rc.2
   '@formatjs/icu-messageformat-parser': ^3.5.23
   '@hono/node-server': ^2.1.11
   '@hono/vite-dev-server': ^0.26.1
@@ -69,7 +70,7 @@ catalog:
   '@tailwindcss/node': ^4.3.5
   '@tailwindcss/oxide': ^4.3.5
   '@tailwindcss/vite': ^4.3.5
-  '@tanstack/react-query': ^5.108.2
+  '@tanstack/react-query': ^5.108.3
   '@testing-library/dom': ^10.4.2
   '@testing-library/jest-dom': ^8.0.0
   '@testing-library/react': ^16.3.3
@@ -92,9 +93,9 @@ catalog:
   cn: ^0.5.2
   date-fns: ^4.4.0
   diff-match-patch: ^1.0.5
-  dompurify: ^3.4.18
-  drizzle-kit: 1.0.0-rc.6
-  drizzle-orm: 1.0.0-rc.6
+  dompurify: ^3.5.0
+  drizzle-kit: ^1.0.0-rc.6
+  drizzle-orm: ^1.0.0-rc.6
   emoji-picker-react: ^5.1.4
   fake-indexeddb: ^6.2.8
   fast-average-color: ^9.6.0
@@ -107,7 +108,6 @@ catalog:
   idb: ^8.0.4
   jsdom: ^31.0.1
   katex: ^0.19.1
-  kysely: ^0.29.9
   lexical: ^0.53.0
   lint-staged: ^17.6.2
   lucide-react: ^1.77.0
@@ -156,7 +156,6 @@ catalog:
   zod: ^4.6.7
 
 overrides:
-  esbuild: ^0.28.2
   '@codemirror/language': ^6.13.1
   '@codemirror/view': ^6.43.15
 allowBuilds:
@@ -168,8 +167,7 @@ minimumReleaseAge: 0
 
 peerDependencyRules:
   allowedVersions:
-    '@emnapi/core': '1'
-    '@emnapi/runtime': '1'
+    '@duckdb/node-api': '2.0.1-r.1'
     oxc-transform-react: '^0.158.0'
 permissions:
   drizzle-kit:

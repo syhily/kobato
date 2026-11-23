@@ -1,7 +1,7 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { BlogSession, PendingOtpUser } from '@kobato/server/domains/auth/session-storage'
 
-import { findUserById } from '@kobato/db/operations/user'
+import { findUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import {

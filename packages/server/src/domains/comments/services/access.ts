@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token'
 
-import { findCommentWithUserById } from '@kobato/db/operations/comment'
+import { findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'
 import { verifyCommentOwnership } from '@kobato/server/domains/comments/services/token-store'
 import { idFromString } from '@kobato/utils/id'
 

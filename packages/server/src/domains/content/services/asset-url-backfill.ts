@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
 import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
@@ -8,8 +8,8 @@ import {
   updateContentBody,
   updateEntityCover,
   type CoverOwnerEntity,
-} from '@kobato/db/operations/entity-asset'
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+} from '@kobato/db/sqlite/operations/content/entity-asset'
+import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { SOLUTION_NODE_TYPE, TWO_COLUMN_NODE_TYPE } from '@kobato/inkling/headless/node-whitelist'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { resolveSrcToStoragePath } from '@kobato/server/domains/images/services/resolve'

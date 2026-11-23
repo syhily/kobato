@@ -1,9 +1,9 @@
-import type { ContentRow } from '@kobato/db/types'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { post as postMetaTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -23,7 +23,10 @@ const syncLibraryImageBlocks = vi.spyOn(
   await import('@kobato/server/domains/content/services/image-sync'),
   'syncLibraryImageBlocks',
 )
-const findLatestRevision = vi.spyOn(await import('@kobato/db/operations/entity-revision'), 'findLatestRevision')
+const findLatestRevision = vi.spyOn(
+  await import('@kobato/db/sqlite/operations/content/entity-revision'),
+  'findLatestRevision',
+)
 const computeBodyProjections = vi.spyOn(
   await import('@kobato/server/infra/lexical/lexical-projection'),
   'computeBodyProjections',

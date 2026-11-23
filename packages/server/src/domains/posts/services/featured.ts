@@ -1,18 +1,18 @@
 import type { ClientPost, SidebarPostLink } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 import type { SidebarSettings } from '@kobato/settings/types'
 
 import { toSidebarPostLink } from '@kobato/catalog/projection'
-import { findCategoryNamesByIds } from '@kobato/db/operations/category'
 import {
   listLiveVisiblePostIds,
   listLiveVisiblePostMetasWithCover,
   listPinnedLiveVisiblePostMetas,
   listPostMetasByIds,
   listVisibleLivePostIdsOrderedById,
-} from '@kobato/db/operations/post'
-import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
+} from '@kobato/db/sqlite/operations/content/post-feature'
+import { findCategoryNamesByIds } from '@kobato/db/sqlite/operations/taxonomy/category'
+import { findTagNamesByPostIds } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { hydratePostImages, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'

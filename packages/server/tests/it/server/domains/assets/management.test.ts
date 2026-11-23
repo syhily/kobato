@@ -1,6 +1,6 @@
 import type { BrandingObjectRef } from '@kobato/settings/types'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'

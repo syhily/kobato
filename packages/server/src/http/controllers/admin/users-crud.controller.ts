@@ -1,6 +1,6 @@
 import { splitMergePatch } from '@kobato/api/contracts/merge-patch'
 import { adminUsersCrudContract } from '@kobato/api/rpc/admin/users'
-import { restoreUserById, updateUserById } from '@kobato/db/operations/user'
+import { restoreUserById, updateUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import {

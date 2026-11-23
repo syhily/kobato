@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { findUserByEmail, verifyUserPassword } from '@kobato/db/operations/user'
+import { findUserByEmail, verifyUserPassword } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { isPasskeySigninUser } from '@kobato/server/domains/auth/passkey/gate'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'

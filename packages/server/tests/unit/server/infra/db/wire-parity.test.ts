@@ -35,16 +35,19 @@ import {
   WEBMENTION_VERIFY_STATUSES as WIRE_VERIFY_STATUSES,
 } from '@kobato/api/contracts/webmentions'
 import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types'
-import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/schema/job-run'
-import { NOTIFICATION_KINDS } from '@kobato/db/schema/notification'
-import { STORAGE_MIGRATION_DIRECTIONS, STORAGE_MIGRATION_PERSISTED_PHASES } from '@kobato/db/schema/storage-migration'
-import { LOGIN_METHODS } from '@kobato/db/schema/user'
+import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/sqlite/schema/job-run'
+import { NOTIFICATION_KINDS } from '@kobato/db/sqlite/schema/notification'
+import {
+  STORAGE_MIGRATION_DIRECTIONS,
+  STORAGE_MIGRATION_PERSISTED_PHASES,
+} from '@kobato/db/sqlite/schema/storage-migration'
+import { LOGIN_METHODS } from '@kobato/db/sqlite/schema/user'
 import {
   WEBMENTION_OUTBOX_STATUSES,
   WEBMENTION_STATUSES,
   WEBMENTION_TYPES,
   WEBMENTION_VERIFY_STATUSES,
-} from '@kobato/db/schema/webmention'
+} from '@kobato/db/sqlite/schema/webmention'
 import { describe, expect, it } from 'vitest'
 
 describe('db ↔ contracts wire parity', () => {

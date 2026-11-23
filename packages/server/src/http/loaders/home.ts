@@ -1,7 +1,7 @@
 import type { HomeExtra } from '@kobato/api/contracts/content'
 import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { ClientPost, ListingPostCard } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'

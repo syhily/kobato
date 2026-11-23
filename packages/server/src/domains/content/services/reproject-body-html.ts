@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import {
   countContentRows,
   listContentProjectionRows,
   updateContentProjections,
-} from '@kobato/db/operations/entity-asset'
+} from '@kobato/db/sqlite/operations/content/entity-asset'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger } from '@kobato/server/infra/logger'

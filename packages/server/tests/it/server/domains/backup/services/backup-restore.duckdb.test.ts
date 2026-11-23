@@ -1,7 +1,7 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
-import { sqliteOf as sqlite } from '@kobato/db/database'
 import { engineOf } from '@kobato/db/duckdb/connection'
+import { sqliteOf as sqlite } from '@kobato/db/sqlite/database'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
@@ -15,11 +15,11 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 let analyticsHandle: AnalyticsHandle
 
-import { findBackupByTimestamp } from '@kobato/db/operations/backup'
-import { createNotificationWithRecipients } from '@kobato/db/operations/notification'
-import { notification } from '@kobato/db/schema/notification'
-import { post } from '@kobato/db/schema/post'
-import { category } from '@kobato/db/schema/taxonomy'
+import { createNotificationWithRecipients } from '@kobato/db/sqlite/operations/engagement/notification'
+import { findBackupByTimestamp } from '@kobato/db/sqlite/operations/system/backup'
+import { notification } from '@kobato/db/sqlite/schema/notification'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { category } from '@kobato/db/sqlite/schema/taxonomy'
 import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@kobato/server/domains/backup/services/backup'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
@@ -104,7 +104,7 @@ describe('backup and restore integration', () => {
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
-    const { openDatabase, closeDatabase, databaseOf, sqliteOf } = await import('@kobato/db/database')
+    const { openDatabase, closeDatabase, databaseOf, sqliteOf } = await import('@kobato/db/sqlite/database')
     const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
     const restored = openDatabase(join(dir, 'restored.db'))
     try {

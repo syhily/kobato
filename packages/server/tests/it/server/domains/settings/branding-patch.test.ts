@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

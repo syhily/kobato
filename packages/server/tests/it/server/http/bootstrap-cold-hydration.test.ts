@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import { isPublicMessageKey } from '@kobato/i18n/catalog-scope'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'

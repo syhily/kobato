@@ -1,4 +1,4 @@
-import type { Setting } from '@kobato/db/types'
+import type { Setting } from '@kobato/db/sqlite/types'
 import type { SettingsSection } from '@kobato/settings/sections'
 
 import { isRecord } from '@kobato/server/domains/settings/services/section-patch'

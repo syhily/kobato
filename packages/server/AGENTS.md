@@ -225,19 +225,20 @@ Two embedded engines, zero services:
 
 - **Content DB** — SQLite via `node:sqlite` + drizzle at `storage.database`, owned entirely by `@kobato/db`: server src
   NEVER imports `node:sqlite`/Drizzle, constructs SQL, or touches a native client. Server code holds the opaque
-  `Database`/`DatabaseHandle` tokens and calls semantic `@kobato/db/operations/*`; `sqliteOf`/`sqliteEngineOf` and the
-  `SqliteEngine` anatomy are db-plane only. Every transaction executes inside a db operation with sync callbacks
+  `Database`/`DatabaseHandle` tokens and calls semantic `@kobato/db/sqlite/operations/*`; `sqliteOf`/`sqliteEngineOf`
+  and the `SqliteEngine` anatomy are db-plane only. Every transaction executes inside a db operation with sync callbacks
   (`db.transaction(async …)` is a compile error). Column modes `timestamp_ms` / `boolean` / `json`; `LIKE`, not `ILIKE`.
 - **Analytics sidecar** — DuckDB at `storage.analyticsDatabase`, owned entirely by `@kobato/db`: server src NEVER
-  imports `@duckdb/node-api` or `kysely` and never runs DuckDB SQL. `access_events` uses the generic-column style (blob
-  semantics in the `blobsMap` in `@kobato/db/duckdb/access-events` — `blob5` is the daily-salted visitor hash, raw IPs
-  never persisted) plus the `device_env_*` sidecars keyed by the event UUID. Server code carries only the opaque
-  capabilities from `@kobato/db/duckdb/connection` (`AnalyticsWriter` for appends/dedup probes, `AnalyticsReader` + the
-  `duckdb/queries/` modules for reads, `AnalyticsQuery` through the executor seam) and the opaque `AnalyticsHandle`
-  engine token in `bootstrap/analytics-lifecycle.ts` (lifecycle metadata `path`/`inMemory`/`closed` only — no native
-  connection fields; lifecycle/adopt wiring passes it straight into db operations); statements (including CHECKPOINT via
-  `@kobato/db/duckdb/database::checkpointAnalyticsDatabase`) stay behind db operations. The single telemetry perimeter
-  is `domains/analytics/services/analytics-sql.ts::runAnalyticsQuery`, registered into db through
+  imports `@duckdb/node-api`, `@duckdbfan/drizzle-duckdb`, or `drizzle-orm` and never runs DuckDB SQL. `access_events`
+  uses the generic-column style (blob semantics in the `blobsMap` in `@kobato/db/duckdb/access-events` — `blob5` is the
+  daily-salted visitor hash, raw IPs never persisted) plus the `device_env_*` sidecars keyed by the event UUID. Server
+  code carries only the opaque capabilities from `@kobato/db/duckdb/connection` (`AnalyticsWriter` for appends/dedup
+  probes, `AnalyticsReader` + the `duckdb/queries/` modules for reads, `AnalyticsQuery` through the executor seam) and
+  the opaque `AnalyticsHandle` engine token in `bootstrap/analytics-lifecycle.ts` (lifecycle metadata
+  `path`/`inMemory`/`closed` only — no native connection fields; lifecycle/adopt wiring passes it straight into db
+  operations); statements (including CHECKPOINT via `@kobato/db/duckdb/database::checkpointAnalyticsDatabase`) stay
+  behind db operations. The single telemetry perimeter is
+  `domains/analytics/services/analytics-sql.ts::runAnalyticsQuery`, registered into db through
   `setAnalyticsQueryExecutor` at boot — spans/metrics carry only the stable operation label, never SQL or parameters.
   Geo-unknown excluded unless `includeUnknown: true`. The sidecar recreates empty when missing but is INCLUDED in
   backups; storage-format upgrade happens at open; legacy `access_log` migrates at boot.
@@ -284,8 +285,9 @@ Two embedded engines, zero services:
 ### Slug derivation
 
 Canonical: `infra/slug/derive::deriveSlug` (pinyin-pro → collapse → github-slugger); resolver `resolve::resolveSlug`;
-validation stays server-side, while fence + in-transaction reservation lives in `@kobato/db/operations/entity-meta`.
-Page ↔ post slugs share the `slug_registry` namespace; `rethrowSlugConflict` maps raced UNIQUE violations to 409.
+validation stays server-side, while fence + in-transaction reservation lives in
+`@kobato/db/sqlite/operations/content/entity-meta`. Page ↔ post slugs share the `slug_registry` namespace;
+`rethrowSlugConflict` maps raced UNIQUE violations to 409.
 
 ### Images
 

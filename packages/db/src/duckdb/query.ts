@@ -1,66 +1,33 @@
 import type { DuckDBValue } from '@duckdb/node-api'
-import type { AnalyticsQuery, AnalyticsReader } from '@kobato/db/duckdb/connection'
-import type { Compilable } from 'kysely'
+import type { AnalyticsCompilable, AnalyticsQuery, AnalyticsReader } from '@kobato/db/duckdb/connection'
+import type { SQL } from 'drizzle-orm'
+import type { SelectedFields } from 'drizzle-orm/pg-core/query-builders/select.types'
 
+import { DuckDBDialect, DuckDBSelectBuilder } from '@duckdbfan/drizzle-duckdb'
 import { analyticsQueryOf, compilableQuery, readerConnection } from '@kobato/db/duckdb/connection'
-import { DummyDriver, Kysely, MysqlAdapter, MysqlIntrospector, MysqlQueryCompiler } from 'kysely'
+import { accessEvents, deviceEnvClient } from '@kobato/db/duckdb/schema'
+import { eq, sql } from 'drizzle-orm'
 
-export interface AnalyticsEventRow {
-  event_id: string
-  index1: string
-  timestamp: string
-  is_bot: boolean
-  [column: string]: unknown
-}
+const identifierPattern = /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$/
+const analyticsDialect = new DuckDBDialect()
 
-export interface AnalyticsEnvRow {
-  event_id: string
-  [column: string]: unknown
-}
-
-export type AnalyticsDatabase = {
-  access_events: AnalyticsEventRow
-  device_env_client: AnalyticsEnvRow
-}
-
-const identifierPattern = /^[A-Za-z_][A-Za-z0-9_]*$/
-
-class AnalyticsQueryCompiler extends MysqlQueryCompiler {
-  protected override getLeftIdentifierWrapper(): string {
-    return ''
+export function analyticsIdentifier(identifier: string): SQL {
+  if (!identifierPattern.test(identifier)) {
+    throw new Error(`Invalid Analytics identifier: ${identifier}`)
   }
-
-  protected override getRightIdentifierWrapper(): string {
-    return ''
-  }
-
-  protected override sanitizeIdentifier(identifier: string): string {
-    if (!identifierPattern.test(identifier)) {
-      throw new Error(`Invalid Analytics identifier: ${identifier}`)
-    }
-    return identifier
-  }
+  return sql.raw(identifier)
 }
 
-const coldDb = new Kysely<AnalyticsDatabase>({
-  dialect: {
-    createAdapter: () => new MysqlAdapter(),
-    createDriver: () => new DummyDriver(),
-    createIntrospector: (db) => new MysqlIntrospector(db),
-    createQueryCompiler: () => new AnalyticsQueryCompiler(),
-  },
-})
-
-export function createAnalyticsQuery() {
-  return coldDb.selectFrom('access_events')
+export function createAnalyticsQuery(fields?: SelectedFields) {
+  return new DuckDBSelectBuilder({ fields, session: undefined, dialect: analyticsDialect }).from(accessEvents)
 }
 
-export function createEnvMetricQuery() {
-  return createAnalyticsQuery().innerJoin('device_env_client', 'device_env_client.event_id', 'access_events.event_id')
+export function createEnvMetricQuery(fields?: SelectedFields) {
+  return createAnalyticsQuery(fields).innerJoin(deviceEnvClient, eq(deviceEnvClient.eventId, accessEvents.eventId))
 }
 
-export function compileAnalyticsQuery(query: Compilable) {
-  return query.compile()
+export function compileAnalyticsQuery(query: AnalyticsCompilable) {
+  return query.toSQL()
 }
 
 function toBoundParameters(parameters: readonly unknown[]): DuckDBValue[] {
@@ -106,7 +73,7 @@ export async function executeAnalyticsQuery(
   query: AnalyticsQuery,
 ): Promise<Record<string, unknown>[]> {
   const compiled = compileAnalyticsQuery(compilableQuery(query))
-  const result = await readerConnection(reader).runAndReadAll(compiled.sql, toBoundParameters(compiled.parameters))
+  const result = await readerConnection(reader).runAndReadAll(compiled.sql, toBoundParameters(compiled.params))
   return result
     .getRowObjects()
     .map((row) =>
@@ -125,7 +92,7 @@ export async function executeAnalyticsQuery(
 
 export async function runAnalyticsQuery(
   reader: AnalyticsReader,
-  query: Compilable,
+  query: AnalyticsCompilable,
   operation: AnalyticsOperation,
 ): Promise<Record<string, unknown>[]> {
   const token = analyticsQueryOf(query)

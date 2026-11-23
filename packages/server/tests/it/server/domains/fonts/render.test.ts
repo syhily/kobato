@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { font } from '@kobato/db/schema/font'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { font } from '@kobato/db/sqlite/schema/font'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,6 +1,6 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { BackupFileDto } from '@kobato/api/contracts/backup'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Readable } from 'node:stream'
 
 import {
@@ -11,8 +11,8 @@ import {
   insertBackupIfMissing,
   listBackupRows,
   listBackupStoragePaths,
-} from '@kobato/db/operations/backup'
-import { vacuumDatabaseInto } from '@kobato/db/operations/maintenance'
+} from '@kobato/db/sqlite/operations/system/backup'
+import { vacuumDatabaseInto } from '@kobato/db/sqlite/operations/system/maintenance'
 import { createBackupCipher } from '@kobato/server/domains/backup/services/crypto'
 import { createTarReadStream } from '@kobato/server/domains/backup/services/tar'
 import { CONFIG_FILE_NAME, resolveConfigFilePath } from '@kobato/server/infra/config'

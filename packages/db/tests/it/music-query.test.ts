@@ -1,4 +1,9 @@
-import { findMusicByPlayerId, findMusicBySourceAndId, insertMusic, softDeleteMusic } from '@kobato/db/operations/music'
+import {
+  findMusicByPlayerId,
+  findMusicBySourceAndId,
+  insertMusic,
+  softDeleteMusic,
+} from '@kobato/db/sqlite/operations/content/music'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

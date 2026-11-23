@@ -1,6 +1,6 @@
 import { parseCommentEntity, serializeCommentEntity } from '@kobato/api/contracts/comments'
 import { commentsAuthedContract } from '@kobato/api/rpc/account/comments'
-import { resolveEntitiesForComments } from '@kobato/db/operations/entity-asset'
+import { resolveEntitiesForComments } from '@kobato/db/sqlite/operations/content/entity-asset'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
   countMyComments,

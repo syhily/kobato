@@ -1,6 +1,6 @@
-import { sqliteOf } from '@kobato/db/database'
-import { post } from '@kobato/db/schema/post'
-import { webmention } from '@kobato/db/schema/webmention'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { webmention } from '@kobato/db/sqlite/schema/webmention'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive'
 import { __setDnsLookupForTests } from '@kobato/server/infra/safe-fetch'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -126,7 +126,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     const first = await receive('https://sender.example/post')
     expect(first.outcome).toBe('inserted')
 
-    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention')
+    const { setWebmentionStatus } = await import('@kobato/db/sqlite/operations/engagement/webmention')
     await setWebmentionStatus(db, first.row.id, 'approved')
 
     enqueueSource('https://sender.example/post')
@@ -147,7 +147,7 @@ describe('integration / receiveWebmention — notification rules', () => {
     await seedLivePost('wm-target')
     enqueueSource('https://sender.example/post')
     const first = await receive('https://sender.example/post')
-    const { setWebmentionStatus } = await import('@kobato/db/operations/webmention')
+    const { setWebmentionStatus } = await import('@kobato/db/sqlite/operations/engagement/webmention')
     await setWebmentionStatus(db, first.row.id, 'rejected')
 
     enqueueSource('https://sender.example/post')

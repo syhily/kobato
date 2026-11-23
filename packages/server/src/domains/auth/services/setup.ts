@@ -1,9 +1,10 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { analyzeDatabase } from '@kobato/db/operations/maintenance'
-import { hasAdmin, hashAdminPassword, installInitialAdminWithSections } from '@kobato/db/operations/user'
+import { hasAdmin, hashAdminPassword } from '@kobato/db/sqlite/operations/identity/user'
+import { installInitialAdminWithSections } from '@kobato/db/sqlite/operations/identity/user-workflow'
+import { analyzeDatabase } from '@kobato/db/sqlite/operations/system/maintenance'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared'

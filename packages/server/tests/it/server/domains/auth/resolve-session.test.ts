@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 
-import { sqliteOf } from '@kobato/db/database'
-import { session as sessionTable } from '@kobato/db/schema/session'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
 import { buildSessionWithSid, commitSession } from '@kobato/server/domains/auth/session-storage'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

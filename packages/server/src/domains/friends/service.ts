@@ -1,10 +1,11 @@
 import type { AdminFriendDto } from '@kobato/api/contracts/friends'
 import type { Friend } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { FriendRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { FriendRow } from '@kobato/db/sqlite/types'
 
 import { isOnSiteOrigin } from '@kobato/assets/asset-url'
 import { extractFriendHostSafe, friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
+import { findImagesByStoragePaths, updateImageStoragePath } from '@kobato/db/sqlite/operations/content/image'
 import {
   type AdminFriendsListFilters,
   countAdminFriends,
@@ -15,8 +16,7 @@ import {
   listAdminFriendRows,
   listPublicFriendRows,
   updateFriend,
-} from '@kobato/db/operations/friend'
-import { findImagesByStoragePaths, updateImageStoragePath } from '@kobato/db/operations/image'
+} from '@kobato/db/sqlite/operations/engagement/friend'
 import { sendNewFriendApplication } from '@kobato/server/domains/friends/email'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'

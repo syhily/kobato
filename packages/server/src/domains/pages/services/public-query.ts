@@ -1,14 +1,14 @@
 import type { Page } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { PageMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PageMetaRow } from '@kobato/db/sqlite/types'
 
-import { findPublicEntityMetaBySlug } from '@kobato/db/operations/entity-meta'
-import { findContentById } from '@kobato/db/operations/entity-revision'
+import { findPublicEntityMetaBySlug } from '@kobato/db/sqlite/operations/content/entity-meta'
+import { findContentById } from '@kobato/db/sqlite/operations/content/entity-revision'
 import {
   findLivePageBySlug as findLivePageBySlugOp,
   listSitemapPages as listSitemapPagesOp,
   type SitemapPageRow,
-} from '@kobato/db/operations/page'
+} from '@kobato/db/sqlite/operations/content/page'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { toCmsPage } from '@kobato/server/domains/pages/projection'

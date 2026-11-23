@@ -1,8 +1,8 @@
-import type { DatabaseHandle } from '@kobato/db/database'
+import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { databaseOf } from '@kobato/db/database'
-import { runSqlitePragmaMaintenance } from '@kobato/db/operations/maintenance'
-import { pruneNotifications } from '@kobato/db/operations/notification'
+import { databaseOf } from '@kobato/db/sqlite/database'
+import { pruneNotifications } from '@kobato/db/sqlite/operations/engagement/notification'
+import { runSqlitePragmaMaintenance } from '@kobato/db/sqlite/operations/system/maintenance'
 import { pruneJobRuns } from '@kobato/server/infra/db/job-run-recorder'
 import { jobHandle, registerJob } from '@kobato/server/infra/job-registry'
 import { getLogger } from '@kobato/server/infra/logger'

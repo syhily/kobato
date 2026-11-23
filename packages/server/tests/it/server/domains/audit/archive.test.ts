@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { auditLog } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'

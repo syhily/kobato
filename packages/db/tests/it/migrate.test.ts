@@ -1,7 +1,7 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
-import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/sqlite/database'
+import { defaultMigrationsFolder, MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import { createTestDatabaseFile } from '@kobato/db/tests/utils/integration-db'
 import { sql } from 'drizzle-orm'
 import { readdirSync, readFileSync, existsSync } from 'node:fs'

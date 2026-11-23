@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { upsertSetting } from '@kobato/db/operations/setting'
+import { upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

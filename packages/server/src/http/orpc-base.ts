@@ -1,5 +1,5 @@
 import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/api-error'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
 import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token'

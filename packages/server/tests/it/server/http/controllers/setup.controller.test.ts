@@ -1,9 +1,9 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
-import { sqliteOf } from '@kobato/db/database'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { oneTimeToken } from '@kobato/db/sqlite/schema/one-time-token'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import { __resetSetupTokenForTests, getSetupToken } from '@kobato/server/domains/auth/setup-token'

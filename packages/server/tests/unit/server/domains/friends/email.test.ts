@@ -1,4 +1,4 @@
-import type { FriendRow } from '@kobato/db/types'
+import type { FriendRow } from '@kobato/db/sqlite/types'
 
 import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'

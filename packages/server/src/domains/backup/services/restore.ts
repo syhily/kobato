@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream'
 
-import { isInMemoryPath } from '@kobato/db/database'
-import { stagedContentDbHasLiveAdmin } from '@kobato/db/operations/backup'
+import { isInMemoryPath } from '@kobato/db/sqlite/database'
+import { stagedContentDbHasLiveAdmin } from '@kobato/db/sqlite/operations/system/backup'
 import {
   BackupDecryptionError,
   createBackupDecipher,

@@ -1,9 +1,9 @@
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { image as imageTable } from '@kobato/db/schema/media'
-import { post as postMetaTable } from '@kobato/db/schema/post'
-import { postTag } from '@kobato/db/schema/post-tag'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { image as imageTable } from '@kobato/db/sqlite/schema/media'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
+import { postTag } from '@kobato/db/sqlite/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -91,11 +91,11 @@ function coverUrl(row: typeof imageTable.$inferSelect): string {
 
 describe('posts/repos/shared — buildPostsWhere', () => {
   it('returns undefined when no filter is supplied', async () => {
-    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    const { listPostMetas } = await import('@kobato/db/sqlite/operations/content/entity-list')
     await expect(listPostMetas(db, {})).resolves.toEqual([])
   })
   it('stacks deletedStatus / q / category / tag / flags / lifecycle', async () => {
-    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    const { listPostMetas } = await import('@kobato/db/sqlite/operations/content/entity-list')
     await expect(
       listPostMetas(db, {
         deletedStatus: 'normal',
@@ -118,11 +118,11 @@ describe('posts/repos/shared — buildPostsWhere', () => {
 
 describe('posts/repos/shared — buildPostsOrderBy', () => {
   it('falls back to firstPublishedAt desc', async () => {
-    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    const { listPostMetas } = await import('@kobato/db/sqlite/operations/content/entity-list')
     await expect(listPostMetas(db, {})).resolves.toEqual([])
   })
   it('switches to updatedAt asc', async () => {
-    const { listPostMetas } = await import('@kobato/db/operations/entity-meta')
+    const { listPostMetas } = await import('@kobato/db/sqlite/operations/content/entity-list')
     await expect(listPostMetas(db, { sortBy: 'updatedAt', sortOrder: 'asc' })).resolves.toEqual([])
   })
 })
@@ -165,7 +165,7 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
 
 describe('posts/repos/shared — buildPublicPostsWhere', () => {
   it('always narrows to published, non-deleted rows', async () => {
-    const { listPublicPostMetas } = await import('@kobato/db/operations/post')
+    const { listPublicPostMetas } = await import('@kobato/db/sqlite/operations/content/post')
     await expect(listPublicPostMetas(db)).resolves.toEqual([])
     await expect(listPublicPostMetas(db, { includeHidden: true, includeScheduled: true })).resolves.toEqual([])
   })
@@ -183,19 +183,19 @@ describe('posts/repos/shared — buildPublicPostsWhere', () => {
 describe('posts/repos/write — updatePostMetaById / softDelete / restore', () => {
   it('updates fields by id', async () => {
     const id = await seedPost({ slug: 'u', title: 'Old' })
-    const { updateEntityMetaById } = await import('@kobato/db/operations/entity-meta')
+    const { updateEntityMetaById } = await import('@kobato/db/sqlite/operations/content/entity-meta')
     const updated = await updateEntityMetaById(db, 'post', id, { title: 'New' })
     expect(updated?.title).toBe('New')
   })
   it('soft-deletes then restores', async () => {
     const id = await seedPost({ slug: 'sd', title: 'X' })
-    const { softDeleteEntityMeta, restoreEntityMeta } = await import('@kobato/db/operations/entity-meta')
+    const { softDeleteEntityMeta, restoreEntityMeta } = await import('@kobato/db/sqlite/operations/content/entity-meta')
     expect(await softDeleteEntityMeta(db, 'post', id)).toBe(true)
     expect(await restoreEntityMeta(db, 'post', id)).toBe(true)
   })
   it('soft-delete returns false when already deleted', async () => {
     const id = await seedPost({ slug: 'sd2', title: 'X' })
-    const { softDeleteEntityMeta } = await import('@kobato/db/operations/entity-meta')
+    const { softDeleteEntityMeta } = await import('@kobato/db/sqlite/operations/content/entity-meta')
     await softDeleteEntityMeta(db, 'post', id)
     expect(await softDeleteEntityMeta(db, 'post', id)).toBe(false)
   })

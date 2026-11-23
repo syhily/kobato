@@ -1,8 +1,11 @@
 import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
-import { sqliteOf } from '@kobato/db/database'
-import { markWebmentionInboxRetry, upsertWebmentionInbox } from '@kobato/db/operations/webmention-inbox'
-import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
-import { webmentionInbox, webmentionOutbox } from '@kobato/db/schema/webmention'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import {
+  markWebmentionInboxRetry,
+  upsertWebmentionInbox,
+} from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
+import { upsertWebmentionOutbox } from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
+import { webmentionInbox, webmentionOutbox } from '@kobato/db/sqlite/schema/webmention'
 import { adminJobsRouter } from '@kobato/server/http/controllers/admin/jobs.controller'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
 import {

@@ -1,9 +1,13 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/images'
-import type { Database } from '@kobato/db/database'
-import type { ImageRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ImageRow } from '@kobato/db/sqlite/types'
 
-import { findImagesByStoragePaths, insertImage, upsertImageByStoragePath } from '@kobato/db/operations/image'
+import {
+  findImagesByStoragePaths,
+  insertImage,
+  upsertImageByStoragePath,
+} from '@kobato/db/sqlite/operations/content/image'
 import { type ImageKindSpec, buildObjectKey } from '@kobato/server/domains/images/key'
 import { toAdminImageDto } from '@kobato/server/domains/images/services/admin-read'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

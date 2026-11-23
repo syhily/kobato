@@ -1,8 +1,8 @@
 import type { Role } from '@kobato/auth/roles'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Session } from 'react-router'
 
-import { deleteSessionById, readLiveSessionData, upsertSession } from '@kobato/db/operations/session'
+import { deleteSessionById, readLiveSessionData, upsertSession } from '@kobato/db/sqlite/operations/identity/session'
 import { serverConfig } from '@kobato/server/infra/config'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'

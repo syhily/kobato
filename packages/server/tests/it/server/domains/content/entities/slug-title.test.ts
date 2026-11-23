@@ -1,7 +1,7 @@
-import { sqliteOf } from '@kobato/db/database'
-import { findEntitySlugTitle, resolveEntitiesForComments } from '@kobato/db/operations/entity-asset'
-import { page } from '@kobato/db/schema/page'
-import { post } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { findEntitySlugTitle, resolveEntitiesForComments } from '@kobato/db/sqlite/operations/content/entity-asset'
+import { page } from '@kobato/db/sqlite/schema/page'
+import { post } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

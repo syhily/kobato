@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { music } from '@kobato/db/schema/media'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { music } from '@kobato/db/sqlite/schema/media'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'

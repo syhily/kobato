@@ -4,9 +4,9 @@ import type { TimeUnit } from '@kobato/utils/date-range'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'
-import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
+import { analyticsIdentifier, createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
 import { pickTimeUnit } from '@kobato/utils/date-range'
-import { sql } from 'kysely'
+import { sql } from 'drizzle-orm'
 
 const UNIT_FORMAT: Record<TimeUnit, string> = {
   minute: '%Y-%m-%d %H:%M',
@@ -20,15 +20,14 @@ export async function queryViews(reader: AnalyticsReader, input: ResolvedAnalyti
 
   const rows = await runAnalyticsQuery(
     reader,
-    createAnalyticsQuery()
-      .select([
-        sql<string>`strftime(timezone(${clientTimezone}, ${sql.ref('timestamp')}), ${UNIT_FORMAT[unit]})`.as('time'),
-        sql<number>`COUNT(*)`.as('visits'),
-        visitorsAggregate,
-      ])
+    createAnalyticsQuery({
+      time: sql<string>`strftime(timezone(${clientTimezone}, ${analyticsIdentifier('access_events.timestamp')}), ${UNIT_FORMAT[unit]})`,
+      visits: sql<number>`COUNT(*)`,
+      visitors: visitorsAggregate,
+    })
       .where(buildAnalyticsFilter(input))
-      .groupBy('time')
-      .orderBy('time'),
+      .groupBy(sql`time`)
+      .orderBy(sql`time`),
     'views',
   )
   const points: ViewsPoint[] = rows.map((row) => ({

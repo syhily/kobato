@@ -1,6 +1,6 @@
 import type { AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Page } from '@kobato/catalog/model'
-import type { NewPageMeta, PageMetaRow } from '@kobato/db/types'
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/sqlite/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
 import {
@@ -11,7 +11,7 @@ import {
   restoreEntityMeta,
   softDeleteEntityMeta,
   updateEntityMetaById,
-} from '@kobato/db/operations/entity-meta'
+} from '@kobato/db/sqlite/operations/content/entity-meta'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'

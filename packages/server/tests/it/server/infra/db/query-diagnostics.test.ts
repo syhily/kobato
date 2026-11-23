@@ -1,4 +1,4 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import { startQueryDiagnostics, stopQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'
 import { getTestDb } from '@kobato/server/tests/utils/integration-db'

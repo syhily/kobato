@@ -1,6 +1,6 @@
 import type { Role } from '@kobato/auth/roles'
-import type { Database } from '@kobato/db/database'
-import type { SessionRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { SessionRow } from '@kobato/db/sqlite/types'
 
 import {
   deleteSessionsOfUser as deleteSessionsOfUserOp,
@@ -10,7 +10,7 @@ import {
   recordSessionActivity as recordSessionActivityOp,
   recordSessionLogin as recordSessionLoginOp,
   revokeSessionById as revokeSessionByIdOp,
-} from '@kobato/db/operations/session'
+} from '@kobato/db/sqlite/operations/identity/session'
 import { resolveSessionMaxAge } from '@kobato/server/domains/auth/session-storage'
 
 const USER_AGENT_MAX_LENGTH = 512

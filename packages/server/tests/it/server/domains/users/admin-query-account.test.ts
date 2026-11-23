@@ -1,7 +1,7 @@
-import { sqliteOf } from '@kobato/db/database'
-import { comment } from '@kobato/db/schema/comment'
-import { passkeyCredential } from '@kobato/db/schema/passkey'
-import { user, verification } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { comment } from '@kobato/db/sqlite/schema/comment'
+import { passkeyCredential } from '@kobato/db/sqlite/schema/passkey'
+import { user, verification } from '@kobato/db/sqlite/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
 import { createCaptureMailFixture } from '@kobato/server/tests/utils/capture-mail'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
@@ -13,8 +13,8 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils
 
 const admin = await import('@kobato/server/domains/users/services/admin')
 const account = await import('@kobato/server/domains/users/services/account')
-const adminQuery = await import('@kobato/db/operations/admin-user')
-const userOps = await import('@kobato/db/operations/user')
+const adminQuery = await import('@kobato/db/sqlite/operations/identity/user-admin')
+const userOps = await import('@kobato/db/sqlite/operations/identity/user')
 
 const db = getTestDb()
 const mail = await createCaptureMailFixture()

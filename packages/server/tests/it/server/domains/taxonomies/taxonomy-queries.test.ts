@@ -1,8 +1,8 @@
-import { sqliteOf } from '@kobato/db/database'
-import { image } from '@kobato/db/schema/media'
-import { post } from '@kobato/db/schema/post'
-import { postTag } from '@kobato/db/schema/post-tag'
-import { category, tag } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { image } from '@kobato/db/sqlite/schema/media'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { postTag } from '@kobato/db/sqlite/schema/post-tag'
+import { category, tag } from '@kobato/db/sqlite/schema/taxonomy'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

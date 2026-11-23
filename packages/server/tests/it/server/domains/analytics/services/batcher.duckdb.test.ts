@@ -1,7 +1,7 @@
-import type { DatabaseHandle } from '@kobato/db/database'
 import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
+import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 import type { AccessLogItem } from '@kobato/server/domains/analytics/services/batcher'
 
 import { engineOf } from '@kobato/db/duckdb/connection'

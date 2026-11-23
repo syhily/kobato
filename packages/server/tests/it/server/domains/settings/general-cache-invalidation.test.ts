@@ -1,4 +1,4 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import { APP_VERSION } from '@kobato/distribution/app'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'

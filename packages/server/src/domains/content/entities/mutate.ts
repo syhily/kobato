@@ -1,6 +1,6 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { Database } from '@kobato/db/database'
-import type { NewPageMeta, NewPostMeta } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NewPageMeta, NewPostMeta } from '@kobato/db/sqlite/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
@@ -10,12 +10,11 @@ import type {
 
 import {
   createEntityWithSlug,
-  SlugOccupiedError,
   restoreEntityReclaimingSlug,
   softDeleteEntityWithSlug,
-  updateEntityMetaById,
   updateEntityWithSlug,
-} from '@kobato/db/operations/entity-meta'
+} from '@kobato/db/sqlite/operations/content/entity-lifecycle'
+import { SlugOccupiedError, updateEntityMetaById } from '@kobato/db/sqlite/operations/content/entity-meta'
 import { rescheduleScheduledPublish } from '@kobato/server/domains/content/scheduled-publish'
 import { resolveContentLanguage } from '@kobato/server/domains/content/schemas/meta-fields'
 import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflict'

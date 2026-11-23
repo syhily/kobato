@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { auditLog } from '@kobato/db/schema/config'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import { extractRequestFacts } from '@kobato/server/http/request/request-facts'

@@ -1,6 +1,6 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { analyzeDatabase } from '@kobato/db/operations/maintenance'
+import { analyzeDatabase } from '@kobato/db/sqlite/operations/system/maintenance'
 import { cleanupPreRestoreFiles, rollbackPreRestoreFiles } from '@kobato/server/domains/backup/services/restore'
 import { scheduleRegisteredJob } from '@kobato/server/infra/job-registry'
 import { restartServer } from '@kobato/server/infra/lifecycle'

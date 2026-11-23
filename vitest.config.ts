@@ -21,8 +21,8 @@ export default defineConfig({
       ],
       exclude: [
         '**/*.d.ts',
-        'packages/db/src/schema/**',
-        'packages/db/src/types/**',
+        'packages/db/src/sqlite/schema/**',
+        'packages/db/src/sqlite/types/**',
         'apps/kobato/src/routes.ts',
         'apps/kobato/src/entry.client.tsx',
         'apps/kobato/src/entry.server.tsx',

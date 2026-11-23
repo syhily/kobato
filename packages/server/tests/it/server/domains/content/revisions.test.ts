@@ -1,9 +1,9 @@
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const query = await import('@kobato/db/operations/entity-revision')
+const query = await import('@kobato/db/sqlite/operations/content/entity-revision')
 
 const db = getTestDb()
 

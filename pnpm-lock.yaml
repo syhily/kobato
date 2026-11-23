@@ -218,6 +218,9 @@ catalogs:
     '@duckdb/node-api':
       specifier: ^2.0.1-r.1
       version: 2.0.1-r.1
+    '@duckdbfan/drizzle-duckdb':
+      specifier: ^3.0.0-rc.2
+      version: 3.0.0-rc.2
     '@formatjs/icu-messageformat-parser':
       specifier: ^3.5.23
       version: 3.5.23
@@ -354,8 +357,8 @@ catalogs:
       specifier: ^4.3.5
       version: 4.3.5
     '@tanstack/react-query':
-      specifier: ^5.108.2
-      version: 5.108.2
+      specifier: ^5.108.3
+      version: 5.108.3
     '@testing-library/jest-dom':
       specifier: ^8.0.0
       version: 8.0.0
@@ -417,13 +420,10 @@ catalogs:
       specifier: ^1.0.5
       version: 1.0.5
     dompurify:
-      specifier: ^3.4.18
-      version: 3.4.18
-    drizzle-kit:
-      specifier: 1.0.0-rc.6
-      version: 1.0.0-rc.6
+      specifier: ^3.5.0
+      version: 3.5.0
     drizzle-orm:
-      specifier: 1.0.0-rc.6
+      specifier: ^1.0.0-rc.6
       version: 1.0.0-rc.6
     emoji-picker-react:
       specifier: ^5.1.4
@@ -461,9 +461,6 @@ catalogs:
     katex:
       specifier: ^0.19.1
       version: 0.19.1
-    kysely:
-      specifier: ^0.29.9
-      version: 0.29.9
     lexical:
       specifier: ^0.53.0
       version: 0.53.0
@@ -595,7 +592,6 @@ catalogs:
       version: 4.6.7
 
 overrides:
-  esbuild: ^0.28.2
   '@codemirror/language': ^6.13.1
   '@codemirror/view': ^6.43.15
 
@@ -846,7 +842,7 @@ importers:
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       '@tanstack/react-query':
         specifier: 'catalog:'
-        version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
+        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -955,6 +951,9 @@ importers:
       '@duckdb/node-api':
         specifier: 'catalog:'
         version: 2.0.1-r.1
+      '@duckdbfan/drizzle-duckdb':
+        specifier: 'catalog:'
+        version: 3.0.0-rc.2(@duckdb/node-api@2.0.1-r.1)(drizzle-orm@1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7))
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../inkling
@@ -974,14 +973,11 @@ importers:
         specifier: 'catalog:'
         version: 3.0.3
       drizzle-kit:
-        specifier: 'catalog:'
+        specifier: 1.0.0-rc.6
         version: 1.0.0-rc.6(drizzle-orm@1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7))
       drizzle-orm:
-        specifier: 'catalog:'
+        specifier: 1.0.0-rc.6
         version: 1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7)
-      kysely:
-        specifier: 'catalog:'
-        version: 0.29.9
       vitest:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1101,7 +1097,7 @@ importers:
         version: 6.3.0(oxc-transform-react@0.158.0)(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       dompurify:
         specifier: 'catalog:'
-        version: 3.4.18
+        version: 3.5.0
       emoji-picker-react:
         specifier: 'catalog:'
         version: 5.1.4(react@19.3.1)
@@ -1446,7 +1442,7 @@ importers:
         version: 30.0.0
       dompurify:
         specifier: 'catalog:'
-        version: 3.4.18
+        version: 3.5.0
       jsdom:
         specifier: 'catalog:'
         version: 31.0.1(@napi-rs/canvas@1.2.0)
@@ -1638,7 +1634,7 @@ importers:
         version: 14.0.0
       '@tanstack/react-query':
         specifier: 'catalog:'
-        version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
+        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1743,10 +1739,10 @@ importers:
         version: 0.4.3
       '@orpc/react-query':
         specifier: 'catalog:'
-        version: 1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.2)(@tanstack/react-query@5.108.2(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
+        version: 1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.3)(@tanstack/react-query@5.108.3(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
       '@tanstack/react-query':
         specifier: 'catalog:'
-        version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
+        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1821,7 +1817,7 @@ importers:
         version: 1.16.4(@opentelemetry/api@1.10.0)
       '@tanstack/react-query':
         specifier: 'catalog:'
-        version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
+        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1980,7 +1976,7 @@ importers:
         version: 3.1.1(@opentelemetry/api@1.10.0)
       '@tanstack/react-query':
         specifier: 'catalog:'
-        version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
+        version: 5.108.3(@types/react@19.3.0)(react@19.3.1)
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 8.0.0(@testing-library/dom@10.4.2)(vitest@5.1.1)
@@ -2379,6 +2375,14 @@ packages:
 
   '@duckdb/node-bindings@2.0.1-r.1':
     resolution: {integrity: sha512-Na56IXKC/Rz7wE41VtTyPyX5Q+MtjYWPKcqOdK3kB2TcirUHVRHJUivmspiBP2ImWCnkX5Ko/rp+j5hw+ohdng==}
+
+  '@duckdbfan/drizzle-duckdb@3.0.0-rc.2':
+    resolution: {integrity: sha512-KEZUX5b+mWShCvnvGYT7yUbg8GIBsYPV8REYdPXme91FwpuISzYv549HHhPVoFR7exSi7Gk0nt/2cJ/rbgLY/Q==}
+    engines: {node: '>=22'}
+    hasBin: true
+    peerDependencies:
+      '@duckdb/node-api': '>=1.4.4 <1.6.0 || >=1.4.4-r.1 <1.4.5 || >=1.4.5-r.1 <1.4.6 || >=1.5.0-r.1 <1.5.1 || >=1.5.1-r.1 <1.5.2 || >=1.5.2-r.1 <1.5.3 || >=1.5.3-r.1 <1.5.4 || >=1.5.4-r.1 <1.5.5 || >=1.5.5-r.1 <1.5.6 || >=1.5.6-r.1 <1.5.7'
+      drizzle-orm: '>=1.0.0-rc.5 <=1.0.0-rc.99 || >=1.0.0 <2.0.0'
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -4010,11 +4014,11 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tanstack/query-core@5.108.2':
-    resolution: {integrity: sha512-0l+0xDKqn71hfJBKaAvFP/X7WYM0TbscEk6nK1pHaWQUWUEA+WJD0VlT8wF+HIJANMV9B/DouPWwDnX3w/l9BA==}
+  '@tanstack/query-core@5.108.3':
+    resolution: {integrity: sha512-Lh8fyLDlHOdZXfUB+G1M5bKxfQ1Y0/mfydFP+pMjFKweAU4OUiC4MyIBTcW7Ck+Iwt6K3/pzvADrJi2Dc1lwuQ==}
 
-  '@tanstack/react-query@5.108.2':
-    resolution: {integrity: sha512-wV6hEjVGTfh9rvu3uREYW0hgBfS9klDejGelhPY575jD5jg6qbAb1nzT7hR1Q+wemR66ZjtE5p9pAGUwqK8zbg==}
+  '@tanstack/react-query@5.108.3':
+    resolution: {integrity: sha512-dd9eDuqr6hvoTycO+wwuIgdA10S9gRA5EYsJCByhiATp/Xy0D51XgJUCRYJONgKs3URKApbBfNl8mgAe5wI0+Q==}
     peerDependencies:
       '@types/react': ^18 || ^19
       react: ^18 || ^19
@@ -4164,6 +4168,9 @@ packages:
 
   '@types/nodemailer@8.0.2':
     resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
+
+  '@types/pegjs@0.10.6':
+    resolution: {integrity: sha512-eLYXDbZWXh2uxf+w8sXS8d6KSoXTswfps6fvCUuVAGN8eRpfe7h9eSRydxiSJvo9Bf+GzifsDOr9TMQlmJdmkw==}
 
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
@@ -4488,6 +4495,10 @@ packages:
   bidi-js@1.1.0:
     resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
+  big-integer@1.6.52:
+    resolution: {integrity: sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==}
+    engines: {node: '>=0.6'}
+
   bowser@2.15.1:
     resolution: {integrity: sha512-ma47ABeUiTsmG4McKDtGCgQSiTCatM97Mlbn13K42N1kPSFE14oN3WFMjtyL4KubhGvQTqYheKl4Qx2bJtMXLQ==}
 
@@ -4521,8 +4532,8 @@ packages:
     resolution: {integrity: sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==}
     engines: {node: '>=10'}
 
-  caniuse-lite@1.0.30001826:
-    resolution: {integrity: sha512-wTB+9tIbLro/BCXwLuNV1meHE4L9dS6dArMDwgYfNBPMYScqClHyGunhkCSDtHhe/69Xl0sHlKgBVZ+fNsYtWA==}
+  caniuse-lite@1.0.30001827:
+    resolution: {integrity: sha512-YWEDr46gSO81M8w6uPbaIy4++IXsirx2asUqvllNiD4BPf75ibxclUjWEqp8ObCenRv+UM2n5Y8xuRPT8V8FrQ==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -4766,8 +4777,8 @@ packages:
   dom-accessibility-api@0.6.3:
     resolution: {integrity: sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==}
 
-  dompurify@3.4.18:
-    resolution: {integrity: sha512-ofe3wI/uNm68HInABYFJYqQxRw1EaKAjNdrFVKqjUY+UZurvNd2L/HuQe097s/4RivWiZyP6tT7aoT8atjfhwg==}
+  dompurify@3.5.0:
+    resolution: {integrity: sha512-LYC0ZkE8P1V42JsRYTwMdme/2ET8SpOc5AA2eOFjP/IadvRd2fwiT4TVz5vkfy0XUx12aS2UaRkTnfVPNOv9vw==}
 
   dot-case@3.0.4:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
@@ -5183,10 +5194,6 @@ packages:
   kdbush@4.1.0:
     resolution: {integrity: sha512-e9vurzrXJQrFX6ckpHP3bvj5l+9CnYzkxDNnNQ1h2QTqdWsUAJgXiKdGNcOa1EY85dU8KbQ+z/FdQdB7P+9yfQ==}
 
-  kysely@0.29.9:
-    resolution: {integrity: sha512-K48ErswC3MlIcBqR0pYIIEl+n9rIgwxgzaM1FxKHMXn7egxr1NHj7bCeF98mXl9A3/QoL5I7mo5S/mLXgeDgGA==}
-    engines: {node: '>=22.0.0'}
-
   leaflet@1.7.1:
     resolution: {integrity: sha512-/xwPEBidtg69Q3HlqPdU3DnrXQOvQU/CCHA1tcDQVzOwm91YMYaILjNp7L4Eaw5Z4sOYdbBz6koWyibppd8Zqw==}
 
@@ -5443,6 +5450,10 @@ packages:
   node-releases@2.0.65:
     resolution: {integrity: sha512-PfvofsGQ+MiOQIPkX9fU8ELUWmy5zL74CdQaph/ismKszfFkfwXaw0cGiwbwym2hT9k5+mdyl8O5WQ1MD8EHmA==}
     engines: {node: '>=18'}
+
+  node-sql-parser@5.4.0:
+    resolution: {integrity: sha512-jVe6Z61gPcPjCElPZ6j8llB3wnqGcuQzefim1ERsqIakxnEy5JlzV7XKdO1KmacRG5TKwPc4vJTgSRQ0LfkbFw==}
+    engines: {node: '>=8'}
 
   node@runtime:26.13.1:
     resolution:
@@ -6184,7 +6195,7 @@ packages:
     peerDependencies:
       '@types/node': ^20.19.0 || >=22.12.0
       '@vitejs/devtools': ^0.7.1 || ^0.8.0
-      esbuild: ^0.28.2
+      esbuild: ^0.27.0 || ^0.28.0
       jiti: '>=1.21.0'
       less: ^4.0.0
       sass: ^1.70.0
@@ -6831,6 +6842,12 @@ snapshots:
       '@duckdb/node-bindings-linux-x64-musl': 2.0.1-r.1
       '@duckdb/node-bindings-win32-arm64': 2.0.1-r.1
       '@duckdb/node-bindings-win32-x64': 2.0.1-r.1
+
+  '@duckdbfan/drizzle-duckdb@3.0.0-rc.2(@duckdb/node-api@2.0.1-r.1)(drizzle-orm@1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7))':
+    dependencies:
+      '@duckdb/node-api': 2.0.1-r.1
+      drizzle-orm: 1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7)
+      node-sql-parser: 5.4.0
 
   '@emnapi/core@2.0.0-beta.2':
     dependencies:
@@ -7543,12 +7560,12 @@ snapshots:
 
   '@orpc/interop@1.16.4': {}
 
-  '@orpc/react-query@1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.2)(@tanstack/react-query@5.108.2(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)':
+  '@orpc/react-query@1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.3)(@tanstack/react-query@5.108.3(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@orpc/client': 1.16.4(@opentelemetry/api@1.10.0)
       '@orpc/shared': 1.16.4(@opentelemetry/api@1.10.0)
-      '@orpc/tanstack-query': 1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.2)
-      '@tanstack/react-query': 5.108.2(@types/react@19.3.0)(react@19.3.1)
+      '@orpc/tanstack-query': 1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.3)
+      '@tanstack/react-query': 5.108.3(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -7625,11 +7642,11 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
-  '@orpc/tanstack-query@1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.2)':
+  '@orpc/tanstack-query@1.16.4(@opentelemetry/api@1.10.0)(@orpc/client@1.16.4(@opentelemetry/api@1.10.0))(@tanstack/query-core@5.108.3)':
     dependencies:
       '@orpc/client': 1.16.4(@opentelemetry/api@1.10.0)
       '@orpc/shared': 1.16.4(@opentelemetry/api@1.10.0)
-      '@tanstack/query-core': 5.108.2
+      '@tanstack/query-core': 5.108.3
     transitivePeerDependencies:
       - '@opentelemetry/api'
 
@@ -8295,11 +8312,11 @@ snapshots:
       tailwindcss: 4.3.5
       vite: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
 
-  '@tanstack/query-core@5.108.2': {}
+  '@tanstack/query-core@5.108.3': {}
 
-  '@tanstack/react-query@5.108.2(@types/react@19.3.0)(react@19.3.1)':
+  '@tanstack/react-query@5.108.3(@types/react@19.3.0)(react@19.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.108.2
+      '@tanstack/query-core': 5.108.3
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
@@ -8456,6 +8473,8 @@ snapshots:
   '@types/nodemailer@8.0.2':
     dependencies:
       '@types/node': 26.6.6
+
+  '@types/pegjs@0.10.6': {}
 
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
@@ -8782,6 +8801,8 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
+  big-integer@1.6.52: {}
+
   bowser@2.15.1: {}
 
   brace-expansion@2.1.8:
@@ -8791,7 +8812,7 @@ snapshots:
   browserslist@4.29.6:
     dependencies:
       baseline-browser-mapping: 2.11.39
-      caniuse-lite: 1.0.30001826
+      caniuse-lite: 1.0.30001827
       electron-to-chromium: 1.5.492
       node-releases: 2.0.65
       update-browserslist-db: 1.4.0(browserslist@4.29.6)
@@ -8813,7 +8834,7 @@ snapshots:
 
   camelcase@6.3.0: {}
 
-  caniuse-lite@1.0.30001826: {}
+  caniuse-lite@1.0.30001827: {}
 
   ccount@2.0.1: {}
 
@@ -9024,7 +9045,7 @@ snapshots:
 
   dom-accessibility-api@0.6.3: {}
 
-  dompurify@3.4.18:
+  dompurify@3.5.0:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -9266,8 +9287,6 @@ snapshots:
 
   kdbush@4.1.0: {}
 
-  kysely@0.29.9: {}
-
   leaflet@1.7.1: {}
 
   lexical@0.53.0(typescript@7.0.2):
@@ -9505,6 +9524,11 @@ snapshots:
   node-fetch-native@1.6.7: {}
 
   node-releases@2.0.65: {}
+
+  node-sql-parser@5.4.0:
+    dependencies:
+      '@types/pegjs': 0.10.6
+      big-integer: 1.6.52
 
   node@runtime:26.13.1: {}
 

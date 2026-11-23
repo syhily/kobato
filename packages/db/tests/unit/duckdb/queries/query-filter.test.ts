@@ -6,24 +6,22 @@ const baseQuery = { range: { startAt: 100, endAt: 200 } }
 
 describe('analytics filters', () => {
   it('always filters bots and the resolved range', () => {
-    const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where(buildAnalyticsFilter(baseQuery)))
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery().where(buildAnalyticsFilter(baseQuery)))
     expect(compiled.sql).toContain('is_bot = FALSE')
-    expect(compiled.sql).toContain('timestamp >= to_timestamp(?)')
-    expect(compiled.sql).toContain('timestamp < to_timestamp(?)')
-    expect(compiled.parameters).toEqual([100, 200])
+    expect(compiled.sql).toContain('timestamp >= to_timestamp($1)')
+    expect(compiled.sql).toContain('timestamp < to_timestamp($2)')
+    expect(compiled.params).toEqual([100, 200])
   })
 
   it('excludes geo-unknown events (empty country blob) by default', () => {
-    const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where(buildAnalyticsFilter(baseQuery)))
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery().where(buildAnalyticsFilter(baseQuery)))
     expect(compiled.sql).toContain(`blob7 <> ''`)
-    expect(compiled.parameters).toEqual([100, 200])
+    expect(compiled.params).toEqual([100, 200])
   })
 
   it('keeps geo-unknown events when includeUnknown is true', () => {
     const compiled = compileAnalyticsQuery(
-      createAnalyticsQuery()
-        .selectAll()
-        .where(buildAnalyticsFilter({ ...baseQuery, includeUnknown: true })),
+      createAnalyticsQuery().where(buildAnalyticsFilter({ ...baseQuery, includeUnknown: true })),
     )
     expect(compiled.sql).not.toContain(`blob7 <> ''`)
   })
@@ -36,21 +34,19 @@ describe('analytics filters', () => {
       country: 'US',
       path: 'alpha,beta',
     })
-    const compiled = compileAnalyticsQuery(createAnalyticsQuery().selectAll().where(filter))
-    expect(compiled.sql).toContain(`index1 = ?`)
-    expect(compiled.sql).toContain('blob7 in (?)')
-    expect(compiled.sql).toContain('blob1 in (?, ?)')
-    expect(compiled.parameters).toEqual([100, 200, 'post:7', 'US', 'alpha', 'beta'])
+    const compiled = compileAnalyticsQuery(createAnalyticsQuery().where(filter))
+    expect(compiled.sql).toContain('index1 = $3')
+    expect(compiled.sql).toContain('blob7 in ($4)')
+    expect(compiled.sql).toContain('blob1 in ($5, $6)')
+    expect(compiled.params).toEqual([100, 200, 'post:7', 'US', 'alpha', 'beta'])
   })
 
   it('keeps injection payloads out of the SQL text', () => {
     const payload = String.raw`x'); DROP TABLE access_events; --`
     const compiled = compileAnalyticsQuery(
-      createAnalyticsQuery()
-        .selectAll()
-        .where(buildAnalyticsFilter({ ...baseQuery, path: payload })),
+      createAnalyticsQuery().where(buildAnalyticsFilter({ ...baseQuery, path: payload })),
     )
     expect(compiled.sql).not.toContain('DROP TABLE')
-    expect(compiled.parameters).toContain(payload)
+    expect(compiled.params).toContain(payload)
   })
 })

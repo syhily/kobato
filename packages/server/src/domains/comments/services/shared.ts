@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
-import type { MetricRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { MetricRow } from '@kobato/db/sqlite/types'
 
-import { ensureMetric, findMetricByPublicId } from '@kobato/db/operations/metric'
+import { ensureMetric, findMetricByPublicId } from '@kobato/db/sqlite/operations/system/metric'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 

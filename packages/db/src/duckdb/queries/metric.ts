@@ -1,38 +1,16 @@
 import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { MetricRow, MetricType, ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
-import type { AnalyticsDatabase } from '@kobato/db/duckdb/query'
 
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { METRIC_DIMENSIONS } from '@kobato/db/duckdb/queries/metric-dimensions'
 import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'
-import { createAnalyticsQuery, createEnvMetricQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { sql, type SelectQueryBuilder } from 'kysely'
-
-function shapeMetricQuery<TB extends keyof AnalyticsDatabase>(
-  query: SelectQueryBuilder<AnalyticsDatabase, TB, Record<string, unknown>>,
-  input: ResolvedAnalyticsQuery,
-  type: MetricType,
-  limit: number,
-): SelectQueryBuilder<AnalyticsDatabase, TB, Record<string, unknown>> {
-  const dimension = METRIC_DIMENSIONS[type]
-  const name =
-    dimension.source === 'events'
-      ? sql<string>`COALESCE(NULLIF(${sql.ref(`access_events.${dimension.column}`)}, ${''}), ${'(unknown)'})`
-      : sql<string>`${dimension.select}`
-
-  const constraints = dimension.source === 'env' ? [sql<boolean>`${dimension.select} IS NOT NULL`] : []
-  if (dimension.source === 'env' && dimension.require !== undefined) {
-    constraints.push(dimension.require)
-  }
-
-  return query
-    .select([name.as('name'), sql<number>`COUNT(*)`.as('visits'), visitorsAggregate])
-    .where(buildAnalyticsFilter(input))
-    .$if(constraints.length > 0, (qb) => qb.where(sql<boolean>`${sql.join(constraints, sql` and `)}`))
-    .groupBy('name')
-    .orderBy('visits', 'desc')
-    .limit(Math.max(0, Math.floor(limit)))
-}
+import {
+  analyticsIdentifier,
+  createAnalyticsQuery,
+  createEnvMetricQuery,
+  runAnalyticsQuery,
+} from '@kobato/db/duckdb/query'
+import { and, desc, sql } from 'drizzle-orm'
 
 export async function queryMetric(
   reader: AnalyticsReader,
@@ -41,10 +19,42 @@ export async function queryMetric(
   limit = 20,
 ): Promise<MetricRow[]> {
   const dimension = METRIC_DIMENSIONS[type]
+  const name =
+    dimension.source === 'events'
+      ? sql<string>`COALESCE(NULLIF(${analyticsIdentifier(`access_events.${dimension.column}`)}, ${''}), ${'(unknown)'})`
+      : sql<string>`${dimension.select}`
+  const selection = {
+    name,
+    visits: sql<number>`COUNT(*)`,
+    visitors: visitorsAggregate,
+  }
+  const constraints = dimension.source === 'env' ? [sql<boolean>`${dimension.select} IS NOT NULL`] : []
+  if (dimension.source === 'env' && dimension.require !== undefined) {
+    constraints.push(dimension.require)
+  }
+  const where = and(buildAnalyticsFilter(input), ...constraints)
+  const normalizedLimit = Math.max(0, Math.floor(limit))
+
   const rows =
     dimension.source === 'env'
-      ? await runAnalyticsQuery(reader, shapeMetricQuery(createEnvMetricQuery(), input, type, limit), 'metric_env')
-      : await runAnalyticsQuery(reader, shapeMetricQuery(createAnalyticsQuery(), input, type, limit), 'metric')
+      ? await runAnalyticsQuery(
+          reader,
+          createEnvMetricQuery(selection)
+            .where(where)
+            .groupBy(sql`name`)
+            .orderBy(desc(sql`visits`))
+            .limit(normalizedLimit),
+          'metric_env',
+        )
+      : await runAnalyticsQuery(
+          reader,
+          createAnalyticsQuery(selection)
+            .where(where)
+            .groupBy(sql`name`)
+            .orderBy(desc(sql`visits`))
+            .limit(normalizedLimit),
+          'metric',
+        )
   return rows.map((row) => ({
     name: typeof row.name === 'string' ? row.name : '',
     visits: Number(row.visits),

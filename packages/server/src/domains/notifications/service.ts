@@ -5,8 +5,8 @@ import type {
   NotificationTab,
   ThreadMessageDto,
 } from '@kobato/api/contracts/notifications'
-import type { Database } from '@kobato/db/database'
-import type { NotificationRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 import type { SystemNotificationMessage } from '@kobato/server/domains/notifications/message'
@@ -16,18 +16,20 @@ import {
   countUnreadNotifications,
   createNotificationWithRecipients,
   findNotificationById,
-  findUserNamesByIds,
-  isActiveUserId,
-  isThreadParticipant,
   listNotificationsForUser,
-  listRecipientUserIds,
   listThreadNotifications,
-  listThreadParticipantIds,
   markNotificationsRead,
   markNotificationsUnread,
   recallNotification,
   type NewNotificationRow,
-} from '@kobato/db/operations/notification'
+} from '@kobato/db/sqlite/operations/engagement/notification'
+import {
+  findUserNamesByIds,
+  isActiveUserId,
+  isThreadParticipant,
+  listRecipientUserIds,
+  listThreadParticipantIds,
+} from '@kobato/db/sqlite/operations/engagement/notification-recipients'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import { queueNotificationEmail } from '@kobato/server/domains/notifications/email'
 import { encodeNotificationDescriptor, resolveNotificationMessage } from '@kobato/server/domains/notifications/message'

@@ -1,12 +1,9 @@
-import type { NewWebmention } from '@kobato/db/types'
+import type { NewWebmention } from '@kobato/db/sqlite/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import {
-  setWebmentionStatus,
-  upsertWebmention,
-  upsertWebmentionVerificationFailure,
-} from '@kobato/db/operations/webmention'
-import { webmention } from '@kobato/db/schema/webmention'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setWebmentionStatus, upsertWebmention } from '@kobato/db/sqlite/operations/engagement/webmention'
+import { upsertWebmentionVerificationFailure } from '@kobato/db/sqlite/operations/engagement/webmention-verification'
+import { webmention } from '@kobato/db/sqlite/schema/webmention'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

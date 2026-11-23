@@ -1,10 +1,10 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
-import { sqliteOf } from '@kobato/db/database'
-import { comment } from '@kobato/db/schema/comment'
-import { metric } from '@kobato/db/schema/metric'
-import { oneTimeToken } from '@kobato/db/schema/one-time-token'
-import { post } from '@kobato/db/schema/post'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { comment } from '@kobato/db/sqlite/schema/comment'
+import { metric } from '@kobato/db/sqlite/schema/metric'
+import { oneTimeToken } from '@kobato/db/sqlite/schema/one-time-token'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -54,13 +54,13 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 
 describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
-    const { findCommentWithUserById } = await import('@kobato/db/operations/comment')
+    const { findCommentWithUserById } = await import('@kobato/db/sqlite/operations/engagement/comment')
     expect(await findCommentWithUserById(db, 9999)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { findCommentWithUserById } = await import('@kobato/db/operations/comment')
+    const { findCommentWithUserById } = await import('@kobato/db/sqlite/operations/engagement/comment')
     const r = await findCommentWithUserById(db, id)
     expect(r?.name).toBe('Alice')
   })

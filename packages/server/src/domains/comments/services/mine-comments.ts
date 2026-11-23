@@ -1,16 +1,16 @@
-import type { Database } from '@kobato/db/database'
-import type { MyCommentEntity, MyCommentsFilters } from '@kobato/db/operations/comment'
-import type { EntityType } from '@kobato/db/target'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { MyCommentEntity, MyCommentsFilters } from '@kobato/db/sqlite/operations/engagement/comment-account'
+import type { EntityType } from '@kobato/db/sqlite/target'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
+import { resolveEntitiesForComments } from '@kobato/db/sqlite/operations/content/entity-asset'
+import { findParentCommentsByIds } from '@kobato/db/sqlite/operations/engagement/comment'
 import {
   countMyComments as countMyCommentsOp,
-  findParentCommentsByIds,
   listMyCommentEntities as listMyCommentEntitiesOp,
   listMyComments,
   mineSoftDeleteCutoff,
-} from '@kobato/db/operations/comment'
-import { resolveEntitiesForComments } from '@kobato/db/operations/entity-asset'
+} from '@kobato/db/sqlite/operations/engagement/comment-account'
 import { entityPermalink } from '@kobato/server/domains/content/urls'
 
 export interface MineCommentItem {

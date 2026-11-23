@@ -1,4 +1,4 @@
-import type { EntityTarget } from '@kobato/db/target'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { UaClientHints } from '@kobato/server/domains/analytics/ua-parse'
 
 export interface RawAccessEvent {

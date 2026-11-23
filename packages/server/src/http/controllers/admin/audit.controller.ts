@@ -7,7 +7,7 @@ import {
   fetchAuditLogActors,
   listAuditLogs,
   type AuditLogFilter,
-} from '@kobato/db/operations/audit-log'
+} from '@kobato/db/sqlite/operations/system/audit-log'
 import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight'
 import { clampDateToRetention, parseDate, toAuditLogItemDto } from '@kobato/server/domains/audit/projection'

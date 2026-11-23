@@ -3,8 +3,9 @@
 `apps/kobato/src/routes/` holds route modules — loader / action / meta / component orchestration. Read session/context
 at the perimeter, call orchestrators (`@kobato/server/http/loaders/*`, domain-surface services), render with
 `@kobato/web-admin` / `@kobato/web-public`. No DB queries, cache access, or markdown parsing inline — never import
-`@kobato/db/operations/*`. `routes.ts` is the URL contract; URLs and physical paths stay stable. Non-page requests (API,
-feeds, sitemap, generated images) are Hono routes in `server.ts`; components take plain props, never `server/*` in JSX.
+`@kobato/db/sqlite/operations/*`. `routes.ts` is the URL contract; URLs and physical paths stay stable. Non-page
+requests (API, feeds, sitemap, generated images) are Hono routes in `server.ts`; components take plain props, never
+`server/*` in JSX.
 
 **Public routes and the root loader are the exception**: both read `public.content.*` via `createSsrCaller`
 (`@kobato/server/http/ssr-caller`), never domain services or `server/http/loaders/*`.

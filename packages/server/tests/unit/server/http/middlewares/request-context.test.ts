@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'
 
-import { databaseOf } from '@kobato/db/database'
+import { databaseOf } from '@kobato/db/sqlite/database'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { deriveStatelessCsrfToken } from '@kobato/server/domains/auth/csrf'
 import { adminUser, makeSession } from '@kobato/server/tests/utils/session'

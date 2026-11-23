@@ -1,4 +1,4 @@
-import type { PostMetaRow } from '@kobato/db/types'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
 import { adminUser, authorUser, regularUser } from '@kobato/server/tests/utils/session'

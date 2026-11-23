@@ -1,12 +1,12 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
 import type { SidebarSettings } from '@kobato/settings/types'
 
-import { sqliteEngineOf, sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { post as postMetaTable } from '@kobato/db/schema/post'
-import { postTag } from '@kobato/db/schema/post-tag'
-import { category as categoryTable, tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { sqliteEngineOf, sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
+import { postTag } from '@kobato/db/sqlite/schema/post-tag'
+import { category as categoryTable, tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import {
@@ -370,7 +370,7 @@ describe('posts/services/search-index — indexPost', () => {
     const pid = await seedPost({ slug: 'idx-post' })
     const { indexPost } = await import('@kobato/server/domains/posts/services/search-index')
     await indexPost(db, pid, 'Title', 'Summary', 'body')
-    const { postSearchIndex } = await import('@kobato/db/schema/content')
+    const { postSearchIndex } = await import('@kobato/db/sqlite/schema/content')
     const rows = await sqliteOf(db).select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('body')

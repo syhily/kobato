@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database'
-import type { NewPageMeta, PageMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NewPageMeta, PageMetaRow } from '@kobato/db/sqlite/types'
 
 import {
   findEntityMetaById,
@@ -9,7 +9,7 @@ import {
   restoreEntityMeta,
   softDeleteEntityMeta,
   updateEntityMetaById,
-} from '@kobato/db/operations/entity-meta'
+} from '@kobato/db/sqlite/operations/content/entity-meta'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }

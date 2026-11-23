@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { upsertWebmentionOutbox } from '@kobato/db/operations/webmention-outbox'
+import { upsertWebmentionOutbox } from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { entityCommentUrl } from '@kobato/server/domains/content/urls'
 import { wirePostPublishHook } from '@kobato/server/domains/posts/publish-hooks'

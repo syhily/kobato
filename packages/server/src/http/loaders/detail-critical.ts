@@ -1,5 +1,5 @@
 import type { DetailCriticalPayload } from '@kobato/api/contracts/content'
-import type { EntityTarget } from '@kobato/db/target'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { trackPageView } from '@kobato/server/domains/analytics/track'

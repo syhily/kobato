@@ -1,4 +1,4 @@
-import type { EntityTarget } from '@kobato/db/target'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { RawAccessEvent } from '@kobato/server/domains/analytics/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 

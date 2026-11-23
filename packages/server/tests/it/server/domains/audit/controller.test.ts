@@ -1,9 +1,9 @@
-import type { AuditLogRow } from '@kobato/db/schema/config'
+import type { AuditLogRow } from '@kobato/db/sqlite/schema/config'
 
 import { describe, expect, it } from 'vitest'
 
 const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@kobato/server/domains/audit/projection')
-const { buildAuditLogWhere } = await import('@kobato/db/operations/audit-log')
+const { buildAuditLogWhere } = await import('@kobato/db/sqlite/operations/system/audit-log')
 const { auditLogRouter } = await import('@kobato/server/http/controllers/admin/audit.controller')
 
 describe('audit/controller helpers', () => {

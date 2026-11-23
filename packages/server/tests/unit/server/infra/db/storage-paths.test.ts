@@ -1,4 +1,4 @@
-import { isInMemoryPath } from '@kobato/db/database'
+import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { resolveAnalyticsPath, resolveDatabasePath } from '@kobato/server/infra/db/paths'
 import { describe, expect, it } from 'vitest'
 

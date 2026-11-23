@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { BundleKey, SettingsSection } from '@kobato/settings/sections'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/operations/setting'
+import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry'
 import { migrateLegacySiteIdentityLocale } from '@kobato/server/domains/settings/services/locale-migration'
 import { decryptIfNeeded } from '@kobato/server/infra/crypto/secret-encryption'

@@ -1,7 +1,7 @@
 import type { ClearCacheTarget } from '@kobato/cache/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { session } from '@kobato/db/schema/session'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { session } from '@kobato/db/sqlite/schema/session'
 import { clearAdminCache, getAdminCacheStats } from '@kobato/server/infra/cache/admin-ops'
 import { countEntryFiles, readGeneration, resolveCacheRoot, setItem } from '@kobato/server/infra/cache/file-store'
 import { bumpCounter, get, getCounter, set, through } from '@kobato/server/infra/cache/registry'

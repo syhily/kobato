@@ -1,10 +1,13 @@
-import type { Database } from '@kobato/db/database'
-import type { NotificationRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { ResolvedNotificationMessage } from '@kobato/server/domains/notifications/message'
 import type { SendResult } from '@kobato/server/infra/email/types'
 import type { ServerTranslator } from '@kobato/server/infra/i18n'
 
-import { findUserEmailsByIds, findUserNamesByIds } from '@kobato/db/operations/notification'
+import {
+  findUserEmailsByIds,
+  findUserNamesByIds,
+} from '@kobato/db/sqlite/operations/engagement/notification-recipients'
 import { resolveNotificationMessage } from '@kobato/server/domains/notifications/message'
 import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notification'
 import { render } from '@kobato/server/infra/email/render'

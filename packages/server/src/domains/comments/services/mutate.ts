@@ -1,6 +1,6 @@
 import type { CommentReq } from '@kobato/api/contracts/comments'
-import type { Database } from '@kobato/db/database'
-import type { NewComment } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NewComment } from '@kobato/db/sqlite/types'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { MetricTarget } from '@kobato/server/domains/comments/services/shared'
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'
@@ -9,10 +9,10 @@ import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 import {
   findCommentRootId,
   findCommentWithSourceUser,
-  insertCommentWithPendingGate,
   recentCommentsForUserDedupe,
-} from '@kobato/db/operations/comment'
-import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@kobato/db/operations/user'
+} from '@kobato/db/sqlite/operations/engagement/comment'
+import { insertCommentWithPendingGate } from '@kobato/db/sqlite/operations/engagement/comment-mutate'
+import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@kobato/db/sqlite/operations/identity/user'
 import { userSession } from '@kobato/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'

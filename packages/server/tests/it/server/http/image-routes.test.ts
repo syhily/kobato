@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { post as postTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { onErrorHandler } from '@kobato/server/http/errors'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

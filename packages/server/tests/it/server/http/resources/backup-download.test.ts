@@ -1,7 +1,7 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { insertBackup } from '@kobato/db/operations/backup'
+import { insertBackup } from '@kobato/db/sqlite/operations/system/backup'
 import { onErrorHandler } from '@kobato/server/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

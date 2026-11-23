@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import bcrypt from 'bcryptjs'

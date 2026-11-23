@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'

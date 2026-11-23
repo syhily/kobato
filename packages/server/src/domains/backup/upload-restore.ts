@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { StagedBackup } from '@kobato/server/domains/backup/services/restore'
 
 import {

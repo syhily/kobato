@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type {
   CommentTokenCookie,
   CommentTokenCookieEntry,
@@ -8,7 +8,7 @@ import {
   findLiveOneTimeTokenPayloads,
   insertOneTimeToken,
   deleteOneTimeToken,
-} from '@kobato/db/operations/one-time-token'
+} from '@kobato/db/sqlite/operations/identity/otp'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { isRecord } from '@kobato/utils/type-guards'

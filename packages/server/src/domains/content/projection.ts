@@ -1,5 +1,5 @@
 import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
-import type { ContentRow } from '@kobato/db/types'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 
 import { readHeadings, readLexicalBody } from '@kobato/server/domains/content/projection-read'
 import { readStringArray } from '@kobato/server/infra/coerce'

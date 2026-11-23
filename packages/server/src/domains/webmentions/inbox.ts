@@ -1,13 +1,13 @@
-import type { Database } from '@kobato/db/database'
-import type { WebmentionInboxRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { WebmentionInboxRow } from '@kobato/db/sqlite/types'
 
-import { upsertWebmentionVerificationFailure } from '@kobato/db/operations/webmention'
 import {
   clearWebmentionInbox,
   deleteWebmentionInbox,
   markWebmentionInboxRetry,
   pickDueWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox'
+} from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
+import { upsertWebmentionVerificationFailure } from '@kobato/db/sqlite/operations/engagement/webmention-verification'
 import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { receiveWebmention } from '@kobato/server/domains/webmentions/receive'
 import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'

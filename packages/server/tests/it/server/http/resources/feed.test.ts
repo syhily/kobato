@@ -1,9 +1,9 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { post as postTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { APP_VERSION } from '@kobato/distribution/app'
 import { onErrorHandler } from '@kobato/server/http/errors'
 import { feedRouter } from '@kobato/server/http/resources/feed'

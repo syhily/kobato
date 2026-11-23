@@ -1,4 +1,4 @@
-import type { NotificationRow } from '@kobato/db/types'
+import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n'
 

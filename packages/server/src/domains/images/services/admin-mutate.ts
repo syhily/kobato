@@ -1,5 +1,5 @@
 import type { AdminImageDto } from '@kobato/api/contracts/images'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import {
   findAdminImageRowById,
@@ -7,7 +7,7 @@ import {
   softDeleteImage,
   updateImageNoteWithUploader,
   updateImageThumbhashWithUploader,
-} from '@kobato/db/operations/image'
+} from '@kobato/db/sqlite/operations/content/image'
 import { canEditImage, type ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import { toAdminImageDto } from '@kobato/server/domains/images/services/admin-read'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

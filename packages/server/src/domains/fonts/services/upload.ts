@@ -1,7 +1,7 @@
 import type { AdminFontDto } from '@kobato/api/contracts/fonts'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { insertFont } from '@kobato/db/operations/font'
+import { insertFont } from '@kobato/db/sqlite/operations/system/font'
 import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
 import { sliceFont } from '@kobato/server/domains/fonts/slice'
 import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage'

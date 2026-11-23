@@ -1,5 +1,5 @@
 import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/api/contracts/content'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'

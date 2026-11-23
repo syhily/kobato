@@ -1,4 +1,4 @@
-import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention'
+import { findNextWebmentionReverifyDueAt } from '@kobato/db/sqlite/operations/engagement/webmention-verification'
 import { makeQueueScheduler } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { runWebmentionReverifyBatch } from '@kobato/server/domains/webmentions/reverify'
 

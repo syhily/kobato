@@ -1,5 +1,5 @@
 import { commentsTokenContract } from '@kobato/api/rpc/public/comments'
-import { findCommentsByIds } from '@kobato/db/operations/comment'
+import { findCommentsByIds } from '@kobato/db/sqlite/operations/engagement/comment'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { parseComments } from '@kobato/server/domains/comments/services/public-query'
 import {

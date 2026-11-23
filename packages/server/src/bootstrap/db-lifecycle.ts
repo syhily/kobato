@@ -1,8 +1,8 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { NOTIFICATION_SOURCES } from '@kobato/api/contracts/notifications'
-import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/database'
-import { migrateDatabase } from '@kobato/db/migrate'
+import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
+import { migrateDatabase } from '@kobato/db/sqlite/migrate'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
 import {
   closeAnalyticsForRestore,

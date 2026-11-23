@@ -1,8 +1,8 @@
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { page as pageTable } from '@kobato/db/schema/page'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { page as pageTable } from '@kobato/db/sqlite/schema/page'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/inkling/tests/utils/lexical'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { adminSession, regularSession } from '@kobato/server/tests/utils/session'

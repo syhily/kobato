@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { tag } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { tag } from '@kobato/db/sqlite/schema/taxonomy'
 import { findTagBySlug, resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'

@@ -1,6 +1,6 @@
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
-import { sqliteOf } from '@kobato/db/database'
-import { comment } from '@kobato/db/schema/comment'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { comment } from '@kobato/db/sqlite/schema/comment'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'

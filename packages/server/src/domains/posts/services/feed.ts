@@ -1,5 +1,5 @@
 import type { Post, PostVisibilityOptions } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { buildPublicPostFilters, hydratePostList } from '@kobato/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@kobato/server/domains/posts/services/public-query'

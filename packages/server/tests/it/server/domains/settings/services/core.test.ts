@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { computeSecretMasks } from '@kobato/server/domains/settings/services/masks'

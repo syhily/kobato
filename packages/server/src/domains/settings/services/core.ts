@@ -1,12 +1,12 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { Database } from '@kobato/db/database'
-import type { Setting } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { Setting } from '@kobato/db/sqlite/types'
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { SectionMeta } from '@kobato/settings/sections/registry'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { isValidPasskeyDomain } from '@kobato/auth/network'
-import { updateSettingTransactionally } from '@kobato/db/operations/setting'
+import { updateSettingTransactionally } from '@kobato/db/sqlite/operations/system/setting'
 import {
   SECTION_REGISTRY,
   sectionWriteSchema,

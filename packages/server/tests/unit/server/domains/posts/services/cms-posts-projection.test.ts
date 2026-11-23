@@ -1,4 +1,4 @@
-import type { ContentRow, PostMetaRow } from '@kobato/db/types'
+import type { ContentRow, PostMetaRow } from '@kobato/db/sqlite/types'
 
 import { describe, expect, it } from 'vitest'
 

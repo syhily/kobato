@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { user, verification } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { user, verification } from '@kobato/db/sqlite/schema/user'
 import { SmtpCapture } from '@kobato/harness/smtp'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

@@ -1,6 +1,6 @@
 import type { AdminPageDto } from '@kobato/api/contracts/pages'
 import type { Page } from '@kobato/catalog/model'
-import type { ContentRow, PageMetaRow } from '@kobato/db/types'
+import type { ContentRow, PageMetaRow } from '@kobato/db/sqlite/types'
 
 import { toAdminMetaDto } from '@kobato/server/domains/content/entities/projection'
 import { readRevisionProjection } from '@kobato/server/domains/content/projection-read'

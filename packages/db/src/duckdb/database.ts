@@ -1,6 +1,6 @@
 import { DuckDBInstance } from '@duckdb/node-api'
-import { isInMemoryPath } from '@kobato/db/database'
 import { analyticsHandleOf, engineOf, type AnalyticsHandle, type DuckDbEngine } from '@kobato/db/duckdb/connection'
+import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'

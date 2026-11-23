@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { findSettingByScope } from '@kobato/db/operations/setting'
-import { setting } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { findSettingByScope } from '@kobato/db/sqlite/operations/system/setting'
+import { setting } from '@kobato/db/sqlite/schema/config'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'

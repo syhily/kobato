@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database'
-import type { NewsletterSubscriberRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NewsletterSubscriberRow } from '@kobato/db/sqlite/types'
 
 import {
   findSubscriberByConfirmTokenHash,
@@ -7,7 +7,7 @@ import {
   findSubscriberById,
   insertSubscriber,
   updateSubscriber,
-} from '@kobato/db/operations/newsletter'
+} from '@kobato/db/sqlite/operations/engagement/newsletter'
 import { sendConfirmSubscription } from '@kobato/server/domains/newsletter/email'
 import { verifyUnsubscribeSignature } from '@kobato/server/domains/newsletter/signing'
 import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens'

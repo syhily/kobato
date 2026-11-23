@@ -1,10 +1,10 @@
 import type { Page, Post } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { ogImagePathForSlug } from '@kobato/catalog/seo/og-image'
-import { findCategoriesByNames } from '@kobato/db/operations/category'
+import { findCategoriesByNames } from '@kobato/db/sqlite/operations/taxonomy/category'
 import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html'
 import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html'
 import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed'

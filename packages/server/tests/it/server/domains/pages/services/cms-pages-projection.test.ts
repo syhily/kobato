@@ -1,4 +1,4 @@
-import type { ContentRow, PageMetaRow } from '@kobato/db/types'
+import type { ContentRow, PageMetaRow } from '@kobato/db/sqlite/types'
 
 import { emptyLexicalBody, lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { describe, expect, it } from 'vitest'

@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { post as postMetaTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

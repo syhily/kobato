@@ -1,4 +1,4 @@
-import { findNextScheduledPublishAt } from '@kobato/db/operations/post'
+import { findNextScheduledPublishAt } from '@kobato/db/sqlite/operations/content/post-schedule'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { jobDb, nudgeRegisteredJob, registerJob } from '@kobato/server/infra/job-registry'
 import { getLogger } from '@kobato/server/infra/logger'

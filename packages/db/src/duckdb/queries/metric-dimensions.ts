@@ -1,9 +1,10 @@
 import type { BlobName } from '@kobato/db/duckdb/access-events'
 import type { MetricType } from '@kobato/db/duckdb/queries/types'
-import type { RawBuilder } from 'kysely'
+import type { SQL } from 'drizzle-orm'
 
 import { blobColumns } from '@kobato/db/duckdb/access-events'
-import { sql } from 'kysely'
+import { analyticsIdentifier } from '@kobato/db/duckdb/query'
+import { sql } from 'drizzle-orm'
 
 export interface EventsDimension {
   source: 'events'
@@ -12,13 +13,13 @@ export interface EventsDimension {
 
 export interface EnvDimension {
   source: 'env'
-  select: RawBuilder<unknown>
-  require?: RawBuilder<boolean>
+  select: SQL
+  require?: SQL<boolean>
 }
 
 export type MetricDimension = EventsDimension | EnvDimension
 
-const env = (column: string) => sql.ref(`device_env_client.${column}`)
+const env = (column: string) => analyticsIdentifier(`device_env_client.${column}`)
 
 const events = (name: Exclude<BlobName, 'reserved'>): EventsDimension => ({
   source: 'events',
@@ -99,14 +100,17 @@ export const METRIC_DIMENSIONS: Record<MetricType, MetricDimension> = {
   path: events('path'),
 }
 
-export function dimensionWhere(dimension: MetricDimension, values: string[]): RawBuilder<boolean> {
-  const list = sql.join(values)
+export function dimensionWhere(dimension: MetricDimension, values: string[]): SQL<boolean> {
+  const list = sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  )
   if (dimension.source === 'events') {
-    return sql<boolean>`${sql.ref(`access_events.${dimension.column}`)} in (${list})`
+    return sql<boolean>`${analyticsIdentifier(`access_events.${dimension.column}`)} in (${list})`
   }
   const required = dimension.require === undefined ? sql`` : sql`and ${dimension.require}`
-  return sql<boolean>`${sql.ref('access_events.event_id')} in (
-    select ${sql.ref('device_env_client.event_id')} from device_env_client
+  return sql<boolean>`${analyticsIdentifier('access_events.event_id')} in (
+    select ${analyticsIdentifier('device_env_client.event_id')} from device_env_client
     where ${dimension.select} in (${list}) ${required}
   )`
 }

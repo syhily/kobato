@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
-import type { WebmentionUpsertOutcome } from '@kobato/db/operations/webmention'
-import type { WebmentionRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { WebmentionUpsertOutcome } from '@kobato/db/sqlite/operations/engagement/webmention'
+import type { WebmentionRow } from '@kobato/db/sqlite/types'
 import type { WebmentionReceiveInput } from '@kobato/server/domains/webmentions/schema'
 
-import { upsertWebmention } from '@kobato/db/operations/webmention'
+import { upsertWebmention } from '@kobato/db/sqlite/operations/engagement/webmention'
 import { classifyWebmentionType, type WebmentionType } from '@kobato/server/domains/webmentions/classify'
 import { sendNewWebmention } from '@kobato/server/domains/webmentions/email'
 import { fetchSourceHtml } from '@kobato/server/domains/webmentions/fetch'

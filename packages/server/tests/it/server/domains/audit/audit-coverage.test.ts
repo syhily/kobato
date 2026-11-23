@@ -1,13 +1,13 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
   buildAuditLogWhere,
   countAuditLogs,
   listAuditLogs,
   fetchAuditLogActorMap,
   fetchAuditLogActors,
-} from '@kobato/db/operations/audit-log'
-import { auditLog } from '@kobato/db/schema/config'
-import { user } from '@kobato/db/schema/user'
+} from '@kobato/db/sqlite/operations/system/audit-log'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   archiveExpiredAuditLogs,

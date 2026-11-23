@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database'
-import type { VerificationPurpose } from '@kobato/db/operations/verification-token'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { VerificationPurpose } from '@kobato/db/sqlite/operations/identity/veification'
 
 import {
   consumeSignInOtp,
@@ -8,7 +8,7 @@ import {
   purgeExpiredVerifications,
   revokeVerificationsFor,
   upsertVerification,
-} from '@kobato/db/operations/verification-token'
+} from '@kobato/db/sqlite/operations/identity/veification'
 import { generateToken, sha256, TOKEN_LEN_RE } from '@kobato/server/infra/crypto/tokens'
 import { getLogger } from '@kobato/server/infra/logger'
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'

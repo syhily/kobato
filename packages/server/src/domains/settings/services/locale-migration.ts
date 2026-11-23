@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { DEFAULT_LOCALE, isKnownLocaleValue, normalizeAppLocale } from '@kobato/i18n/locales'
 import { getLogger } from '@kobato/server/infra/logger'
 import { generalSection } from '@kobato/settings/sections/general'

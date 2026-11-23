@@ -1,12 +1,12 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
-import type { EntityTarget } from '@kobato/db/target'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { TrackPageViewOptions } from '@kobato/server/domains/analytics/track'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
-import { sqliteOf } from '@kobato/db/database'
 import { engineOf } from '@kobato/db/duckdb/connection'
-import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric'
-import { metric } from '@kobato/db/schema/metric'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { ensureMetric, findMetricByTarget } from '@kobato/db/sqlite/operations/system/metric'
+import { metric } from '@kobato/db/sqlite/schema/metric'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,

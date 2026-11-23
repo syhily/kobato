@@ -1,38 +1,44 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
-  adminUserIds,
   commentFingerprintRows,
-  commentsByIds,
-  countAdminComments,
-  countAllComments,
   countApprovedCommentsByUser,
   countApprovedRepliesOfComment,
   countCommentsAndRoots,
   findChildComments,
   findCommentRootId,
   findCommentsByIds,
-  findCommentWithUserAndTarget,
   findCommentWithUserById,
   findParentCommentsByIds,
   findRootComments,
-  insertComment,
-  latestDistinctCommentIds,
-  latestDistinctCommentIdsQuery,
+  recentCommentsForUserDedupe,
+} from '@kobato/db/sqlite/operations/engagement/comment'
+import { listMyComments } from '@kobato/db/sqlite/operations/engagement/comment-account'
+import {
+  countAdminComments,
+  countAllComments,
+  findCommentWithUserAndTarget,
   listAdminComments,
   listAdminPendingDashboard,
-  listMyComments,
-  pendingComments,
-  recentCommentsForUserDedupe,
   searchCommentAuthors,
   searchPages,
+} from '@kobato/db/sqlite/operations/engagement/comment-admin'
+import {
+  adminUserIds,
+  commentsByIds,
+  latestDistinctCommentIds,
+  latestDistinctCommentIdsQuery,
+  pendingComments,
+} from '@kobato/db/sqlite/operations/engagement/comment-digest'
+import {
+  insertComment,
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@kobato/db/operations/comment'
-import { comment } from '@kobato/db/schema/comment'
-import { metric } from '@kobato/db/schema/metric'
-import { post } from '@kobato/db/schema/post'
-import { user } from '@kobato/db/schema/user'
+} from '@kobato/db/sqlite/operations/engagement/comment-mutate'
+import { comment } from '@kobato/db/sqlite/schema/comment'
+import { metric } from '@kobato/db/sqlite/schema/metric'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
 import { countAdminPendingDashboard } from '@kobato/server/domains/comments/services/admin-query'
 import { countMyComments, listMyCommentEntities } from '@kobato/server/domains/comments/services/mine-comments'

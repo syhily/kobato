@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database'
-import type { ContentRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 
-import { findContentsByIds } from '@kobato/db/operations/entity-revision'
-import { listLivePostReindexBatch } from '@kobato/db/operations/post'
+import { findContentsByIds } from '@kobato/db/sqlite/operations/content/entity-revision'
+import { listLivePostReindexBatch } from '@kobato/db/sqlite/operations/content/post-schedule'
 import { indexPostFromRevision } from '@kobato/server/domains/posts/services/search-index'
 import { getLogger } from '@kobato/server/infra/logger'
 

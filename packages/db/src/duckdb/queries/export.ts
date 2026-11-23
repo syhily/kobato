@@ -4,7 +4,8 @@ import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
 import { visitAggregates } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter } from '@kobato/db/duckdb/queries/query-filter'
 import { createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { sql } from 'kysely'
+import { accessEvents } from '@kobato/db/duckdb/schema'
+import { desc, sql } from 'drizzle-orm'
 
 export interface AnalyticsExportRow {
   path: string
@@ -19,11 +20,10 @@ export async function queryExportRows(
 ): Promise<AnalyticsExportRow[]> {
   const rows = await runAnalyticsQuery(
     reader,
-    createAnalyticsQuery()
-      .select([sql.ref('blob1').as('path'), ...visitAggregates('views')])
+    createAnalyticsQuery({ path: accessEvents.blob1, ...visitAggregates('views') })
       .where(buildAnalyticsFilter(input))
-      .groupBy('path')
-      .orderBy('views', 'desc')
+      .groupBy(accessEvents.blob1)
+      .orderBy(desc(sql`views`))
       .limit(input.limit ?? 500),
     'export',
   )

@@ -1,7 +1,7 @@
 import type { AdminTagDto } from '@kobato/api/contracts/tags'
 import type { Tag } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { TagRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { TagRow } from '@kobato/db/sqlite/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
 import { hasAtLeast } from '@kobato/auth/roles'
@@ -17,7 +17,7 @@ import {
   listAdminTagRows,
   listTagNameSlugRows,
   updateTag,
-} from '@kobato/db/operations/tag'
+} from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { countPostsByTaxonomy, listPostTitlesByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
 import {

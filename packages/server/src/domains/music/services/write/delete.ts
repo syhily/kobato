@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { findMusicById, softDeleteMusic } from '@kobato/db/operations/music'
+import { findMusicById, softDeleteMusic } from '@kobato/db/sqlite/operations/content/music'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { backendFor } from '@kobato/server/infra/storage/registry'

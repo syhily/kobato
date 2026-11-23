@@ -1,24 +1,23 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
+import { countApprovedRepliesOfComment, findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'
+import { findCommentWithUserAndTarget } from '@kobato/db/sqlite/operations/engagement/comment-admin'
 import {
   adminClearDeleteRequest as adminClearDeleteRequestOp,
   approveCommentById as approveCommentByIdOp,
   bulkApprovePendingByUser as bulkApprovePendingByUserOp,
   bulkSoftDeleteCommentsByUser as bulkSoftDeleteCommentsByUserOp,
   clearDeleteRequest as clearDeleteRequestOp,
-  countApprovedRepliesOfComment,
   deleteCommentById as deleteCommentByIdOp,
-  findCommentWithUserAndTarget,
-  findCommentWithUserById,
   requestDeleteComment as requestDeleteCommentOp,
   softDeleteCommentById as softDeleteCommentByIdOp,
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@kobato/db/operations/comment'
+} from '@kobato/db/sqlite/operations/engagement/comment-mutate'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { isCommentOwner } from '@kobato/server/domains/auth/rbac'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'

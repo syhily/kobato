@@ -1,4 +1,4 @@
-import type { auditLog } from '@kobato/db/schema/config'
+import type { auditLog } from '@kobato/db/sqlite/schema/config'
 import type { z } from 'zod'
 
 import { auditLogItemDto } from '@kobato/api/contracts/audit'

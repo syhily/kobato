@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { BrandingObjectRef } from '@kobato/settings/types'
 
-import { findSettingByScope, upsertSetting } from '@kobato/db/operations/setting'
+import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { type BinarySlot } from '@kobato/server/assets/defaults'
 import { generateFaviconPack } from '@kobato/server/domains/assets/generate'
 import {

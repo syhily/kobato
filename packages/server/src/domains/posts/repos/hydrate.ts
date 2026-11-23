@@ -1,11 +1,11 @@
 import type { Post, PostVisibilityOptions } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { PublicPostFilters } from '@kobato/db/operations/post'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PublicPostFilters } from '@kobato/db/sqlite/operations/content/post'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
-import { findCategoryNamesByIds } from '@kobato/db/operations/category'
-import { hydratePublishedRevisions } from '@kobato/db/operations/entity-revision'
-import { findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
+import { hydratePublishedRevisions } from '@kobato/db/sqlite/operations/content/entity-revision'
+import { findCategoryNamesByIds } from '@kobato/db/sqlite/operations/taxonomy/category'
+import { findTagNamesByPostIds } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { toCmsPost } from '@kobato/server/domains/posts/projection'
 

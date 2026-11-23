@@ -1,11 +1,11 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
   listWebmentionInbox,
   markWebmentionInboxRetry,
   upsertWebmentionInbox,
-} from '@kobato/db/operations/webmention-inbox'
-import { post } from '@kobato/db/schema/post'
-import { webmention, webmentionInbox } from '@kobato/db/schema/webmention'
+} from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { webmention, webmentionInbox } from '@kobato/db/sqlite/schema/webmention'
 import { processWebmentionInboxRow, runWebmentionInboxBatch } from '@kobato/server/domains/webmentions/inbox'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'

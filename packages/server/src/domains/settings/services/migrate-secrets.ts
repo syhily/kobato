@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/operations/setting'
+import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { isVitest } from '@kobato/server/infra/config'
 import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@kobato/server/infra/crypto/secret-encryption'
 import { getLogger } from '@kobato/server/infra/logger'

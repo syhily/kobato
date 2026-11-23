@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { category } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { category } from '@kobato/db/sqlite/schema/taxonomy'
 import {
   findCategoryBySlug,
   resolveCategoryBySlugOrName,

@@ -1,10 +1,11 @@
-import type { EntityType } from '@kobato/db/target'
+import type { EntityType } from '@kobato/db/sqlite/target'
 
-import { sqliteOf } from '@kobato/db/database'
-import { reserveSlugTx, SlugOccupiedError } from '@kobato/db/operations/entity-meta'
-import { slugRegistry } from '@kobato/db/schema/config'
-import { page } from '@kobato/db/schema/page'
-import { post } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { reserveSlugTx } from '@kobato/db/sqlite/operations/content/entity-lifecycle'
+import { SlugOccupiedError } from '@kobato/db/sqlite/operations/content/entity-meta'
+import { slugRegistry } from '@kobato/db/sqlite/schema/config'
+import { page } from '@kobato/db/sqlite/schema/page'
+import { post } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

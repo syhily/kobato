@@ -1,7 +1,7 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
-import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/sqlite/database'
+import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { wipeCache } from '@kobato/server/infra/cache/file-store'
 import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'

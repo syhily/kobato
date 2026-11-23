@@ -1,9 +1,9 @@
-import type { Database } from '@kobato/db/database'
-import type { NewAuditLog } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { NewAuditLog } from '@kobato/db/sqlite/types'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types'
 
-import { databaseOf } from '@kobato/db/database'
-import { insertAuditLogRows } from '@kobato/db/operations/audit-log'
+import { databaseOf } from '@kobato/db/sqlite/database'
+import { insertAuditLogRows } from '@kobato/db/sqlite/operations/system/audit-log'
 import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
 import {

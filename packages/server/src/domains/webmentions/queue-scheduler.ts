@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { Logger } from '@kobato/server/infra/logger'
 
 import { jobDb, registerJob } from '@kobato/server/infra/job-registry'

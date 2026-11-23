@@ -1,9 +1,9 @@
 import type { Role } from '@kobato/auth/roles'
 
-import { sqliteOf } from '@kobato/db/database'
-import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/operations/notification'
-import { notification, notificationRecipient } from '@kobato/db/schema/notification'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/sqlite/operations/engagement/notification'
+import { notification, notificationRecipient } from '@kobato/db/sqlite/schema/notification'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { markRead, recallMessage, sendBroadcast, sendDirectMessage } from '@kobato/server/domains/notifications/service'
 import { runDbMaintenance } from '@kobato/server/infra/db/maintenance'

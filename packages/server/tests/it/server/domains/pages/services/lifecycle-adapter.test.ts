@@ -1,4 +1,4 @@
-import type { PageMetaRow } from '@kobato/db/types'
+import type { PageMetaRow } from '@kobato/db/sqlite/types'
 
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
 import { adminUser, authorUser, regularUser } from '@kobato/server/tests/utils/session'

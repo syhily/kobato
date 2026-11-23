@@ -1,9 +1,9 @@
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
-import { sqliteOf } from '@kobato/db/database'
-import { auditLog } from '@kobato/db/schema/config'
-import { user as userTable } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import {

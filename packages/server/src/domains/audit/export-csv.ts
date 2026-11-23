@@ -1,4 +1,4 @@
-import type { auditLog } from '@kobato/db/schema/config'
+import type { auditLog } from '@kobato/db/sqlite/schema/config'
 
 import { toAuditLogItemDto } from '@kobato/server/domains/audit/projection'
 

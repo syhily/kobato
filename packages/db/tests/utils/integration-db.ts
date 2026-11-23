@@ -1,7 +1,7 @@
-import type { Database, DatabaseHandle } from '@kobato/db/database'
+import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/database'
-import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/migrate'
+import { closeDatabase, databaseOf, openDatabase, sqliteOf } from '@kobato/db/sqlite/database'
+import { MIGRATIONS_TABLE, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import { sql } from 'drizzle-orm'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

@@ -1,10 +1,10 @@
 import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/api/contracts/cache'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/cache/types'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/cache/types'
-import { countLiveSessions } from '@kobato/db/operations/session'
+import { countLiveSessions } from '@kobato/db/sqlite/operations/identity/session'
 import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store'
 import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from '@kobato/server/infra/cache/registry'
 import { createServerTranslator } from '@kobato/server/infra/i18n'

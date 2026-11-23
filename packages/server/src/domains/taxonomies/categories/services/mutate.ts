@@ -1,6 +1,6 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
-import type { Database } from '@kobato/db/database'
-import type { CategoryRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { CategoryRow } from '@kobato/db/sqlite/types'
 import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup'
 import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection'
 
@@ -12,7 +12,7 @@ import {
   listPublicCategoryRows,
   reorderCategories as reorderCategoryRows,
   updateCategory,
-} from '@kobato/db/operations/category'
+} from '@kobato/db/sqlite/operations/taxonomy/category'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
 import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '@kobato/server/domains/posts/services/taxonomy'

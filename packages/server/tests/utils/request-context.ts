@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
 import type { RequestContext } from '@kobato/server/http/request-context'
 import type { AppLocalization } from '@kobato/settings/app-localization'

@@ -1,12 +1,12 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
-import { sqliteOf } from '@kobato/db/database'
-import { comment as commentTable } from '@kobato/db/schema/comment'
-import { setting } from '@kobato/db/schema/config'
-import { post as postTable } from '@kobato/db/schema/post'
-import { session as sessionTable } from '@kobato/db/schema/session'
-import { user as userTable } from '@kobato/db/schema/user'
-import { webmention as webmentionTable } from '@kobato/db/schema/webmention'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { comment as commentTable } from '@kobato/db/sqlite/schema/comment'
+import { setting } from '@kobato/db/sqlite/schema/config'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
+import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
+import { webmention as webmentionTable } from '@kobato/db/sqlite/schema/webmention'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,

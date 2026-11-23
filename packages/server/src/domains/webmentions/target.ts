@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { entityPermalink } from '@kobato/server/domains/content/urls'
 import { findLivePageBySlug } from '@kobato/server/domains/pages/services/public-query'

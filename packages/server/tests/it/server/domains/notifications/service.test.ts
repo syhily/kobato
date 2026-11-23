@@ -1,14 +1,14 @@
 import type { Role } from '@kobato/auth/roles'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { sqliteEngineOf, sqliteOf } from '@kobato/db/database'
+import { sqliteEngineOf, sqliteOf } from '@kobato/db/sqlite/database'
 import {
   createNotificationWithRecipients,
-  listThreadParticipantIds,
   notificationInboxQuery,
-} from '@kobato/db/operations/notification'
-import { notification, notificationRecipient } from '@kobato/db/schema/notification'
-import { user } from '@kobato/db/schema/user'
+} from '@kobato/db/sqlite/operations/engagement/notification'
+import { listThreadParticipantIds } from '@kobato/db/sqlite/operations/engagement/notification-recipients'
+import { notification, notificationRecipient } from '@kobato/db/sqlite/schema/notification'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import {

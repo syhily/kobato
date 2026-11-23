@@ -1,8 +1,12 @@
 import type { AdminFontDto } from '@kobato/api/contracts/fonts'
-import type { Database } from '@kobato/db/database'
-import type { FontRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { FontRow } from '@kobato/db/sqlite/types'
 
-import { findFontByHash as findFontByHashOp, findFontRowsByIds, listFontRows } from '@kobato/db/operations/font'
+import {
+  findFontByHash as findFontByHashOp,
+  findFontRowsByIds,
+  listFontRows,
+} from '@kobato/db/sqlite/operations/system/font'
 
 export function toAdminFontDto(row: FontRow): AdminFontDto {
   return {

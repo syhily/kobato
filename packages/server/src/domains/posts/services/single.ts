@@ -1,14 +1,18 @@
 import type { Post } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
-import { findCategoryNamesByIds } from '@kobato/db/operations/category'
-import { findEntityMetaById, findEntityMetaBySlug, findPublicEntityMetaBySlug } from '@kobato/db/operations/entity-meta'
+import {
+  findEntityMetaById,
+  findEntityMetaBySlug,
+  findPublicEntityMetaBySlug,
+} from '@kobato/db/sqlite/operations/content/entity-meta'
 import {
   findLivePostBySlug as findLivePostBySlugOp,
   findLivePostWithRevisionBySlugOrAlias,
-} from '@kobato/db/operations/post'
-import { findTagNamesByPostId } from '@kobato/db/operations/post-tag'
+} from '@kobato/db/sqlite/operations/content/post'
+import { findCategoryNamesByIds } from '@kobato/db/sqlite/operations/taxonomy/category'
+import { findTagNamesByPostId } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { toCmsPost } from '@kobato/server/domains/posts/projection'
 import { hydratePostImages } from '@kobato/server/domains/posts/repos/hydrate'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'

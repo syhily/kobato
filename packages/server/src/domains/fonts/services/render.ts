@@ -1,5 +1,5 @@
 import type { ResolvedFont, ResolvedFonts } from '@kobato/assets/fonts'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { FontsSettings } from '@kobato/settings/types'
 
 import { findFontsByIds, resolveSlotOrder } from '@kobato/server/domains/fonts/services/read'

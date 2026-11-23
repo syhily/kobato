@@ -2,8 +2,8 @@ import type { AvatarSource } from '@kobato/assets/avatar'
 
 import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar'
 import { encodedEmail } from '@kobato/auth/security'
-import { sqliteOf } from '@kobato/db/database'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { user } from '@kobato/db/sqlite/schema/user'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
   defaultAvatarPath,

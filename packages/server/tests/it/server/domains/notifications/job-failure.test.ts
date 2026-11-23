@@ -1,7 +1,7 @@
 import type { Role } from '@kobato/auth/roles'
 
-import { sqliteOf } from '@kobato/db/database'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { getThread, listInbox, unreadCount } from '@kobato/server/domains/notifications/service'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

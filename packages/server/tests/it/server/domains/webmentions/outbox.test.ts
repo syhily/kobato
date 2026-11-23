@@ -1,10 +1,10 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
   findNextWebmentionOutboxDueAt,
   pickDueWebmentionOutbox,
   upsertWebmentionOutbox,
-} from '@kobato/db/operations/webmention-outbox'
-import { webmentionOutbox } from '@kobato/db/schema/webmention'
+} from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
+import { webmentionOutbox } from '@kobato/db/sqlite/schema/webmention'
 import {
   OUTBOX_MAX_ATTEMPTS,
   processWebmentionOutboxRow,

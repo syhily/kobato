@@ -1,9 +1,15 @@
 import type { QueueTaskStatsDto } from '@kobato/api/contracts/jobs'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { findNextWebmentionReverifyDueAt } from '@kobato/db/operations/webmention'
-import { countWebmentionInbox, findNextWebmentionInboxDueAt } from '@kobato/db/operations/webmention-inbox'
-import { countWebmentionOutboxByStatus, findNextWebmentionOutboxDueAt } from '@kobato/db/operations/webmention-outbox'
+import {
+  countWebmentionInbox,
+  findNextWebmentionInboxDueAt,
+} from '@kobato/db/sqlite/operations/engagement/webmention-inbox'
+import {
+  countWebmentionOutboxByStatus,
+  findNextWebmentionOutboxDueAt,
+} from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
+import { findNextWebmentionReverifyDueAt } from '@kobato/db/sqlite/operations/engagement/webmention-verification'
 
 function dueAtToIso(due: Date | 'now' | null): string | null {
   if (due === null) {

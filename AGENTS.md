@@ -80,7 +80,7 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
   integration stays at the web-client seam. The server implements through the `implement{Public,Authed,Author,Admin}`
   bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
-  Production source never imports SQLite/Drizzle/DuckDB/Kysely drivers, builds SQL, or unwraps native handles;
+  Production source never imports SQLite/Drizzle/DuckDB drivers, builds SQL, or unwraps native handles;
   `apps/kobato/tests/arch/persistence-ownership.test.ts` pins it. First-party JSON operations use oRPC, with only the
   audited stream/upload/protocol resources in `apps/kobato/tests/arch/api-resource-surface.test.ts`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; owns every query, transaction, native connection, and row model,
@@ -168,14 +168,14 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
 
 ## Dependencies
 
-- Every version lives in the root `pnpm-workspace.yaml` `catalog:` table; `taze` edits it in place. Range-less entries
-  are locked; every other entry carries `^`.
+- Every version lives in the root `pnpm-workspace.yaml` `catalog:` table; `taze` edits it in place. Every catalog entry
+  carries `^`; exact resolved versions are locked in `pnpm-lock.yaml`.
 - Each package declares every external package it imports — an undeclared import fails typecheck. Workspace links are
   `"workspace:*"`. The server/app `drizzle-orm` devDependencies are test-only for seed/assertion code; production source
   must not import them.
 - Only native-dynamic-library packages required at production runtime belong in the ROOT `package.json` `dependencies`:
   `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`. Everything else is a devDependencies entry of the importing package —
   the SEA binary builds from the full dev install.
-- `drizzle-orm` / `drizzle-kit` stay pinned at `1.0.0-rc.6`; when drizzle 1.0 stable ships, upgrade the pair together
-  and re-run the migration contract tests before unpinning. Raw integer `sql` fields in mapped selects need an explicit
-  `.mapWith(Number)` — rc.6 decodes them as `bigint` on `node:sqlite`.
+- Upgrade `drizzle-orm` / `drizzle-kit` together and re-run the migration contract tests on upgrades. Raw integer `sql`
+  fields in mapped selects need an explicit `.mapWith(Number)` — rc.6 decodes them as `bigint` on `node:sqlite`.
+- `@duckdbfan/drizzle-duckdb`'s DuckDB 2.0 peer exception requires the real DuckDB suites on upgrades.

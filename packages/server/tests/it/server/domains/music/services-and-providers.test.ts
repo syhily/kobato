@@ -1,8 +1,8 @@
 import type { StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { sqliteOf } from '@kobato/db/database'
-import { music } from '@kobato/db/schema/media'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { music } from '@kobato/db/sqlite/schema/media'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
@@ -34,7 +34,7 @@ vi.spyOn(await import('@kobato/server/infra/image/process'), 'processImageBuffer
 )
 
 const read = await import('@kobato/server/domains/music/services/read')
-const musicOps = await import('@kobato/db/operations/music')
+const musicOps = await import('@kobato/db/sqlite/operations/content/music')
 const searchService = await import('@kobato/server/domains/music/services/search')
 const addMod = await import('@kobato/server/domains/music/services/write/add')
 const metadataMod = await import('@kobato/server/domains/music/services/write/metadata')

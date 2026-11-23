@@ -1,6 +1,6 @@
 import type { ContentType } from '@kobato/server/domains/content/schemas/revision'
 
-import { isUniqueConstraintError } from '@kobato/db/errors'
+import { isUniqueConstraintError } from '@kobato/db/sqlite/errors'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 

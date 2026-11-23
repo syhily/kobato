@@ -1,8 +1,8 @@
-import type { FontRow } from '@kobato/db/schema/font'
+import type { FontRow } from '@kobato/db/sqlite/schema/font'
 
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
-import { font } from '@kobato/db/schema/font'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
+import { font } from '@kobato/db/sqlite/schema/font'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
 import { DomainError } from '@kobato/server/infra/http/errors'

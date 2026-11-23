@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { searchPostSlugs } from '@kobato/db/operations/post-search'
+import { searchPostSlugs } from '@kobato/db/sqlite/operations/content/post-search'
 import { getCounter, through } from '@kobato/server/infra/cache/registry'
 import { getLogger } from '@kobato/server/infra/logger'
 

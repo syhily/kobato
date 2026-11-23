@@ -1,10 +1,10 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
 import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/api/contracts/analytics'
-import { sqliteOf } from '@kobato/db/database'
-import { post as postTable } from '@kobato/db/schema/post'
-import { postTag } from '@kobato/db/schema/post-tag'
-import { tag as tagTable } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
+import { postTag } from '@kobato/db/sqlite/schema/post-tag'
+import { tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,

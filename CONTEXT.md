@@ -11,8 +11,8 @@ revision, scheduling)
 **Promoted**: published with a published revision, whatever the soft-delete state and schedule; the projection for
 lifecycle bucketing (draft vs published) and restore re-indexing. Live implies Promoted. `isPromoted` in
 `packages/server/src/domains/content/schemas/live-gate.ts` and `promotedEntityWhere` in
-`packages/db/src/operations/entity-meta.ts`. _Avoid_: live (stricter: adds not-deleted and not-future legs), published
-(misses the revision)
+`packages/db/src/sqlite/operations/content/entity-meta.ts`. _Avoid_: live (stricter: adds not-deleted and not-future
+legs), published (misses the revision)
 
 **Visible**: `visible=false` hides a post from the home page and random-post widgets only; it stays in archives, tags,
 search, sitemap, feeds, and direct links. Orthogonal to Live. _Avoid_: hidden (implies unreachable)
@@ -36,8 +36,8 @@ publishing points the entity's `publishedRevisionId` at one. _Avoid_: version (a
 revision's state)
 
 **Live gate**: `isLive` (in-memory) in `packages/server/src/domains/content/schemas/live-gate.ts` and `liveEntityWhere`
-(SQL) in `packages/db/src/operations/entity-meta.ts` decide Live; both take `{ asOf, includeScheduled }`. _Avoid_:
-hand-written `published && publishedRevisionId` checks (that is the Promoted gate)
+(SQL) in `packages/db/src/sqlite/operations/content/entity-meta.ts` decide Live; both take `{ asOf, includeScheduled }`.
+_Avoid_: hand-written `published && publishedRevisionId` checks (that is the Promoted gate)
 
 **Draft preview**: viewing non-live content by direct link: authors their own post drafts (admins any post draft),
 admins only for page drafts. _Avoid_: "preview" unqualified (the rule differs per entity), admin-only (never enforced)

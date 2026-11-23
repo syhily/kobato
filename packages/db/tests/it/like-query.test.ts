@@ -1,6 +1,10 @@
-import { sqliteOf } from '@kobato/db/database'
-import { consumeLikeAndDecrement, existsActiveLikeToken, purgeOldLikeTokens } from '@kobato/db/operations/like'
-import { like } from '@kobato/db/schema/metric'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import {
+  consumeLikeAndDecrement,
+  existsActiveLikeToken,
+  purgeOldLikeTokens,
+} from '@kobato/db/sqlite/operations/engagement/like'
+import { like } from '@kobato/db/sqlite/schema/metric'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'

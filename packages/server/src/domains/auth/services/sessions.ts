@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { SessionMeta, SessionWithUser } from '@kobato/server/domains/auth/repo'
 
-import { findUsersByIds } from '@kobato/db/operations/user'
+import { findUsersByIds } from '@kobato/db/sqlite/operations/identity/user'
 import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '@kobato/server/domains/auth/repo'
 
 const MAX_SESSIONS_LISTED = 10_000

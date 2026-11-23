@@ -1,8 +1,8 @@
-import type { Database } from '@kobato/db/database'
-import type { EntityType } from '@kobato/db/target'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { EntityType } from '@kobato/db/sqlite/target'
 
-import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/operations/like'
-import { ensureMetricsBatch } from '@kobato/db/operations/metric'
+import { commentCountsByOwnerIds, metricsByOwnerIds } from '@kobato/db/sqlite/operations/engagement/like'
+import { ensureMetricsBatch } from '@kobato/db/sqlite/operations/system/metric'
 
 export interface AdminListEngagement {
   commentCount: number

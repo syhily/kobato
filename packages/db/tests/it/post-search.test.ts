@@ -1,7 +1,7 @@
-import { sqliteOf } from '@kobato/db/database'
-import { searchPostSlugs } from '@kobato/db/operations/post-search'
-import { postSearchIndex } from '@kobato/db/schema/content'
-import { post } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { searchPostSlugs } from '@kobato/db/sqlite/operations/content/post-search'
+import { postSearchIndex } from '@kobato/db/sqlite/schema/content'
+import { post } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

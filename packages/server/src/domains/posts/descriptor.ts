@@ -1,12 +1,11 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { AdminPostDto } from '@kobato/api/contracts/posts'
 import type { Post } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/sqlite/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
 import { hasAtLeast } from '@kobato/auth/roles'
-import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/operations/category'
 import {
   findEntityMetaById,
   findEntityMetaBySlug,
@@ -15,10 +14,11 @@ import {
   restoreEntityMeta,
   softDeleteEntityMeta,
   updateEntityMetaById,
-} from '@kobato/db/operations/entity-meta'
-import { findContentById } from '@kobato/db/operations/entity-revision'
-import { removePostSearchIndex } from '@kobato/db/operations/post-search'
-import { findTagNamesByPostId, findTagNamesByPostIds } from '@kobato/db/operations/post-tag'
+} from '@kobato/db/sqlite/operations/content/entity-meta'
+import { findContentById } from '@kobato/db/sqlite/operations/content/entity-revision'
+import { removePostSearchIndex } from '@kobato/db/sqlite/operations/content/post-search'
+import { findCategoryById, findCategoryNamesByIds } from '@kobato/db/sqlite/operations/taxonomy/category'
+import { findTagNamesByPostId, findTagNamesByPostIds } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { canEditPost } from '@kobato/server/domains/auth/rbac'
 import { invalidateContent } from '@kobato/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'

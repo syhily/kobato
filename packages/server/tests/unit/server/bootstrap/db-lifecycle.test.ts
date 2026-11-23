@@ -1,4 +1,4 @@
-import { databaseOf, sqliteEngineOf } from '@kobato/db/database'
+import { databaseOf, sqliteEngineOf } from '@kobato/db/sqlite/database'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const clientMock = { id: 'client' }
@@ -22,7 +22,7 @@ const wireRestoreMachine = vi.fn((deps: { complete: (success: boolean, err?: Err
   restoreCallback = deps.complete
 })
 
-vi.mock('@kobato/db/database', () => ({
+vi.mock('@kobato/db/sqlite/database', () => ({
   openDatabase: vi.fn(() => ({ db: dbMock, client: clientMock, path: ':memory:', inMemory: true, closed: false })),
   closeDatabase: (handle: { closed: boolean }) => {
     closeDatabase(handle)
@@ -36,7 +36,7 @@ vi.mock('@kobato/server/infra/db/paths', () => ({
   resolveDatabasePath: () => ':memory:',
 }))
 
-vi.mock('@kobato/db/migrate', () => ({
+vi.mock('@kobato/db/sqlite/migrate', () => ({
   migrateDatabase: (...args: unknown[]) => migrateDatabase(...args),
 }))
 

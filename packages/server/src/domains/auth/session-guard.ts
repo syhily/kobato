@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { findSafeUserById } from '@kobato/db/operations/user'
+import { findSafeUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { findSessionMeta, revokeSessionById } from '@kobato/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@kobato/server/domains/auth/services/sessions'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

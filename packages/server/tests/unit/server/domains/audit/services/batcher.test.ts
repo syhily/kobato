@@ -1,8 +1,8 @@
-import type { DatabaseHandle } from '@kobato/db/database'
+import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { databaseOf, sqliteOf } from '@kobato/db/database'
-import { auditLog } from '@kobato/db/schema/config'
-import { user } from '@kobato/db/schema/user'
+import { databaseOf, sqliteOf } from '@kobato/db/sqlite/database'
+import { auditLog } from '@kobato/db/sqlite/schema/config'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog, pushAuditEvent, replayDeadLetterAuditLog } from '@kobato/server/domains/audit/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'

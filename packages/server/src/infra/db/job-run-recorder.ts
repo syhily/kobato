@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/api/contracts/jobs'
 import {
@@ -9,7 +9,7 @@ import {
   startJobRun as startJobRunOp,
   sweepOrphanedJobRuns as sweepOrphanedJobRunsOp,
   type JobRunRow,
-} from '@kobato/db/operations/job-run'
+} from '@kobato/db/sqlite/operations/system/job-run'
 import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('job-run-recorder')

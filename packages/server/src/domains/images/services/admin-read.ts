@@ -1,9 +1,13 @@
 import type { AdminImageDto, AdminImagesListInput, ListImagesOutput } from '@kobato/api/contracts/images'
-import type { Database } from '@kobato/db/database'
-import type { ImageRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ImageRow } from '@kobato/db/sqlite/types'
 
 import { classifyImageKind } from '@kobato/assets/images'
-import { type AdminImagesListFilters, countAdminImages, listAdminImageRows } from '@kobato/db/operations/image'
+import {
+  type AdminImagesListFilters,
+  countAdminImages,
+  listAdminImageRows,
+} from '@kobato/db/sqlite/operations/content/image'
 import { safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url'
 
 export async function listImagesForAdmin(db: Database, input: AdminImagesListInput = {}): Promise<ListImagesOutput> {

@@ -1,6 +1,6 @@
-import { sqliteOf } from '@kobato/db/database'
-import { post } from '@kobato/db/schema/post'
-import { category } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { post } from '@kobato/db/sqlite/schema/post'
+import { category } from '@kobato/db/sqlite/schema/taxonomy'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

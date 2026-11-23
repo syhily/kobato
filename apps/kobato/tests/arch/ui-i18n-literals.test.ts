@@ -320,7 +320,7 @@ describe('production sources', () => {
         'packages/server/src/domains/taxonomies/shared.ts',
         'packages/server/src/domains/taxonomies/categories/services/mutate.ts',
         'packages/server/src/domains/content/lifecycle.ts',
-        'packages/db/src/operations/entity-meta.ts',
+        'packages/db/src/sqlite/operations/content/entity-meta.ts',
         'packages/server/src/domains/posts/descriptor.ts',
         'packages/server/src/domains/pages/services/shared.ts',
         'packages/server/src/domains/content/services/lexical/canonicalize.ts',

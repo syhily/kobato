@@ -1,5 +1,5 @@
 import type { AdminPostDto } from '@kobato/api/contracts/posts'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor'
 
 import { canEditPost, type ViewerIdentity } from '@kobato/server/domains/auth/rbac'

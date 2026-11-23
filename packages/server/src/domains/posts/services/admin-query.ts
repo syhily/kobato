@@ -1,5 +1,5 @@
 import type { AdminPostDetailDto } from '@kobato/api/contracts/posts'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type { AdminPostsListResult } from '@kobato/server/domains/posts/services/shared'
 
@@ -7,7 +7,7 @@ import {
   countPostMetas as countPostMetasOp,
   listPostMetas as listPostMetasOp,
   type PostListFilters,
-} from '@kobato/db/operations/entity-meta'
+} from '@kobato/db/sqlite/operations/content/entity-list'
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query'
 import { postDescriptor } from '@kobato/server/domains/posts/descriptor'
 

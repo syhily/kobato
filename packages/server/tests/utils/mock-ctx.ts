@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 import type { AppLocalization } from '@kobato/settings/app-localization'
 import type { BlogSettingsBundle } from '@kobato/settings/types'

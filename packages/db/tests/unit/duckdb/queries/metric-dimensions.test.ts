@@ -1,6 +1,7 @@
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions'
 import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types'
 import { compileAnalyticsQuery, createAnalyticsQuery, createEnvMetricQuery } from '@kobato/db/duckdb/query'
+import { accessEvents } from '@kobato/db/duckdb/schema'
 import { describe, expect, it } from 'vitest'
 
 const ENV_DIMENSIONS = ['screen', 'viewport', 'dpr', 'touch', 'colorScheme', 'netEffectiveType']
@@ -10,7 +11,7 @@ function envDimensionSql(type: 'dpr' | 'touch'): string {
   if (dimension.source !== 'env') {
     throw new Error(`${type} is not an env dimension`)
   }
-  return compileAnalyticsQuery(createEnvMetricQuery().select([dimension.select.as('bucket')])).sql
+  return compileAnalyticsQuery(createEnvMetricQuery({ bucket: dimension.select })).sql
 }
 
 describe('METRIC_DIMENSIONS registry', () => {
@@ -34,14 +35,14 @@ describe('METRIC_DIMENSIONS registry', () => {
 
   it('binds the environment filter values instead of inlining them', () => {
     const compiled = compileAnalyticsQuery(
-      createAnalyticsQuery()
-        .select(['blob1'])
-        .where(dimensionWhere(METRIC_DIMENSIONS.viewport, ['≤480', '≤768'])),
+      createAnalyticsQuery({ path: accessEvents.blob1 }).where(
+        dimensionWhere(METRIC_DIMENSIONS.viewport, ['≤480', '≤768']),
+      ),
     )
 
     expect(compiled.sql).toContain('device_env_client')
-    expect(compiled.sql).toMatch(/in \(\?, \?\)/)
-    expect(compiled.parameters).toEqual(['≤480', '≤768'])
+    expect(compiled.sql).toMatch(/in \(\$\d+, \$\d+\)/)
+    expect(compiled.params).toEqual(['≤480', '≤768'])
   })
 
   it('emits locale-neutral bucket tokens (the UI owns their labels)', () => {
@@ -58,12 +59,10 @@ describe('METRIC_DIMENSIONS registry', () => {
 
   it('targets the blob column for a blob dimension filter', () => {
     const compiled = compileAnalyticsQuery(
-      createAnalyticsQuery()
-        .select(['blob1'])
-        .where(dimensionWhere(METRIC_DIMENSIONS.country, ['US'])),
+      createAnalyticsQuery({ path: accessEvents.blob1 }).where(dimensionWhere(METRIC_DIMENSIONS.country, ['US'])),
     )
 
     expect(compiled.sql).toContain('access_events.blob7 in (')
-    expect(compiled.parameters).toEqual(['US'])
+    expect(compiled.params).toEqual(['US'])
   })
 })

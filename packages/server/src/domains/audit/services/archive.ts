@@ -1,4 +1,4 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { ArchiveResult, CleanupResult } from '@kobato/server/domains/audit/types'
 
 import {
@@ -6,7 +6,7 @@ import {
   listAuditArchiveDaysBefore,
   listAuditLogPageForArchive,
   purgeAuditLogsBefore,
-} from '@kobato/db/operations/audit-log'
+} from '@kobato/db/sqlite/operations/system/audit-log'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { toJsonSafe } from '@kobato/server/infra/json'
 import { getLogger } from '@kobato/server/infra/logger'

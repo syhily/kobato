@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { ensureMetric, findMetricByTarget } from '@kobato/db/operations/metric'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { ensureMetric, findMetricByTarget } from '@kobato/db/sqlite/operations/system/metric'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'

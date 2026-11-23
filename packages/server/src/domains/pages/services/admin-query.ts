@@ -1,11 +1,11 @@
 import type { AdminPageDetailDto, AdminPageDto } from '@kobato/api/contracts/pages'
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import {
   countPageMetas as countPageMetasOp,
   type EntityListFiltersBase,
   listPageMetas as listPageMetasOp,
-} from '@kobato/db/operations/entity-meta'
+} from '@kobato/db/sqlite/operations/content/entity-list'
 import { makeEntityAdminQuery } from '@kobato/server/domains/content/entities/admin-query'
 import { pageDescriptor } from '@kobato/server/domains/pages/descriptor'
 

@@ -1,7 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
-import { findFirstAdminUser, hasAdmin } from '@kobato/db/operations/user'
+import { findFirstAdminUser, hasAdmin } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@kobato/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@kobato/server/domains/auth/setup-token'

@@ -1,4 +1,4 @@
-import type { NotificationRow } from '@kobato/db/types'
+import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@kobato/server/infra/logger'

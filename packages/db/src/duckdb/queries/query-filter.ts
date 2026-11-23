@@ -1,25 +1,28 @@
 import type { DateRange } from '@kobato/utils/date-range'
-import type { RawBuilder } from 'kysely'
+import type { SQL } from 'drizzle-orm'
 
 import { index1Of } from '@kobato/db/duckdb/access-events'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions'
 import { METRIC_TYPES, type AnalyticsRangeInput, type ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
+import { analyticsIdentifier } from '@kobato/db/duckdb/query'
 import { computeDateRange } from '@kobato/utils/date-range'
-import { sql } from 'kysely'
+import { sql } from 'drizzle-orm'
 
-export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): RawBuilder<boolean> {
-  const filters: RawBuilder<boolean>[] = [
-    sql<boolean>`${sql.ref('access_events.is_bot')} = FALSE`,
-    sql<boolean>`${sql.ref('access_events.timestamp')} >= to_timestamp(${query.range.startAt})`,
-    sql<boolean>`${sql.ref('access_events.timestamp')} < to_timestamp(${query.range.endAt})`,
+export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): SQL<boolean> {
+  const filters: SQL<boolean>[] = [
+    sql<boolean>`${analyticsIdentifier('access_events.is_bot')} = FALSE`,
+    sql<boolean>`${analyticsIdentifier('access_events.timestamp')} >= to_timestamp(${query.range.startAt})`,
+    sql<boolean>`${analyticsIdentifier('access_events.timestamp')} < to_timestamp(${query.range.endAt})`,
   ]
 
   if (query.entityType && query.entityId !== undefined) {
-    filters.push(sql<boolean>`${sql.ref('access_events.index1')} = ${index1Of(query.entityType, query.entityId)}`)
+    filters.push(
+      sql<boolean>`${analyticsIdentifier('access_events.index1')} = ${index1Of(query.entityType, query.entityId)}`,
+    )
   }
 
   if (query.includeUnknown !== true) {
-    filters.push(sql<boolean>`${sql.ref('access_events.blob7')} <> ''`)
+    filters.push(sql<boolean>`${analyticsIdentifier('access_events.blob7')} <> ''`)
   }
 
   for (const type of METRIC_TYPES) {

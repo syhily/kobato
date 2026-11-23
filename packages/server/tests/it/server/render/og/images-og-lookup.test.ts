@@ -1,9 +1,9 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { page as pageTable } from '@kobato/db/schema/page'
-import { post as postTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { page as pageTable } from '@kobato/db/sqlite/schema/page'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { drawOpenGraph } from '@kobato/server/render/og/render'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { representationRevisionsFor } from '@kobato/settings/representation-scopes'

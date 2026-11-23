@@ -1,6 +1,6 @@
-import { sqliteOf } from '@kobato/db/database'
-import { hasAdmin, findFirstAdminUser } from '@kobato/db/operations/user'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { hasAdmin, findFirstAdminUser } from '@kobato/db/sqlite/operations/identity/user'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
 import { beforeEach, describe, expect, it } from 'vitest'
 

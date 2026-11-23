@@ -1,12 +1,12 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { sqliteOf } from '@kobato/db/database'
-import { setting } from '@kobato/db/schema/config'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { friend as friendTable } from '@kobato/db/schema/friend'
-import { page as pageTable } from '@kobato/db/schema/page'
-import { post as postTable } from '@kobato/db/schema/post'
-import { category as categoryTable } from '@kobato/db/schema/taxonomy'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { setting } from '@kobato/db/sqlite/schema/config'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { friend as friendTable } from '@kobato/db/sqlite/schema/friend'
+import { page as pageTable } from '@kobato/db/sqlite/schema/page'
+import { post as postTable } from '@kobato/db/sqlite/schema/post'
+import { category as categoryTable } from '@kobato/db/sqlite/schema/taxonomy'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,

@@ -1,5 +1,5 @@
-import type { Database } from '@kobato/db/database'
-import type { WebmentionOutboxRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { WebmentionOutboxRow } from '@kobato/db/sqlite/types'
 
 import {
   markWebmentionOutboxRetry,
@@ -7,7 +7,7 @@ import {
   markWebmentionOutboxTerminal,
   pickDueWebmentionOutbox,
   setWebmentionOutboxEndpoint,
-} from '@kobato/db/operations/webmention-outbox'
+} from '@kobato/db/sqlite/operations/engagement/webmention-outbox'
 import { discoverEndpoint, formatFetchFailure, type DiscoveryResult } from '@kobato/server/domains/webmentions/discover'
 import { runDueRows } from '@kobato/server/domains/webmentions/queue-scheduler'
 import { truncateFailureMessage, webmentionBackoffMs } from '@kobato/server/domains/webmentions/retry'

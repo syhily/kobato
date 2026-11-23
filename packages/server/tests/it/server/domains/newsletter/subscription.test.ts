@@ -1,7 +1,7 @@
-import type { NewsletterSubscriberRow } from '@kobato/db/types'
+import type { NewsletterSubscriberRow } from '@kobato/db/sqlite/types'
 
-import { sqliteOf } from '@kobato/db/database'
-import { newsletterSubscriber } from '@kobato/db/schema/newsletter'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { newsletterSubscriber } from '@kobato/db/sqlite/schema/newsletter'
 import { signUnsubscribeId } from '@kobato/server/domains/newsletter/signing'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'

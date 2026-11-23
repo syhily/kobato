@@ -1,6 +1,6 @@
 import type { DeviceEnvBeacon } from '@kobato/api/contracts/analytics'
-import type { DatabaseHandle } from '@kobato/db/database'
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
+import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { engineOf } from '@kobato/db/duckdb/connection'
 import {

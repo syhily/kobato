@@ -1,6 +1,6 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { Database } from '@kobato/db/database'
-import type { PostMetaRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { PostMetaRow } from '@kobato/db/sqlite/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
 import { getLogger } from '@kobato/server/infra/logger'

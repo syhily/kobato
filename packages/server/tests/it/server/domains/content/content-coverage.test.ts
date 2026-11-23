@@ -1,4 +1,4 @@
-import { sqliteOf } from '@kobato/db/database'
+import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
   findContentById,
   findContentsByIds,
@@ -8,10 +8,10 @@ import {
   MissingContentOwnerError,
   publishLatestRevision,
   saveDraftRevision,
-} from '@kobato/db/operations/entity-revision'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { page as pageMetaTable } from '@kobato/db/schema/page'
-import { post as postMetaTable } from '@kobato/db/schema/post'
+} from '@kobato/db/sqlite/operations/content/entity-revision'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { page as pageMetaTable } from '@kobato/db/sqlite/schema/page'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
 import { eq } from 'drizzle-orm'

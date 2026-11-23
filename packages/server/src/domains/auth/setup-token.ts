@@ -1,6 +1,6 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
-import { findLiveOneTimeToken, deleteOneTimeToken, upsertOneTimeToken } from '@kobato/db/operations/one-time-token'
+import { findLiveOneTimeToken, deleteOneTimeToken, upsertOneTimeToken } from '@kobato/db/sqlite/operations/identity/otp'
 import { boxLog } from '@kobato/server/infra/logger/box-console'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 

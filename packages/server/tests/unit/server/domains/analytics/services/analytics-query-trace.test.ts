@@ -27,7 +27,7 @@ function resolution(): TraceConfigResolution {
 }
 
 const QUERY = {
-  compile: () => ({ sql: 'SELECT secret_column FROM access_events WHERE blob1 = ?', parameters: ['secret-param'] }),
+  toSQL: () => ({ sql: 'SELECT secret_column FROM access_events WHERE blob1 = $1', params: ['secret-param'] }),
 } as unknown as AnalyticsQuery
 
 function readerWith(run: () => Promise<{ getRowObjects: () => Record<string, unknown>[] }>): AnalyticsReader {

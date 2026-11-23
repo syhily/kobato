@@ -1,21 +1,23 @@
 import type { LatestComment } from '@kobato/api/contracts/comments'
-import type { Database } from '@kobato/db/database'
-import type { EntityTarget } from '@kobato/db/target'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/types'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { hasAtLeast } from '@kobato/auth/roles'
 import {
-  adminUserIds,
   commentFingerprintRows,
-  commentsByIds,
   countApprovedCommentsByUser,
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
+} from '@kobato/db/sqlite/operations/engagement/comment'
+import {
+  adminUserIds,
+  commentsByIds,
   latestDistinctCommentIds,
-} from '@kobato/db/operations/comment'
+} from '@kobato/db/sqlite/operations/engagement/comment-digest'
 import { userSession } from '@kobato/server/domains/auth/primitives'
 import { toLatestComment } from '@kobato/server/domains/comments/projection'
 import { ensureCommentPage } from '@kobato/server/domains/comments/services/shared'

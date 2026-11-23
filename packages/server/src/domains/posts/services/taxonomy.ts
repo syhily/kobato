@@ -1,10 +1,10 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 
 import {
   countPostsByTaxonomy as countPostsByTaxonomyOp,
   listPostTitlesByCategoryId as listPostTitlesByCategoryIdOp,
   listPostTitlesByTag as listPostTitlesByTagOp,
-} from '@kobato/db/operations/post'
+} from '@kobato/db/sqlite/operations/content/post-taxonomy'
 
 export async function listPostTitlesByTaxonomy(db: Database, name: string): Promise<string[]> {
   return listPostTitlesByTagOp(db, name)

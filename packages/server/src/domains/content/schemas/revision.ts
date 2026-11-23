@@ -1,4 +1,4 @@
-import type { ContentRow } from '@kobato/db/types'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { BodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
 
 import { areLexicalEditorStatesEquivalent } from '@kobato/inkling/headless/equivalence'

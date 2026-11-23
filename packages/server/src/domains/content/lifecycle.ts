@@ -1,7 +1,7 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
 import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
-import type { Database } from '@kobato/db/database'
-import type { ContentRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 import type { ContentType, PublishLatestResult, SaveDraftResult } from '@kobato/server/domains/content/schemas/revision'
@@ -14,7 +14,7 @@ import {
   MissingContentOwnerError,
   publishLatestRevision,
   saveDraftRevision,
-} from '@kobato/db/operations/entity-revision'
+} from '@kobato/db/sqlite/operations/content/entity-revision'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@kobato/inkling/headless/collect'
 import { compactLexicalEditorState } from '@kobato/inkling/headless/dialect'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'

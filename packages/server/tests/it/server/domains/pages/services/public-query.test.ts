@@ -1,8 +1,8 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
-import { page as pageTable } from '@kobato/db/schema/page'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
+import { page as pageTable } from '@kobato/db/sqlite/schema/page'
 import {
   findLivePageBySlug,
   findPageBySlug,

@@ -1,5 +1,5 @@
-import { sqliteOf } from '@kobato/db/database'
-import { content as contentTable } from '@kobato/db/schema/content'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { reprojectBodyHtmlBatch } from '@kobato/server/domains/content/services/reproject-body-html'
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'

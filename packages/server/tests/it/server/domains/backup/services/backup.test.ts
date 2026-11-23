@@ -1,7 +1,7 @@
-import type { Database } from '@kobato/db/database'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { PutStreamInput, StorageBackend } from '@kobato/server/infra/storage/backend'
 
-import { findBackupByTimestamp, insertBackup } from '@kobato/db/operations/backup'
+import { findBackupByTimestamp, insertBackup } from '@kobato/db/sqlite/operations/system/backup'
 import {
   cleanupOldBackups,
   createBackup,

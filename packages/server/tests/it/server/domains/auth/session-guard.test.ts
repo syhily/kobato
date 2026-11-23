@@ -1,8 +1,8 @@
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { sqliteOf } from '@kobato/db/database'
-import { session as sessionTable } from '@kobato/db/schema/session'
-import { user } from '@kobato/db/schema/user'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
+import { user } from '@kobato/db/sqlite/schema/user'
 import { findSessionMeta, recordSessionLogin } from '@kobato/server/domains/auth/repo'
 import {
   revokeAllSessionsWithGuard,

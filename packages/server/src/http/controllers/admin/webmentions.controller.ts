@@ -1,5 +1,5 @@
 import { adminWebmentionsContract } from '@kobato/api/rpc/admin/webmentions'
-import { countWebmentions } from '@kobato/db/operations/webmention'
+import { countWebmentions } from '@kobato/db/sqlite/operations/engagement/webmention'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asAdminWebmentionWire } from '@kobato/server/domains/webmentions/projection'
 import { reverifyWebmention } from '@kobato/server/domains/webmentions/reverify'

@@ -1,8 +1,8 @@
-import { sqliteOf } from '@kobato/db/database'
-import { slugRegistry } from '@kobato/db/schema/config'
-import { content as contentTable, postSearchIndex } from '@kobato/db/schema/content'
-import { page as pageTable } from '@kobato/db/schema/page'
-import { post as postMetaTable } from '@kobato/db/schema/post'
+import { sqliteOf } from '@kobato/db/sqlite/database'
+import { slugRegistry } from '@kobato/db/sqlite/schema/config'
+import { content as contentTable, postSearchIndex } from '@kobato/db/sqlite/schema/content'
+import { page as pageTable } from '@kobato/db/sqlite/schema/page'
+import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/server/tests/utils/lexical'
@@ -16,7 +16,10 @@ const indexPostFromRevisionMock = vi.spyOn(
   await import('@kobato/server/domains/posts/services/search-index'),
   'indexPostFromRevision',
 )
-const removePostIndexMock = vi.spyOn(await import('@kobato/db/operations/post-search'), 'removePostSearchIndex')
+const removePostIndexMock = vi.spyOn(
+  await import('@kobato/db/sqlite/operations/content/post-search'),
+  'removePostSearchIndex',
+)
 const invalidateContentMock = vi.spyOn(await import('@kobato/server/domains/content/invalidate'), 'invalidateContent')
 
 afterAll(() => {

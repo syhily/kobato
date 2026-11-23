@@ -1,6 +1,6 @@
 import type { Category } from '@kobato/catalog/model'
-import type { Database } from '@kobato/db/database'
-import type { CategoryRow } from '@kobato/db/types'
+import type { Database } from '@kobato/db/sqlite/database'
+import type { CategoryRow } from '@kobato/db/sqlite/types'
 import type { AdminCategoriesListResult } from '@kobato/server/domains/taxonomies/categories/projection'
 
 import {
@@ -10,7 +10,7 @@ import {
   findCategoryNameSlugByNames,
   listAdminCategoryRows,
   listPublicCategoryRows,
-} from '@kobato/db/operations/category'
+} from '@kobato/db/sqlite/operations/taxonomy/category'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { countPostsByTaxonomy } from '@kobato/server/domains/posts/services/taxonomy'
 import { toAdminCategoryDto } from '@kobato/server/domains/taxonomies/categories/projection'
