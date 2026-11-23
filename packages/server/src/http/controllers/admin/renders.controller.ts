@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 
 import { adminRendersContract } from '@kobato/api/rpc/admin/renders'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'

@@ -1,4 +1,4 @@
-import { METING_SOURCES, adminMusicAddInput, adminMusicSearchInput } from '@kobato/api/contracts/music'
+import { METING_SOURCES, adminMusicAddInput, adminMusicSearchInput } from '@kobato/api/contracts/admin/music'
 import { describe, expect, it } from 'vitest'
 
 describe('METING_SOURCES', () => {

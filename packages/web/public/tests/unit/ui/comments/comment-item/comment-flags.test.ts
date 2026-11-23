@@ -1,4 +1,4 @@
-import type { CommentItemWire } from '@kobato/api/contracts/comments'
+import type { CommentItemWire } from '@kobato/api/contracts/public/comments'
 
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
 import { commentFlags, type CommentIdentity } from '@kobato/web-public/ui/comments/comment-item/comment-flags'

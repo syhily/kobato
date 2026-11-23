@@ -1,4 +1,4 @@
-import type { AdminRevisionDto } from '@kobato/api/contracts/revision'
+import type { AdminRevisionDto } from '@kobato/api/contracts/admin/revision'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
 import { Badge } from '@kobato/ui/components/badge'

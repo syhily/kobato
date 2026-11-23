@@ -1,4 +1,4 @@
-import type { PublicWebmentionWire } from '@kobato/api/contracts/webmentions'
+import type { PublicWebmentionWire } from '@kobato/api/contracts/public/webmentions'
 
 import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
 import { WebmentionList } from '@kobato/web-public/ui/webmentions/WebmentionList'

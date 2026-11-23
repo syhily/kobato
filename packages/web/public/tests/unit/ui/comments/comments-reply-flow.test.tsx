@@ -1,4 +1,4 @@
-import type { Comments as CommentsData } from '@kobato/api/contracts/comments'
+import type { Comments as CommentsData } from '@kobato/api/contracts/public/comments'
 
 import { makeComment } from '@kobato/api/tests/utils/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'

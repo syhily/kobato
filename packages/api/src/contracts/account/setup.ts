@@ -1,4 +1,4 @@
-import { authMessageDescriptorSchema } from '@kobato/api/contracts/auth'
+import { authMessageDescriptorSchema } from '@kobato/api/contracts/account/auth'
 import { z } from 'zod'
 
 export const setupStatusInput = z.object({})

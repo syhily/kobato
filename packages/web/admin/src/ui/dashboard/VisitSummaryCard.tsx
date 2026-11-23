@@ -1,4 +1,4 @@
-import type { CountersDto, ViewsDto, ViewsPoint } from '@kobato/api/contracts/analytics'
+import type { CountersDto, ViewsDto, ViewsPoint } from '@kobato/api/contracts/admin/analytics'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Button } from '@kobato/ui/components/button'

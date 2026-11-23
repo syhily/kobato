@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
 import { Badge } from '@kobato/ui/components/badge'

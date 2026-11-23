@@ -1,4 +1,4 @@
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/comments'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/admin/comments'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { AdminCommentListFilters, AdminPendingKind } from '@kobato/db/sqlite/operations/engagement/comment-admin'
 import type { AdminCommentsResult } from '@kobato/server/domains/comments/types'

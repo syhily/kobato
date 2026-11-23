@@ -2,11 +2,13 @@ import {
   ADMIN_COMMENT_STATUSES,
   COMMENT_TEXT_MATCHES,
   adminCommentsLoadAllInput,
+} from '@kobato/api/contracts/admin/comments'
+import {
   commentEditInputSchema,
   commentListInputSchema,
   commentReplySchema,
   commentRidSchema,
-} from '@kobato/api/contracts/comments'
+} from '@kobato/api/contracts/public/comments'
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { describe, expect, it } from 'vitest'
 

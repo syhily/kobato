@@ -1,4 +1,5 @@
-import { applyFriendSchema, friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@kobato/api/contracts/friends'
+import { applyFriendSchema } from '@kobato/api/contracts/account/friends'
+import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@kobato/api/contracts/admin/friends'
 import { describe, expect, it } from 'vitest'
 
 describe('contracts/friends — listFriendsSchema', () => {

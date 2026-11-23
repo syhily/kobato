@@ -1,5 +1,5 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
-import type { AdminUserDto } from '@kobato/api/contracts/users'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
+import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'

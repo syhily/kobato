@@ -1,8 +1,8 @@
-import type { AuthFlowOutput } from '@kobato/api/contracts/auth'
+import type { AuthFlowOutput } from '@kobato/api/contracts/account/auth'
 import type { AuthFlowResult, SigninFlowContext } from '@kobato/server/domains/auth/services/shared'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
-import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/auth'
+import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
 import { safeRedirectPath } from '@kobato/utils/safe-url'
 
 export function authFlowContext(context: HandlerContext): SigninFlowContext {

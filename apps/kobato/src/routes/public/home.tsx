@@ -1,4 +1,4 @@
-import type { HomeExtra } from '@kobato/api/contracts/content'
+import type { HomeExtra } from '@kobato/api/contracts/public/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
 import { metaWithFallback } from '@kobato/catalog/seo/meta'

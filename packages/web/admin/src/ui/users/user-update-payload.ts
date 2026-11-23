@@ -1,4 +1,4 @@
-import type { AdminUserUpdateInput } from '@kobato/api/contracts/users'
+import type { AdminUserUpdateInput } from '@kobato/api/contracts/admin/users'
 
 export type AdminUserUpdatePayload = Omit<AdminUserUpdateInput, 'id'>
 

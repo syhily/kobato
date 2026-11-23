@@ -4,20 +4,17 @@ import {
   adminRenderMathOutputDto,
   adminRenderReindexOutputDto,
   adminRenderReprojectOutputDto,
-} from '@kobato/api/contracts/renders'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/renders'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminRendersContract = {
-  math: oc
-    .route({ method: 'POST', path: '/admin/renders/math' })
+  math: defineProcedure({ method: 'POST', path: '/admin/renders/math' })
     .input(adminRenderMathInput)
     .output(adminRenderMathOutputDto),
-  reindexSearch: oc
-    .route({ method: 'POST', path: '/admin/renders/reindex-search' })
+  reindexSearch: defineProcedure({ method: 'POST', path: '/admin/renders/reindex-search' })
     .input(adminRenderBatchInput)
     .output(adminRenderReindexOutputDto),
-  reprojectBodies: oc
-    .route({ method: 'POST', path: '/admin/renders/reproject-bodies' })
+  reprojectBodies: defineProcedure({ method: 'POST', path: '/admin/renders/reproject-bodies' })
     .input(adminRenderBatchInput)
     .output(adminRenderReprojectOutputDto),
 }

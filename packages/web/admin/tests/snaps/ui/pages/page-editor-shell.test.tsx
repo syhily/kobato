@@ -1,5 +1,5 @@
-import type { AdminPageDto } from '@kobato/api/contracts/pages'
-import type { AdminUserDto } from '@kobato/api/contracts/users'
+import type { AdminPageDto } from '@kobato/api/contracts/admin/pages'
+import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 import type { PageFilterFieldKey } from '@kobato/web-admin/ui/pages/filter-fields'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 

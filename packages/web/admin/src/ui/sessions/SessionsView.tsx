@@ -1,4 +1,4 @@
-import type { AdminSessionItem } from '@kobato/api/contracts/sessions'
+import type { AdminSessionItem } from '@kobato/api/contracts/admin/users'
 import type { ReactNode } from 'react'
 
 import { Badge } from '@kobato/ui/components/badge'

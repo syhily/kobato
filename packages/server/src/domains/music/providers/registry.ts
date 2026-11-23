@@ -1,4 +1,4 @@
-import type { MetingSource } from '@kobato/api/contracts/music'
+import type { MetingSource } from '@kobato/api/contracts/admin/music'
 import type { MusicProvider } from '@kobato/server/domains/music/providers/types'
 
 import { neteaseProvider } from '@kobato/server/domains/music/providers/netease'

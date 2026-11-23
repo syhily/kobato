@@ -1,7 +1,9 @@
-import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/api/contracts/jobs'
-import { oc } from '@orpc/contract'
+import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/api/contracts/admin/jobs'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminJobsContract = {
-  list: oc.route({ method: 'GET', path: '/admin/jobs/list' }).output(jobsListDto),
-  history: oc.route({ method: 'GET', path: '/admin/jobs/history' }).input(jobHistoryInput).output(jobHistoryOutput),
+  list: defineProcedure({ method: 'GET', path: '/admin/jobs/list' }).output(jobsListDto),
+  history: defineProcedure({ method: 'GET', path: '/admin/jobs/history' })
+    .input(jobHistoryInput)
+    .output(jobHistoryOutput),
 }

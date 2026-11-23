@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { ObservabilityProvisionOutcome } from '@kobato/api/contracts/observability'
+import type { ObservabilityProvisionOutcome } from '@kobato/api/contracts/admin/observability'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observability/config'
 import type { AuthedHandlerContext } from '@kobato/server/http/orpc-base'
 

@@ -16,50 +16,44 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
-} from '@kobato/api/contracts/content'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/public/content'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const contentBootstrapContract = {
-  bootstrap: oc.route({ method: 'GET', path: '/content/bootstrap' }).output(contentBootstrapOutputSchema),
+  bootstrap: defineProcedure({ method: 'GET', path: '/content/bootstrap' }, { publicRead: true }).output(
+    contentBootstrapOutputSchema,
+  ),
 }
 
 export const contentListingsContract = {
-  home: oc
-    .route({ method: 'GET', path: '/content/home' })
+  home: defineProcedure({ method: 'GET', path: '/content/home' }, { publicRead: true })
     .input(contentHomeInputSchema)
     .output(contentHomeOutputSchema),
-  postsList: oc
-    .route({ method: 'GET', path: '/content/posts/list' })
+  postsList: defineProcedure({ method: 'GET', path: '/content/posts/list' }, { publicRead: true })
     .input(contentPostsListInputSchema)
     .output(contentPostsListOutputSchema),
-  search: oc
-    .route({ method: 'GET', path: '/content/search' })
+  search: defineProcedure({ method: 'GET', path: '/content/search' }, { publicRead: true })
     .input(contentSearchInputSchema)
     .output(contentSearchOutputSchema),
-  categoriesList: oc
-    .route({ method: 'GET', path: '/content/categories/list' })
+  categoriesList: defineProcedure({ method: 'GET', path: '/content/categories/list' }, { publicRead: true })
     .input(contentCategoriesListInputSchema)
     .output(contentCategoriesListOutputSchema),
-  archives: oc
-    .route({ method: 'GET', path: '/content/archives' })
+  archives: defineProcedure({ method: 'GET', path: '/content/archives' }, { publicRead: true })
     .input(contentArchivesInputSchema)
     .output(contentArchivesOutputSchema),
 }
 
 export const contentDetailContract = {
-  postBySlug: oc
-    .route({ method: 'GET', path: '/content/posts/bySlug' })
+  postBySlug: defineProcedure({ method: 'GET', path: '/content/posts/bySlug' }, { publicRead: true })
     .input(contentPostBySlugInputSchema)
     .output(contentPostBySlugOutputSchema),
-  pageBySlug: oc
-    .route({ method: 'GET', path: '/content/pages/bySlug' })
+  pageBySlug: defineProcedure({ method: 'GET', path: '/content/pages/bySlug' }, { publicRead: true })
     .input(contentPageBySlugInputSchema)
     .output(contentPageBySlugOutputSchema),
 }
 
 export const contentCommentsContract = {
-  byKey: oc
-    .route({ method: 'GET', path: '/content/comments/byKey' })
+  byKey: defineProcedure({ method: 'GET', path: '/content/comments/byKey' }, { publicRead: true })
     .input(contentCommentsByKeyInputSchema)
     .output(contentCommentsByKeyOutputSchema),
 }

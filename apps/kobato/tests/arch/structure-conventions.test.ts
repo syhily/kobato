@@ -32,6 +32,10 @@ function dirsOf(root: string): string[] {
   return out
 }
 
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+}
+
 const WEB_SRC_ROOTS = ['packages/web/admin/src', 'packages/web/public/src', 'packages/web/client/src']
 
 function packageDirs(): string[] {
@@ -197,7 +201,7 @@ describe('structure conventions', () => {
     expect(actual, 'a new admin domain directory joins this table with its API/server counterpart').toEqual(expected)
   })
 
-  it('prefixes every admin oc.route with /admin', () => {
+  it('prefixes every admin route metadata path with /admin', () => {
     const root = `${REPO_ROOT}/packages/api/src/rpc/admin`
     const legacyAnalyticsRoutes = new Set([
       '/analytics/counters',
@@ -223,9 +227,28 @@ describe('structure conventions', () => {
     }
     expect(
       offenders,
-      'every admin oc.route path is `/admin/<domain>/…` (sole legacy exception: analytics keeps its deployed ' +
-        '`/analytics/*` oc.route metadata; the /rpc transport alias /rpc/analytics/* is rewritten server-side by ' +
-        'request/legacy-rpc-path.ts and is NOT route metadata)',
+      'every admin route metadata path is `/admin/<domain>/…` (sole legacy exception: analytics keeps its deployed ' +
+        '`/analytics/*` route metadata)',
+    ).toEqual([])
+  })
+
+  it('groups every contract module into an audience layer — only generic primitives sit at the root', () => {
+    const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
+    const layers = new Set(['public', 'account', 'admin'])
+    const offenders: string[] = []
+    for (const entry of readdirSync(contractRoot, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!layers.has(entry.name)) {
+          offenders.push(entry.name)
+        }
+      } else if (entry.name !== 'primitives.ts') {
+        offenders.push(entry.name)
+      }
+    }
+    expect(
+      offenders,
+      'packages/api/src/contracts holds exactly the three audience layers — public/, account/, admin/ — plus the ' +
+        'audience-free generic wire vocabulary in primitives.ts at the root, and nothing else',
     ).toEqual([])
   })
 
@@ -234,29 +257,105 @@ describe('structure conventions', () => {
     const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
     const groups = ['public', 'account', 'admin'] as const
 
-    const ALIASES: Record<string, Record<string, string>> = {
-      public: { 'avatar.ts': 'comments.ts' },
-      account: { 'self.ts': 'users.ts', 'passkey.ts': 'users.ts' },
-      admin: {},
-    }
-
     const orphans: string[] = []
     for (const group of groups) {
       for (const entry of readdirSync(join(apiRoot, group), { withFileTypes: true })) {
         if (!entry.isFile() || !entry.name.endsWith('.ts')) {
           continue
         }
-        const target = ALIASES[group][entry.name] ?? entry.name
-        try {
-          statSync(`${contractRoot}/${target}`)
-        } catch {
+        if (!statSync(`${contractRoot}/${group}/${entry.name}`, { throwIfNoEntry: false })?.isFile()) {
           orphans.push(`${group}/${entry.name}`)
         }
       }
     }
     expect(
       orphans,
-      'an `@kobato/api/rpc/<group>/<domain>` module needs a matching `@kobato/api/contracts/<domain>` (same noun)',
+      'an `@kobato/api/rpc/<group>/<domain>` module composes the same-named ' +
+        '`@kobato/api/contracts/<group>/<domain>` wire vocabulary (same noun)',
     ).toEqual([])
+  })
+
+  it('gives every audience contract module an rpc counterpart in its own group', () => {
+    const apiRoot = `${REPO_ROOT}/packages/api/src/rpc`
+    const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
+    const groups = ['public', 'account', 'admin'] as const
+
+    // Same-layer base modules composed by sibling contracts — they deliberately have no rpc module of their own.
+    const BASES: Record<(typeof groups)[number], string[]> = {
+      public: [],
+      account: [],
+      admin: ['content-admin-base.ts'],
+    }
+
+    const orphans: string[] = []
+    for (const group of groups) {
+      for (const entry of readdirSync(join(contractRoot, group), { withFileTypes: true })) {
+        if (!entry.isFile() || !entry.name.endsWith('.ts') || BASES[group].includes(entry.name)) {
+          continue
+        }
+        if (!statSync(`${apiRoot}/${group}/${entry.name}`, { throwIfNoEntry: false })?.isFile()) {
+          orphans.push(`${group}/${entry.name}`)
+        }
+      }
+    }
+    expect(
+      orphans,
+      'a `contracts/<group>/<domain>` module serves that group’s procedures — it pairs with ' +
+        '`rpc/<group>/<domain>` (sole exception: a same-layer base module listed in BASES)',
+    ).toEqual([])
+  })
+
+  it('keeps the contracts dependency direction — audiences reach only downward; root primitives stay audience-free', () => {
+    const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
+    const layers = ['public', 'account', 'admin'] as const
+    const allowed: Record<string, readonly string[]> = {
+      root: [],
+      public: ['public'],
+      account: ['public', 'account'],
+      admin: ['public', 'account', 'admin'],
+    }
+    const offenders: string[] = []
+    for (const file of walk(contractRoot).filter((entry) => entry.endsWith('.ts'))) {
+      const first = relative(contractRoot, file).split('/')[0]
+      const layer = (layers as readonly string[]).includes(first) ? first : 'root'
+      const source = readFileSync(file, 'utf8')
+      for (const match of source.matchAll(/@kobato\/api\/contracts\/(public|account|admin)\/[a-z0-9-]+/g)) {
+        if (!allowed[layer].includes(match[1])) {
+          offenders.push(`${relative(REPO_ROOT, file)} → ${match[0]}`)
+        }
+      }
+    }
+    expect(
+      offenders,
+      'the root primitives module imports no audience layer; public imports only itself; account may reach public; ' +
+        'admin may reach public and account — cross-audience vocabulary lives in the lower layer, never duplicated ' +
+        'and never shimmed',
+    ).toEqual([])
+  })
+
+  it('pins no orphan contract modules — every module has at least one importer', () => {
+    const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
+    const referenced = new Set<string>()
+    const specifier = /@kobato\/api\/contracts\/(?:(?:public|account|admin)\/)?[a-z0-9-]+/g
+    const sourceFiles = ['packages', 'apps'].flatMap((root) =>
+      walk(`${REPO_ROOT}/${root}`).filter((file) => /\.tsx?$/.test(file)),
+    )
+    for (const file of sourceFiles) {
+      const source = readFileSync(file, 'utf8')
+      if (!source.includes('@kobato/api/contracts/')) {
+        continue
+      }
+      for (const match of stripComments(source).matchAll(specifier)) {
+        referenced.add(match[0])
+      }
+    }
+    const orphans = walk(contractRoot)
+      .filter((file) => file.endsWith('.ts'))
+      .map((file) => relative(REPO_ROOT, file))
+      .filter((rel) => {
+        const id = rel.replace('packages/api/src', '@kobato/api').replace(/\.ts$/, '')
+        return !referenced.has(id)
+      })
+    expect(orphans, 'every contracts module has at least one importer — no dead wire vocabulary').toEqual([])
   })
 })

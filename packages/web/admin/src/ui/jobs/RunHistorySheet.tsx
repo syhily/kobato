@@ -1,4 +1,4 @@
-import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/api/contracts/jobs'
+import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/api/contracts/admin/jobs'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Badge } from '@kobato/ui/components/badge'

@@ -3,7 +3,7 @@ import type {
   AdminPostDto,
   AdminPostUpsertMetaOutput as UpsertPostMetaOutput,
   UpsertPostMetaInput,
-} from '@kobato/api/contracts/posts'
+} from '@kobato/api/contracts/admin/posts'
 import type { NavigateFunction } from 'react-router'
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'

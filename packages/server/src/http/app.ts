@@ -8,7 +8,6 @@ import { csrfGuard } from '@kobato/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit'
 import { orpcInputValidationInterceptor } from '@kobato/server/http/orpc-base'
 import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace'
-import { adaptLegacyRpcRequest } from '@kobato/server/http/request/legacy-rpc-path'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono, type Context } from 'hono'
@@ -69,7 +68,7 @@ export function createApiApp(): Hono<Env> {
       settings: rc.settings,
       localization: rc.localization,
     }
-    const result = await handler.handle(adaptLegacyRpcRequest(c.req.raw), { prefix: '/rpc', context })
+    const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })
     if (!result.matched) {
       await next()
       return

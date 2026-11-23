@@ -29,7 +29,7 @@ layer — RUM vocabulary, bootstrap/intake, OpenObserve stream/metric names, pri
 validation stays in server), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror, code-block
 highlight languages), `sanitize` (isomorphic DOMPurify stack, `sanitize-url`, `escape-html`), `distribution`
 (`__APP_*__` identity, SEA asset keys, route-warmup manifest contract). The wire vocabulary (per-domain Zod schemas +
-DTOs, `api-error`, `merge-patch`) lives in the API SDK: `@kobato/api/contracts`.
+DTOs and generic primitives) lives in the API SDK: `@kobato/api/contracts`.
 
 Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings + i18n + utils + inkling headless (type-only);
 `cache` → i18n + utils; `settings` → i18n + cache + assets + utils (never `@kobato/api`). Pinned by

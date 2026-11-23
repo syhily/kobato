@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 import type { DateRange, PresetKey } from '@kobato/utils/date-range'
 
 import { safeBoolean } from '@kobato/api/contracts/primitives'

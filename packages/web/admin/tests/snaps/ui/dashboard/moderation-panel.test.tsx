@@ -1,4 +1,4 @@
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/comments'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/contracts/admin/comments'
 
 import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
 import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel'

@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/api/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 

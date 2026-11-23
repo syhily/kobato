@@ -1,8 +1,5 @@
-import type {
-  AdminWebmentionOutboxWire,
-  AdminWebmentionWire,
-  PublicWebmentionWire,
-} from '@kobato/api/contracts/webmentions'
+import type { AdminWebmentionOutboxWire, AdminWebmentionWire } from '@kobato/api/contracts/admin/webmentions'
+import type { PublicWebmentionWire } from '@kobato/api/contracts/public/webmentions'
 import type { WebmentionOutboxRow, WebmentionRow } from '@kobato/db/sqlite/types'
 
 export function asAdminWebmentionWire(row: WebmentionRow): AdminWebmentionWire {

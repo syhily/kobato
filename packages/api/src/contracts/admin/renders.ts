@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 
 import { z } from 'zod'
 

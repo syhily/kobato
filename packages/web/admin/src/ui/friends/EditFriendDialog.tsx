@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { extractFriendHostSafe, retargetFriendPosterUrl } from '@kobato/assets/images'
 import { Button } from '@kobato/ui/components/button'

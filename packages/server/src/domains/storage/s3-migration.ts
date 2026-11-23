@@ -11,7 +11,7 @@ import {
   type StorageMigrationPhase,
   type StorageMigrationStatus,
   type StorageMigrationVerification,
-} from '@kobato/api/contracts/storage'
+} from '@kobato/api/contracts/admin/storage'
 import {
   cancelStorageMigrationRow,
   completeStorageMigrationRow,

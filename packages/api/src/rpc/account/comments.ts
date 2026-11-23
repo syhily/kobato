@@ -8,34 +8,28 @@ import {
   commentSearchMineEntitiesInputSchema,
   commentSearchMineEntitiesOutputSchema,
   commentUpdateOwnInputSchema,
-  ownCommentMutationDto,
-} from '@kobato/api/contracts/comments'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/account/comments'
+import { ownCommentMutationDto } from '@kobato/api/contracts/public/comments'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const commentsAuthedContract = {
-  updateOwn: oc
-    .route({ method: 'POST', path: '/comments/update-own' })
+  updateOwn: defineProcedure({ method: 'POST', path: '/comments/update-own' })
     .input(commentUpdateOwnInputSchema)
     .output(ownCommentMutationDto),
-  requestDeleteOwn: oc
-    .route({ method: 'POST', path: '/comments/request-delete-own' })
+  requestDeleteOwn: defineProcedure({ method: 'POST', path: '/comments/request-delete-own' })
     .input(commentIdInputSchema)
     .output(ownCommentMutationDto),
-  cancelDeleteOwn: oc
-    .route({ method: 'POST', path: '/comments/cancel-delete-own' })
+  cancelDeleteOwn: defineProcedure({ method: 'POST', path: '/comments/cancel-delete-own' })
     .input(commentIdInputSchema)
     .output(ownCommentMutationDto),
-  loadMine: oc
-    .route({ method: 'GET', path: '/comments/load-mine' })
+  loadMine: defineProcedure({ method: 'GET', path: '/comments/load-mine' })
     .input(commentLoadMineInputSchema)
     .output(commentLoadMineOutputSchema),
-  searchMineEntities: oc
-    .route({ method: 'GET', path: '/comments/search-mine-entities' })
+  searchMineEntities: defineProcedure({ method: 'GET', path: '/comments/search-mine-entities' })
     .input(commentSearchMineEntitiesInputSchema)
     .output(commentSearchMineEntitiesOutputSchema),
-  myCounts: oc.route({ method: 'GET', path: '/comments/my-counts' }).output(commentsMyCountsOutputSchema),
-  resolveEntity: oc
-    .route({ method: 'GET', path: '/comments/resolve-entity' })
+  myCounts: defineProcedure({ method: 'GET', path: '/comments/my-counts' }).output(commentsMyCountsOutputSchema),
+  resolveEntity: defineProcedure({ method: 'GET', path: '/comments/resolve-entity' })
     .input(commentsResolveEntityInputSchema)
     .output(commentsResolveEntityOutputSchema),
 }

@@ -1,4 +1,4 @@
-import type { MetricRow } from '@kobato/api/contracts/analytics'
+import type { MetricRow } from '@kobato/api/contracts/admin/analytics'
 
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { Skeleton } from '@kobato/ui/components/skeleton'

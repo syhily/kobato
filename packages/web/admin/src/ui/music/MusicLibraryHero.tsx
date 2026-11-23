@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/api/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import type { ReactNode } from 'react'
 
 import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'

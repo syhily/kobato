@@ -1,4 +1,4 @@
-import type { AdminMusicDto, MetingSearchHit } from '@kobato/api/contracts/music'
+import type { AdminMusicDto, MetingSearchHit } from '@kobato/api/contracts/admin/music'
 
 import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'

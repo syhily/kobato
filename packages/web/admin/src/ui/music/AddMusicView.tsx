@@ -1,4 +1,4 @@
-import type { MetingSearchHit, MetingSource } from '@kobato/api/contracts/music'
+import type { MetingSearchHit, MetingSource } from '@kobato/api/contracts/admin/music'
 
 import { Label } from '@kobato/ui/components/label'
 import { LazyMotionDiv } from '@kobato/ui/components/lazy-motion'

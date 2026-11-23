@@ -1,4 +1,4 @@
-import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/api/contracts/audit'
+import type { AuditLogActorDto, AuditLogItemDto } from '@kobato/api/contracts/admin/audit'
 import type { AuditLogFilterFieldKey } from '@kobato/web-admin/ui/audit/filter-fields'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 

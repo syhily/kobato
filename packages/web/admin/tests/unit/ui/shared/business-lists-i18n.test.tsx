@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
-import type { MetingSearchHit } from '@kobato/api/contracts/music'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
+import type { MetingSearchHit } from '@kobato/api/contracts/admin/music'
 
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { PendingFriendRow } from '@kobato/web-admin/ui/friends/PendingFriendRow'

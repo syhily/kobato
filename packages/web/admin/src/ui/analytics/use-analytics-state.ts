@@ -1,8 +1,8 @@
-import type { Filters, MetricType } from '@kobato/api/contracts/analytics'
+import type { Filters, MetricType } from '@kobato/api/contracts/admin/analytics'
 import type { DateRange, PresetKey, TimeUnit } from '@kobato/utils/date-range'
 import type { z } from 'zod'
 
-import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/api/contracts/analytics'
+import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/api/contracts/admin/analytics'
 import { PRESET_KEYS, computeDateRange, pickTimeUnit } from '@kobato/utils/date-range'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'

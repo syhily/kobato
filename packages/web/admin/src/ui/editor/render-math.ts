@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { CardConfig } from '@kobato/inkling'
 
 import { orpc } from '@kobato/web-client/api/client'

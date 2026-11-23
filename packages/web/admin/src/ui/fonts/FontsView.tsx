@@ -1,4 +1,4 @@
-import type { AdminFontDto, FontSlot } from '@kobato/api/contracts/fonts'
+import type { AdminFontDto, FontSlot } from '@kobato/api/contracts/admin/fonts'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import {

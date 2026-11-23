@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/api/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import type { MusicRow } from '@kobato/db/sqlite/types'
 
 import { resolveAssetUrl } from '@kobato/server/infra/storage/public-url'

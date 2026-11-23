@@ -1,11 +1,11 @@
 import type { RevisionContract } from '@kobato/api/rpc/admin/revision'
 import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@kobato/server/domains/content/lifecycle'
-import type { HandlerContext } from '@kobato/server/http/orpc-base'
+import type { ContractImplementer } from '@kobato/server/http/contract-implementation'
+import type { AuthedHandlerContext, HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { saveBody } from '@kobato/server/domains/content/lifecycle'
 import { getPublicMusicMetasByIds } from '@kobato/server/domains/music/services/read'
-import { implementAuthor } from '@kobato/server/http/orpc-base'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { idFromString } from '@kobato/utils/id'
@@ -16,11 +16,17 @@ export interface RevisionRouterAudit {
   publishedAction: string
 }
 
-const revisionImplementer = implementAuthor<RevisionContract>
-type RevisionRouterImplementer = Pick<ReturnType<typeof revisionImplementer>, 'saveDraft' | 'publishLatest'>
+/**
+ * The two revision implementers an author implementer exposes for `RevisionContract<TBase>`; `TBase` is inferred from
+ * the host controller's `impl`, so the routers built here keep the exact `/<base>/save-draft` path brand.
+ */
+type RevisionRouterImplementer<TBase extends string> = Pick<
+  ContractImplementer<RevisionContract<TBase>, HandlerContext, AuthedHandlerContext>,
+  'saveDraft' | 'publishLatest'
+>
 
-export interface MakeRevisionRouterOptions<TMeta, TPreview> {
-  impl: RevisionRouterImplementer
+export interface MakeRevisionRouterOptions<TBase extends string, TMeta, TPreview> {
+  impl: RevisionRouterImplementer<TBase>
   adapter: ContentEntityAdapter<TMeta, TPreview>
   audit: RevisionRouterAudit
   passViewerToSaveBody: boolean
@@ -32,7 +38,9 @@ function localizeSaveResult(result: SaveBodyOutcome, context: HandlerContext): S
   return warning === undefined ? rest : { ...rest, warning }
 }
 
-export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterOptions<TMeta, TPreview>) {
+export function makeRevisionRouter<TBase extends string, TMeta, TPreview>(
+  options: MakeRevisionRouterOptions<TBase, TMeta, TPreview>,
+) {
   const { impl, adapter, audit, passViewerToSaveBody } = options
 
   const saveDraft = impl.saveDraft.handler(async ({ input, context }) => {

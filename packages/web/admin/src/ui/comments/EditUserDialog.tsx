@@ -1,5 +1,5 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
-import type { AdminUserUpdateInput } from '@kobato/api/contracts/users'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
+import type { AdminUserUpdateInput } from '@kobato/api/contracts/admin/users'
 
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'

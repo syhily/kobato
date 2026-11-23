@@ -1,4 +1,4 @@
-import type { AdminPageDetailDto, AdminPageDto } from '@kobato/api/contracts/pages'
+import type { AdminPageDetailDto, AdminPageDto } from '@kobato/api/contracts/admin/pages'
 import type { Database } from '@kobato/db/sqlite/database'
 
 import {

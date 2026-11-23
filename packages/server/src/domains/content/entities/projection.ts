@@ -1,4 +1,4 @@
-import type { AdminMetaBaseDto } from '@kobato/api/contracts/content-admin-base'
+import type { AdminMetaBaseDto } from '@kobato/api/contracts/admin/content-admin-base'
 import type { MetaRowBase } from '@kobato/server/domains/content/entities/descriptor'
 
 export type AdminMetaDto = AdminMetaBaseDto

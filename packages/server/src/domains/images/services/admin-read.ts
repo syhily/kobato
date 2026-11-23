@@ -1,4 +1,4 @@
-import type { AdminImageDto, AdminImagesListInput, ListImagesOutput } from '@kobato/api/contracts/images'
+import type { AdminImageDto, AdminImagesListInput, ListImagesOutput } from '@kobato/api/contracts/admin/images'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ImageRow } from '@kobato/db/sqlite/types'
 

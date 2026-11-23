@@ -887,7 +887,7 @@ async function main(): Promise<void> {
     )
     const csrfToken = tokenMatch[1]!
     const rpcStatus = await page.evaluate(async (token: string) => {
-      const res = await fetch('/rpc/content/bootstrap', {
+      const res = await fetch('/rpc/public/content/bootstrap', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-csrf-token': token },
         body: JSON.stringify({ json: {} }),

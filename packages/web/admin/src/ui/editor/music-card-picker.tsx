@@ -1,4 +1,4 @@
-import type { AdminMusicDto } from '@kobato/api/contracts/music'
+import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import type { MusicPlayerCardMeta } from '@kobato/inkling/headless/cards/music-player'
 
 import { registerCardPicker, useCardChrome, type CardPickerRenderProps } from '@kobato/inkling'

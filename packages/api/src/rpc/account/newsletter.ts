@@ -3,20 +3,17 @@ import {
   newsletterOkOutputSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '@kobato/api/contracts/newsletter'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/account/newsletter'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const newsletterContract = {
-  subscribe: oc
-    .route({ method: 'POST', path: '/newsletter/subscribe' })
+  subscribe: defineProcedure({ method: 'POST', path: '/newsletter/subscribe' })
     .input(newsletterSubscribeSchema)
     .output(newsletterOkOutputSchema),
-  confirm: oc
-    .route({ method: 'POST', path: '/newsletter/confirm' })
+  confirm: defineProcedure({ method: 'POST', path: '/newsletter/confirm' })
     .input(newsletterConfirmSchema)
     .output(newsletterOkOutputSchema),
-  unsubscribe: oc
-    .route({ method: 'POST', path: '/newsletter/unsubscribe' })
+  unsubscribe: defineProcedure({ method: 'POST', path: '/newsletter/unsubscribe' })
     .input(newsletterUnsubscribeSchema)
     .output(newsletterOkOutputSchema),
 }

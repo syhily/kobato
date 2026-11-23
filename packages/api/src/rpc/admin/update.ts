@@ -5,20 +5,17 @@ import {
   adminUpdateStatusInput,
   updateCheckResultDto,
   updateJobStatusDto,
-} from '@kobato/api/contracts/update'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/update'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminUpdateContract = {
-  check: oc
-    .route({ method: 'GET', path: '/admin/update/check' })
+  check: defineProcedure({ method: 'GET', path: '/admin/update/check' })
     .input(adminUpdateCheckInput)
     .output(updateCheckResultDto),
-  apply: oc
-    .route({ method: 'POST', path: '/admin/update/apply' })
+  apply: defineProcedure({ method: 'POST', path: '/admin/update/apply' })
     .input(adminUpdateApplyInput)
     .output(adminUpdateApplyOutputDto),
-  status: oc
-    .route({ method: 'GET', path: '/admin/update/status' })
+  status: defineProcedure({ method: 'GET', path: '/admin/update/status' })
     .input(adminUpdateStatusInput)
     .output(updateJobStatusDto),
 }

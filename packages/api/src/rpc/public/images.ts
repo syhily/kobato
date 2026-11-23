@@ -1,9 +1,11 @@
-import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/api/contracts/images'
-import { oc } from '@orpc/contract'
+import {
+  imageResolveThumbhashInputSchema,
+  imageResolveThumbhashOutputSchema,
+} from '@kobato/api/contracts/public/images'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const imagesContract = {
-  resolveThumbhash: oc
-    .route({ method: 'GET', path: '/image/resolve-thumbhash' })
+  resolveThumbhash: defineProcedure({ method: 'GET', path: '/image/resolve-thumbhash' }, { publicRead: true })
     .input(imageResolveThumbhashInputSchema)
     .output(imageResolveThumbhashOutputSchema),
 }

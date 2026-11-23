@@ -1,4 +1,4 @@
-import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/api/contracts/cache'
+import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/api/contracts/admin/cache'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/cache/types'
 import type { Database } from '@kobato/db/sqlite/database'
 

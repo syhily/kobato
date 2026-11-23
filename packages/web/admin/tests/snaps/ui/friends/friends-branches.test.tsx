@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView'

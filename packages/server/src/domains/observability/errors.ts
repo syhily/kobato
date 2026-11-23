@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { DomainErrorCode } from '@kobato/server/infra/http/errors'
 
 import { O2ClientError } from '@kobato/server/domains/observability/o2-client'

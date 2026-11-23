@@ -6,8 +6,9 @@ import { isPublicReadRpcPath } from '@kobato/server/http/request/public-read-rpc
 import { createMiddleware } from 'hono/factory'
 
 export const csrfGuard = createMiddleware<Env>(async (c, next) => {
-  // The RPC protocol issues reads as POSTs, so the anonymous public-read exemption is the frozen procedure set in
-  // isPublicReadRpcPath — not a method rule. Everything else (mutations, token reads, account/admin) validates.
+  // The RPC protocol issues reads as POSTs, so the anonymous public-read exemption is the declared procedure set in
+  // isPublicReadRpcPath (derived from `@kobato/api`'s `~orpc.meta.publicRead` markers) — not a method rule. Everything
+  // else (mutations, token reads, account/admin) validates.
   if (isCsrfValidationSkipped() || isPathExempt(c.req.path) || isPublicReadRpcPath(c.req.path)) {
     return next()
   }

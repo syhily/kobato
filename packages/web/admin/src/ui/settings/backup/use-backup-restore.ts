@@ -1,4 +1,4 @@
-import type { RestoreProgressDto } from '@kobato/api/contracts/backup'
+import type { RestoreProgressDto } from '@kobato/api/contracts/admin/backup'
 import type { RestoreStep } from '@kobato/web-admin/ui/settings/backup/RestoreProgressPanel'
 import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 

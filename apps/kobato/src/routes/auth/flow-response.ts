@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { AuthFlowOutput } from '@kobato/api/contracts/auth'
+import type { AuthFlowOutput } from '@kobato/api/contracts/account/auth'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { authFlowMessage } from '@kobato/server/domains/auth/services/shared'

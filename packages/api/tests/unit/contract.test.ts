@@ -6,7 +6,7 @@ import {
   likeIncreaseInput,
   likeIncreaseOutput,
   likeValidateInput,
-} from '@kobato/api/contracts/likes'
+} from '@kobato/api/contracts/account/likes'
 import { likesContract } from '@kobato/api/rpc/account/likes'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'

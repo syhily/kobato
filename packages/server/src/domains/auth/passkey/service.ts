@@ -1,4 +1,4 @@
-import type { LoginMethod } from '@kobato/api/contracts/users'
+import type { LoginMethod } from '@kobato/api/contracts/account/self'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { SafeUser } from '@kobato/db/sqlite/operations/identity/user'
 import type { PasskeyCredentialRow } from '@kobato/db/sqlite/types'

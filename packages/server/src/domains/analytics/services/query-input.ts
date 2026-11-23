@@ -1,6 +1,6 @@
 import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
 
-import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/api/contracts/analytics'
+import { METRIC_TYPES, analyticsQuerySchema } from '@kobato/api/contracts/admin/analytics'
 import { resolveAnalyticsRange } from '@kobato/db/duckdb/queries/query-filter'
 
 const SEARCH_KEYS = [

@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/api/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
 import { Button } from '@kobato/ui/components/button'

@@ -1,5 +1,5 @@
-import { upsertPageMetaSchema } from '@kobato/api/contracts/pages'
-import { upsertPostMetaSchema } from '@kobato/api/contracts/posts'
+import { upsertPageMetaSchema } from '@kobato/api/contracts/admin/pages'
+import { upsertPostMetaSchema } from '@kobato/api/contracts/admin/posts'
 import {
   CONTENT_LANGUAGE_MAX_LENGTH,
   canonicalContentLanguage,

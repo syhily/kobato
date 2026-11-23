@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 import type { PostFilterFieldKey } from '@kobato/web-admin/ui/posts/filter-fields'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 

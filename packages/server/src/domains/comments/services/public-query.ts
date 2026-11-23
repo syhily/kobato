@@ -1,4 +1,4 @@
-import type { LatestComment } from '@kobato/api/contracts/comments'
+import type { LatestComment } from '@kobato/api/contracts/public/comments'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'

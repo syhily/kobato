@@ -1,3 +1,6 @@
+import type { apiContract } from '@kobato/api/contract'
+import type { ContractImplementation } from '@kobato/server/http/contract-implementation'
+
 import { accountRouter } from '@kobato/server/http/controllers/account/account.controller'
 import { authRouter } from '@kobato/server/http/controllers/account/auth.controller'
 import { commentsAuthedRouter } from '@kobato/server/http/controllers/account/comments-authed.controller'
@@ -103,6 +106,6 @@ export const apiRouter = {
     update: adminUpdateRouter,
     analytics: analyticsRouter,
   },
-}
+} satisfies ContractImplementation<typeof apiContract>
 
 export type ApiRouter = typeof apiRouter

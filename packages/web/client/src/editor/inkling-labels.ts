@@ -1,4 +1,4 @@
-import type { ContentBootstrapI18n } from '@kobato/api/contracts/content'
+import type { ContentBootstrapI18n } from '@kobato/api/contracts/public/content'
 import type { KobatoInklingLabelKey } from '@kobato/i18n/inkling-labels/en-US'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { InklingHostMenuLabelKey, InklingLabels, InklingLabelsInput } from '@kobato/inkling'

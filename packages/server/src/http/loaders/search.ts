@@ -4,7 +4,7 @@ import type { AppLocale } from '@kobato/i18n/locales'
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { SEARCH_KEYWORD_MAX_LENGTH } from '@kobato/api/contracts/content'
+import { SEARCH_KEYWORD_MAX_LENGTH } from '@kobato/api/contracts/public/content'
 import { toClientPost, toListingPostCard } from '@kobato/catalog/projection'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { pagePath, searchRootPath } from '@kobato/server/domains/content/urls'

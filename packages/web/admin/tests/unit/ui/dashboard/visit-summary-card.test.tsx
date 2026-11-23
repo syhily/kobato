@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ViewsDto } from '@kobato/api/contracts/analytics'
+import type { ViewsDto } from '@kobato/api/contracts/admin/analytics'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'

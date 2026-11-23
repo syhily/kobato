@@ -1,4 +1,4 @@
-import type { CountersDto } from '@kobato/api/contracts/analytics'
+import type { CountersDto } from '@kobato/api/contracts/admin/analytics'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'

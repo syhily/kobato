@@ -1,4 +1,7 @@
-import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@kobato/api/contracts/comments'
+import type {
+  CommentItemWire as CommentItemType,
+  Comments as CommentsData,
+} from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
 
 import { makeComment, makeCommentBody } from '@kobato/api/tests/utils/catalog'

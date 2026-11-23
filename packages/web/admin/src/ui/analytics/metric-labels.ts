@@ -1,4 +1,4 @@
-import type { MetricType } from '@kobato/api/contracts/analytics'
+import type { MetricType } from '@kobato/api/contracts/admin/analytics'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 export type HeatmapMetricKey = 'visits' | 'visitors'

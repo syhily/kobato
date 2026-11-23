@@ -1,4 +1,4 @@
-import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/api/contracts/content'
+import type { ContentNotModifiedSignal, ContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { AuditContext } from '@kobato/server/domains/audit/types'

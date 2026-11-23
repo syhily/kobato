@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/api/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { TableCell, TableRow } from '@kobato/ui/components/table'

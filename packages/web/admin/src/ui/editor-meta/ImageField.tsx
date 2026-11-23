@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/api/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'

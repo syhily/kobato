@@ -1,9 +1,9 @@
+import type { FindAvatarOutput } from '@kobato/api/contracts/public/avatar'
 import type {
   CommentItemWire as CommentItemType,
-  FindAvatarOutput,
   ReplyCommentInput,
   ReplyCommentOutput,
-} from '@kobato/api/contracts/comments'
+} from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 

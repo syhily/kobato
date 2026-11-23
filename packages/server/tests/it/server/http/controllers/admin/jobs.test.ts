@@ -1,4 +1,4 @@
-import { TASK_CATALOG } from '@kobato/api/contracts/jobs'
+import { TASK_CATALOG } from '@kobato/api/contracts/admin/jobs'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import {
   markWebmentionInboxRetry,

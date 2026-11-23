@@ -1,4 +1,4 @@
-import type { QueueTaskStatsDto } from '@kobato/api/contracts/jobs'
+import type { QueueTaskStatsDto } from '@kobato/api/contracts/admin/jobs'
 import type { Database } from '@kobato/db/sqlite/database'
 
 import {

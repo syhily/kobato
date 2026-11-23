@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/storage'
+import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/admin/storage'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes } from '@kobato/utils/format'

@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/api/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
 import { Button } from '@kobato/ui/components/button'
 import {

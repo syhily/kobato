@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { APP_VERSION } from '@kobato/distribution/app'

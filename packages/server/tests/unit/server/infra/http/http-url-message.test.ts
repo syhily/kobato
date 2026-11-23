@@ -1,6 +1,6 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
-import { applyFriendSchema } from '@kobato/api/contracts/friends'
+import { applyFriendSchema } from '@kobato/api/contracts/account/friends'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@kobato/server/infra/i18n'

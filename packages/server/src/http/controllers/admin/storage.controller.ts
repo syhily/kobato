@@ -1,4 +1,4 @@
-import type { StorageMigrationStatus } from '@kobato/api/contracts/storage'
+import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage'
 
 import { adminStorageContract } from '@kobato/api/rpc/admin/storage'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'

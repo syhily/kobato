@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { storageMigrationStatusDto } from '@kobato/api/contracts/admin/storage'
 import { isoDateTime } from '@kobato/api/contracts/primitives'
-import { storageMigrationStatusDto } from '@kobato/api/contracts/storage'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 

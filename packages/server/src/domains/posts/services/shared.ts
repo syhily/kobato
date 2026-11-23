@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 import type { PostMetaRow } from '@kobato/db/sqlite/types'
 import type { UpsertMetaInputBase } from '@kobato/server/domains/content/entities/descriptor'
 

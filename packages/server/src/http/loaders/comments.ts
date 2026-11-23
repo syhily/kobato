@@ -1,4 +1,4 @@
-import type { DetailPageComments } from '@kobato/api/contracts/comments'
+import type { DetailPageComments } from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { EntityTarget } from '@kobato/db/sqlite/target'

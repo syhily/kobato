@@ -1,4 +1,4 @@
-import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/api/contracts/jobs'
+import { JOB_RUN_ERROR_PROCESS_RESTART } from '@kobato/api/contracts/admin/jobs'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { jobRun } from '@kobato/db/sqlite/schema/job-run'
 import {

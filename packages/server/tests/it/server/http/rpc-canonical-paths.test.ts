@@ -1,0 +1,133 @@
+import type { Env } from '@kobato/server/http/hono-env'
+
+import { getTestDb } from '@kobato/server/tests/utils/integration-db'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { makeSession } from '@kobato/server/tests/utils/session'
+import { Hono } from 'hono'
+import { describe, expect, it } from 'vitest'
+
+const db = getTestDb()
+const CSRF = 'canonical-rpc-csrf-token'
+
+const { onErrorHandler } = await import('@kobato/server/http/errors')
+const { createApiApp } = await import('@kobato/server/http/app')
+
+function makeApiApp() {
+  const rc = makeRequestContext({ db, session: makeSession({ csrfToken: CSRF }) })
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', rc as unknown as Env['Variables']['requestContext'])
+    await next()
+  })
+  app.route('/', createApiApp())
+  app.onError(onErrorHandler)
+  return app
+}
+
+async function rpc(app: ReturnType<typeof makeApiApp>, path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers({ 'content-type': 'application/json', 'x-csrf-token': CSRF })
+  if (init.headers !== undefined) {
+    for (const [key, value] of new Headers(init.headers)) {
+      headers.set(key, value)
+    }
+  }
+  return app.request(path, {
+    method: 'POST',
+    headers,
+    body: init.body ?? '{}',
+  })
+}
+
+async function rpcNoCsrf(app: ReturnType<typeof makeApiApp>, path: string, body = '{}'): Promise<Response> {
+  return app.request(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body,
+  })
+}
+
+describe('canonical-only /rpc/* transport (real HTTP)', () => {
+  it.each([
+    '/rpc/content/bootstrap',
+    '/rpc/content/home',
+    '/rpc/comments/loadComments',
+    '/rpc/likes/increase',
+    '/rpc/notifications/list',
+    '/rpc/analytics/overview',
+  ])('no longer matches the removed pre-grouping alias %s (404 behind a valid CSRF token)', async (path) => {
+    const app = makeApiApp()
+
+    const response = await rpc(app, path, { body: JSON.stringify({ json: {} }) })
+
+    expect(response.status).toBe(404)
+  })
+
+  it.each(['/rpc/content/bootstrap', '/rpc/content/home', '/rpc/comments/loadComments'])(
+    'no longer exempts the removed anonymous-read alias %s (CSRF 403)',
+    async (path) => {
+      const app = makeApiApp()
+
+      const response = await rpcNoCsrf(app, path, JSON.stringify({ json: {} }))
+
+      expect(response.status).toBe(403)
+    },
+  )
+
+  it('leaves unmatched canonical-shaped paths unmatched', async () => {
+    const app = makeApiApp()
+
+    const response = await rpc(app, '/rpc/public/content/notAProcedure')
+
+    expect(response.status).toBe(404)
+  })
+
+  describe('canonical surface (unchanged)', () => {
+    it('serves the frozen anonymous public reads without any CSRF header', async () => {
+      const app = makeApiApp()
+
+      const bootstrap = await rpcNoCsrf(app, '/rpc/public/content/bootstrap')
+      expect(bootstrap.status).toBe(200)
+
+      const loadComments = await rpcNoCsrf(
+        app,
+        '/rpc/public/comments/loadComments',
+        JSON.stringify({ json: { page_key: '/p', offset: 0 } }),
+      )
+      // Exempt from the CSRF guard; the handler's own answer is out of scope here.
+      expect(loadComments.status).not.toBe(403)
+    })
+
+    it.each(['/rpc/public/comments/getRaw', '/rpc/public/comments/replyComment', '/rpc/public/comments/myComments'])(
+      'still rejects the token read / comment mutation %s with CSRF 403',
+      async (path) => {
+        const app = makeApiApp()
+
+        const response = await rpcNoCsrf(app, path, JSON.stringify({ json: { rid: '1', page_key: '/p' } }))
+
+        expect(response.status).toBe(403)
+      },
+    )
+
+    it.each(['/rpc/account/notifications/list', '/rpc/admin/analytics/overview'])(
+      'keeps the CSRF guard in front of the anonymous account/admin surface %s',
+      async (path) => {
+        const app = makeApiApp()
+
+        const response = await rpcNoCsrf(app, path, JSON.stringify({ json: {} }))
+
+        expect(response.status).toBe(403)
+      },
+    )
+
+    it.each(['/rpc/account/notifications/list', '/rpc/admin/analytics/overview'])(
+      'keeps the auth guard on the canonical account/admin surface %s behind a valid CSRF token',
+      async (path) => {
+        const app = makeApiApp()
+
+        const response = await rpc(app, path, { body: JSON.stringify({ json: {} }) })
+
+        expect(response.status).toBe(401)
+      },
+    )
+  })
+})

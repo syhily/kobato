@@ -1,4 +1,4 @@
-import type { DetailPageComments, LatestComment } from '@kobato/api/contracts/comments'
+import type { DetailPageComments, LatestComment } from '@kobato/api/contracts/public/comments'
 import type { ResolvedFonts } from '@kobato/assets/fonts'
 import type { Role } from '@kobato/auth/roles'
 import type { ListingPageLoaderData } from '@kobato/catalog/listing'

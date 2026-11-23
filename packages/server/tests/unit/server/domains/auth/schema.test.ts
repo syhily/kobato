@@ -1,4 +1,4 @@
-import { zodIssueParams } from '@kobato/api/contracts/api-error'
+import { zodIssueParams } from '@kobato/api/contracts/primitives'
 import { signInSchema, signUpAdminSchema, updateUserSchema } from '@kobato/server/domains/auth/schema'
 import { describe, expect, it } from 'vitest'
 

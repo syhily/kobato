@@ -1,4 +1,4 @@
-import type { MySessionItem } from '@kobato/api/contracts/sessions'
+import type { MySessionItem } from '@kobato/api/contracts/account/self'
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

@@ -75,26 +75,22 @@ feature files. Once a subdirectory exists (`services/`, `repos/`), the root file
 
 ## http/
 
-HTTP perimeter only: `orpc-base.ts`, `request-context.ts`, `hono-env.ts`, `api-router.ts`, `errors.ts`, `app.ts`,
-`orpc-trace.ts`, `middlewares/`, `controllers/` (mirroring the router groups: `public/`, `account/`, `admin/`),
-`resources/`, `loaders/`, `route-cache-headers.ts`, `request/`, `ssr-caller.ts`. Controllers and loaders **orchestrate
-only** — logic stays in `domains/<x>/service.ts`. `controllers/**` mirrors the `apiRouter` groups one-to-one
-(`apiRouter.public.comments` ⇔ `controllers/public/comments-*.controller.ts`); route-less shared factories are the only
-exception (`admin/revision-shared.ts`, `account/auth-shared.ts`). `apiRouter` mirrors the three-group contract tree
-exactly (`public` / `account` / `admin`); the account self procedures spread at the `account` root (so `account.profile`
-etc. keep their keys — `/rpc/account/*` never moved).
+HTTP perimeter only: `orpc-base.ts`, `contract-implementation.ts`, `request-context.ts`, `hono-env.ts`, `api-router.ts`,
+`errors.ts`, `app.ts`, `orpc-trace.ts`, `middlewares/`, `controllers/` (mirroring the router groups: `public/`,
+`account/`, `admin/`), `resources/`, `loaders/`, `route-cache-headers.ts`, `request/`, `ssr-caller.ts`. Controllers and
+loaders **orchestrate only** — logic stays in `domains/<x>/service.ts`. `controllers/**` mirrors the `apiRouter` groups
+one-to-one (`apiRouter.public.comments` ⇔ `controllers/public/comments-*.controller.ts`); route-less shared factories
+are the only exception (`admin/revision-shared.ts`, `account/auth-shared.ts`). `apiRouter` mirrors the three-group
+contract tree exactly (`public` / `account` / `admin`); the account self procedures spread at the `account` root (so
+`account.profile` etc. keep their keys — `/rpc/account/*` never moved).
 
-Two URL surfaces, never conflated: (1) the **oc.route method/path metadata** from `@kobato/api` — the REST-style wire
-compatibility contract; `admin.analytics` keeps its legacy `/analytics/*` route metadata (the one non-`/admin/` admin
-prefix). (2) the **`/rpc/*` transport URLs** — oRPC's `RPCHandler` derives them from the ROUTER TREE KEYS, so the
-grouped tree answers at `/rpc/public/...` / `/rpc/account/...` / `/rpc/admin/...` (canonical). `app.ts` runs every
-`/rpc/*` request through `request/legacy-rpc-path.ts` FIRST: the adapter rewrites the exact pre-grouping tree URLs
-(`/rpc/content/*`; `/rpc/{avatar,github,images,music,webmentions}/*` → `public`;
-`/rpc/{likes,friends,newsletter,notifications,passkey}/*` → `account`; `/rpc/analytics/*` → `/rpc/admin/analytics/*`;
-per-procedure `/rpc/comments/*`) onto the canonical grouped paths before the handler, preserving
-method/headers/body/query — RequestContext, CSRF, and business guards run on the original request and are untouched. The
-canonical grouped paths are what every in-repo caller and new headless client (`createKobatoPublicClient`) uses; the
-adapter exists only for already-deployed old clients.
+Two URL surfaces, never conflated: (1) the **route method/path metadata** from `@kobato/api` — the REST-style
+compatibility record, never a mounted REST surface; `admin.analytics` keeps its legacy `/analytics/*` route metadata
+(the one non-`/admin/` admin prefix). (2) the **`/rpc/*` transport URLs** — oRPC's `RPCHandler` derives them from the
+ROUTER TREE KEYS, so the grouped tree answers at `/rpc/public/...` / `/rpc/account/...` / `/rpc/admin/...` (canonical).
+The canonical grouped paths are the ONLY transport: `app.ts` hands `c.req.raw` straight to the handler, and every caller
+— in-repo and headless alike (`createKobatoPublicClient`) — uses them; the pre-grouping alias adapter was removed
+(ADR-0009 §5).
 
 ### Sign-in & install flows (`account.auth.*` / `account.setup.*`)
 
@@ -106,14 +102,15 @@ and password reset (+ author invite); `passkey.authFinish` lives in the passkey 
 projection), `verifyToken` (keyed rate limit — the 429 rides the wire error variant —, session flag +
 `markSessionDirty`), and `install` (session/token gates, `signUpAdminSchema` safeParse so field copy stays
 `auth.setup.error.*` descriptors, `signUpInitialAdminWithSession`). All are `implementPublic` — anonymous ceremonies
-with their own rate limits; HTTP calls still pay the global `csrfGuard` (none of them joined the frozen public-read
-exemption). Typed camelCase inputs are adapted to `FormData` (auth) or the domain schema (setup) so the services keep
-owning user-visible error copy — the wire input schemas are deliberately permissive. Controllers re-validate every
-`redirectTo` with `safeRedirectPath` themselves (action fallback `AUTH_ACTION_REDIRECT_FALLBACK`, status fallback
-`AUTH_STATUS_REDIRECT_FALLBACK`, both declared in `@kobato/api/contracts/auth`) — never trust a route-side sanitization.
-Internal `setCookie` values move from `AuthFlowResult` onto `context.responseHeaders` (`wireAuthFlow`) and never appear
-in the wire output; the `/rpc` mount and `createSsrCaller` both surface them as real `Set-Cookie` headers — the same
-cookie reaches HTTP RPC clients and the in-process React Router action.
+with their own rate limits; HTTP calls still pay the global `csrfGuard` (none of them carries the `publicRead`
+declaration, so none joined the public-read exemption). Typed camelCase inputs are adapted to `FormData` (auth) or the
+domain schema (setup) so the services keep owning user-visible error copy — the wire input schemas are deliberately
+permissive. Controllers re-validate every `redirectTo` with `safeRedirectPath` themselves (action fallback
+`AUTH_ACTION_REDIRECT_FALLBACK`, status fallback `AUTH_STATUS_REDIRECT_FALLBACK`, both declared in
+`@kobato/api/contracts/account/auth`) — never trust a route-side sanitization. Internal `setCookie` values move from
+`AuthFlowResult` onto `context.responseHeaders` (`wireAuthFlow`) and never appear in the wire output; the `/rpc` mount
+and `createSsrCaller` both surface them as real `Set-Cookie` headers — the same cookie reaches HTTP RPC clients and the
+in-process React Router action.
 
 - Error translation seam: `errors.ts` (vocabulary), `translate-domain-error.ts` (domain error → `ORPCError`),
   `localized-http-exception.ts` + `leaked-response.ts`.
@@ -127,8 +124,8 @@ cookie reaches HTTP RPC clients and the in-process React Router action.
 ### Public content API (`public.content.*`)
 
 - The public read-only contract is the `public.content.*` group (Ghost-Content-API style), implemented by
-  `controllers/public/content-*.controller.ts`, schemas in `@kobato/api/contracts/content.ts`. Admin SSR lives in the
-  domain groups; there is deliberately NO page-level aggregate group — loaders compose domain endpoints.
+  `controllers/public/content-*.controller.ts`, schemas in `@kobato/api/contracts/public/content.ts`. Admin SSR lives in
+  the domain groups; there is deliberately NO page-level aggregate group — loaders compose domain endpoints.
 - Public route loaders and the root loader consume `public.content.*` through `createSsrCaller` (`ssr-caller.ts`) —
   in-process, no HTTP hop; it also owns `unwrapListing`/`unwrapDetail`.
 - `loaders/*` are the orchestration layer (`listing`, `search`, `sidebar`, `comments`, `detail-critical` + the
@@ -152,25 +149,41 @@ cookie reaches HTTP RPC clients and the in-process React Router action.
 | `adminProc`  | `requireRole('admin')` + `csrfGuard`  | Admins only                |
 
 `csrfGuard` runs on every `/rpc/*` request — safe methods included (the RPC transport POSTs reads too); anonymous
-sessions validate against the stateless `__csrf` double-submit token. Sole exception: the frozen anonymous public-read
-procedure set (`request/public-read-rpc-path.ts` — the sixteen exact canonical `content.*`/`comments.loadComments`/
-`webmentions.list`/`avatar.find`/`github.*`/`images.resolveThumbhash`/`music.get` paths, legacy aliases equivalent),
-exempted by procedure identity, never by HTTP method or route metadata. Token reads (`comments.getRaw`/`myComments`),
-every mutation, and the whole `account`/`admin` surface keep the full guard — a future sensitive read gains nothing
-automatically.
+sessions validate against the stateless `__csrf` double-submit token. Sole exception: the anonymous public-read
+exemption in `request/public-read-rpc-path.ts`, DERIVED from the `~orpc.meta.publicRead === true` declarations on
+`@kobato/api`'s `publicContract` (`defineProcedure(route, { publicRead: true })` — eligibility is declared explicitly on
+the API side, pinned there by frozen-key tests; the server only converts the marked tree keys into exact canonical
+`/rpc/public/*` paths and enforces). Exemption is by declared procedure identity, never by HTTP method or route metadata
+— a future sensitive read gains nothing automatically. Token reads (`comments.getRaw`/`myComments`), every mutation, and
+the whole `account`/`admin` surface keep the full guard.
 
 ### Contract-first procedures
 
 Domains declare `method`/`path`/`input`/`output` ONCE in `@kobato/api`; controllers implement through the
-`implement{Public,Authed,Author,Admin}` factories in `orpc-base.ts` (reference: `controllers/likes.controller.ts`). A
-limiter that must run BEFORE input parsing rides the implementer; `impl.router({...})` dedupes the shared leading guard.
+`implement{Public,Authed,Author,Admin}` factories in `orpc-base.ts` (reference:
+`controllers/account/likes.controller.ts`). A limiter that must run BEFORE input parsing rides the implementer;
+`impl.router({...})` dedupes the shared leading guard. The implementer types come from `contract-implementation.ts`:
+each `implement*` returns a `ContractImplementer`, whose leaf `.handler()` result carries the contract's route brand
+(`defineProcedure` in `@kobato/api`) through `.use()`, and whose `.router()` only accepts a tree matching
+`ContractImplementation<typeof contract>` — every key, the exact input/output schema types, and the branded method/path.
+`apiRouter` closes the loop with `apiRouter = { … } satisfies ContractImplementation<typeof apiContract>` (compile-time
+twin of the runtime parity test `tests/unit/server/http/api-contract.test.ts`; `contract-implementation.test.ts` pins
+the types, positive and fail-closed negative). Plain `oc.route` contracts carry no brand and FAIL CLOSED: an unbranded
+leaf makes `ContractImplementation` demand the unsatisfiable `UnbrandedContractRoute` brand, so neither `impl.router()`
+nor the `apiRouter` satisfies accepts it — every production contract procedure is declared with `defineProcedure`, and
+`@kobato/api/rpc/define-procedure.ts` is the single `oc.route` call site in `@kobato/api`'s `src/rpc/`. Shared
+route-less factories must stay generic over the host base path so the brand survives: `admin/revision-shared.ts` infers
+`TBase` from the host controller's `impl` (`RevisionRouterImplementer<TBase>` over `RevisionContract<TBase>`); a
+non-generic `RevisionContract` widens every revision path to `` `/${string}/…` `` and
+`adminPostsRouter`/`adminPagesRouter` stop satisfying their contracts.
 
 ### Adding an endpoint
 
-- Schema in `@kobato/api/contracts/<domain>.ts` (never inline); declare in the domain's `@kobato/api/rpc/<group>/`
-  module; implement with the right `implement*` base; register in `apiRouter` under the matching group (`public` /
-  `account` / `admin`) and the group composition root in `@kobato/api`.
-- A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/api/contracts/merge-patch` —
+- Schema in `@kobato/api/contracts/<group>/<domain>.ts` (never inline — vocabulary a second audience needs lives in the
+  lower audience layer, e.g. `admin/` reuses `public/` and `account/`); declare in the domain's
+  `@kobato/api/rpc/<group>/` module; implement with the right `implement*` base; register in `apiRouter` under the
+  matching group (`public` / `account` / `admin`) and the group composition root in `@kobato/api`.
+- A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/api/contracts/primitives` —
   `clearable(...)` for nullable columns, `splitMergePatch(input)` in the handler (pinned by
   `apps/kobato/tests/arch/merge-patch-controllers.test.ts`; reference `admin.users.update`). Full-record upserts,
   single-field setters, lifecycle actions, and the settings section merge are deliberately NOT merge-patch.

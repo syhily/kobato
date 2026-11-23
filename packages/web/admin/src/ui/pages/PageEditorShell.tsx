@@ -3,7 +3,7 @@ import type {
   AdminPageDto,
   AdminPageUpsertMetaOutput as UpsertPageMetaOutput,
   UpsertPageMetaInput,
-} from '@kobato/api/contracts/pages'
+} from '@kobato/api/contracts/admin/pages'
 import type { NavigateFunction } from 'react-router'
 
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'

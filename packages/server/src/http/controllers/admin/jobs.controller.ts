@@ -4,7 +4,7 @@ import {
   type JobRunDto,
   type JobSummaryDto,
   type JobsListDto,
-} from '@kobato/api/contracts/jobs'
+} from '@kobato/api/contracts/admin/jobs'
 import { adminJobsContract } from '@kobato/api/rpc/admin/jobs'
 import { getStorageMigrationStatus } from '@kobato/server/domains/storage/s3-migration'
 import { queueTaskStats } from '@kobato/server/domains/webmentions/queue-stats'

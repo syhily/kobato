@@ -55,7 +55,7 @@ vi.mock('@kobato/web-admin/ui/editor-shell/use-editor-keyboard-shortcuts', () =>
   useEditorKeyboardShortcuts: vi.fn(),
 }))
 
-import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/api/contracts/revision'
+import type { AdminRevisionDto, SaveBodyOutput } from '@kobato/api/contracts/admin/revision'
 import type { EditorShellDetail, EntityLike } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
 import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'

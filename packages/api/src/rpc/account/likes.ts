@@ -5,11 +5,17 @@ import {
   likeIncreaseOutput,
   likeValidateInput,
   likeValidateOutput,
-} from '@kobato/api/contracts/likes'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/account/likes'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const likesContract = {
-  increase: oc.route({ method: 'POST', path: '/likes/increase' }).input(likeIncreaseInput).output(likeIncreaseOutput),
-  decrease: oc.route({ method: 'POST', path: '/likes/decrease' }).input(likeDecreaseInput).output(likeDecreaseOutput),
-  validate: oc.route({ method: 'GET', path: '/likes/validate' }).input(likeValidateInput).output(likeValidateOutput),
+  increase: defineProcedure({ method: 'POST', path: '/likes/increase' })
+    .input(likeIncreaseInput)
+    .output(likeIncreaseOutput),
+  decrease: defineProcedure({ method: 'POST', path: '/likes/decrease' })
+    .input(likeDecreaseInput)
+    .output(likeDecreaseOutput),
+  validate: defineProcedure({ method: 'GET', path: '/likes/validate' })
+    .input(likeValidateInput)
+    .output(likeValidateOutput),
 }

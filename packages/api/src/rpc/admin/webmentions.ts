@@ -1,4 +1,3 @@
-import { voidOutput } from '@kobato/api/contracts/primitives'
 import {
   adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
@@ -7,31 +6,27 @@ import {
   adminWebmentionOutboxListSchema,
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
-} from '@kobato/api/contracts/webmentions'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/webmentions'
+import { voidOutput } from '@kobato/api/contracts/primitives'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminWebmentionsContract = {
-  loadAll: oc
-    .route({ method: 'GET', path: '/admin/webmentions/load-all' })
+  loadAll: defineProcedure({ method: 'GET', path: '/admin/webmentions/load-all' })
     .input(adminWebmentionListSchema)
     .output(adminWebmentionsLoadAllOutputDto),
-  approve: oc
-    .route({ method: 'POST', path: '/admin/webmentions/approve' })
+  approve: defineProcedure({ method: 'POST', path: '/admin/webmentions/approve' })
     .input(adminWebmentionIdInput)
     .output(voidOutput),
-  reject: oc
-    .route({ method: 'POST', path: '/admin/webmentions/reject' })
+  reject: defineProcedure({ method: 'POST', path: '/admin/webmentions/reject' })
     .input(adminWebmentionIdInput)
     .output(voidOutput),
-  reverify: oc
-    .route({ method: 'POST', path: '/admin/webmentions/reverify' })
+  reverify: defineProcedure({ method: 'POST', path: '/admin/webmentions/reverify' })
     .input(adminWebmentionIdInput)
     .output(adminWebmentionDto),
-  outbox: oc
-    .route({ method: 'GET', path: '/admin/webmentions/outbox' })
+  outbox: defineProcedure({ method: 'GET', path: '/admin/webmentions/outbox' })
     .input(adminWebmentionOutboxListSchema)
     .output(adminWebmentionOutboxOutputDto),
-  pendingCount: oc
-    .route({ method: 'GET', path: '/admin/webmentions/pending-count' })
-    .output(adminWebmentionsPendingCountOutputSchema),
+  pendingCount: defineProcedure({ method: 'GET', path: '/admin/webmentions/pending-count' }).output(
+    adminWebmentionsPendingCountOutputSchema,
+  ),
 }

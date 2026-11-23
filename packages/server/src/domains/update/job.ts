@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { UpdateJobStatus } from '@kobato/api/contracts/update'
+import type { UpdateJobStatus } from '@kobato/api/contracts/admin/update'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'

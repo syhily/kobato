@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AdminUserDto } from '@kobato/api/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 import type { ReactElement, ReactNode } from 'react'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'

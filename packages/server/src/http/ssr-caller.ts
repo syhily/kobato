@@ -1,6 +1,10 @@
-import type { DetailPageComments } from '@kobato/api/contracts/comments'
-import type { ContentNotModifiedSignal, ContentRedirectSignal, ContentSignal } from '@kobato/api/contracts/content'
-import type { PublicWebmentionWire } from '@kobato/api/contracts/webmentions'
+import type { DetailPageComments } from '@kobato/api/contracts/public/comments'
+import type {
+  ContentNotModifiedSignal,
+  ContentRedirectSignal,
+  ContentSignal,
+} from '@kobato/api/contracts/public/content'
+import type { PublicWebmentionWire } from '@kobato/api/contracts/public/webmentions'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
 import type { ApiRouter } from '@kobato/server/http/api-router'
 import type { AppLocalization } from '@kobato/settings/app-localization'

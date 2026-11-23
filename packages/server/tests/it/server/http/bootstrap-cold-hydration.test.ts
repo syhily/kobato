@@ -80,7 +80,7 @@ beforeEach(async () => {
   resetBlogSettingsForTests()
 })
 
-describe('cold /rpc/content/bootstrap', () => {
+describe('cold /rpc/public/content/bootstrap', () => {
   it('hydrates settings before projecting localization (installed, non-default locale)', async () => {
     seedInstalledSite({ locale: 'zh-TW', timeZone: 'Asia/Taipei' })
     resetBlogSettingsForTests()

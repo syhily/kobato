@@ -1,4 +1,4 @@
-import type { AdminFontDto } from '@kobato/api/contracts/fonts'
+import type { AdminFontDto } from '@kobato/api/contracts/admin/fonts'
 import type { Database } from '@kobato/db/sqlite/database'
 
 import { insertFont } from '@kobato/db/sqlite/operations/system/font'

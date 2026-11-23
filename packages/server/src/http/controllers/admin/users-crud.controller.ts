@@ -1,4 +1,4 @@
-import { splitMergePatch } from '@kobato/api/contracts/merge-patch'
+import { splitMergePatch } from '@kobato/api/contracts/primitives'
 import { adminUsersCrudContract } from '@kobato/api/rpc/admin/users'
 import { restoreUserById, updateUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'

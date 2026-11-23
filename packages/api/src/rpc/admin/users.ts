@@ -1,4 +1,3 @@
-import { successDto, voidOutput } from '@kobato/api/contracts/primitives'
 import {
   adminUserUpdateInput,
   adminUsersCountOutputSchema,
@@ -19,60 +18,62 @@ import {
   adminUserUpdateRoleOutputDto,
   adminUsersListInput,
   adminUsersListOutputDto,
-} from '@kobato/api/contracts/users'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/users'
+import { successDto, voidOutput } from '@kobato/api/contracts/primitives'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminUsersCrudContract = {
-  count: oc.route({ method: 'GET', path: '/admin/users/count' }).output(adminUsersCountOutputSchema),
-  passkeyFlag: oc.route({ method: 'GET', path: '/admin/users/passkey-flag' }).output(adminUsersPasskeyFlagOutputSchema),
-  list: oc
-    .route({ method: 'GET', path: '/admin/users/list' })
+  count: defineProcedure({ method: 'GET', path: '/admin/users/count' }).output(adminUsersCountOutputSchema),
+  passkeyFlag: defineProcedure({ method: 'GET', path: '/admin/users/passkey-flag' }).output(
+    adminUsersPasskeyFlagOutputSchema,
+  ),
+  list: defineProcedure({ method: 'GET', path: '/admin/users/list' })
     .input(adminUsersListInput)
     .output(adminUsersListOutputDto),
-  get: oc.route({ method: 'GET', path: '/admin/users/get' }).input(adminUserIdInput).output(adminUserEnvelopeDto),
-  update: oc.route({ method: 'POST', path: '/admin/users/update' }).input(adminUserUpdateInput).output(successDto),
-  softDelete: oc.route({ method: 'POST', path: '/admin/users/soft-delete' }).input(adminUserIdInput).output(voidOutput),
-  restore: oc.route({ method: 'POST', path: '/admin/users/restore' }).input(adminUserIdInput).output(successDto),
+  get: defineProcedure({ method: 'GET', path: '/admin/users/get' })
+    .input(adminUserIdInput)
+    .output(adminUserEnvelopeDto),
+  update: defineProcedure({ method: 'POST', path: '/admin/users/update' })
+    .input(adminUserUpdateInput)
+    .output(successDto),
+  softDelete: defineProcedure({ method: 'POST', path: '/admin/users/soft-delete' })
+    .input(adminUserIdInput)
+    .output(voidOutput),
+  restore: defineProcedure({ method: 'POST', path: '/admin/users/restore' }).input(adminUserIdInput).output(successDto),
 }
 
 export const adminUsersAdminContract = {
-  mute: oc.route({ method: 'POST', path: '/admin/users/mute' }).input(adminUserMuteInput).output(adminUserEnvelopeDto),
-  updateRole: oc
-    .route({ method: 'POST', path: '/admin/users/update-role' })
+  mute: defineProcedure({ method: 'POST', path: '/admin/users/mute' })
+    .input(adminUserMuteInput)
+    .output(adminUserEnvelopeDto),
+  updateRole: defineProcedure({ method: 'POST', path: '/admin/users/update-role' })
     .input(adminUserUpdateRoleInput)
     .output(adminUserUpdateRoleOutputDto),
-  inviteAuthor: oc
-    .route({ method: 'POST', path: '/admin/users/invite-author' })
+  inviteAuthor: defineProcedure({ method: 'POST', path: '/admin/users/invite-author' })
     .input(adminUserInviteAuthorInput)
     .output(successDto),
-  sendPasswordReset: oc
-    .route({ method: 'POST', path: '/admin/users/send-password-reset' })
+  sendPasswordReset: defineProcedure({ method: 'POST', path: '/admin/users/send-password-reset' })
     .input(adminUserSendPasswordResetInput)
     .output(successDto),
-  clearPasskeys: oc
-    .route({ method: 'POST', path: '/admin/users/clear-passkeys' })
+  clearPasskeys: defineProcedure({ method: 'POST', path: '/admin/users/clear-passkeys' })
     .input(adminUserClearPasskeysInput)
     .output(adminUserEnvelopeDto),
 }
 
 export const adminUsersSessionsContract = {
-  listSessions: oc
-    .route({ method: 'GET', path: '/admin/users/list-sessions' })
-    .output(adminUsersListSessionsOutputSchema),
-  revokeSession: oc
-    .route({ method: 'POST', path: '/admin/users/revoke-session' })
+  listSessions: defineProcedure({ method: 'GET', path: '/admin/users/list-sessions' }).output(
+    adminUsersListSessionsOutputSchema,
+  ),
+  revokeSession: defineProcedure({ method: 'POST', path: '/admin/users/revoke-session' })
     .input(adminRevokeSessionInput)
     .output(adminRevokeSessionOutputDto),
-  revokeAllSessions: oc
-    .route({ method: 'POST', path: '/admin/users/revoke-all-sessions' })
+  revokeAllSessions: defineProcedure({ method: 'POST', path: '/admin/users/revoke-all-sessions' })
     .input(adminUserIdParamInput)
     .output(successDto),
-  bulkApproveComments: oc
-    .route({ method: 'POST', path: '/admin/users/bulk-approve-comments' })
+  bulkApproveComments: defineProcedure({ method: 'POST', path: '/admin/users/bulk-approve-comments' })
     .input(adminUserIdParamInput)
     .output(adminBulkApproveCommentsOutputDto),
-  bulkDeleteComments: oc
-    .route({ method: 'POST', path: '/admin/users/bulk-delete-comments' })
+  bulkDeleteComments: defineProcedure({ method: 'POST', path: '/admin/users/bulk-delete-comments' })
     .input(adminUserIdParamInput)
     .output(adminBulkDeleteCommentsOutputDto),
 }

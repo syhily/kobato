@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { newPasswordSchema } from '@kobato/api/contracts/users'
+import { newPasswordSchema } from '@kobato/api/contracts/account/self'
 import { MAX_PASSWORD_LENGTH } from '@kobato/auth/security'
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema'

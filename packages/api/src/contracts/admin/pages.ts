@@ -1,6 +1,6 @@
-import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/api/contracts/content-admin-base'
+import { adminMetaBaseDto, upsertMetaBaseSchema } from '@kobato/api/contracts/admin/content-admin-base'
+import { adminRevisionDto } from '@kobato/api/contracts/admin/revision'
 import { safeBoolean } from '@kobato/api/contracts/primitives'
-import { adminRevisionDto } from '@kobato/api/contracts/revision'
 import { z } from 'zod'
 
 export const adminPageIdInput = z.object({ id: z.string().min(1) })

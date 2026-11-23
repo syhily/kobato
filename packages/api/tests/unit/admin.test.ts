@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+
 import {
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
@@ -11,14 +13,14 @@ import {
   analyticsQuerySchema,
   countersDto,
   viewsDto,
-} from '@kobato/api/contracts/analytics'
+} from '@kobato/api/contracts/admin/analytics'
 import {
   auditLogActorsOutput,
   auditLogExportInput,
   auditLogExportOutput,
   auditLogListInput,
   auditLogListOutput,
-} from '@kobato/api/contracts/audit'
+} from '@kobato/api/contracts/admin/audit'
 import {
   adminBackupCreateInput,
   adminBackupCreateOutputDto,
@@ -32,14 +34,14 @@ import {
   adminBackupUploadRestoreDecryptOutputDto,
   restoreJobStatusDto,
   restoreProgressDto,
-} from '@kobato/api/contracts/backup'
-import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/branding'
+} from '@kobato/api/contracts/admin/backup'
+import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/admin/branding'
 import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
   adminCacheStatsDto,
   clearCacheResultDto,
-} from '@kobato/api/contracts/cache'
+} from '@kobato/api/contracts/admin/cache'
 import {
   adminCategoriesListInput,
   adminCategoriesListOutputDto,
@@ -48,7 +50,7 @@ import {
   adminCategoryIdInput,
   adminCategoryUpsertInput,
   adminCategoryUpsertOutputDto,
-} from '@kobato/api/contracts/categories'
+} from '@kobato/api/contracts/admin/categories'
 import {
   adminCommentsPendingCountOutputSchema,
   adminAvatarMirrorProbeOutputDto,
@@ -63,9 +65,8 @@ import {
   adminCommentsLoadAllOutputDto,
   adminCommentsPendingDashboardInput,
   adminPendingDashboardDto,
-  ownCommentMutationDto,
-} from '@kobato/api/contracts/comments'
-import { contentRestoreResultDto } from '@kobato/api/contracts/content-admin-base'
+} from '@kobato/api/contracts/admin/comments'
+import { contentRestoreResultDto } from '@kobato/api/contracts/admin/content-admin-base'
 import {
   adminFontDeleteInput,
   adminFontDeleteOutputDto,
@@ -73,20 +74,20 @@ import {
   adminFontSetSlotOutputDto,
   listFontsOutputDto,
   setFontSlotInputDto,
-} from '@kobato/api/contracts/fonts'
+} from '@kobato/api/contracts/admin/fonts'
 import {
   adminFriendUpsertOutputDto,
   adminFriendsListOutputDto,
   friendIdSchema,
   listFriendsSchema,
   upsertFriendSchema,
-} from '@kobato/api/contracts/friends'
+} from '@kobato/api/contracts/admin/friends'
 import {
   adminGeoipStatusInput,
   adminGeoipStatusOutputDto,
   adminGeoipUpdateInput,
   adminGeoipUpdateOutputDto,
-} from '@kobato/api/contracts/geoip'
+} from '@kobato/api/contracts/admin/geoip'
 import {
   adminImageIdInput,
   adminImageMutationOutputDto,
@@ -94,9 +95,9 @@ import {
   adminImageUploadInput,
   adminImagesListInput,
   listImagesOutputDto,
-} from '@kobato/api/contracts/images'
-import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/api/contracts/jobs'
-import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/api/contracts/mail'
+} from '@kobato/api/contracts/admin/images'
+import { jobHistoryInput, jobHistoryOutput, jobsListDto } from '@kobato/api/contracts/admin/jobs'
+import { adminMailSendTestInput, adminMailSendTestOutputDto } from '@kobato/api/contracts/admin/mail'
 import {
   addMusicOutputDto,
   adminMusicAddInput,
@@ -108,14 +109,14 @@ import {
   listMusicOutputDto,
   searchMusicOutputDto,
   updateMusicOutputDto,
-} from '@kobato/api/contracts/music'
+} from '@kobato/api/contracts/admin/music'
 import {
   adminRecallNotificationInput,
   adminRecallNotificationOutput,
   adminSendBroadcastInput,
   adminSendDirectInput,
   adminSendOutput,
-} from '@kobato/api/contracts/notifications'
+} from '@kobato/api/contracts/admin/notifications'
 import {
   observabilityProvisionInputSchema,
   observabilityProvisionOutputSchema,
@@ -123,7 +124,7 @@ import {
   observabilityStatusOutputSchema,
   observabilityTestConnectionInputSchema,
   observabilityTestConnectionOutputSchema,
-} from '@kobato/api/contracts/observability'
+} from '@kobato/api/contracts/admin/observability'
 import {
   adminPageDetailDto,
   adminPageIdInput,
@@ -133,7 +134,7 @@ import {
   listPagesOutputDto,
   listPagesSchema,
   upsertPageMetaSchema,
-} from '@kobato/api/contracts/pages'
+} from '@kobato/api/contracts/admin/pages'
 import {
   adminPostsMySummaryOutputSchema,
   adminPostDetailDto,
@@ -144,33 +145,32 @@ import {
   listPostsOutputDto,
   listPostsSchema,
   upsertPostMetaSchema,
-} from '@kobato/api/contracts/posts'
-import { successDto, voidOutput } from '@kobato/api/contracts/primitives'
+} from '@kobato/api/contracts/admin/posts'
 import {
   adminRenderBatchInput,
   adminRenderMathInput,
   adminRenderMathOutputDto,
   adminRenderReindexOutputDto,
   adminRenderReprojectOutputDto,
-} from '@kobato/api/contracts/renders'
-import { saveBodyInput, saveResultOutput } from '@kobato/api/contracts/revision'
+} from '@kobato/api/contracts/admin/renders'
+import { saveBodyInput, saveResultOutput } from '@kobato/api/contracts/admin/revision'
 import {
   adminSettingsBootstrapOutputSchema,
   adminSettingsUpdateInput,
   adminSettingsUpdateOutput,
-} from '@kobato/api/contracts/settings'
+} from '@kobato/api/contracts/admin/settings'
 import {
   adminStorageStartMigrationInput,
   adminStorageStatsOutputDto,
   storageMigrationStatusDto,
-} from '@kobato/api/contracts/storage'
+} from '@kobato/api/contracts/admin/storage'
 import {
   adminTagsListInput,
   adminTagsListOutputDto,
   adminTagIdInput,
   adminTagUpsertInput,
   adminTagUpsertOutputDto,
-} from '@kobato/api/contracts/tags'
+} from '@kobato/api/contracts/admin/tags'
 import {
   adminUpdateApplyInput,
   adminUpdateApplyOutputDto,
@@ -178,7 +178,7 @@ import {
   adminUpdateStatusInput,
   updateCheckResultDto,
   updateJobStatusDto,
-} from '@kobato/api/contracts/update'
+} from '@kobato/api/contracts/admin/update'
 import {
   adminUserUpdateInput,
   adminUsersCountOutputSchema,
@@ -199,7 +199,7 @@ import {
   adminUserUpdateRoleOutputDto,
   adminUsersListInput,
   adminUsersListOutputDto,
-} from '@kobato/api/contracts/users'
+} from '@kobato/api/contracts/admin/users'
 import {
   adminWebmentionsPendingCountOutputSchema,
   adminWebmentionDto,
@@ -208,7 +208,9 @@ import {
   adminWebmentionOutboxListSchema,
   adminWebmentionOutboxOutputDto,
   adminWebmentionsLoadAllOutputDto,
-} from '@kobato/api/contracts/webmentions'
+} from '@kobato/api/contracts/admin/webmentions'
+import { successDto, voidOutput } from '@kobato/api/contracts/primitives'
+import { ownCommentMutationDto } from '@kobato/api/contracts/public/comments'
 import { analyticsContract } from '@kobato/api/rpc/admin/analytics'
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
 import { adminBackupContract } from '@kobato/api/rpc/admin/backup'
@@ -228,7 +230,7 @@ import { adminObservabilityContract } from '@kobato/api/rpc/admin/observability'
 import { adminPagesContract } from '@kobato/api/rpc/admin/pages'
 import { adminPostsContract } from '@kobato/api/rpc/admin/posts'
 import { adminRendersContract } from '@kobato/api/rpc/admin/renders'
-import { revisionContract } from '@kobato/api/rpc/admin/revision'
+import { type RevisionContract, revisionContract } from '@kobato/api/rpc/admin/revision'
 import { adminSettingsContract } from '@kobato/api/rpc/admin/settings'
 import { adminStorageContract } from '@kobato/api/rpc/admin/storage'
 import { adminTagsContract } from '@kobato/api/rpc/admin/tags'
@@ -240,8 +242,13 @@ import {
   adminUsersSessionsContract,
 } from '@kobato/api/rpc/admin/users'
 import { adminWebmentionsContract } from '@kobato/api/rpc/admin/webmentions'
-import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
-import { describe, expect, it } from 'vitest'
+import {
+  type AnyContractProcedure,
+  type InferContractRouterInputs,
+  type InferContractRouterOutputs,
+  isContractProcedure,
+} from '@orpc/contract'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 
 const ADMIN_ROUTES = {
   posts: {
@@ -674,6 +681,60 @@ describe('revisionContract factory', () => {
   it('feeds the very same procedure objects into the domain contracts', () => {
     expect(adminPostsContract.saveDraft['~orpc'].inputSchema).toBe(saveBodyInput)
     expect(adminPagesContract.saveDraft['~orpc'].outputSchema).toBe(saveResultOutput)
+  })
+
+  it('brands the mounted posts and pages procedures with their exact routes', () => {
+    for (const [contract, base] of [
+      [adminPostsContract, '/admin/posts'],
+      [adminPagesContract, '/admin/pages'],
+    ] as const) {
+      expect(contract.saveDraft['~orpc'].route).toEqual({ method: 'POST', path: `${base}/save-draft` })
+      expect(contract.publishLatest['~orpc'].route).toEqual({ method: 'POST', path: `${base}/publish-latest` })
+      expect(contract.saveDraft['~orpc'].inputSchema).toBe(saveBodyInput)
+      expect(contract.saveDraft['~orpc'].outputSchema).toBe(saveResultOutput)
+    }
+  })
+
+  it('keeps the base path literal in the type brand instead of widening it to a template', () => {
+    expectTypeOf(adminPostsContract.saveDraft['~orpc'].route.method).toEqualTypeOf<'POST'>()
+    expectTypeOf(adminPostsContract.saveDraft['~orpc'].route.path).toEqualTypeOf<'/admin/posts/save-draft'>()
+    expectTypeOf(adminPostsContract.publishLatest['~orpc'].route.path).toEqualTypeOf<'/admin/posts/publish-latest'>()
+    expectTypeOf(adminPagesContract.saveDraft['~orpc'].route.method).toEqualTypeOf<'POST'>()
+    expectTypeOf(adminPagesContract.saveDraft['~orpc'].route.path).toEqualTypeOf<'/admin/pages/save-draft'>()
+    expectTypeOf(adminPagesContract.publishLatest['~orpc'].route.path).toEqualTypeOf<'/admin/pages/publish-latest'>()
+    type PostsLatestPath = RevisionContract<'admin/posts'>['publishLatest']['~orpc']['route']['path']
+    expectTypeOf<PostsLatestPath>().toEqualTypeOf<'/admin/posts/publish-latest'>()
+    expectTypeOf<InferContractRouterInputs<typeof adminPostsContract.saveDraft>>().toEqualTypeOf<
+      z.input<typeof saveBodyInput>
+    >()
+    expectTypeOf<InferContractRouterOutputs<typeof adminPostsContract.saveDraft>>().toEqualTypeOf<
+      z.output<typeof saveResultOutput>
+    >()
+    expectTypeOf<InferContractRouterInputs<typeof adminPagesContract.publishLatest>>().toEqualTypeOf<
+      z.input<typeof saveBodyInput>
+    >()
+    // @ts-expect-error — the posts draft path is not the pages draft path
+    expectTypeOf(adminPostsContract.saveDraft['~orpc'].route.path).toEqualTypeOf<'/admin/pages/save-draft'>()
+    // @ts-expect-error — the brand is the exact literal, not `/${string}/save-draft`
+    expectTypeOf(adminPagesContract.saveDraft['~orpc'].route.path).toEqualTypeOf<`/${string}/save-draft`>()
+    // @ts-expect-error — publish-latest is a different path than save-draft
+    const crossProcedure: '/admin/pages/save-draft' = adminPagesContract.publishLatest['~orpc'].route.path
+    // @ts-expect-error — the method stays pinned to POST
+    const crossMethod: 'GET' = adminPostsContract.saveDraft['~orpc'].route.method
+    void crossProcedure
+    void crossMethod
+  })
+
+  it('propagates the base path literal through a generic caller', () => {
+    function family<const TBase extends string>(base: `/${TBase}`) {
+      return revisionContract(base)
+    }
+    const tags = family('/admin/tags')
+    expectTypeOf(tags.saveDraft['~orpc'].route.path).toEqualTypeOf<'/admin/tags/save-draft'>()
+    expect(tags.saveDraft['~orpc'].route).toEqual({ method: 'POST', path: '/admin/tags/save-draft' })
+    expectTypeOf(
+      revisionContract('/admin/posts').saveDraft['~orpc'].route.path,
+    ).toEqualTypeOf<'/admin/posts/save-draft'>()
   })
 })
 

@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
 import type { CommentFilterFieldKey } from '@kobato/web-admin/ui/comments/filter-fields'
 import type { CommentActions } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'

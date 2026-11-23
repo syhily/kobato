@@ -1,5 +1,5 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
-import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/images'
+import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/admin/images'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ImageRow } from '@kobato/db/sqlite/types'
 

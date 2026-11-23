@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { renderWithI18n, wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'

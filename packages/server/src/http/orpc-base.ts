@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/primitives'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
@@ -15,6 +15,7 @@ import {
   parseCommentTokensCookie,
   serializeCommentTokensCookie,
 } from '@kobato/server/domains/comments/services/comment-token'
+import { contractImplementer, type ContractImplementer } from '@kobato/server/http/contract-implementation'
 import {
   apiErrorData,
   summarizeApiError,
@@ -30,7 +31,7 @@ import {
   tryNotificationReplyRateLimit,
   tryResourceRateLimit,
 } from '@kobato/server/infra/rate-limit'
-import { implementerInternal, ORPCError, os } from '@orpc/server'
+import { ORPCError, os } from '@orpc/server'
 
 export interface HandlerContext {
   request: Request
@@ -252,23 +253,31 @@ export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 export const adminProc = root.use(requireRole('admin')).use(domainErrorGuard)
 export const authorProc = root.use(requireRole('author')).use(domainErrorGuard)
 
-export function implementPublic<T extends AnyContractRouter>(contract: T) {
-  return implementerInternal<T, HandlerContext, HandlerContext>(contract, {}, [domainErrorGuard])
+export function implementPublic<T extends AnyContractRouter>(
+  contract: T,
+): ContractImplementer<T, HandlerContext, HandlerContext> {
+  return contractImplementer<T, HandlerContext, HandlerContext>(contract, [domainErrorGuard])
 }
 
-export function implementAuthed<T extends AnyContractRouter>(contract: T) {
-  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [requireAuth, domainErrorGuard])
+export function implementAuthed<T extends AnyContractRouter>(
+  contract: T,
+): ContractImplementer<T, HandlerContext, AuthedHandlerContext> {
+  return contractImplementer<T, HandlerContext, AuthedHandlerContext>(contract, [requireAuth, domainErrorGuard])
 }
 
-export function implementAuthor<T extends AnyContractRouter>(contract: T) {
-  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [
+export function implementAuthor<T extends AnyContractRouter>(
+  contract: T,
+): ContractImplementer<T, HandlerContext, AuthedHandlerContext> {
+  return contractImplementer<T, HandlerContext, AuthedHandlerContext>(contract, [
     requireRole('author'),
     domainErrorGuard,
   ])
 }
 
-export function implementAdmin<T extends AnyContractRouter>(contract: T) {
-  return implementerInternal<T, HandlerContext, AuthedHandlerContext>(contract, {}, [
+export function implementAdmin<T extends AnyContractRouter>(
+  contract: T,
+): ContractImplementer<T, HandlerContext, AuthedHandlerContext> {
+  return contractImplementer<T, HandlerContext, AuthedHandlerContext>(contract, [
     requireRole('admin'),
     domainErrorGuard,
   ])

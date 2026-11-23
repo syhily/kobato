@@ -1,10 +1,9 @@
-import type { MetingSource } from '@kobato/api/contracts/music'
 import type { MusicProvider, ProviderTrack } from '@kobato/server/domains/music/providers/types'
 import type { Env } from '@kobato/server/http/hono-env'
 import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
-import { METING_SOURCES } from '@kobato/api/contracts/music'
+import { type MetingSource, METING_SOURCES } from '@kobato/api/contracts/admin/music'
 import { getProvider } from '@kobato/server/domains/music/providers/registry'
 import { requireRoleMw } from '@kobato/server/http/middlewares/hono-rbac'
 import { ActionFailure } from '@kobato/server/infra/http/errors'

@@ -1,8 +1,15 @@
+import { accountContract } from '@kobato/api/account-contract'
+import { adminContract } from '@kobato/api/admin-contract'
 import { publicContract } from '@kobato/api/public-contract'
 import { isPublicReadRpcPath } from '@kobato/server/http/request/public-read-rpc-path'
+import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
-const PUBLIC_READ_PATHS: readonly string[] = [
+// FROZEN expectation, independent of the production derivation: the exact canonical `/rpc/public/*` paths that may
+// serve anonymous reads. The production set is DERIVED from `@kobato/api`'s `~orpc.meta.publicRead` declarations, so
+// this list is the safety pin — adding a marker (or a new marked procedure) without deliberately updating this frozen
+// expectation fails here, and removing one fails the per-path exemptions below.
+const EXPECTED_PUBLIC_READ_PATHS: readonly string[] = [
   '/rpc/public/content/bootstrap',
   '/rpc/public/content/home',
   '/rpc/public/content/posts/list',
@@ -21,7 +28,7 @@ const PUBLIC_READ_PATHS: readonly string[] = [
   '/rpc/public/music/get',
 ]
 
-const LEGACY_ALIASES: readonly string[] = [
+const REMOVED_LEGACY_ALIASES: readonly string[] = [
   '/rpc/content/bootstrap',
   '/rpc/content/home',
   '/rpc/content/posts/list',
@@ -40,13 +47,32 @@ const LEGACY_ALIASES: readonly string[] = [
   '/rpc/music/get',
 ]
 
+function leavesOf(tree: Record<string, unknown>, prefix = ''): Map<string, unknown> {
+  const leaves = new Map<string, unknown>()
+  for (const [key, node] of Object.entries(tree)) {
+    const path = prefix === '' ? key : `${prefix}/${key}`
+    if (isContractProcedure(node)) {
+      leaves.set(path, node)
+    } else if (typeof node === 'object' && node !== null) {
+      for (const [nestedPath, nestedLeaf] of leavesOf(node as Record<string, unknown>, path)) {
+        leaves.set(nestedPath, nestedLeaf)
+      }
+    }
+  }
+  return leaves
+}
+
+function publicReadMetaOf(leaf: unknown): unknown {
+  return (leaf as { '~orpc': { meta: { publicRead?: unknown } } })['~orpc'].meta.publicRead
+}
+
 describe('isPublicReadRpcPath', () => {
-  it.each(PUBLIC_READ_PATHS)('exempts the frozen canonical public-read procedure %s', (pathname) => {
+  it.each(EXPECTED_PUBLIC_READ_PATHS)('exempts the declared canonical public-read procedure %s', (pathname) => {
     expect(isPublicReadRpcPath(pathname)).toBe(true)
   })
 
-  it.each(LEGACY_ALIASES)('exempts the legacy alias %s exactly like its canonical path', (pathname) => {
-    expect(isPublicReadRpcPath(pathname)).toBe(true)
+  it.each(REMOVED_LEGACY_ALIASES)('no longer exempts the removed pre-grouping alias %s', (pathname) => {
+    expect(isPublicReadRpcPath(pathname)).toBe(false)
   })
 
   it.each([
@@ -78,20 +104,35 @@ describe('isPublicReadRpcPath', () => {
     expect(isPublicReadRpcPath(pathname)).toBe(false)
   })
 
-  it('conserves the exemption: every frozen canonical path terminates at a real publicContract procedure', () => {
-    // The exemption is this frozen table, not anything derived — so a renamed or removed public procedure must break
-    // here (and only here) to force the CSRF set back in sync. New procedures gain no alias automatically.
-    for (const canonical of PUBLIC_READ_PATHS) {
-      let node: unknown = publicContract
-      for (const segment of canonical.slice('/rpc/public/'.length).split('/')) {
-        expect(node, `${canonical}: walking into ${segment}`).toBeTypeOf('object')
-        node = (node as Record<string, unknown>)[segment]
-        expect(node, `${canonical}: segment ${segment} exists on publicContract`).toBeDefined()
-      }
-      expect(
-        typeof node === 'object' && node !== null && '~orpc' in node,
-        `${canonical} must terminate at an oRPC contract procedure`,
-      ).toBe(true)
+  it('exempts exactly the frozen set — no more, no fewer', () => {
+    // Catches both directions the per-path tests miss: a NEW marked procedure (exempt but not frozen) and a silently
+    // dropped one (frozen but no longer exempt — also covered above). The walk reads the contract independently of
+    // the production collector, so a derivation bug cannot cancel out against itself.
+    const exempt = [...leavesOf(publicContract).keys()]
+      .map((key) => `/rpc/public/${key}`)
+      .filter((pathname) => isPublicReadRpcPath(pathname))
+      .sort()
+    expect(exempt).toEqual([...EXPECTED_PUBLIC_READ_PATHS].sort())
+  })
+
+  it('tracks the api publicRead declaration — a public leaf is exempt iff its meta carries publicRead === true', () => {
+    for (const [key, leaf] of leavesOf(publicContract)) {
+      expect(isPublicReadRpcPath(`/rpc/public/${key}`), key).toBe(publicReadMetaOf(leaf) === true)
+    }
+    // The frozen expectation is tied to the declaration: every expected path terminates at a marked procedure, so
+    // dropping the marker in `@kobato/api` breaks here even before behavior is considered.
+    for (const [key, leaf] of leavesOf(publicContract)) {
+      const expected = EXPECTED_PUBLIC_READ_PATHS.includes(`/rpc/public/${key}`)
+      expect(publicReadMetaOf(leaf) === true, key).toBe(expected)
+    }
+  })
+
+  it('grants no account or admin procedure the exemption', () => {
+    for (const [key] of leavesOf(accountContract)) {
+      expect(isPublicReadRpcPath(`/rpc/account/${key}`), key).toBe(false)
+    }
+    for (const [key] of leavesOf(adminContract)) {
+      expect(isPublicReadRpcPath(`/rpc/admin/${key}`), key).toBe(false)
     }
   })
 })

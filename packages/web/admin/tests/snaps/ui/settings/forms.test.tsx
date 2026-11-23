@@ -1,4 +1,4 @@
-import type { AdminCacheStatsDto } from '@kobato/api/contracts/cache'
+import type { AdminCacheStatsDto } from '@kobato/api/contracts/admin/cache'
 import type {
   CacheSettings,
   FontsSettings,

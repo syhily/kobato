@@ -1,4 +1,4 @@
-import type { AnalyticsQuery } from '@kobato/api/contracts/analytics'
+import type { AnalyticsQuery } from '@kobato/api/contracts/admin/analytics'
 import type { ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
 
 import { analyticsContract } from '@kobato/api/rpc/admin/analytics'

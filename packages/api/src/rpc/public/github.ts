@@ -1,7 +1,11 @@
-import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/github'
-import { oc } from '@orpc/contract'
+import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/public/github'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const githubContract = {
-  avatar: oc.route({ method: 'GET', path: '/github/avatar' }).output(githubAvatarOutputSchema),
-  release: oc.route({ method: 'GET', path: '/github/release' }).output(githubReleaseOutputSchema),
+  avatar: defineProcedure({ method: 'GET', path: '/github/avatar' }, { publicRead: true }).output(
+    githubAvatarOutputSchema,
+  ),
+  release: defineProcedure({ method: 'GET', path: '/github/release' }, { publicRead: true }).output(
+    githubReleaseOutputSchema,
+  ),
 }

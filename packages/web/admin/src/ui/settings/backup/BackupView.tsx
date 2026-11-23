@@ -1,4 +1,4 @@
-import type { BackupFileDto } from '@kobato/api/contracts/backup'
+import type { BackupFileDto } from '@kobato/api/contracts/admin/backup'
 import type { BackupLoaderShape } from '@kobato/settings/projection'
 
 import { apiErrorDescriptorKey } from '@kobato/api/client/error'

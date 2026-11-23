@@ -1,10 +1,10 @@
 import type {
   AdminWebmentionOutboxWire,
   AdminWebmentionWire,
-  PublicWebmentionWire,
   WebmentionOutboxStatusCounts,
   WebmentionStatusCounts,
-} from '@kobato/api/contracts/webmentions'
+} from '@kobato/api/contracts/admin/webmentions'
+import type { PublicWebmentionWire } from '@kobato/api/contracts/public/webmentions'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { WebmentionOutboxStatus, WebmentionStatus } from '@kobato/db/sqlite/schema/webmention'
 import type { EntityTarget } from '@kobato/db/sqlite/target'

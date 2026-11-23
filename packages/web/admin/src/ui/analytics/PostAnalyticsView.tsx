@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { idFromString } from '@kobato/utils/id'

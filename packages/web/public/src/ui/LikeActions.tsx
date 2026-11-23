@@ -2,7 +2,7 @@ import type {
   LikeDecreaseOutput as DecreaseLikeOutput,
   LikeIncreaseOutput as IncreaseLikeOutput,
   LikeValidateOutput as ValidateLikeTokenOutput,
-} from '@kobato/api/contracts/likes'
+} from '@kobato/api/contracts/account/likes'
 
 import { Button } from '@kobato/ui/components/button'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content'

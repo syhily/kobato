@@ -1,6 +1,8 @@
-import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/music'
-import { oc } from '@orpc/contract'
+import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/public/music'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const musicContract = {
-  get: oc.route({ method: 'GET', path: '/music/get' }).input(musicGetInputSchema).output(musicGetOutputSchema),
+  get: defineProcedure({ method: 'GET', path: '/music/get' }, { publicRead: true })
+    .input(musicGetInputSchema)
+    .output(musicGetOutputSchema),
 }

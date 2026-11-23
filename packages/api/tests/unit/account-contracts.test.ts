@@ -14,7 +14,7 @@ import {
   authStatusInput,
   authStatusOutputSchema,
   passkeyAuthFinishInput,
-} from '@kobato/api/contracts/auth'
+} from '@kobato/api/contracts/account/auth'
 import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
@@ -25,15 +25,14 @@ import {
   commentSearchMineEntitiesInputSchema,
   commentSearchMineEntitiesOutputSchema,
   commentUpdateOwnInputSchema,
-  ownCommentMutationDto,
-} from '@kobato/api/contracts/comments'
-import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/friends'
+} from '@kobato/api/contracts/account/comments'
+import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/account/friends'
 import {
   newsletterConfirmSchema,
   newsletterOkOutputSchema,
   newsletterSubscribeSchema,
   newsletterUnsubscribeSchema,
-} from '@kobato/api/contracts/newsletter'
+} from '@kobato/api/contracts/account/newsletter'
 import {
   listNotificationsInput,
   listNotificationsOutput,
@@ -44,21 +43,17 @@ import {
   replyNotificationInput,
   replyNotificationOutput,
   unreadCountOutput,
-} from '@kobato/api/contracts/notifications'
-import { successDto } from '@kobato/api/contracts/primitives'
-import {
-  setupInstallInput,
-  setupStatusInput,
-  setupStatusOutputSchema,
-  setupVerifyTokenInput,
-  setupVerifyTokenOutputSchema,
-} from '@kobato/api/contracts/setup'
+} from '@kobato/api/contracts/account/notifications'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
   accountPasskeyRegisterBeginInput,
   accountPasskeyRegisterBeginOutputSchema,
   accountPasskeyRegisterFinishInput,
+  passkeyAuthBeginInputSchema,
+  passkeyOptionsOutputSchema,
+} from '@kobato/api/contracts/account/passkey'
+import {
   accountProfileOutputSchema,
   accountRevokeSessionInput,
   accountRevokeSessionOutputSchema,
@@ -67,9 +62,16 @@ import {
   accountUpdatePasswordInput,
   accountUpdateProfileInput,
   accountUpdateProfileOutputSchema,
-  passkeyAuthBeginInputSchema,
-  passkeyOptionsOutputSchema,
-} from '@kobato/api/contracts/users'
+} from '@kobato/api/contracts/account/self'
+import {
+  setupInstallInput,
+  setupStatusInput,
+  setupStatusOutputSchema,
+  setupVerifyTokenInput,
+  setupVerifyTokenOutputSchema,
+} from '@kobato/api/contracts/account/setup'
+import { successDto } from '@kobato/api/contracts/primitives'
+import { ownCommentMutationDto } from '@kobato/api/contracts/public/comments'
 import { accountAuthContract } from '@kobato/api/rpc/account/auth'
 import { commentsAuthedContract } from '@kobato/api/rpc/account/comments'
 import { friendsContract } from '@kobato/api/rpc/account/friends'

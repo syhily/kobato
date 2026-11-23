@@ -1,4 +1,4 @@
-import type { ErrorMessageParams } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageParams } from '@kobato/api/contracts/primitives'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'

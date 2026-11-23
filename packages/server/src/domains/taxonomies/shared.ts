@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/contracts/primitives'
 
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'

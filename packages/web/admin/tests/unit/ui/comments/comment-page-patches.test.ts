@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
 import type { AdminCommentsData, StatusCounts } from '@kobato/web-admin/ui/comments/use-comments-controller'
 
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'

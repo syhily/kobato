@@ -4,7 +4,7 @@ import type {
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
-} from '@kobato/api/contracts/comments'
+} from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
 
 import { Button } from '@kobato/ui/components/button'

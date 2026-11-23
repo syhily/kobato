@@ -1,6 +1,6 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
-import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/api/contracts/analytics'
+import { METRIC_GROUPS, METRIC_GROUP_TABS, type AdminPostAnalyticsData } from '@kobato/api/contracts/admin/analytics'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { postTag } from '@kobato/db/sqlite/schema/post-tag'

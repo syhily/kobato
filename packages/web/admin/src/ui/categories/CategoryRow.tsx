@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { Tooltip } from '@kobato/ui/components/tooltip'

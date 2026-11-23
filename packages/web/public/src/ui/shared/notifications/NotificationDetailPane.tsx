@@ -1,4 +1,4 @@
-import type { NotificationDto } from '@kobato/api/contracts/notifications'
+import type { NotificationDto } from '@kobato/api/contracts/account/notifications'
 
 import {
   AlertDialog,

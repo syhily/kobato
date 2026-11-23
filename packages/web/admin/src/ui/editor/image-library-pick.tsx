@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/api/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 
 import { type CardPickerRenderProps, registerCardPicker, useCardChrome } from '@kobato/inkling'
 import { isKobatoImageNode, type KobatoImageNode } from '@kobato/inkling/host-cards'

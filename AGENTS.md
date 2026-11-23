@@ -74,11 +74,20 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
 - `packages/shared/*`: runtime-isomorphic, React-free. `@kobato/settings` never imports `@kobato/api`. `catalog` and the
   api `contracts/` layer reach the Lexical document model only via `@kobato/inkling/headless` (catalog type-only).
 - `@kobato/api` → the shared leaves only; `src/rpc/` is metadata-only (`method`/`path`/`input`/`output`) composing the
-  Zod schemas in `src/contracts/` (never a copy), and `src/contracts/` imports no `@orpc/*`. `src/client/` is the
-  React-free transport factory `createKobatoClient({ url, fetch?, getHeaders? })` (`url` is the full RPC URL, e.g.
-  `https://host/rpc`) plus the wire error payload decoding; `@orpc/client` stays inside `src/client/`, and React Query
-  integration stays at the web-client seam. The server implements through the `implement{Public,Authed,Author,Admin}`
-  bases in `packages/server/src/http/orpc-base.ts`.
+  Zod schemas in `src/contracts/` (never a copy), declared exclusively with `defineProcedure`
+  (`src/rpc/define-procedure.ts` is the single `oc.route` call site) — its `~orpc.route` literal brand is what the
+  server's `ContractImplementation` check consumes, and plain `oc.route` contracts fail closed. Anonymous-read
+  eligibility is likewise declared here, per procedure: `{ publicRead: true }` puts `~orpc.meta.publicRead === true` on
+  the procedure (oRPC's `$meta`, never the route record); the server derives its CSRF public-read exemption from that
+  flag and enforces it server-side, and eligibility is never inferred from the HTTP method. `src/contracts/` mirrors the
+  rpc audiences in three layers — `public/`, `account/`, `admin/` — plus the audience-free generic wire vocabulary in
+  the root `primitives.ts`: the root module imports no audience layer, `public/` imports only itself and the root,
+  `account/` may also reach `public/`, and `admin/` may reach `public/` and `account/` — vocabulary a second audience
+  needs lives in the lower layer (no duplicated schemas, no re-export shims). `src/contracts/` imports no `@orpc/*`.
+  `src/client/` is the React-free transport factory `createKobatoClient({ url, fetch?, getHeaders? })` (`url` is the
+  full RPC URL, e.g. `https://host/rpc`) plus the wire error payload decoding; `@orpc/client` stays inside
+  `src/client/`, and React Query integration stays at the web-client seam. The server implements through the
+  `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
   Production source never imports SQLite/Drizzle/DuckDB drivers, builds SQL, or unwraps native handles;
   `apps/kobato/tests/arch/persistence-ownership.test.ts` pins it. First-party JSON operations use oRPC, with only the

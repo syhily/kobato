@@ -1,6 +1,4 @@
-import type { LoginMethod } from '@kobato/api/contracts/users'
-
-import { loginMethodSchema } from '@kobato/api/contracts/users'
+import { type LoginMethod, loginMethodSchema } from '@kobato/api/contracts/account/self'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { RadioGroup } from '@kobato/ui/components/radio-group'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

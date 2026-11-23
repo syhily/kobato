@@ -1,4 +1,4 @@
-import { publicWebmentionDto } from '@kobato/api/contracts/webmentions'
+import { publicWebmentionDto } from '@kobato/api/contracts/public/webmentions'
 import { describe, expect, it } from 'vitest'
 
 describe('contracts / publicWebmentionDto', () => {

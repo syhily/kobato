@@ -3,16 +3,14 @@ import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
   clearCacheResultDto,
-} from '@kobato/api/contracts/cache'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/cache'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminCacheContract = {
-  getStats: oc
-    .route({ method: 'GET', path: '/admin/cache/get-stats' })
+  getStats: defineProcedure({ method: 'GET', path: '/admin/cache/get-stats' })
     .input(adminCacheGetStatsInput)
     .output(adminCacheStatsDto),
-  clear: oc
-    .route({ method: 'POST', path: '/admin/cache/clear' })
+  clear: defineProcedure({ method: 'POST', path: '/admin/cache/clear' })
     .input(adminCacheClearInput)
     .output(clearCacheResultDto),
 }

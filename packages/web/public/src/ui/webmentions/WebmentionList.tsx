@@ -1,4 +1,4 @@
-import type { PublicWebmentionWire } from '@kobato/api/contracts/webmentions'
+import type { PublicWebmentionWire } from '@kobato/api/contracts/public/webmentions'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { tryParseUrl } from '@kobato/utils/safe-url'

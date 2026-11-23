@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/api/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
 import { makeAdminTag } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'

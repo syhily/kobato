@@ -1,4 +1,4 @@
-import type { UpdateCheckResult } from '@kobato/api/contracts/update'
+import type { UpdateCheckResult } from '@kobato/api/contracts/admin/update'
 
 import { APP_VERSION } from '@kobato/distribution/app'
 import { startUpdateJob } from '@kobato/server/domains/update/job'

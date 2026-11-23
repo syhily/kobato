@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { RestoreEntityResult } from '@kobato/db/sqlite/operations/content/entity-lifecycle'
 import type { ContentRow } from '@kobato/db/sqlite/types'

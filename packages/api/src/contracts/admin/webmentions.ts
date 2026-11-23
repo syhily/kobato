@@ -1,12 +1,11 @@
 import { idString, isoDateTime } from '@kobato/api/contracts/primitives'
+import { WEBMENTION_TYPES } from '@kobato/api/contracts/public/webmentions'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const
 
 export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
-
-export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
 
 export const WEBMENTION_OUTBOX_STATUSES = ['pending', 'sent', 'no-endpoint', 'failed'] as const
 
@@ -41,17 +40,6 @@ export const adminWebmentionOutboxDto = z.object({
   createdAt: isoDateTime,
 })
 export type AdminWebmentionOutboxWire = z.infer<typeof adminWebmentionOutboxDto>
-
-export const publicWebmentionDto = z.object({
-  id: idString,
-  sourceUrl: z.string(),
-  type: z.enum(WEBMENTION_TYPES),
-  authorName: z.string().nullable(),
-  title: z.string().nullable(),
-  summary: z.string().nullable(),
-  createdAt: isoDateTime,
-})
-export type PublicWebmentionWire = z.infer<typeof publicWebmentionDto>
 
 function statusCountFields<T extends readonly string[]>(statuses: T): { [K in T[number]]: z.ZodNumber } {
   return unsafeCast(Object.fromEntries(statuses.map((status) => [status, z.number().int()])))
@@ -101,10 +89,5 @@ export const adminWebmentionOutboxOutputDto = z.object({
   statusCounts: webmentionOutboxStatusCountsSchema,
 })
 export type AdminWebmentionOutboxOutput = z.infer<typeof adminWebmentionOutboxOutputDto>
-
-export const webmentionPublicListSchema = z.object({ page_key: z.string() })
-
-export const webmentionPublicListOutputSchema = z.object({ webmentions: z.array(publicWebmentionDto) })
-export type WebmentionPublicListOutput = z.infer<typeof webmentionPublicListOutputSchema>
 
 export const adminWebmentionsPendingCountOutputSchema = z.number().int().nonnegative()

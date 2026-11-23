@@ -3,16 +3,14 @@ import {
   adminGeoipStatusOutputDto,
   adminGeoipUpdateInput,
   adminGeoipUpdateOutputDto,
-} from '@kobato/api/contracts/geoip'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/geoip'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminGeoipContract = {
-  status: oc
-    .route({ method: 'GET', path: '/admin/geoip/status' })
+  status: defineProcedure({ method: 'GET', path: '/admin/geoip/status' })
     .input(adminGeoipStatusInput)
     .output(adminGeoipStatusOutputDto),
-  update: oc
-    .route({ method: 'POST', path: '/admin/geoip/update' })
+  update: defineProcedure({ method: 'POST', path: '/admin/geoip/update' })
     .input(adminGeoipUpdateInput)
     .output(adminGeoipUpdateOutputDto),
 }

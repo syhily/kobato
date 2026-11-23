@@ -1,7 +1,7 @@
-import type { AuthSigninViewAction, AuthStatusOutput } from '@kobato/api/contracts/auth'
+import type { AuthSigninViewAction, AuthStatusOutput } from '@kobato/api/contracts/account/auth'
 import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared'
 
-import { AUTH_SIGNIN_VIEW_ACTIONS, AUTH_STATUS_REDIRECT_FALLBACK } from '@kobato/api/contracts/auth'
+import { AUTH_SIGNIN_VIEW_ACTIONS, AUTH_STATUS_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
 import { accountAuthContract } from '@kobato/api/rpc/account/auth'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { logout } from '@kobato/server/domains/auth/primitives'

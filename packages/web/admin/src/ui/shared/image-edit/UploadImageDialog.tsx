@@ -1,4 +1,4 @@
-import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/images'
+import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/admin/images'
 import type { LockedAspect } from '@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas'
 
 import { Button } from '@kobato/ui/components/button'

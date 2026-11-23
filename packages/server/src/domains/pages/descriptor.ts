@@ -1,4 +1,4 @@
-import type { AdminPageDto } from '@kobato/api/contracts/pages'
+import type { AdminPageDto } from '@kobato/api/contracts/admin/pages'
 import type { Page } from '@kobato/catalog/model'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/sqlite/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'

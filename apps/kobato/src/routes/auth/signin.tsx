@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/auth'
+import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared'
 import { ensureInstalledOrRedirect } from '@kobato/server/domains/settings/install-gate'

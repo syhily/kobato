@@ -1,4 +1,4 @@
-import type { AdminCommentStatus, CommentTextMatch } from '@kobato/api/contracts/comments'
+import type { AdminCommentStatus, CommentTextMatch } from '@kobato/api/contracts/admin/comments'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 import type { FilterFieldSpec } from '@kobato/web-admin/ui/shared/filter-bar/types'

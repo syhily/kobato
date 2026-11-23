@@ -1,4 +1,4 @@
-import type { LatestComment } from '@kobato/api/contracts/comments'
+import type { LatestComment } from '@kobato/api/contracts/public/comments'
 
 import { makePostList, makeTag } from '@kobato/api/tests/utils/catalog'
 import { renderInRouter } from '@kobato/web-client/tests/utils/render'

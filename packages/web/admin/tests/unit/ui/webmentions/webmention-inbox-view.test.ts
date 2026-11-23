@@ -1,4 +1,4 @@
-import type { AdminWebmentionWire } from '@kobato/api/contracts/webmentions'
+import type { AdminWebmentionWire } from '@kobato/api/contracts/admin/webmentions'
 import type { InfiniteData } from '@tanstack/react-query'
 
 import {

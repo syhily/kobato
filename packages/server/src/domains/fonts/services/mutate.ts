@@ -1,4 +1,4 @@
-import type { FontSlot } from '@kobato/api/contracts/fonts'
+import type { FontSlot } from '@kobato/api/contracts/admin/fonts'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { FontRow } from '@kobato/db/sqlite/schema/font'
 import type { FontsSettings } from '@kobato/settings/types'

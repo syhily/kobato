@@ -9,21 +9,23 @@ import {
   listMusicOutputDto,
   searchMusicOutputDto,
   updateMusicOutputDto,
-} from '@kobato/api/contracts/music'
+} from '@kobato/api/contracts/admin/music'
 import { voidOutput } from '@kobato/api/contracts/primitives'
-import { oc } from '@orpc/contract'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminMusicContract = {
-  list: oc.route({ method: 'GET', path: '/admin/music/list' }).input(adminMusicListInput).output(listMusicOutputDto),
-  search: oc
-    .route({ method: 'GET', path: '/admin/music/search' })
+  list: defineProcedure({ method: 'GET', path: '/admin/music/list' })
+    .input(adminMusicListInput)
+    .output(listMusicOutputDto),
+  search: defineProcedure({ method: 'GET', path: '/admin/music/search' })
     .input(adminMusicSearchInput)
     .output(searchMusicOutputDto),
-  add: oc.route({ method: 'POST', path: '/admin/music/add' }).input(adminMusicAddInput).output(addMusicOutputDto),
-  get: oc.route({ method: 'GET', path: '/admin/music/get' }).input(adminMusicIdInput).output(getMusicOutputDto),
-  update: oc
-    .route({ method: 'POST', path: '/admin/music/update' })
+  add: defineProcedure({ method: 'POST', path: '/admin/music/add' })
+    .input(adminMusicAddInput)
+    .output(addMusicOutputDto),
+  get: defineProcedure({ method: 'GET', path: '/admin/music/get' }).input(adminMusicIdInput).output(getMusicOutputDto),
+  update: defineProcedure({ method: 'POST', path: '/admin/music/update' })
     .input(adminMusicUpdateInput)
     .output(updateMusicOutputDto),
-  delete: oc.route({ method: 'POST', path: '/admin/music/remove' }).input(adminMusicIdInput).output(voidOutput),
+  delete: defineProcedure({ method: 'POST', path: '/admin/music/remove' }).input(adminMusicIdInput).output(voidOutput),
 }

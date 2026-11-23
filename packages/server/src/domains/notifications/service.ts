@@ -4,7 +4,7 @@ import type {
   NotificationSenderDto,
   NotificationTab,
   ThreadMessageDto,
-} from '@kobato/api/contracts/notifications'
+} from '@kobato/api/contracts/account/notifications'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { AppLocale } from '@kobato/i18n/locales'

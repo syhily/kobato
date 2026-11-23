@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 
 import { findUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'

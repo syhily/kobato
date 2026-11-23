@@ -1,4 +1,4 @@
-import type { LatestComment } from '@kobato/api/contracts/comments'
+import type { LatestComment } from '@kobato/api/contracts/public/comments'
 import type { ClientTag, SidebarPostLink } from '@kobato/catalog/model'
 import type { ReactNode } from 'react'
 

@@ -1,4 +1,4 @@
-import type { AdminSessionItem } from '@kobato/api/contracts/sessions'
+import type { AdminSessionItem } from '@kobato/api/contracts/admin/users'
 
 import { requireRole } from '@kobato/server/domains/auth/rbac'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller'

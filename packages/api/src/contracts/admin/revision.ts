@@ -1,6 +1,12 @@
-import { idString, isoDateTime, markdownHeadingDto, safeBoolean } from '@kobato/api/contracts/primitives'
+import { idString, isoDateTime, safeBoolean } from '@kobato/api/contracts/primitives'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { z } from 'zod'
+
+export const markdownHeadingDto = z.object({
+  depth: z.number().int().min(1).max(6),
+  slug: z.string(),
+  text: z.string(),
+})
 
 export const adminRevisionDto = z.object({
   id: idString,

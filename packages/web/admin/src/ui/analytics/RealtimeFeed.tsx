@@ -1,4 +1,4 @@
-import type { RealtimeEvent } from '@kobato/api/contracts/analytics'
+import type { RealtimeEvent } from '@kobato/api/contracts/admin/analytics'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { cn } from '@kobato/ui/lib/cn'

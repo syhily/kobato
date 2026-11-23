@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
 import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'

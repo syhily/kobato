@@ -1,4 +1,4 @@
-import type { SetupVerifyTokenError, SetupVerifyTokenOutput } from '@kobato/api/contracts/setup'
+import type { SetupVerifyTokenError, SetupVerifyTokenOutput } from '@kobato/api/contracts/account/setup'
 import type { AuthFlowError } from '@kobato/server/domains/auth/services/shared'
 
 import { accountSetupContract } from '@kobato/api/rpc/account/setup'

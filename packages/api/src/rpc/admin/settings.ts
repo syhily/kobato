@@ -2,13 +2,14 @@ import {
   adminSettingsBootstrapOutputSchema,
   adminSettingsUpdateInput,
   adminSettingsUpdateOutput,
-} from '@kobato/api/contracts/settings'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/settings'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminSettingsContract = {
-  update: oc
-    .route({ method: 'POST', path: '/admin/settings/update' })
+  update: defineProcedure({ method: 'POST', path: '/admin/settings/update' })
     .input(adminSettingsUpdateInput)
     .output(adminSettingsUpdateOutput),
-  bootstrap: oc.route({ method: 'GET', path: '/admin/settings/bootstrap' }).output(adminSettingsBootstrapOutputSchema),
+  bootstrap: defineProcedure({ method: 'GET', path: '/admin/settings/bootstrap' }).output(
+    adminSettingsBootstrapOutputSchema,
+  ),
 }

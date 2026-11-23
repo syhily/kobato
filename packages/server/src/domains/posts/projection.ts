@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 import type { Post } from '@kobato/catalog/model'
 import type { ContentRow, PostMetaRow } from '@kobato/db/sqlite/types'
 

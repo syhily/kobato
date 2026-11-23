@@ -1,4 +1,4 @@
-import type { MetricRow, MetricType } from '@kobato/api/contracts/analytics'
+import type { MetricRow, MetricType } from '@kobato/api/contracts/admin/analytics'
 
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'

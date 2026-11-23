@@ -1,4 +1,4 @@
-import type { AdminImageDto } from '@kobato/api/contracts/images'
+import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { Button } from '@kobato/ui/components/button'

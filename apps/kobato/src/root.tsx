@@ -1,5 +1,5 @@
 import '@/zod-config'
-import type { ContentBootstrapI18n } from '@kobato/api/contracts/content'
+import type { ContentBootstrapI18n } from '@kobato/api/contracts/public/content'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/catalog/seo/meta'

@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/api/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 import type { Tag } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { TagRow } from '@kobato/db/sqlite/types'

@@ -1,7 +1,7 @@
-import type { JobSummaryDto, QueueTaskStatsDto } from '@kobato/api/contracts/jobs'
-import type { StorageMigrationStatus } from '@kobato/api/contracts/storage'
+import type { JobSummaryDto, QueueTaskStatsDto } from '@kobato/api/contracts/admin/jobs'
+import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage'
 
-import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/storage'
+import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/admin/storage'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@kobato/ui/components/card'

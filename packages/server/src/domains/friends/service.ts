@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 import type { Friend } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { FriendRow } from '@kobato/db/sqlite/types'

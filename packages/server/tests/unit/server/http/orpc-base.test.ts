@@ -1,3 +1,4 @@
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 import { parseCommentTokensCookie } from '@kobato/server/domains/comments/services/comment-token'
 import {
   authedProc,
@@ -17,7 +18,6 @@ import {
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
 } from '@kobato/settings/tests/utils/blog-settings'
-import { oc } from '@orpc/contract'
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -369,12 +369,10 @@ describe('commentTokenCookie oRPC middleware', () => {
 })
 
 const implementerContract = {
-  ping: oc
-    .route({ method: 'POST', path: '/impl/ping' })
+  ping: defineProcedure({ method: 'POST', path: '/impl/ping' })
     .input(z.object({ msg: z.string() }))
     .output(z.object({ ok: z.boolean() })),
-  boom: oc
-    .route({ method: 'POST', path: '/impl/boom' })
+  boom: defineProcedure({ method: 'POST', path: '/impl/boom' })
     .input(z.object({}))
     .output(z.object({ ok: z.boolean() })),
 }
@@ -388,8 +386,7 @@ const publicImplRouter = publicImpl.router({
 })
 
 const authedContract = {
-  me: oc
-    .route({ method: 'POST', path: '/impl/me' })
+  me: defineProcedure({ method: 'POST', path: '/impl/me' })
     .input(z.object({}))
     .output(z.object({ id: z.string() })),
 }

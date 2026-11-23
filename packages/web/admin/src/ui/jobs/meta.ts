@@ -1,5 +1,5 @@
-import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/api/contracts/jobs'
-import type { StorageMigrationStatus } from '@kobato/api/contracts/storage'
+import type { JobRunErrorCode, JobRunStatus, JobSummaryDto, TaskGroup } from '@kobato/api/contracts/admin/jobs'
+import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BadgeProps } from '@kobato/ui/components/badge'
 

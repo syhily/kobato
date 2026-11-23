@@ -1,4 +1,4 @@
-import { zodIssueParams } from '@kobato/api/contracts/api-error'
+import { zodIssueParams } from '@kobato/api/contracts/primitives'
 import { describe, expect, it } from 'vitest'
 
 describe('zodIssueParams', () => {

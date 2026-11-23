@@ -11,7 +11,7 @@ queries and wire schemas.
 Moved out (do not move back): role/security primitives and the SSRF/passkey network boundary → `@kobato/auth`; `toc` →
 `@kobato/inkling/headless`; avatar URL rules and the Gravatar mirror policy → `@kobato/assets`; app identity (`version`)
 → `@kobato/distribution/app`; Zod helpers (`safeBoolean`/`honeypotField`, `zod-issue-bounds`) → `@kobato/api/contracts`;
-comment entity parse/serialize and the `Comments` count summary → `@kobato/api/contracts/comments`; `is-bot` →
+comment entity parse/serialize and the `Comments` count summary → `@kobato/api/contracts/public/comments`; `is-bot` →
 `@kobato/server/infra/http`; session sort → `@kobato/web-admin/ui/sessions`.
 
 - Allowed deps: `@kobato/i18n` only (locale types). Never the api contracts, settings, cache, assets, sanitize, or any

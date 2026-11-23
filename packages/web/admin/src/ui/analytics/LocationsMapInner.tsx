@@ -1,4 +1,4 @@
-import type { MetricRow } from '@kobato/api/contracts/analytics'
+import type { MetricRow } from '@kobato/api/contracts/admin/analytics'
 
 import { escapeHtml } from '@kobato/sanitize/escape-html'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

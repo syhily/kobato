@@ -1,4 +1,4 @@
-import type { ReservedCacheBucketStats } from '@kobato/api/contracts/cache'
+import type { ReservedCacheBucketStats } from '@kobato/api/contracts/admin/cache'
 import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/cache/types'
 import type { CacheSettings } from '@kobato/settings/types'
 

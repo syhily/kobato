@@ -1,9 +1,8 @@
-import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/branding'
-import { oc } from '@orpc/contract'
+import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/admin/branding'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminBrandingContract = {
-  clear: oc
-    .route({ method: 'POST', path: '/admin/branding/clear' })
+  clear: defineProcedure({ method: 'POST', path: '/admin/branding/clear' })
     .input(adminBrandingClearInput)
     .output(adminBrandingClearOutputDto),
 }

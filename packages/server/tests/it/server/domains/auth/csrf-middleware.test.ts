@@ -113,12 +113,16 @@ describe('csrfGuard middleware', () => {
     expect(res.status).toBe(200)
   })
 
-  it('exempts the frozen anonymous public-read procedures without a CSRF header (canonical and legacy alike)', async () => {
+  it('exempts the declared anonymous public-read procedures without a CSRF header (canonical only)', async () => {
     const app = await setupApp()
     const canonical = await app.request('/rpc/public/content/bootstrap', { method: 'POST' })
-    const legacy = await app.request('/rpc/content/bootstrap', { method: 'POST' })
     expect(canonical.status).toBe(200)
-    expect(legacy.status).toBe(200)
+  })
+
+  it('no longer exempts the removed pre-grouping alias', async () => {
+    const app = await setupApp()
+    const legacy = await app.request('/rpc/content/bootstrap', { method: 'POST' })
+    expect(legacy.status).toBe(403)
   })
 
   it.each([

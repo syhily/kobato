@@ -1,6 +1,8 @@
-import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/api/contracts/comments'
-import { oc } from '@orpc/contract'
+import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/api/contracts/public/avatar'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const avatarContract = {
-  find: oc.route({ method: 'GET', path: '/avatar/find' }).input(avatarFindInputSchema).output(avatarFindOutputSchema),
+  find: defineProcedure({ method: 'GET', path: '/avatar/find' }, { publicRead: true })
+    .input(avatarFindInputSchema)
+    .output(avatarFindOutputSchema),
 }

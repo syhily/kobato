@@ -1,4 +1,4 @@
-import type { HomeExtra } from '@kobato/api/contracts/content'
+import type { HomeExtra } from '@kobato/api/contracts/public/content'
 import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { ClientPost, ListingPostCard } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'

@@ -1,4 +1,4 @@
-import type { ListMusicOutput } from '@kobato/api/contracts/music'
+import type { ListMusicOutput } from '@kobato/api/contracts/admin/music'
 import type { NavigateFunction } from 'react-router'
 
 import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@kobato/ui/components/lazy-motion'

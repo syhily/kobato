@@ -1,4 +1,4 @@
-import type { AdminFriendDto } from '@kobato/api/contracts/friends'
+import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { Badge } from '@kobato/ui/components/badge'
 import { Skeleton } from '@kobato/ui/components/skeleton'

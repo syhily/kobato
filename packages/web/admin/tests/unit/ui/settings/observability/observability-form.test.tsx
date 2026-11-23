@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ObservabilityStatusOutput } from '@kobato/api/contracts/observability'
+import type { ObservabilityStatusOutput } from '@kobato/api/contracts/admin/observability'
 import type { ObservabilitySettings } from '@kobato/settings/types'
 
 import { mergeSectionPatch } from '@kobato/server/domains/settings/services/merge-section-patch'

@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 
 import { CommentRow } from '@kobato/web-public/ui/comments/comment-item/CommentRow'
 import { asKey, childrenListClass } from '@kobato/web-public/ui/comments/comment-item/presentation'

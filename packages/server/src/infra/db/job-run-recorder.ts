@@ -1,6 +1,6 @@
 import type { Database } from '@kobato/db/sqlite/database'
 
-import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/api/contracts/jobs'
+import { JOB_RUN_ERROR_PROCESS_RESTART, type JobRunStatus, type JobRunTrigger } from '@kobato/api/contracts/admin/jobs'
 import {
   finishJobRun as finishJobRunOp,
   latestJobRunsByTask as latestJobRunsByTaskOp,

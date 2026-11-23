@@ -1,9 +1,8 @@
-import type { NotificationDto } from '@kobato/api/contracts/notifications'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { LucideIcon } from 'lucide-react'
 
-import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/notifications'
+import { type NotificationDto, JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/account/notifications'
 import { formatRelativeTime } from '@kobato/utils/format'
 import { MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 

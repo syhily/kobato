@@ -1,4 +1,4 @@
-import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@kobato/api/contracts/music'
+import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@kobato/api/contracts/admin/music'
 
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'

@@ -1,4 +1,4 @@
-import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'

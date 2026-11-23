@@ -1,7 +1,7 @@
 import type { RealtimeEvent } from '@kobato/db/duckdb/queries/types'
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { deviceEnvBeaconSchema } from '@kobato/api/contracts/analytics'
+import { deviceEnvBeaconSchema } from '@kobato/api/contracts/admin/analytics'
 import { queryRealtimeTail } from '@kobato/db/duckdb/queries/realtime'
 import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle'
 import { pushDeviceEnvBeacon } from '@kobato/server/domains/analytics/services/env-beacon'

@@ -1,6 +1,5 @@
+import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/api/contracts/public/avatar'
 import {
-  avatarFindInputSchema,
-  avatarFindOutputSchema,
   commentEditInputSchema,
   commentGetRawOutputSchema,
   commentListInputSchema,
@@ -13,7 +12,7 @@ import {
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
-} from '@kobato/api/contracts/comments'
+} from '@kobato/api/contracts/public/comments'
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
@@ -32,11 +31,14 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
-} from '@kobato/api/contracts/content'
-import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/github'
-import { imageResolveThumbhashInputSchema, imageResolveThumbhashOutputSchema } from '@kobato/api/contracts/images'
-import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/music'
-import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/webmentions'
+} from '@kobato/api/contracts/public/content'
+import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/public/github'
+import {
+  imageResolveThumbhashInputSchema,
+  imageResolveThumbhashOutputSchema,
+} from '@kobato/api/contracts/public/images'
+import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/public/music'
+import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/public/webmentions'
 import { avatarContract } from '@kobato/api/rpc/public/avatar'
 import { commentsContract, commentsPublicContract, commentsTokenContract } from '@kobato/api/rpc/public/comments'
 import {

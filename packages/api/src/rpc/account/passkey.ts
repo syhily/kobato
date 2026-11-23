@@ -1,14 +1,12 @@
-import { authFlowOutputSchema, passkeyAuthFinishInput } from '@kobato/api/contracts/auth'
-import { passkeyAuthBeginInputSchema, passkeyOptionsOutputSchema } from '@kobato/api/contracts/users'
-import { oc } from '@orpc/contract'
+import { authFlowOutputSchema, passkeyAuthFinishInput } from '@kobato/api/contracts/account/auth'
+import { passkeyAuthBeginInputSchema, passkeyOptionsOutputSchema } from '@kobato/api/contracts/account/passkey'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const passkeyContract = {
-  authBegin: oc
-    .route({ method: 'POST', path: '/passkey/auth-begin' })
+  authBegin: defineProcedure({ method: 'POST', path: '/passkey/auth-begin' })
     .input(passkeyAuthBeginInputSchema)
     .output(passkeyOptionsOutputSchema),
-  authFinish: oc
-    .route({ method: 'POST', path: '/passkey/auth-finish' })
+  authFinish: defineProcedure({ method: 'POST', path: '/passkey/auth-finish' })
     .input(passkeyAuthFinishInput)
     .output(authFlowOutputSchema),
 }

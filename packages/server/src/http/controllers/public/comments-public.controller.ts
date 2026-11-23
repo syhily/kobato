@@ -1,4 +1,4 @@
-import type { CommentReq } from '@kobato/api/contracts/comments'
+import type { CommentReq } from '@kobato/api/contracts/public/comments'
 
 import { commentsPublicContract } from '@kobato/api/rpc/public/comments'
 import { findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'

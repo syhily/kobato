@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@kobato/api/contracts/posts'
+import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { cn } from '@kobato/ui/lib/cn'

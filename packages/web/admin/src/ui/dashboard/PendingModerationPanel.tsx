@@ -1,4 +1,4 @@
-import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@kobato/api/contracts/comments'
+import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@kobato/api/contracts/admin/comments'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { Badge } from '@kobato/ui/components/badge'

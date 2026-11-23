@@ -1,4 +1,4 @@
-import type { ErrorMessageDescriptor } from '@kobato/api/contracts/api-error'
+import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { NewPageMeta, NewPostMeta } from '@kobato/db/sqlite/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'

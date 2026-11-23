@@ -1,4 +1,4 @@
-import type { MetricType } from '@kobato/api/contracts/analytics'
+import type { MetricType } from '@kobato/api/contracts/admin/analytics'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { ComponentType } from 'react'
 

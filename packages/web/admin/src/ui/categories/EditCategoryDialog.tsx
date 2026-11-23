@@ -1,4 +1,4 @@
-import type { AdminCategoryDto } from '@kobato/api/contracts/categories'
+import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
 import { isSafeImageSegment } from '@kobato/assets/images'
 import { Button } from '@kobato/ui/components/button'

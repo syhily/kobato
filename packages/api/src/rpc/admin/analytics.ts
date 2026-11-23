@@ -9,30 +9,27 @@ import {
   analyticsQuerySchema,
   countersDto,
   viewsDto,
-} from '@kobato/api/contracts/analytics'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/admin/analytics'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const analyticsContract = {
-  counters: oc.route({ method: 'GET', path: '/analytics/counters' }).input(analyticsQuerySchema).output(countersDto),
-  views: oc.route({ method: 'GET', path: '/analytics/views' }).input(analyticsQuerySchema).output(viewsDto),
-  heatmap: oc
-    .route({ method: 'GET', path: '/analytics/heatmap' })
+  counters: defineProcedure({ method: 'GET', path: '/analytics/counters' })
+    .input(analyticsQuerySchema)
+    .output(countersDto),
+  views: defineProcedure({ method: 'GET', path: '/analytics/views' }).input(analyticsQuerySchema).output(viewsDto),
+  heatmap: defineProcedure({ method: 'GET', path: '/analytics/heatmap' })
     .input(analyticsQuerySchema)
     .output(analyticsHeatmapOutputSchema),
-  metrics: oc
-    .route({ method: 'GET', path: '/analytics/metrics' })
+  metrics: defineProcedure({ method: 'GET', path: '/analytics/metrics' })
     .input(analyticsMetricsInputSchema)
     .output(analyticsMetricsOutputSchema),
-  export: oc
-    .route({ method: 'GET', path: '/analytics/export' })
+  export: defineProcedure({ method: 'GET', path: '/analytics/export' })
     .input(analyticsQuerySchema)
     .output(analyticsExportOutputSchema),
-  overview: oc
-    .route({ method: 'GET', path: '/analytics/overview' })
+  overview: defineProcedure({ method: 'GET', path: '/analytics/overview' })
     .input(adminAnalyticsSearchInputSchema)
     .output(adminAnalyticsOverviewOutputSchema),
-  mentions: oc
-    .route({ method: 'GET', path: '/analytics/mentions' })
+  mentions: defineProcedure({ method: 'GET', path: '/analytics/mentions' })
     .input(adminAnalyticsSearchInputSchema)
     .output(adminAnalyticsMentionsOutputSchema),
 }

@@ -1,4 +1,4 @@
-import type { AdminUserDto } from '@kobato/api/contracts/users'
+import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters'
 
 import { makeAdminUser } from '@kobato/api/tests/utils/catalog'

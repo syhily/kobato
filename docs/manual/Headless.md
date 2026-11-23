@@ -3,7 +3,8 @@
 Kobato can serve an externally deployed frontend: your frontend renders the public site by calling the backend's public
 contract over HTTP, while the backend keeps owning data, admin/editor/auth, resources, and analytics. There is no
 runtime switch — public procedures are always mounted, and your frontend is simply another caller. The decision record
-is [ADR-0009](../adr/0009-optional-headless-frontends.md); the workspace map is [architecture.md](../architecture.md).
+is [ADR-0009](../adr/0009-optional-headless-frontends.md); the workspace conventions live in the root
+[AGENTS.md](../../AGENTS.md) and each package's own `AGENTS.md`.
 
 ## Consuming the workspace source
 
@@ -38,12 +39,14 @@ switch (result.kind) {
 }
 ```
 
-Anonymous public reads work bare — no cookie, no `x-csrf-token` header. The sixteen frozen public-read procedures (all
-nine `content.*` reads, plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`,
-`github.release`, `images.resolveThumbhash`, `music.get`) are exempt from the CSRF double-submit guard. The exemption is
-a hand-frozen, exact-path set on the server (never an HTTP-method rule — the RPC transport POSTs reads too — and never
-derived from route metadata), and legacy aliases (`/rpc/content/home`) answer exactly like the canonical paths
-(`/rpc/public/content/home`). Everything else keeps the full guard: the comment mutations
+Anonymous public reads work bare — no cookie, no `x-csrf-token` header. The sixteen public-read procedures (all nine
+`content.*` reads, plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`, `github.release`,
+`images.resolveThumbhash`, `music.get`) are exempt from the CSRF double-submit guard. Eligibility is an explicit
+per-procedure declaration in `@kobato/api` — `~orpc.meta.publicRead === true` — and the server derives the exact-path
+exemption set from that declaration and enforces it: never an HTTP-method rule (the RPC transport POSTs reads too),
+never derived from route metadata, and frozen by independent tests on both sides so a new read gains the exemption only
+by deliberate opt-in. The exemption matches the canonical paths only: the pre-grouping aliases (`/rpc/content/home`)
+were removed and no longer answer. Everything else keeps the full guard: the comment mutations
 (`replyComment`/`edit`/`revokeToken`), the comment-token reads (`getRaw`/`myComments`), and the whole `account`/`admin`
 surface.
 
@@ -81,9 +84,10 @@ key-by-key by
 - Reads dominate: the only writes are the three deployed comment mutations (`replyComment`, `edit`, `revokeToken`).
 - Do **not** depend on `account` or `admin` procedures — that is workspace surface, free to churn with any release
   (`createKobatoPublicClient` doesn't even expose them at the type level).
-- Call the canonical `/rpc/public/<domain>/<procedure>` transport paths. Pre-grouping URLs (`/rpc/content/...` and
-  friends) still answer through a server-side alias adapter, but they exist for already-deployed old clients — build
-  nothing new on them.
+- Call the canonical `/rpc/public/<domain>/<procedure>` transport paths — they are the only transport. The pre-grouping
+  aliases (`/rpc/content/...` and friends) no longer answer: the server-side alias adapter was removed (ADR-0009 §5), so
+  an old URL fails closed — the CSRF guard answers 403 first whenever the request carries no valid token (anonymous or
+  not), and only a request with a valid CSRF token reaches the handler and 404s.
 
 ## Semantics to honor
 

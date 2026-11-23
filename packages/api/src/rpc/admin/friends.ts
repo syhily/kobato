@@ -4,18 +4,16 @@ import {
   friendIdSchema,
   listFriendsSchema,
   upsertFriendSchema,
-} from '@kobato/api/contracts/friends'
+} from '@kobato/api/contracts/admin/friends'
 import { voidOutput } from '@kobato/api/contracts/primitives'
-import { oc } from '@orpc/contract'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const adminFriendsContract = {
-  list: oc
-    .route({ method: 'GET', path: '/admin/friends/list' })
+  list: defineProcedure({ method: 'GET', path: '/admin/friends/list' })
     .input(listFriendsSchema)
     .output(adminFriendsListOutputDto),
-  upsert: oc
-    .route({ method: 'POST', path: '/admin/friends/upsert' })
+  upsert: defineProcedure({ method: 'POST', path: '/admin/friends/upsert' })
     .input(upsertFriendSchema)
     .output(adminFriendUpsertOutputDto),
-  delete: oc.route({ method: 'POST', path: '/admin/friends/remove' }).input(friendIdSchema).output(voidOutput),
+  delete: defineProcedure({ method: 'POST', path: '/admin/friends/remove' }).input(friendIdSchema).output(voidOutput),
 }

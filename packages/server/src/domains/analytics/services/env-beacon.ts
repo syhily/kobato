@@ -1,4 +1,4 @@
-import type { DeviceEnvBeacon } from '@kobato/api/contracts/analytics'
+import type { DeviceEnvBeacon } from '@kobato/api/contracts/admin/analytics'
 import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvClientRow } from '@kobato/db/duckdb/device-env'
 

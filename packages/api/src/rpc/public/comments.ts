@@ -11,35 +11,29 @@ import {
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
-} from '@kobato/api/contracts/comments'
-import { oc } from '@orpc/contract'
+} from '@kobato/api/contracts/public/comments'
+import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const commentsPublicContract = {
-  replyComment: oc
-    .route({ method: 'POST', path: '/comments/reply' })
+  replyComment: defineProcedure({ method: 'POST', path: '/comments/reply' })
     .input(commentReplySchema)
     .output(replyCommentOutputSchema),
-  loadComments: oc
-    .route({ method: 'GET', path: '/comments/list' })
+  loadComments: defineProcedure({ method: 'GET', path: '/comments/list' }, { publicRead: true })
     .input(commentListInputSchema)
     .output(commentListOutputSchema),
-  getRaw: oc
-    .route({ method: 'GET', path: '/comments/get-raw' })
+  getRaw: defineProcedure({ method: 'GET', path: '/comments/get-raw' })
     .input(commentRidSchema)
     .output(commentGetRawOutputSchema),
-  edit: oc
-    .route({ method: 'POST', path: '/comments/edit' })
+  edit: defineProcedure({ method: 'POST', path: '/comments/edit' })
     .input(commentEditInputSchema)
     .output(ownCommentMutationDto),
 }
 
 export const commentsTokenContract = {
-  revokeToken: oc
-    .route({ method: 'POST', path: '/comments/revoke-token' })
+  revokeToken: defineProcedure({ method: 'POST', path: '/comments/revoke-token' })
     .input(commentRevokeTokenInputSchema)
     .output(commentRevokeTokenOutputSchema),
-  myComments: oc
-    .route({ method: 'GET', path: '/comments/my-comments' })
+  myComments: defineProcedure({ method: 'GET', path: '/comments/my-comments' })
     .input(commentMyCommentsInputSchema)
     .output(myCommentsOutputSchema),
 }

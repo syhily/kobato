@@ -1,4 +1,4 @@
-import type { AdminTagDto } from '@kobato/api/contracts/tags'
+import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'

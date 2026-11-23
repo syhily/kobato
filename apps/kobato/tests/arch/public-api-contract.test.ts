@@ -81,8 +81,8 @@ describe('public API contract seam', () => {
 
   it('pins the canonical /rpc/public/* transport paths derived from the tree keys', () => {
     // The oc.route values above are REST-style metadata; the /rpc/* transport URLs come from the TREE KEYS.
-    // `content.home` answers at /rpc/public/content/home — and the server's legacy adapter keeps the pre-grouping
-    // aliases (e.g. /rpc/content/home) working for already-deployed clients.
+    // `content.home` answers at /rpc/public/content/home — the canonical grouped paths are the only transport
+    // surface; the pre-grouping aliases (e.g. /rpc/content/home) are gone.
     const canonicalPaths = [...publicProcedures.keys()].sort().map((key) => `/rpc/public/${key.replaceAll('.', '/')}`)
     expect(canonicalPaths).toEqual([
       '/rpc/public/avatar/find',
