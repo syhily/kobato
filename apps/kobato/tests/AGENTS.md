@@ -23,13 +23,14 @@ resolver.
   no HTTP surface can stage (use only when no admin RPC exists; always restore). Mail never leaves the machine
   (in-process SMTP capture via `@kobato/harness/smtp.ts`).
 - **`tests/browser/`** — real-Chromium Playwright journeys for behavior jsdom cannot prove. Spec/support files import
-  through the `@tests/browser/...` alias resolved by the tree's own tsconfig. The Playwright config lives in
-  `tools/browser/playwright.config.ts`. **Not part of `pnpm test`**: `pnpm run test:browser` boots a throwaway instance
-  or targets `KOBATO_BROWSER_BASE_URL`; `pnpm run sea:browser [binary]` always boots the built binary (exits non-zero
-  when missing). Runner env: `KOBATO_BROWSER_BASE_URL` + `KOBATO_BROWSER_{ADMIN_EMAIL,ADMIN_PASSWORD,POST_SLUG}`;
-  `global-setup.ts` stages one published post and resets the settings baseline — never point an external target at
-  production. One worker, files serial; local runs default to system Chrome, `KOBATO_BROWSER_CHANNEL` overrides, CI
-  installs `chromium`.
+  through the `@tests/browser/...` alias resolved by the tree's own tsconfig. That tsconfig deliberately uses a
+  file-relative `extends` to `tools/tsconfig/tsconfig.base.json`: Playwright does not apply `paths` through a
+  package-based `extends`. The Playwright config lives in `tools/browser/playwright.config.ts`. **Not part of
+  `pnpm test`**: `pnpm run test:browser` boots a throwaway instance or targets `KOBATO_BROWSER_BASE_URL`;
+  `pnpm run sea:browser [binary]` always boots the built binary (exits non-zero when missing). Runner env:
+  `KOBATO_BROWSER_BASE_URL` + `KOBATO_BROWSER_{ADMIN_EMAIL,ADMIN_PASSWORD,POST_SLUG}`; `global-setup.ts` stages one
+  published post and resets the settings baseline — never point an external target at production. One worker, files
+  serial; local runs default to system Chrome, `KOBATO_BROWSER_CHANNEL` overrides, CI installs `chromium`.
 
 Cross-cutting integration tests live inside the owning package's `tests/it/` under the primary domain — there is no
 `features/` bucket. Artifacts and the HTML report land under the ignored `tmp/`.

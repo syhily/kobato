@@ -105,7 +105,7 @@ describe('public comments flow (HTTP e2e)', () => {
 
       const reply = await callE2eRpc<{ comment: { id: string; isPending: boolean | null } }>(
         guest,
-        '/comments/replyComment',
+        '/public/comments/replyComment',
         { page_key: pageKey, name: 'E2E Guest', email: 'e2e-guest@example.com', body: COMMENT_BODY },
         guestCsrf,
       )
@@ -118,7 +118,7 @@ describe('public comments flow (HTTP e2e)', () => {
       const anonCsrf = await getPublicCsrfToken(anon, '/')
       const hidden = await callE2eRpc<CommentListJson>(
         anon,
-        '/comments/loadComments',
+        '/public/comments/loadComments',
         { page_key: pageKey, offset: 0 },
         anonCsrf,
       )
@@ -139,7 +139,7 @@ describe('public comments flow (HTTP e2e)', () => {
 
       const visible = await callE2eRpc<CommentListJson>(
         anon,
-        '/comments/loadComments',
+        '/public/comments/loadComments',
         { page_key: pageKey, offset: 0 },
         anonCsrf,
       )
