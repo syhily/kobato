@@ -1,6 +1,7 @@
 import type { AdminFontDto } from '@kobato/api/contracts/admin/fonts'
 import type { Database } from '@kobato/db/sqlite/database'
 
+import { FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
 import { insertFont } from '@kobato/db/sqlite/operations/system/font'
 import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
 import { sliceFont } from '@kobato/server/domains/fonts/slice'
@@ -8,8 +9,6 @@ import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domain
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { createHash } from 'node:crypto'
-
-export const FONT_MAX_BYTES = 60 * 1024 * 1024
 
 export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
   if (buffer.length < 4) {

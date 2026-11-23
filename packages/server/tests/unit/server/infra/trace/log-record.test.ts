@@ -56,7 +56,7 @@ describe('projectLogLine — HTTP records', () => {
     })
   })
 
-  it.each(['/health', '/ready', '/api/rum/status', '/api/rum/intake/rum/v1/default/rum'])(
+  it.each(['/health', '/ready', '/rpc/public/observability/rumStatus', '/api/rum/intake/rum/v1/default/rum'])(
     'drops a quiet line for the self-telemetry path %s',
     (url) => {
       const projection = projectLogLine(
@@ -83,7 +83,7 @@ describe('projectLogLine — HTTP records', () => {
         line({
           level,
           time: '2026-01-01T00:00:00.000Z',
-          req: { method: 'GET', url: '/api/rum/status' },
+          req: { method: 'GET', url: '/rpc/public/observability/rumStatus' },
           res: { status },
         }),
         NOW,

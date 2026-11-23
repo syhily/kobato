@@ -241,7 +241,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
   const previewUrl = configured ? `${meta.publicPath}?v=${status.etag}` : meta.publicPath
 
   const { upload, pending } = useFileUpload({
-    endpoint: '/api/admin/branding/upload',
+    submit: (file) => orpc.admin.branding.upload({ file, slot: meta.slot }),
     t,
     fields: { slot: meta.slot },
     accept: [meta.accept],

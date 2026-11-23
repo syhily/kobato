@@ -13,9 +13,10 @@ reads from sessions, route params, request objects, or env vars.
   into this package.
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
   modules stay at the root (`ConfirmDialog`, `sortable.tsx`, `mask.ts`, `SearchShortcutHint`, `use-file-upload.ts`).
-  - `useFileUpload` owns the CSRF read, guards, FormData POST, error unwrap, and toast choreography — never hand-roll a
-    fetch upload. Hooks running under the React tree read `useI18n()` themselves; hooks callable from non-React entries
-    take the caller's `t`.
+  - `useFileUpload` owns file/field guards, typed-oRPC submission, error unwrap, and toast choreography — never
+    hand-roll a fetch upload. Backup's progress XHR is the sole transport exception and still uses the API package's
+    standard RPC serializer. Hooks running under the React tree read `useI18n()` themselves; hooks callable from
+    non-React entries take the caller's `t`.
   - `sortable.tsx` is the one dnd-list adapter (`useSortableRow` — destructure its result; member access trips the
     react-compiler ref heuristic). New sortable lists use it.
 - `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import), `pickers/`,

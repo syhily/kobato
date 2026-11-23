@@ -1,5 +1,8 @@
+import type { HandlerContext } from '@kobato/server/http/orpc-base'
+
 import { adminMusicContract } from '@kobato/api/rpc/admin/music'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { proxyMusicAsset } from '@kobato/server/domains/music/services/proxy'
 import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read'
 import { searchMusic } from '@kobato/server/domains/music/services/search'
 import { addMusic } from '@kobato/server/domains/music/services/write/add'
@@ -84,4 +87,31 @@ const remove = impl.delete.handler(async ({ input, context }) => {
   })
 })
 
-export const adminMusicRouter = impl.router({ list, search, add, get, update, delete: remove })
+async function proxy(
+  kind: 'cover' | 'audio',
+  input: { source: 'netease' | 'tencent'; sourceId: string },
+  context: HandlerContext,
+) {
+  const result = await proxyMusicAsset(input.source, input.sourceId, kind)
+  context.responseHeaders.set('Content-Type', result.contentType)
+  context.responseHeaders.set('Cache-Control', 'private, max-age=300')
+  if (result.attachment) {
+    context.responseHeaders.set('Content-Disposition', 'attachment')
+  }
+  return result.body
+}
+
+const proxyCover = impl.proxyCover.handler(({ input, context }) => proxy('cover', input, context))
+
+const proxyAudio = impl.proxyAudio.handler(({ input, context }) => proxy('audio', input, context))
+
+export const adminMusicRouter = impl.router({
+  list,
+  search,
+  add,
+  get,
+  update,
+  delete: remove,
+  proxyCover,
+  proxyAudio,
+})

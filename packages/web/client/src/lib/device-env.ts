@@ -1,4 +1,4 @@
-import type { DeviceEnvBeacon } from '@kobato/api/contracts/admin/analytics'
+import type { DeviceEnvBeacon } from '@kobato/api/contracts/public/analytics'
 
 export type DeviceEnvStaticFields = Pick<
   DeviceEnvBeacon,

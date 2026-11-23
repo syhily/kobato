@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 
 import {
+  adminAnalyticsEventsInputSchema,
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
@@ -12,6 +13,7 @@ import {
   analyticsMetricsOutputSchema,
   analyticsQuerySchema,
   countersDto,
+  realtimeEventDto,
   viewsDto,
 } from '@kobato/api/contracts/admin/analytics'
 import {
@@ -25,6 +27,8 @@ import {
   adminBackupCreateInput,
   adminBackupCreateOutputDto,
   adminBackupDeleteInput,
+  adminBackupDownloadInput,
+  adminBackupDownloadOutput,
   adminBackupListInput,
   adminBackupListOutputDto,
   adminBackupRestoreInput,
@@ -32,10 +36,17 @@ import {
   adminBackupStatusOutputDto,
   adminBackupUploadRestoreDecryptInput,
   adminBackupUploadRestoreDecryptOutputDto,
+  adminBackupUploadRestoreInput,
+  adminBackupUploadRestoreOutputDto,
   restoreJobStatusDto,
   restoreProgressDto,
 } from '@kobato/api/contracts/admin/backup'
-import { adminBrandingClearInput, adminBrandingClearOutputDto } from '@kobato/api/contracts/admin/branding'
+import {
+  adminBrandingClearInput,
+  adminBrandingClearOutputDto,
+  adminBrandingUploadInput,
+  adminBrandingUploadOutputDto,
+} from '@kobato/api/contracts/admin/branding'
 import {
   adminCacheClearInput,
   adminCacheGetStatsInput,
@@ -68,10 +79,14 @@ import {
 } from '@kobato/api/contracts/admin/comments'
 import { contentRestoreResultDto } from '@kobato/api/contracts/admin/content-admin-base'
 import {
+  adminCanvasFontUploadInput,
+  adminCanvasFontUploadOutputDto,
   adminFontDeleteInput,
   adminFontDeleteOutputDto,
   adminFontsListInput,
   adminFontSetSlotOutputDto,
+  adminFontUploadInput,
+  adminFontUploadOutputDto,
   listFontsOutputDto,
   setFontSlotInputDto,
 } from '@kobato/api/contracts/admin/fonts'
@@ -87,6 +102,8 @@ import {
   adminGeoipStatusOutputDto,
   adminGeoipUpdateInput,
   adminGeoipUpdateOutputDto,
+  adminGeoipUploadInput,
+  adminGeoipUploadOutputDto,
 } from '@kobato/api/contracts/admin/geoip'
 import {
   adminImageIdInput,
@@ -103,6 +120,8 @@ import {
   adminMusicAddInput,
   adminMusicIdInput,
   adminMusicListInput,
+  adminMusicProxyInput,
+  adminMusicProxyOutput,
   adminMusicSearchInput,
   adminMusicUpdateInput,
   getMusicOutputDto,
@@ -246,6 +265,7 @@ import {
   type AnyContractProcedure,
   type InferContractRouterInputs,
   type InferContractRouterOutputs,
+  getEventIteratorSchemaDetails,
   isContractProcedure,
 } from '@orpc/contract'
 import { describe, expect, expectTypeOf, it } from 'vitest'
@@ -351,6 +371,8 @@ const ADMIN_ROUTES = {
     get: { method: 'GET', path: '/admin/music/get' },
     update: { method: 'POST', path: '/admin/music/update' },
     delete: { method: 'POST', path: '/admin/music/remove' },
+    proxyCover: { method: 'GET', path: '/admin/music/proxy/cover' },
+    proxyAudio: { method: 'GET', path: '/admin/music/proxy/audio' },
   },
   notifications: {
     sendDirect: { method: 'POST', path: '/admin/notifications/send-direct' },
@@ -388,18 +410,24 @@ const ADMIN_ROUTES = {
     restoreStatus: { method: 'GET', path: '/admin/backup/restore-status' },
     restoreProgress: { method: 'GET', path: '/admin/backup/restore-progress' },
     uploadRestoreDecrypt: { method: 'POST', path: '/admin/backup/upload-restore/decrypt' },
+    uploadRestore: { method: 'POST', path: '/admin/backup/upload-restore' },
+    download: { method: 'GET', path: '/admin/backup/download/:timestamp' },
   },
   branding: {
     clear: { method: 'POST', path: '/admin/branding/clear' },
+    upload: { method: 'POST', path: '/admin/branding/upload' },
   },
   fonts: {
     list: { method: 'GET', path: '/admin/fonts/list' },
     delete: { method: 'POST', path: '/admin/fonts/delete' },
     setSlot: { method: 'POST', path: '/admin/fonts/set-slot' },
+    upload: { method: 'POST', path: '/admin/fonts/package/upload' },
+    uploadCanvas: { method: 'POST', path: '/admin/fonts/upload' },
   },
   geoip: {
     status: { method: 'GET', path: '/admin/geoip/status' },
     update: { method: 'POST', path: '/admin/geoip/update' },
+    upload: { method: 'POST', path: '/admin/maxmind/upload' },
   },
   webmentions: {
     loadAll: { method: 'GET', path: '/admin/webmentions/load-all' },
@@ -422,6 +450,7 @@ const ADMIN_ROUTES = {
     export: { method: 'GET', path: '/analytics/export' },
     overview: { method: 'GET', path: '/analytics/overview' },
     mentions: { method: 'GET', path: '/analytics/mentions' },
+    events: { method: 'GET', path: '/analytics/events' },
   },
 } as const
 
@@ -526,6 +555,8 @@ const ADMIN_SCHEMAS = {
     get: { input: adminMusicIdInput, output: getMusicOutputDto },
     update: { input: adminMusicUpdateInput, output: updateMusicOutputDto },
     delete: { input: adminMusicIdInput, output: voidOutput },
+    proxyCover: { input: adminMusicProxyInput, output: adminMusicProxyOutput },
+    proxyAudio: { input: adminMusicProxyInput, output: adminMusicProxyOutput },
   },
   notifications: {
     sendDirect: { input: adminSendDirectInput, output: adminSendOutput },
@@ -566,18 +597,24 @@ const ADMIN_SCHEMAS = {
       input: adminBackupUploadRestoreDecryptInput,
       output: adminBackupUploadRestoreDecryptOutputDto,
     },
+    uploadRestore: { input: adminBackupUploadRestoreInput, output: adminBackupUploadRestoreOutputDto },
+    download: { input: adminBackupDownloadInput, output: adminBackupDownloadOutput },
   },
   branding: {
     clear: { input: adminBrandingClearInput, output: adminBrandingClearOutputDto },
+    upload: { input: adminBrandingUploadInput, output: adminBrandingUploadOutputDto },
   },
   fonts: {
     list: { input: adminFontsListInput, output: listFontsOutputDto },
     delete: { input: adminFontDeleteInput, output: adminFontDeleteOutputDto },
     setSlot: { input: setFontSlotInputDto, output: adminFontSetSlotOutputDto },
+    upload: { input: adminFontUploadInput, output: adminFontUploadOutputDto },
+    uploadCanvas: { input: adminCanvasFontUploadInput, output: adminCanvasFontUploadOutputDto },
   },
   geoip: {
     status: { input: adminGeoipStatusInput, output: adminGeoipStatusOutputDto },
     update: { input: adminGeoipUpdateInput, output: adminGeoipUpdateOutputDto },
+    upload: { input: adminGeoipUploadInput, output: adminGeoipUploadOutputDto },
   },
   webmentions: {
     loadAll: { input: adminWebmentionListSchema, output: adminWebmentionsLoadAllOutputDto },
@@ -661,6 +698,26 @@ describe('admin contracts shape', () => {
     const proc = contract[key]['~orpc']
     expect(proc.inputSchema).toBe(pinned.input)
     expect(proc.outputSchema).toBe(pinned.output)
+  })
+})
+
+describe('admin realtime event iterator contract', () => {
+  it('composes its input and validates every yielded batch', async () => {
+    expect(analyticsContract.events['~orpc'].inputSchema).toBe(adminAnalyticsEventsInputSchema)
+    const details = getEventIteratorSchemaDetails(analyticsContract.events['~orpc'].outputSchema)
+    expect(details).toBeDefined()
+    const event = realtimeEventDto.parse({
+      ts: '2026-01-01T00:00:00.000Z',
+      path: '/',
+      country: null,
+      city: null,
+      browser: null,
+      os: null,
+      deviceType: null,
+      isBot: false,
+    })
+    expect((await details!.yields['~standard'].validate([event])).issues).toBeUndefined()
+    expect((await details!.yields['~standard'].validate([{ ...event, isBot: 'no' }])).issues).toBeDefined()
   })
 })
 

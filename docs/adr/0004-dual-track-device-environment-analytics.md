@@ -37,11 +37,13 @@ geometry, touch, hardware concurrency) once per browser session via a `sessionSt
 (viewport, network, color scheme) per page view. Static dimensions exist only on `has_static = TRUE` rows, aggregated
 over that beacon-covered subset — valid because static values never vary within a session.
 
-**The beacon is a bare Hono resource route:** `POST /api/analytics/env` (`src/server/http/resources/analytics.ts`), not
-an oRPC `publicProc` — `sendBeacon` is an anonymous fire-and-forget ping, so `/rpc/*`'s `csrfGuard` is the wrong shape.
-Perimeter: IP rate limit (120/min), 4 KiB body cap (declared `content-length` checked first), and
-`deviceEnvBeaconSchema` in `src/shared/contracts/analytics.ts`. The id is not validated against `access_events`; a
-bot-gated or direct-POST id yields an orphan row the JOIN drops and retention clears.
+**The beacon is the oRPC procedure `public.analytics.recordDeviceEnv`:** `POST /rpc/public/analytics/recordDeviceEnv`.
+The browser still uses `navigator.sendBeacon`, now with the standard oRPC JSON envelope from
+`@kobato/api/client/rpc-serialization`. A dedicated `csrfExempt` procedure marker preserves the original anonymous,
+header-less fire-and-forget ping without weakening CSRF anywhere else. Perimeter: IP rate limit (120/min), 4 KiB body
+cap (declared `content-length` checked first), and `deviceEnvBeaconSchema` in `@kobato/api/contracts/public/analytics`.
+The id is not validated against `access_events`; a bot-gated or direct-POST id yields an orphan row the JOIN drops and
+retention clears.
 
 **Privacy is unchanged or stricter.** `DNT: 1` suppresses the beacon entirely while the server aggregate page view is
 still counted. No fingerprint, no cross-session id; the only key is the per-event UUID. The 180-day job deletes from
@@ -64,5 +66,5 @@ stream keeps its field set; environment data stays in aggregate panels.
 - The beacon route is the only unauthenticated write surface into the analytics store; rate limit, body cap, and
   contract validation are its whole perimeter, pinned by tests. Do not widen it.
 - Do not reintroduce: UPDATE/backfill into `access_events`, extra blob slots, a client fingerprint or session id, a
-  `<meta>`-tag `eid` channel, or an oRPC `publicProc` for the beacon.
+  `<meta>`-tag `eid` channel, or a replacement bare-Hono beacon outside the contract tree.
 - Coverage expansion changes the page-view volume baseline by design; not a data bug.

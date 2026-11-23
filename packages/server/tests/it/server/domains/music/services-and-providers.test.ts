@@ -494,8 +494,8 @@ describe('music/services/search — searchMusic', () => {
 
     const r = await searchService.searchMusic('netease', 'keyword')
     expect(r.results).toHaveLength(1)
-    expect(r.results[0].coverUrl).toContain('/admin/music/proxy/cover')
-    expect(r.results[0].previewUrl).toContain('/admin/music/proxy/audio')
+    expect(r.results[0].coverUrl).toContain('/rpc/admin/music/proxyCover')
+    expect(r.results[0].previewUrl).toContain('/rpc/admin/music/proxyAudio')
     expect(resolveAudioUrl).not.toHaveBeenCalled()
     expect(resolveCoverUrl).not.toHaveBeenCalled()
   })

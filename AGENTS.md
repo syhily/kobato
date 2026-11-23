@@ -92,8 +92,9 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
   `implement{Public,Authed,Author,Admin}` bases in `packages/server/src/http/orpc-base.ts`.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
   Production source never imports SQLite/Drizzle/DuckDB drivers, builds SQL, or unwraps native handles;
-  `apps/kobato/tests/arch/persistence-ownership.test.ts` pins it. First-party JSON operations use oRPC, with only the
-  audited stream/upload/protocol resources in `apps/kobato/tests/arch/api-resource-surface.test.ts`.
+  `apps/kobato/tests/arch/persistence-ownership.test.ts` pins it. First-party JSON, File/Blob, binary streams, and event
+  iterators use oRPC; only audited external-protocol/public/operational resources remain in
+  `apps/kobato/tests/arch/api-resource-surface.test.ts`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; owns every query, transaction, native connection, and row model,
   never wire shapes. Server passes opaque `Database`/`AnalyticsHandle` tokens to semantic operations.
 - Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`. Web leaves never

@@ -1,9 +1,5 @@
-import {
-  METRIC_GROUP_TABS,
-  METRIC_TYPES,
-  analyticsQuerySchema,
-  deviceEnvBeaconSchema,
-} from '@kobato/api/contracts/admin/analytics'
+import { METRIC_GROUP_TABS, METRIC_TYPES, analyticsQuerySchema } from '@kobato/api/contracts/admin/analytics'
+import { deviceEnvBeaconSchema } from '@kobato/api/contracts/public/analytics'
 import { describe, expect, it } from 'vitest'
 
 describe('analyticsQuerySchema dimension filters', () => {

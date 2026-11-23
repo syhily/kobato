@@ -43,6 +43,13 @@ vi.mock('@openobserve/browser-rum-slim', () => ({
 
 const ROUTE = { id: 'routes/public/post/detail', template: '/posts/:slug' }
 
+function statusResponse(enabled: unknown): Response {
+  return new Response(JSON.stringify({ json: { enabled } }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
 const BOOTSTRAP: FrontendRumBootstrap = {
   applicationId: 'kobato-dev',
   service: 'kobato',
@@ -67,7 +74,7 @@ beforeEach(() => {
   sdk.stopSession.mockReset()
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+    vi.fn(async () => statusResponse(true)),
   )
 })
 
@@ -186,7 +193,7 @@ describe('startRum initialization', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+      vi.fn(async () => statusResponse(true)),
     )
     await __pollRumStatusForTests()
 
@@ -213,7 +220,7 @@ describe('startRum initialization', () => {
   it('honors a suspend that arrives while initialization is still in flight', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
+      vi.fn(async () => statusResponse(false)),
     )
     const starting = startRum(BOOTSTRAP, ROUTE)
     suspendRum()
@@ -254,7 +261,7 @@ describe('runtime status polling', () => {
     await startRum(BOOTSTRAP, ROUTE)
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
+      vi.fn(async () => statusResponse(false)),
     )
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
@@ -263,7 +270,7 @@ describe('runtime status polling', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+      vi.fn(async () => statusResponse(true)),
     )
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('granted')
@@ -275,7 +282,7 @@ describe('runtime status polling', () => {
   it('never re-authorizes via startRum while the gate is closed', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
+      vi.fn(async () => statusResponse(false)),
     )
     await startRum(BOOTSTRAP, ROUTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -300,7 +307,7 @@ describe('runtime status polling', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+      vi.fn(async () => statusResponse(true)),
     )
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('granted')
@@ -314,12 +321,12 @@ describe('runtime status polling', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: false }) })),
+      vi.fn(async () => statusResponse(false)),
     )
     await __pollRumStatusForTests()
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+      vi.fn(async () => statusResponse(true)),
     )
     await __pollRumStatusForTests()
 
@@ -335,8 +342,8 @@ describe('runtime status polling', () => {
 
   it('does not resume from a stale response after polling stopped', async () => {
     await startRum(BOOTSTRAP, ROUTE)
-    let resolveFetch!: (value: { ok: boolean; json: () => Promise<{ enabled: boolean }> }) => void
-    const pending = new Promise<{ ok: boolean; json: () => Promise<{ enabled: boolean }> }>((resolve) => {
+    let resolveFetch!: (value: Response) => void
+    const pending = new Promise<Response>((resolve) => {
       resolveFetch = resolve
     })
     vi.stubGlobal(
@@ -346,7 +353,7 @@ describe('runtime status polling', () => {
 
     const polling = __pollRumStatusForTests()
     stopRum()
-    resolveFetch({ ok: true, json: async () => ({ enabled: true }) })
+    resolveFetch(statusResponse(true))
     await polling
 
     expect(sdk.startView).not.toHaveBeenCalled()
@@ -366,7 +373,7 @@ describe('runtime status polling', () => {
     sdk.setTrackingConsent.mockReset()
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: 'yes' }) })),
+      vi.fn(async () => statusResponse('yes')),
     )
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
@@ -380,7 +387,7 @@ describe('runtime status polling', () => {
     Object.defineProperty(window.navigator, 'doNotTrack', { configurable: true, value: '1' })
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ ok: true, json: async () => ({ enabled: true }) })),
+      vi.fn(async () => statusResponse(true)),
     )
     await __pollRumStatusForTests()
     expect(sdk.setTrackingConsent).toHaveBeenLastCalledWith('not-granted')
@@ -401,16 +408,16 @@ describe('tracing propagation predicate', () => {
   })
 
   it('excludes the analytics beacon/SSE, OpenObserve intake, and probes', () => {
-    expect(isTraceableRumUrl('http://localhost:4321/api/analytics/env', origin)).toBe(false)
-    expect(isTraceableRumUrl('http://localhost:4321/api/analytics/events', origin)).toBe(false)
+    expect(isTraceableRumUrl('http://localhost:4321/rpc/public/analytics/recordDeviceEnv', origin)).toBe(false)
+    expect(isTraceableRumUrl('http://localhost:4321/rpc/admin/analytics/events', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/rum/v1/default/rum', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/api/rum/intake/rum/v1/default/rum', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/health', origin)).toBe(false)
     expect(isTraceableRumUrl('http://localhost:4321/ready', origin)).toBe(false)
-    expect(isTraceableRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(false)
-    expect(isSelfTelemetryRumUrl('http://localhost:4321/api/rum/status', origin)).toBe(true)
+    expect(isTraceableRumUrl('http://localhost:4321/rpc/public/observability/rumStatus', origin)).toBe(false)
+    expect(isSelfTelemetryRumUrl('http://localhost:4321/rpc/public/observability/rumStatus', origin)).toBe(true)
     expect(isSelfTelemetryRumUrl('http://localhost:4321/api/rum/intake/rum/v1/default/rum', origin)).toBe(true)
-    expect(isSelfTelemetryRumUrl('http://localhost:4321/api/analytics/env', origin)).toBe(true)
+    expect(isSelfTelemetryRumUrl('http://localhost:4321/rpc/public/analytics/recordDeviceEnv', origin)).toBe(true)
   })
 
   it('registers only the tracecontext propagator', async () => {

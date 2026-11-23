@@ -1,3 +1,4 @@
+import { deviceEnvBeaconOutputSchema, deviceEnvBeaconSchema } from '@kobato/api/contracts/public/analytics'
 import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/api/contracts/public/avatar'
 import {
   commentEditInputSchema,
@@ -38,7 +39,9 @@ import {
   imageResolveThumbhashOutputSchema,
 } from '@kobato/api/contracts/public/images'
 import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/public/music'
+import { publicRumStatusInputSchema, publicRumStatusOutputSchema } from '@kobato/api/contracts/public/observability'
 import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/public/webmentions'
+import { publicAnalyticsContract } from '@kobato/api/rpc/public/analytics'
 import { avatarContract } from '@kobato/api/rpc/public/avatar'
 import { commentsContract, commentsPublicContract, commentsTokenContract } from '@kobato/api/rpc/public/comments'
 import {
@@ -51,6 +54,7 @@ import {
 import { githubContract } from '@kobato/api/rpc/public/github'
 import { imagesContract } from '@kobato/api/rpc/public/images'
 import { musicContract } from '@kobato/api/rpc/public/music'
+import { publicObservabilityContract } from '@kobato/api/rpc/public/observability'
 import { webmentionsContract } from '@kobato/api/rpc/public/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
@@ -68,6 +72,28 @@ interface ContractSpec {
 }
 
 const CONTRACT_SPECS: Record<string, ContractSpec> = {
+  analytics: {
+    contract: publicAnalyticsContract as unknown as Record<string, unknown>,
+    routes: {
+      recordDeviceEnv: {
+        method: 'POST',
+        path: '/analytics/env',
+        input: deviceEnvBeaconSchema,
+        output: deviceEnvBeaconOutputSchema,
+      },
+    },
+  },
+  observability: {
+    contract: publicObservabilityContract as unknown as Record<string, unknown>,
+    routes: {
+      rumStatus: {
+        method: 'GET',
+        path: '/rum/status',
+        input: publicRumStatusInputSchema,
+        output: publicRumStatusOutputSchema,
+      },
+    },
+  },
   avatar: {
     contract: avatarContract as unknown as Record<string, unknown>,
     routes: {

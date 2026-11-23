@@ -1,3 +1,4 @@
+import { FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
 import { Input } from '@kobato/ui/components/input'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpc } from '@kobato/web-client/api/client'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
@@ -37,11 +39,11 @@ export function FontUploadButton() {
   const trimmedFamilyName = inputFamilyName.trim()
 
   const { upload } = useFileUpload({
-    endpoint: '/api/admin/fonts/package/upload',
+    submit: (file) => orpc.admin.fonts.upload({ file, familyName: trimmedFamilyName }),
     t,
     fields: { familyName: trimmedFamilyName },
     accept: ['.ttf', '.otf'],
-    maxBytes: 60 * 1024 * 1024,
+    maxBytes: FONT_MAX_BYTES,
     messages: {
       invalidType: { title: t('admin.fonts.upload.invalidType') },
       tooLarge: () => ({ title: t('admin.fonts.upload.tooLarge') }),

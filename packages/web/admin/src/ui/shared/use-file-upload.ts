@@ -1,10 +1,8 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 
-import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useCallback, useState } from 'react'
-import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 export interface FileUploadToast {
@@ -20,16 +18,14 @@ export interface FileUploadMessages {
   failure?: UiMessageId
 }
 
-export interface UseFileUploadOptions {
-  endpoint: string
+export interface UseFileUploadOptions<TOutput = unknown> {
+  submit: (file: File, fields: Record<string, string>) => Promise<TOutput>
   t: ToastTranslator
   fields?: Record<string, string>
   accept?: readonly string[]
   maxBytes?: number
-  credentials?: RequestCredentials
-  parseJson?: boolean
   messages?: FileUploadMessages
-  onSuccess?: (body: unknown) => void | Promise<void>
+  onSuccess?: (body: TOutput) => void | Promise<void>
   onError?: (message: string) => void
 }
 
@@ -38,14 +34,33 @@ export interface UseFileUploadResult {
   pending: boolean
 }
 
-export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResult {
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
+function errorStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null || !('status' in error)) {
+    return undefined
+  }
+  return typeof error.status === 'number' ? error.status : undefined
+}
+
+function formValues(input: FormData, t: ToastTranslator): { file: File; fields: Record<string, string> } {
+  const file = input.get('file')
+  if (!(file instanceof File)) {
+    throw new TypeError(t('common.error.uploadMissing'))
+  }
+  const fields: Record<string, string> = {}
+  for (const [key, value] of input.entries()) {
+    if (key !== 'file' && key !== 'csrf_token' && typeof value === 'string') {
+      fields[key] = value
+    }
+  }
+  return { file, fields }
+}
+
+export function useFileUpload<TOutput>(options: UseFileUploadOptions<TOutput>): UseFileUploadResult {
   const [pending, setPending] = useState(false)
 
   const upload = useCallback(
     async (input: File | FormData): Promise<boolean> => {
-      const { endpoint, fields, accept, maxBytes, credentials, parseJson, messages, t, onSuccess, onError } = options
+      const { submit, fields, accept, maxBytes, messages, t, onSuccess, onError } = options
 
       const reportGuardFailure = (payload: FileUploadToast): false => {
         if (onError) {
@@ -71,65 +86,28 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       }
 
       setPending(true)
-      let succeeded = false
-      let failed = false
-      let failure: unknown = null
       try {
-        let formData: FormData
-        if (input instanceof File) {
-          formData = new FormData()
-          for (const [key, value] of Object.entries(fields ?? {})) {
-            formData.append(key, value)
-          }
-          formData.append('file', input)
-        } else {
-          formData = input
+        const parsed = input instanceof File ? { file: input, fields: fields ?? {} } : formValues(input, t)
+        const body = await submit(parsed.file, { ...fields, ...parsed.fields })
+        if (messages?.success !== undefined) {
+          toast.success(messages.success)
         }
-        const headers: Record<string, string> = {}
-        if (csrfToken) {
-          headers['x-csrf-token'] = csrfToken
-        }
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          body: formData,
-          headers,
-          ...(credentials !== undefined ? { credentials } : {}),
-        })
-        const body: unknown = parseJson === true ? await res.json() : undefined
-        if (!res.ok) {
-          const data: unknown = parseJson === true ? body : await res.json().catch(() => null)
-          const message =
-            extractApiErrorMessage(data) ??
-            (messages?.httpFailure ?? ((status: number) => t('admin.toast.uploadStatusFailed', { status })))(res.status)
-          if (onError) {
-            onError(message)
-          } else {
-            failed = true
-            failure = new Error(message)
-          }
-        } else {
-          if (messages?.success !== undefined) {
-            toast.success(messages.success)
-          }
-          await onSuccess?.(body)
-          succeeded = true
-        }
-      } catch (err) {
-        failed = true
-        failure = err
-      }
-      if (failed) {
-        const failureId = messages?.failure ?? 'admin.toast.uploadFailed'
+        await onSuccess?.(body)
+        return true
+      } catch (error) {
+        const status = errorStatus(error)
+        const statusMessage = status === undefined ? undefined : messages?.httpFailure?.(status)
         if (onError) {
-          onError(t(failureId))
+          onError(statusMessage ?? (error instanceof Error ? error.message : t('admin.toast.uploadFailed')))
         } else {
-          toastApiError(failure, failureId, t)
+          toastApiError(statusMessage ?? error, messages?.failure ?? 'admin.toast.uploadFailed', t)
         }
+        return false
+      } finally {
+        setPending(false)
       }
-      setPending(false)
-      return succeeded
     },
-    [options, csrfToken],
+    [options],
   )
 
   return { upload, pending }

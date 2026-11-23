@@ -27,9 +27,9 @@ const EXEMPT_CASES = [
   { path: '/__manifest',             desc: '__manifest' },
   { path: '/admin/signin',           desc: 'admin signin' },
   { path: '/admin/setup',            desc: 'admin setup' },
-  { path: '/api/setup/restore',      desc: 'api setup restore' },
+  { path: '/rpc/account/setup/restore', desc: 'setup restore RPC' },
   { path: '/ready',                  desc: 'ready endpoint' },
-  { path: '/api/rum/status',         desc: 'frontend RUM status probe' },
+  { path: '/rpc/public/observability/rumStatus', desc: 'frontend RUM status RPC' },
   { path: '/api/rum/intake/rum/v1/default/rum', desc: 'frontend RUM intake relay' },
   { path: '/admin/signin.data',      desc: 'RR data suffix' },
 ]

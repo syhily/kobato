@@ -37,6 +37,7 @@ import { adminUsersAdminRouter } from '@kobato/server/http/controllers/admin/use
 import { adminUsersCrudRouter } from '@kobato/server/http/controllers/admin/users-crud.controller'
 import { adminUsersSessionsRouter } from '@kobato/server/http/controllers/admin/users-sessions.controller'
 import { adminWebmentionsRouter } from '@kobato/server/http/controllers/admin/webmentions.controller'
+import { publicAnalyticsRouter } from '@kobato/server/http/controllers/public/analytics.controller'
 import { avatarRouter } from '@kobato/server/http/controllers/public/avatar.controller'
 import { commentsPublicRouter } from '@kobato/server/http/controllers/public/comments-public.controller'
 import { commentsTokenRouter } from '@kobato/server/http/controllers/public/comments-token.controller'
@@ -47,6 +48,7 @@ import { contentListingsRouter } from '@kobato/server/http/controllers/public/co
 import { githubRouter } from '@kobato/server/http/controllers/public/github.controller'
 import { imageRouter } from '@kobato/server/http/controllers/public/image.controller'
 import { musicRouter } from '@kobato/server/http/controllers/public/music.controller'
+import { publicObservabilityRouter } from '@kobato/server/http/controllers/public/observability.controller'
 import { webmentionPublicRouter } from '@kobato/server/http/controllers/public/webmention-public.controller'
 
 export const apiRouter = {
@@ -67,6 +69,8 @@ export const apiRouter = {
     github: githubRouter,
     images: imageRouter,
     music: musicRouter,
+    analytics: publicAnalyticsRouter,
+    observability: publicObservabilityRouter,
   },
   account: {
     ...accountRouter,

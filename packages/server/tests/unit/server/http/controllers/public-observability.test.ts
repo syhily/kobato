@@ -1,6 +1,7 @@
-import { rumStatusRouter } from '@kobato/server/http/resources/rum-status'
+import { publicObservabilityRouter } from '@kobato/server/http/controllers/public/observability.controller'
 import { __resetFrontendGateForTests, activateFrontendGate } from '@kobato/server/infra/trace/frontend-gate'
-import { Hono } from 'hono'
+import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { call } from '@orpc/server'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const RELAY = {
@@ -32,24 +33,20 @@ function activate(): void {
   )
 }
 
-describe('rumStatusRouter', () => {
+describe('publicObservabilityRouter.rumStatus', () => {
   it('returns a boolean, no-store status payload', async () => {
-    const app = new Hono().route('/', rumStatusRouter)
-
-    const disabled = await app.request('/api/rum/status')
-    expect(disabled.status).toBe(200)
-    expect(disabled.headers.get('Cache-Control')).toBe('no-store')
-    expect(await disabled.json()).toEqual({ enabled: false })
+    const context = makePublicCtx()
+    expect(await call(publicObservabilityRouter.rumStatus, {}, { context })).toEqual({ enabled: false })
+    expect(context.responseHeaders.get('Cache-Control')).toBe('no-store')
 
     activate()
-    const enabled = await app.request('/api/rum/status')
-    expect(await enabled.json()).toEqual({ enabled: true })
+    expect(await call(publicObservabilityRouter.rumStatus, {}, { context })).toEqual({ enabled: true })
   })
 
   it('never exposes the client token or endpoint detail', async () => {
     activate()
-    const app = new Hono().route('/', rumStatusRouter)
-    const body = await (await app.request('/api/rum/status')).text()
+    const result = await call(publicObservabilityRouter.rumStatus, {}, { context: makePublicCtx() })
+    const body = JSON.stringify(result)
 
     expect(body).not.toContain('127.0.0.1')
     expect(body).not.toContain('rum-client-token')

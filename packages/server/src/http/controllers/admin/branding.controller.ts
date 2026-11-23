@@ -1,5 +1,5 @@
 import { adminBrandingContract } from '@kobato/api/rpc/admin/branding'
-import { clearBrandingAsset } from '@kobato/server/domains/assets/management'
+import { clearBrandingAsset, uploadBrandingAsset } from '@kobato/server/domains/assets/management'
 import { isBrandingSlot } from '@kobato/server/domains/assets/services/storage'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
@@ -26,4 +26,21 @@ const clear = impl.clear.handler(async ({ input, context }) => {
   return { slot, success: true }
 })
 
-export const adminBrandingRouter = impl.router({ clear })
+const upload = impl.upload.handler(async ({ input, context }) => {
+  const slot = input.slot
+  if (!isBrandingSlot(slot)) {
+    throw new ActionFailure(400, descriptorFor('branding.error.unknownSlot'))
+  }
+  const buffer = Buffer.from(await input.file.arrayBuffer())
+  const ref = await uploadBrandingAsset(context.db, slot, buffer)
+  recordAuditEventFromContext(context, {
+    action: 'branding_uploaded',
+    resourceType: 'branding',
+    resourceId: slot,
+    details: { size: buffer.length },
+  })
+  log.info('Branding uploaded', { slot, size: buffer.length })
+  return { slot, ref }
+})
+
+export const adminBrandingRouter = impl.router({ clear, upload })

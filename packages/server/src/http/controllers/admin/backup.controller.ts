@@ -22,8 +22,13 @@ import {
   restoreFromStagedBackup,
   stageBackup,
 } from '@kobato/server/domains/backup/services/restore'
-import { decryptParkedUploadAndRestore } from '@kobato/server/domains/backup/upload-restore'
+import {
+  decryptParkedUploadAndRestore,
+  stageUploadedBackup,
+  startRestoreFromStaged,
+} from '@kobato/server/domains/backup/upload-restore'
 import { implementAdmin, rateLimitByIp } from '@kobato/server/http/orpc-base'
+import { nodeStreamToWeb } from '@kobato/server/http/resources/serve-local-file'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
@@ -45,7 +50,11 @@ const impl = implementAdmin({
   delete: adminBackupContract.delete,
   restoreStatus: adminBackupContract.restoreStatus,
   restoreProgress: adminBackupContract.restoreProgress,
+  download: adminBackupContract.download,
 })
+const uploadImpl = implementAdmin({ uploadRestore: adminBackupContract.uploadRestore }).use(
+  rateLimitByIp('backupRestoreUpload', { windowSeconds: 3600, maxAttempts: 30 }),
+)
 const decryptImpl = implementAdmin({ uploadRestoreDecrypt: adminBackupContract.uploadRestoreDecrypt }).use(
   rateLimitByIp('backupRestoreDecrypt', DECRYPT_RATE_LIMIT_BUCKET),
 )
@@ -170,7 +179,45 @@ const uploadRestoreDecrypt = decryptImpl.uploadRestoreDecrypt.handler(async ({ i
   })
 })
 
+const uploadRestore = uploadImpl.uploadRestore.handler(async ({ input, context }) => {
+  const staged = await stageUploadedBackup(input.file, { allowAnalyticsOnly: true })
+  if ('encrypted' in staged) {
+    return staged
+  }
+  const outcome = await startRestoreFromStaged(staged, input.file.name, {
+    afterReopen: (_db, fileName) => {
+      recordAuditEventFromContext(context, {
+        action: 'backup_restored',
+        resourceType: 'backup',
+        resourceId: fileName,
+      })
+    },
+  })
+  if (outcome === 'busy') {
+    throw new ActionFailure(409, descriptorFor('backup.error.restoreRunning'))
+  }
+  return { accepted: true as const }
+})
+
+const download = impl.download.handler(async ({ input, context }) => {
+  if (!isValidBackupKey(input.key)) {
+    throw new ActionFailure(400, descriptorFor('backup.error.invalidKey'))
+  }
+  const { stream, byteSize, encrypted, fileName } = await getBackupStream(context.db, input.key)
+  const safeFileName = fileName.replace(/[^A-Za-z0-9._-]/g, '_')
+  context.responseHeaders.set('Content-Type', encrypted ? 'application/octet-stream' : 'application/gzip')
+  context.responseHeaders.set('Content-Disposition', `attachment; filename="${safeFileName}"`)
+  context.responseHeaders.set('Content-Length', String(byteSize))
+  recordAuditEventFromContext(context, {
+    action: 'backup_downloaded',
+    resourceType: 'backup',
+    resourceId: input.key,
+  })
+  return nodeStreamToWeb(stream)
+})
+
 export const adminBackupRouter = {
-  ...impl.router({ status, list, create, restore, delete: delete_, restoreStatus, restoreProgress }),
+  ...impl.router({ status, list, create, restore, delete: delete_, restoreStatus, restoreProgress, download }),
+  ...uploadImpl.router({ uploadRestore }),
   ...decryptImpl.router({ uploadRestoreDecrypt }),
 }

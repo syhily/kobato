@@ -1,10 +1,14 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
 import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { createApiApp } from '@kobato/server/http/app'
 import { FONT_DIR } from '@kobato/server/infra/data-paths'
 import { resetFontCache } from '@kobato/server/render/canvas-fonts'
-import { adminSession, adminUser } from '@kobato/server/tests/utils/session'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { adminSession } from '@kobato/server/tests/utils/session'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Hono } from 'hono'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -17,12 +21,7 @@ function createApp() {
   const session = adminSession()
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', {
-      session,
-      viewer: adminUser(),
-      clientAddress: '127.0.0.1',
-      requestFacts: { userAgent: 'vitest' },
-    } as never)
+    c.set('requestContext', makeRequestContext({ session }))
     await next()
   })
   return { app, csrf: { 'x-csrf-token': ensureCsrfToken(session) } }
@@ -43,8 +42,7 @@ afterAll(() => {
 })
 
 async function makeRouter() {
-  const { fontsRouter } = await import('@kobato/server/http/resources/fonts')
-  return fontsRouter
+  return createApiApp()
 }
 
 describe('fontsRouter', () => {
@@ -52,13 +50,12 @@ describe('fontsRouter', () => {
     const { app, csrf } = createApp()
     app.route('/', await makeRouter())
 
-    const form = new FormData()
-    form.append('slot', 'og')
-    form.append('file', new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }))
-
-    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
+    const body = unsafeCast<BodyInit>(
+      serializeKobatoRpcInput({ slot: 'og', file: new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }) }),
+    )
+    const res = await app.request('/rpc/admin/fonts/uploadCanvas', { method: 'POST', body, headers: csrf })
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ slot: 'og', size: REAL_TTF.length })
+    await expect(res.json()).resolves.toEqual({ json: { slot: 'og', size: REAL_TTF.length } })
     expect(readFileSync(OG_FONT_PATH).equals(REAL_TTF)).toBe(true)
   })
 
@@ -75,10 +72,10 @@ describe('fontsRouter', () => {
     const cached = await ensureCanvasFont('og')
     expect(cached).toBe(first)
 
-    const form = new FormData()
-    form.append('slot', 'og')
-    form.append('file', new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }))
-    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
+    const body = unsafeCast<BodyInit>(
+      serializeKobatoRpcInput({ slot: 'og', file: new File([REAL_TTF], 'font.ttf', { type: 'font/ttf' }) }),
+    )
+    const res = await app.request('/rpc/admin/fonts/uploadCanvas', { method: 'POST', body, headers: csrf })
     expect(res.status).toBe(200)
 
     const second = await ensureCanvasFont('og')
@@ -95,7 +92,7 @@ describe('fontsRouter', () => {
     form.append('slot', 'body')
     form.append('file', new File(['fontdata'], 'font.ttf', { type: 'font/ttf' }))
 
-    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/fonts/uploadCanvas', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
@@ -107,7 +104,7 @@ describe('fontsRouter', () => {
     form.append('slot', 'og')
     form.append('file', new File(['fontdata'], 'font.woff2', { type: 'font/woff2' }))
 
-    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/fonts/uploadCanvas', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
@@ -119,7 +116,7 @@ describe('fontsRouter', () => {
     form.append('slot', 'og')
     form.append('file', new File([], 'font.ttf', { type: 'font/ttf' }))
 
-    const res = await app.request('/api/admin/fonts/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/fonts/uploadCanvas', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 })

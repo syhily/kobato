@@ -1,10 +1,12 @@
+import { serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
+import { PUBLIC_ANALYTICS_RECORD_DEVICE_ENV_RPC_PATH } from '@kobato/api/rpc/public/analytics'
 import { isRecord } from '@kobato/utils/type-guards'
 import { buildDeviceEnvBeacon } from '@kobato/web-client/lib/device-env'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'
 
 const STATIC_SENT_KEY = 'kobato.env.static'
-const BEACON_PATH = '/api/analytics/env'
+const BEACON_PATH = PUBLIC_ANALYTICS_RECORD_DEVICE_ENV_RPC_PATH
 
 const SENT_EVENT_IDS_LIMIT = 500
 const sentEventIds = new Set<string>()
@@ -61,7 +63,8 @@ export function sendDeviceEnvBeacon(eventId: string): boolean {
   const includeStatic = !hasStaticBlockBeenSent()
   const payload = buildDeviceEnvBeacon(eventId, includeStatic)
   try {
-    const sent = navigator.sendBeacon(BEACON_PATH, new Blob([JSON.stringify(payload)], { type: 'application/json' }))
+    const body = JSON.stringify(serializeKobatoRpcInput(payload))
+    const sent = navigator.sendBeacon(BEACON_PATH, new Blob([body], { type: 'application/json' }))
     if (sent) {
       if (includeStatic) {
         markStaticBlockSent()

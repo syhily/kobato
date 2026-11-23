@@ -1,8 +1,14 @@
 import {
+  CANVAS_FONT_MAX_BYTES,
+  FONT_MAX_BYTES,
+  adminCanvasFontUploadInput,
+  adminCanvasFontUploadOutputDto,
   adminFontDeleteInput,
   adminFontDeleteOutputDto,
   adminFontsListInput,
   adminFontSetSlotOutputDto,
+  adminFontUploadInput,
+  adminFontUploadOutputDto,
   listFontsOutputDto,
   setFontSlotInputDto,
 } from '@kobato/api/contracts/admin/fonts'
@@ -18,4 +24,22 @@ export const adminFontsContract = {
   setSlot: defineProcedure({ method: 'POST', path: '/admin/fonts/set-slot' })
     .input(setFontSlotInputDto)
     .output(adminFontSetSlotOutputDto),
+  upload: defineProcedure(
+    { method: 'POST', path: '/admin/fonts/package/upload' },
+    {
+      requestBodyLimit: {
+        maxBytes: FONT_MAX_BYTES,
+        messageKey: 'fonts.error.packageTooLarge',
+        formatMaxBytes: true,
+      },
+    },
+  )
+    .input(adminFontUploadInput)
+    .output(adminFontUploadOutputDto),
+  uploadCanvas: defineProcedure(
+    { method: 'POST', path: '/admin/fonts/upload' },
+    { requestBodyLimit: { maxBytes: CANVAS_FONT_MAX_BYTES, messageKey: 'common.error.uploadTooLarge' } },
+  )
+    .input(adminCanvasFontUploadInput)
+    .output(adminCanvasFontUploadOutputDto),
 }

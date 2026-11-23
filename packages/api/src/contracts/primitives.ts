@@ -20,6 +20,16 @@ export type OkOutput = z.infer<typeof okDto>
 
 export const voidOutput = z.void()
 
+export const fileSchema = z
+  .instanceof(Blob)
+  .refine((value): value is File => 'name' in value && typeof value.name === 'string')
+export type FileWire = z.infer<typeof fileSchema>
+
+export const binaryOutput = z.custom<ReadableStream<Uint8Array> | Blob>(
+  (value) => value instanceof ReadableStream || value instanceof Blob,
+)
+export type BinaryOutput = z.infer<typeof binaryOutput>
+
 const HONEYPOT_MAX_LENGTH = 240
 
 export function honeypotField<const TName extends string>(name: TName) {

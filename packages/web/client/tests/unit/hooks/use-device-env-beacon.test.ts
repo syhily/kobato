@@ -56,7 +56,8 @@ type SendBeaconMock = ReturnType<typeof vi.fn<(url: string, data: BodyInit | nul
 
 async function sentPayload(sendBeacon: SendBeaconMock, callIndex = 0): Promise<Record<string, unknown>> {
   const body = sendBeacon.mock.calls[callIndex]![1] as Blob
-  return JSON.parse(await body.text()) as Record<string, unknown>
+  const envelope = JSON.parse(await body.text()) as { json: Record<string, unknown> }
+  return envelope.json
 }
 
 beforeEach(() => {
@@ -111,7 +112,7 @@ describe('sendDeviceEnvBeacon', () => {
     const { storage } = stubCollectorEnv({ sendBeacon })
 
     expect(sendDeviceEnvBeacon(EVENT_ID)).toBe(true)
-    expect(sendBeacon.mock.calls[0]![0]).toBe('/api/analytics/env')
+    expect(sendBeacon.mock.calls[0]![0]).toBe('/rpc/public/analytics/recordDeviceEnv')
     const first = await sentPayload(sendBeacon)
     expect(first).toMatchObject({
       eventId: EVENT_ID,

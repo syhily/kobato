@@ -211,6 +211,7 @@ describe('structure conventions', () => {
       '/analytics/export',
       '/analytics/overview',
       '/analytics/mentions',
+      '/analytics/events',
     ])
     const offenders: string[] = []
     for (const file of walk(root).filter((entry) => entry.endsWith('.ts'))) {

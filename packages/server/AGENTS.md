@@ -118,8 +118,9 @@ in-process React Router action.
   path; input is never recorded.
 - `buildCspHeader` is the single dynamic-CSP owner and NEVER widens `connect-src`. The browser SDK posts RUM to the
   same-origin relay `POST /api/rum/intake/rum/v1/<org>/rum` (`http/resources/rum-intake.ts`), mounted in EVERY build
-  next to `/api/rum/status` — both install-gate-exempt, trace-excluded, with caps/limits enforced in the resource. The
-  OpenObserve origin appears in no policy, document, or CORS entry.
+  beside the `public.observability.rumStatus` procedure — both install-gate-exempt and trace-excluded. Intake
+  caps/limits stay in the external resource; status is an anonymous `publicRead` RPC. The OpenObserve origin appears in
+  no policy, document, or CORS entry.
 
 ### Public content API (`public.content.*`)
 
@@ -149,13 +150,12 @@ in-process React Router action.
 | `adminProc`  | `requireRole('admin')` + `csrfGuard`  | Admins only                |
 
 `csrfGuard` runs on every `/rpc/*` request — safe methods included (the RPC transport POSTs reads too); anonymous
-sessions validate against the stateless `__csrf` double-submit token. Sole exception: the anonymous public-read
-exemption in `request/public-read-rpc-path.ts`, DERIVED from the `~orpc.meta.publicRead === true` declarations on
-`@kobato/api`'s `publicContract` (`defineProcedure(route, { publicRead: true })` — eligibility is declared explicitly on
-the API side, pinned there by frozen-key tests; the server only converts the marked tree keys into exact canonical
-`/rpc/public/*` paths and enforces). Exemption is by declared procedure identity, never by HTTP method or route metadata
-— a future sensitive read gains nothing automatically. Token reads (`comments.getRaw`/`myComments`), every mutation, and
-the whole `account`/`admin` surface keep the full guard.
+sessions validate against the stateless `__csrf` double-submit token. Anonymous public reads are exempt only when
+`~orpc.meta.publicRead === true`, declared in `@kobato/api` and derived by `request/public-read-rpc-path.ts`. A separate
+`csrfExempt` meta preserves the four legacy no-CSRF transports: the anonymous device beacon plus admin backup download
+and the two author music media GETs (their role guards still run). Both sets are exact canonical-path, frozen-key
+tested; eligibility is never inferred from HTTP method. Every other mutation, token read, and account/admin procedure
+keeps the full guard.
 
 ### Contract-first procedures
 
@@ -182,7 +182,11 @@ non-generic `RevisionContract` widens every revision path to `` `/${string}/…`
 - Schema in `@kobato/api/contracts/<group>/<domain>.ts` (never inline — vocabulary a second audience needs lives in the
   lower audience layer, e.g. `admin/` reuses `public/` and `account/`); declare in the domain's
   `@kobato/api/rpc/<group>/` module; implement with the right `implement*` base; register in `apiRouter` under the
-  matching group (`public` / `account` / `admin`) and the group composition root in `@kobato/api`.
+  matching group (`public` / `account` / `admin`) and the group composition root in `@kobato/api`. Long-running
+  procedures declare `requestTimeoutMs` in the same metadata; `request/rpc-timeout-overrides.ts` derives the Hono
+  timeout overrides from the full contract tree rather than maintaining a second path table. `requestBodyLimit`,
+  `installGateExempt`, and `telemetryExcluded` are likewise declared on the procedure and derived through
+  `@kobato/api/rpc/metadata`; no parallel Hono/browser path lists.
 - A multi-column field-update procedure MUST use `mergePatchInput` from `@kobato/api/contracts/primitives` —
   `clearable(...)` for nullable columns, `splitMergePatch(input)` in the handler (pinned by
   `apps/kobato/tests/arch/merge-patch-controllers.test.ts`; reference `admin.users.update`). Full-record upserts,
@@ -201,12 +205,11 @@ non-generic `RevisionContract` widens every revision path to `` `/${string}/…`
   routes use `failureJsonResponse` / `errorJsonResponse`; a worker isolate throws `WorkerDomainError` carrying the same
   descriptor. Ordinary `Error` is CLI-only; user-visible background failures carry descriptors. Settings strict patches
   reject unknown keys with `unrecognizedKeys`.
-- No ad-hoc Hono JSON command/query routes bypassing `apiRouter`; only audited multipart/stream/download/external
-  protocol resources belong in `resources/`. A JSON admin operation is an oRPC procedure even when its sibling multipart
-  upload stays a resource (`admin.branding.clear` ⇄ the branding upload resource;
-  `admin.backup.restoreStatus`/`restoreProgress`/`uploadRestoreDecrypt` ⇄ the backup download/upload resources).
-  `apps/kobato/tests/arch/api-resource-surface.test.ts` pins the exact paths and browser callers. Procedure inputs are a
-  single flat object.
+- No ad-hoc Hono command/query/upload/download routes bypassing `apiRouter`; first-party JSON, File/Blob, binary
+  streams, and event iterators are all oRPC procedures. Only audited external-protocol, preserved-public-URL, and
+  operational resources belong in `resources/` (OpenObserve RUM intake, Webmention, feeds/images/storage,
+  health/readiness). `apps/kobato/tests/arch/api-resource-surface.test.ts` pins the exact paths and browser callers.
+  Procedure inputs are a single flat object.
 
 ## render/
 
@@ -260,9 +263,10 @@ Two embedded engines, zero services:
 - **Page views** — `metric.pv` through the in-memory `PageViewBatcher` (flush on 50 bumps / 60s); reads merge
   `pendingViewDelta`. `trackPageView` is synchronous; every public document tracks exactly one view, a 304 never.
   `AccessLogBatcher` appends `{ event, envServer }` in one flush.
-- **Env beacon intake** — `POST /api/analytics/env`: 4 KB cap, 120/min per-IP, schema validation, then
-  `DeviceEnvBeaconBatcher`. Event ids are NOT checked against `access_events` (orphans drop at JOINs); the batcher
-  pre-filters ids already in `device_env_client`.
+- **Env beacon intake** — `public.analytics.recordDeviceEnv` at `/rpc/public/analytics/recordDeviceEnv`: 4 KB cap,
+  120/min per-IP, schema validation, then `DeviceEnvBeaconBatcher`. It is the only anonymous write in the explicit
+  `csrfExempt` set, preserving `sendBeacon` without headers. Event ids are NOT checked against `access_events` (orphans
+  drop at JOINs); the batcher pre-filters ids already in `device_env_client`.
 - **Daily maintenance** (04:30 site TZ): SQLite `incremental_vacuum` + `optimize` + `job_run` pruning; DuckDB 180-day
   retention + `CHECKPOINT`; token purge. `ANALYZE` after every bulk load; both DuckDB mutation windows serialize on one
   lock. Crash-orphaned `job_run` `running` rows sweep to `failed` once at boot; other stored errors render verbatim.

@@ -1,4 +1,4 @@
-import type { NoMeta, PublicReadMeta } from '@kobato/api/rpc/define-procedure'
+import type { NoMeta, RpcProcedureMeta } from '@kobato/api/rpc/define-procedure'
 
 import { accountContract } from '@kobato/api/account-contract'
 import { adminContract } from '@kobato/api/admin-contract'
@@ -6,10 +6,6 @@ import { publicContract } from '@kobato/api/public-contract'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
-// FROZEN anonymous-read eligibility: the exact public procedure keys (each is its canonical `/rpc/public/<key>`
-// transport path with `.` → `/`) carrying `~orpc.meta.publicRead === true`. The server derives its CSRF public-read
-// exemption from this metadata — adding a key is a deliberate security-sensitive act, removing one breaks deployed
-// headless consumers. Token reads, comment mutations, and the whole account/admin surface must never appear here.
 const PUBLIC_READ_KEYS: readonly string[] = [
   'content.bootstrap',
   'content.home',
@@ -27,6 +23,7 @@ const PUBLIC_READ_KEYS: readonly string[] = [
   'github.release',
   'images.resolveThumbhash',
   'music.get',
+  'observability.rumStatus',
 ]
 
 function leavesOf(tree: Record<string, unknown>, prefix = ''): Map<string, unknown> {
@@ -49,7 +46,7 @@ function publicReadMetaOf(leaf: unknown): unknown {
 }
 
 describe('publicRead metadata on the contract tree', () => {
-  it('marks exactly the frozen sixteen public leaves — no more, no fewer', () => {
+  it('marks exactly the frozen seventeen public leaves — no more, no fewer', () => {
     const marked = [...leavesOf(publicContract).entries()]
       .filter(([, leaf]) => publicReadMetaOf(leaf) === true)
       .map(([key]) => key)
@@ -81,7 +78,7 @@ describe('publicRead metadata on the contract tree', () => {
   })
 
   it('pins the literal meta type on a marked and an unmarked procedure', () => {
-    expectTypeOf(publicContract.content.home['~orpc'].meta).toEqualTypeOf<PublicReadMeta>()
+    expectTypeOf(publicContract.content.home['~orpc'].meta).toMatchTypeOf<RpcProcedureMeta>()
     expectTypeOf(publicContract.content.home['~orpc'].meta.publicRead).toEqualTypeOf<true>()
     expectTypeOf(publicContract.comments.getRaw['~orpc'].meta).toEqualTypeOf<NoMeta>()
     // @ts-expect-error — eligibility is the literal true, not a widened boolean

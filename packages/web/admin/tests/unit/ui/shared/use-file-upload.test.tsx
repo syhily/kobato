@@ -1,479 +1,183 @@
 // @vitest-environment happy-dom
 
-import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const routerState = vi.hoisted(() => ({ csrfToken: 'test-csrf-token' as string | undefined }))
-
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router')
-  return {
-    ...actual,
-    useRouteLoaderData: () => (routerState.csrfToken === undefined ? undefined : { csrfToken: routerState.csrfToken }),
-  }
-})
-
-import { toast } from 'sonner'
-const toastMock = vi.mocked(toast)
-const fetchMock = vi.hoisted(() => vi.fn())
-
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { useFileUpload, type UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload'
-
+import { act, renderHook } from '@testing-library/react'
+import { toast } from 'sonner'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+const toastMock = vi.mocked(toast)
 const t = makeTranslator('zh-CN')
 
-function makeFile(name: string, size: number): File {
+function makeFile(name: string, size = 3): File {
   return new File([new Uint8Array(size)], name)
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-}
-
-function lastFetchInit(): RequestInit {
-  const init = fetchMock.mock.calls.at(-1)?.[1] as RequestInit | undefined
-  if (init === undefined) {
-    throw new Error('fetch was not called')
-  }
-  return init
-}
-
-beforeEach(() => {
-  vi.clearAllMocks()
-  routerState.csrfToken = 'test-csrf-token'
-  vi.stubGlobal('fetch', fetchMock)
-})
-
-describe('useFileUpload — guards', () => {
-  const options: UseFileUploadOptions = {
+function options(overrides: Partial<UseFileUploadOptions> = {}): UseFileUploadOptions {
+  return {
     t,
-    endpoint: '/api/admin/example/upload',
+    submit: vi.fn(async () => ({ accepted: true })),
     accept: ['.svg'],
     maxBytes: 100,
     messages: {
       invalidType: { title: '文件类型错误', description: '请选择 .svg 格式的文件' },
-      tooLarge: (file) => ({
-        title: `文件过大（${(file.size / 1024).toFixed(0)} KB）`,
-        description: '大小上限为 100 B。',
-      }),
+      tooLarge: (file) => ({ title: `文件过大（${file.size} B）`, description: '大小上限为 100 B。' }),
     },
+    ...overrides,
   }
+}
 
-  it('rejects a file whose extension is not accepted and never fetches', async () => {
-    const { result } = renderHook(() => useFileUpload(options))
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('icon.png', 10))
-    })
-    expect(ok).toBe(false)
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('useFileUpload — guards', () => {
+  it('rejects an invalid extension before calling submit', async () => {
+    const opts = options()
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.png')))).toBe(false)
+    expect(opts.submit).not.toHaveBeenCalled()
     expect(toastMock.error).toHaveBeenCalledWith('文件类型错误', { description: '请选择 .svg 格式的文件' })
-    expect(fetchMock).not.toHaveBeenCalled()
-    expect(result.current.pending).toBe(false)
   })
 
   it('matches extensions case-insensitively', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() => useFileUpload(options))
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('ICON.SVG', 10))
-    })
-    expect(ok).toBe(true)
-    expect(toastMock.error).not.toHaveBeenCalled()
+    const opts = options()
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.SVG')))).toBe(true)
   })
 
-  it('rejects an oversize file and hands it to the tooLarge message factory', async () => {
-    const { result } = renderHook(() => useFileUpload(options))
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('icon.svg', 4096))
-    })
-    expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('文件过大（4 KB）', { description: '大小上限为 100 B。' })
-    expect(fetchMock).not.toHaveBeenCalled()
+  it('rejects oversize files and runs the type guard first', async () => {
+    const opts = options()
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg', 101)))).toBe(false)
+    expect(toastMock.error).toHaveBeenLastCalledWith('文件过大（101 B）', { description: '大小上限为 100 B。' })
+    expect(await act(() => result.current.upload(makeFile('x.png', 101)))).toBe(false)
+    expect(toastMock.error).toHaveBeenLastCalledWith('文件类型错误', { description: '请选择 .svg 格式的文件' })
+    expect(opts.submit).not.toHaveBeenCalled()
   })
 
-  it('runs the type guard before the size guard', async () => {
-    const { result } = renderHook(() => useFileUpload(options))
-    await act(async () => {
-      await result.current.upload(makeFile('icon.png', 4096))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('文件类型错误', { description: '请选择 .svg 格式的文件' })
-  })
-
-  it('routes guard failures to onError (description preferred) when the channel is set', async () => {
+  it('routes guard failures to onError with the description', async () => {
     const onError = vi.fn()
-    const { result } = renderHook(() => useFileUpload({ ...options, onError }))
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('icon.png', 10))
-    })
-    expect(ok).toBe(false)
+    const { result } = renderHook(() => useFileUpload(options({ onError })))
+    expect(await act(() => result.current.upload(makeFile('x.png')))).toBe(false)
     expect(onError).toHaveBeenCalledWith('请选择 .svg 格式的文件')
-    expect(toastMock.error).not.toHaveBeenCalled()
-    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('skips the guards for a prebuilt FormData and posts it through untouched', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const formData = new FormData()
-    formData.append('file', makeFile('backup.sql', 10))
-    formData.append('csrf_token', 'embedded')
-    const { result } = renderHook(() => useFileUpload(options))
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(formData)
-    })
-    expect(ok).toBe(true)
-    expect(lastFetchInit().body).toBe(formData)
+  it('skips client guards for FormData and merges its fields', async () => {
+    const opts = options({ fields: { slot: 'logo' } })
+    const { result } = renderHook(() => useFileUpload(opts))
+    const form = new FormData()
+    form.set('file', makeFile('x.png', 200))
+    form.set('password', 'secret')
+    form.set('csrf_token', 'do-not-submit')
+    expect(await act(() => result.current.upload(form))).toBe(true)
+    expect(opts.submit).toHaveBeenCalledWith(expect.any(File), { slot: 'logo', password: 'secret' })
   })
 })
 
-describe('useFileUpload — request', () => {
-  it('posts fields + file as multipart with the CSRF header and toasts success', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const file = makeFile('icon.svg', 10)
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/branding/upload',
-        fields: { slot: 'faviconSvg' },
-        messages: { success: 'Favicon SVG 已上传' },
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(file)
-    })
-    expect(ok).toBe(true)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/admin/branding/upload')
-    const init = lastFetchInit()
-    expect(init.method).toBe('POST')
-    expect(init.headers).toEqual({ 'x-csrf-token': 'test-csrf-token' })
-    expect(init.credentials).toBeUndefined()
-    const body = init.body as FormData
-    expect(body.get('slot')).toBe('faviconSvg')
-    expect(body.get('file')).toBe(file)
-    expect(toastMock.success).toHaveBeenCalledWith('Favicon SVG 已上传')
+describe('useFileUpload — submit lifecycle', () => {
+  it('submits fields and file, toasts success, and passes the output to onSuccess', async () => {
+    const output = { font: { id: 'f1' } }
+    const opts = options({ submit: vi.fn(async () => output), fields: { slot: 'og' } })
+    const onSuccess = vi.fn()
+    opts.messages = { success: '上传成功' }
+    opts.onSuccess = onSuccess
+    const { result } = renderHook(() => useFileUpload(opts))
+    const file = makeFile('x.svg')
+    expect(await act(() => result.current.upload(file))).toBe(true)
+    expect(opts.submit).toHaveBeenCalledWith(file, { slot: 'og' })
+    expect(toastMock.success).toHaveBeenCalledWith('上传成功')
+    expect(onSuccess).toHaveBeenCalledWith(output)
   })
 
-  it('omits the CSRF header when the root loader has no token', async () => {
-    routerState.csrfToken = undefined
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
+  it('is pending while submit is in flight and clears it after success', async () => {
+    let resolve!: (value: unknown) => void
+    const opts = options({
+      submit: vi.fn(
+        () =>
+          new Promise((r) => {
+            resolve = r
+          }),
+      ),
     })
-    expect(lastFetchInit().headers).toEqual({})
-  })
-
-  it('forwards the credentials mode when set', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        credentials: 'include',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(new FormData())
-    })
-    expect(lastFetchInit().credentials).toBe('include')
-  })
-
-  it('is pending while the request is in flight', async () => {
-    let resolveFetch!: (res: Response) => void
-    fetchMock.mockImplementation(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveFetch = resolve
-        }),
-    )
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    expect(result.current.pending).toBe(false)
-    let ok!: boolean
-    let promise!: Promise<boolean>
+    const { result } = renderHook(() => useFileUpload(opts))
+    let pending!: Promise<boolean>
     act(() => {
-      promise = result.current.upload(makeFile('a.bin', 1))
+      pending = result.current.upload(makeFile('x.svg'))
     })
     expect(result.current.pending).toBe(true)
     await act(async () => {
-      resolveFetch(jsonResponse({}))
-      ok = await promise
-    })
-    expect(ok).toBe(true)
-    expect(result.current.pending).toBe(false)
-  })
-
-  it('clears pending after a failure too', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}, 500))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
+      resolve({})
+      await pending
     })
     expect(result.current.pending).toBe(false)
   })
-})
 
-describe('useFileUpload — success handling', () => {
-  it('awaits onSuccess after the success toast', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const order: string[] = []
-    toastMock.success.mockImplementation(() => {
-      order.push('toast')
-      return ''
-    })
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-        messages: { success: '已上传' },
-        onSuccess: async () => {
-          order.push('onSuccess')
-        },
+  it('clears pending after a rejection', async () => {
+    const opts = options({
+      submit: vi.fn(async () => {
+        throw new Error('offline')
       }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
     })
-    expect(order).toEqual(['toast', 'onSuccess'])
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg')))).toBe(false)
+    expect(result.current.pending).toBe(false)
   })
 
-  it('surfaces an onSuccess throw through the toast channel with the error message', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-        onSuccess: () => {
-          throw new Error('revalidate blew up')
-        },
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('a.bin', 1))
+  it('surfaces an onSuccess throw through the error channel', async () => {
+    const opts = options({
+      onSuccess: () => {
+        throw new Error('refresh failed')
+      },
     })
-    expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'revalidate blew up' })
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg')))).toBe(false)
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'refresh failed' })
   })
 
-  it('passes the parsed body to onSuccess when parseJson is set', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ accepted: true }))
-    const onSuccess = vi.fn()
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        parseJson: true,
-        onSuccess,
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(new FormData())
-    })
-    expect(onSuccess).toHaveBeenCalledWith({ accepted: true })
-    expect(toastMock.success).not.toHaveBeenCalled()
+  it('returns false and reports a missing FormData file', async () => {
+    const onError = vi.fn()
+    const { result } = renderHook(() => useFileUpload(options({ onError })))
+    expect(await act(() => result.current.upload(new FormData()))).toBe(false)
+    expect(onError).toHaveBeenCalledWith('请上传文件')
   })
 })
 
-describe('useFileUpload — failure handling', () => {
-  it('unwraps the server error envelope and toasts its message', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ error: { message: '存储后端不可用' } }, 502))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '存储后端不可用' })
-    expect(toastMock.success).not.toHaveBeenCalled()
-  })
-
-  it('falls back to 上传失败 (<status>) when the error body has no message', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}, 413))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '上传失败 (413)' })
-  })
-
-  it('falls back when the error body is not JSON at all', async () => {
-    fetchMock.mockResolvedValue(new Response('<html>bad gateway</html>', { status: 502 }))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '上传失败 (502)' })
-  })
-
-  it('routes HTTP failures to onError when the channel is set', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ error: { message: '恢复失败，请检查备份文件后重试。' } }, 400))
+describe('useFileUpload — failures', () => {
+  it('uses httpFailure for wire status errors in onError mode', async () => {
     const onError = vi.fn()
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        parseJson: true,
-        onError,
+    const opts = options({
+      submit: vi.fn(async () => {
+        throw Object.assign(new Error('upstream'), { status: 502 })
       }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(new FormData())
+      messages: { httpFailure: (status) => `服务器错误 (${status})` },
+      onError,
     })
-    expect(ok).toBe(false)
-    expect(onError).toHaveBeenCalledWith('恢复失败，请检查备份文件后重试。')
-    expect(toastMock.error).not.toHaveBeenCalled()
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg')))).toBe(false)
+    expect(onError).toHaveBeenCalledWith('服务器错误 (502)')
   })
 
-  it('uses the httpFailure override when the server message is missing', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}, 500))
+  it('toasts transport errors', async () => {
+    const opts = options({
+      submit: vi.fn(async () => {
+        throw new Error('offline')
+      }),
+    })
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg')))).toBe(false)
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'offline' })
+  })
+
+  it('routes transport failures to onError', async () => {
     const onError = vi.fn()
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        parseJson: true,
-        messages: { httpFailure: () => '恢复失败，请检查备份文件后重试。' },
-        onError,
+    const opts = options({
+      submit: vi.fn(async () => {
+        throw new Error('offline')
       }),
-    )
-    await act(async () => {
-      await result.current.upload(new FormData())
+      onError,
     })
-    expect(onError).toHaveBeenCalledWith('恢复失败，请检查备份文件后重试。')
-  })
-
-  it('toasts the transport error message when fetch rejects', async () => {
-    fetchMock.mockRejectedValue(new Error('Failed to fetch'))
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'Failed to fetch' })
-  })
-
-  it('toasts the failure fallback for non-Error throws', async () => {
-    fetchMock.mockRejectedValue('boom')
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/admin/example/upload',
-      }),
-    )
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'boom' })
-  })
-
-  it('routes transport failures to the failure fallback in onError mode', async () => {
-    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
-    const onError = vi.fn()
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        messages: { failure: 'admin.toast.uploadFailed' },
-        onError,
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(new FormData())
-    })
-    expect(ok).toBe(false)
-    expect(onError).toHaveBeenCalledWith('上传失败')
-  })
-
-  it('treats a malformed JSON body as a transport failure when parseJson is set', async () => {
-    fetchMock.mockResolvedValue(new Response('not json', { status: 502 }))
-    const onError = vi.fn()
-    const { result } = renderHook(() =>
-      useFileUpload({
-        t,
-        endpoint: '/api/setup/restore',
-        parseJson: true,
-        messages: { httpFailure: () => '恢复失败，请检查备份文件后重试。', failure: 'admin.toast.uploadFailed' },
-        onError,
-      }),
-    )
-    let ok!: boolean
-    await act(async () => {
-      ok = await result.current.upload(new FormData())
-    })
-    expect(ok).toBe(false)
-    expect(onError).toHaveBeenCalledWith('上传失败')
-  })
-})
-
-describe('useFileUpload — default copy follows the active locale', () => {
-  const tEn = makeTranslator('en-US')
-
-  it('translates the type and size guards', async () => {
-    const { result } = renderHook(() =>
-      useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload', accept: ['.svg'], maxBytes: 10 }),
-    )
-
-    await act(async () => {
-      await result.current.upload(makeFile('icon.png', 1))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('Wrong file type', { description: undefined })
-
-    await act(async () => {
-      await result.current.upload(makeFile('icon.svg', 100))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('File too large', { description: undefined })
-  })
-
-  it('translates the status fallback when the error body carries no message', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}, 413))
-    const { result } = renderHook(() => useFileUpload({ t: tEn, endpoint: '/api/admin/example/upload' }))
-
-    await act(async () => {
-      await result.current.upload(makeFile('a.bin', 1))
-    })
-    expect(toastMock.error).toHaveBeenCalledWith('Upload failed', { description: 'Upload failed (413)' })
+    const { result } = renderHook(() => useFileUpload(opts))
+    expect(await act(() => result.current.upload(makeFile('x.svg')))).toBe(false)
+    expect(onError).toHaveBeenCalledWith('offline')
   })
 })

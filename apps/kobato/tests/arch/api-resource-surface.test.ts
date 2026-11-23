@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 const API_LITERAL = /['"`](\/api\/[^'"`]+)['"`]/g
-const RESOURCE_PATHS = new Set([
+const RESOURCE_PATHS = new Set<string>()
+const RESOURCE_PREFIXES = ['/api/rum/intake/'] as const
+const RETIRED_JSON_ROUTES = [
+  '/api/admin/backup/restore-status',
+  '/api/admin/backup/restore-progress',
+  '/api/admin/backup/upload-restore/decrypt',
+  '/api/admin/branding/clear',
   '/api/admin/backup/upload-restore',
   '/api/admin/branding/upload',
   '/api/admin/fonts/upload',
@@ -14,13 +20,6 @@ const RESOURCE_PATHS = new Set([
   '/api/analytics/events',
   '/api/rum/status',
   '/api/setup/restore',
-])
-const RESOURCE_PREFIXES = ['/api/admin/backup/download/', '/api/rum/intake/'] as const
-const RETIRED_JSON_ROUTES = [
-  '/api/admin/backup/restore-status',
-  '/api/admin/backup/restore-progress',
-  '/api/admin/backup/upload-restore/decrypt',
-  '/api/admin/branding/clear',
 ] as const
 const TELEMETRY_POLICY = 'packages/web/client/src/lib/rum/rum-url-policy.ts'
 const OUTBOUND_API_PREFIXES = [
@@ -75,7 +74,7 @@ describe('HTTP resource surface', () => {
     expect(offenders).toEqual([])
   })
 
-  it('allows /api paths only for registered streams, uploads, downloads, and external protocol resources', () => {
+  it('allows /api paths only for the OpenObserve intake and other external protocol resources', () => {
     const offenders = productionFiles().flatMap((file) => {
       const relativeFile = relative(REPO_ROOT, file)
       if (relativeFile === TELEMETRY_POLICY) {
@@ -95,5 +94,7 @@ describe('HTTP resource surface', () => {
     for (const retired of RETIRED_JSON_ROUTES) {
       expect(pipeline).not.toContain(retired)
     }
+    expect(pipeline).not.toContain('/admin/music/proxy/')
+    expect(pipeline).not.toContain('/api/admin/backup/download/')
   })
 })

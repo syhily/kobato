@@ -1,5 +1,8 @@
-import { isoDateTime } from '@kobato/api/contracts/primitives'
+import { fileSchema, isoDateTime } from '@kobato/api/contracts/primitives'
 import { z } from 'zod'
+
+export const FONT_MAX_BYTES = 60 * 1024 * 1024
+export const CANVAS_FONT_MAX_BYTES = 60 * 1024 * 1024
 
 export const fontSlot = z.enum(['global', 'post', 'code'])
 export type FontSlot = z.infer<typeof fontSlot>
@@ -40,3 +43,18 @@ export type AdminFontDeleteOutput = z.infer<typeof adminFontDeleteOutputDto>
 
 export const adminFontSetSlotOutputDto = z.object({}).optional()
 export type AdminFontSetSlotOutput = z.infer<typeof adminFontSetSlotOutputDto>
+
+export const adminFontUploadInput = z.object({ file: fileSchema, familyName: z.string().trim().min(1).max(100) })
+export type AdminFontUploadInput = z.infer<typeof adminFontUploadInput>
+
+export const adminFontUploadOutputDto = z.object({ font: adminFontDto })
+export type AdminFontUploadOutput = z.infer<typeof adminFontUploadOutputDto>
+
+export const adminCanvasFontUploadInput = z.object({ file: fileSchema, slot: z.enum(['og', 'calendar']) })
+export type AdminCanvasFontUploadInput = z.infer<typeof adminCanvasFontUploadInput>
+
+export const adminCanvasFontUploadOutputDto = z.object({
+  slot: z.enum(['og', 'calendar']),
+  size: z.number().int().nonnegative(),
+})
+export type AdminCanvasFontUploadOutput = z.infer<typeof adminCanvasFontUploadOutputDto>

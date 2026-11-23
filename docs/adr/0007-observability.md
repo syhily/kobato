@@ -106,14 +106,14 @@ stopped pipeline withholds browser RUM and closes the relay at the same instant,
 running.
 
 A single 15 s interval (cleared on stop/HMR) rechecks and flips the gate both ways at runtime, and the browser polls
-`/api/rum/status` every 10 s, so the maximum detection window is about 25 s plus request time, not zero.
-`/api/rum/status` is mounted in every build, answers `{ enabled: boolean }` with `no-store`, reads the gate in the
-handler because settings changes never re-mount the router, is exempt from the install gate, and is excluded from HTTP
-spans and RUM activity/tracing; the former DEV-only `/api/dev/rum/status` does not exist. Stream retention is opt-in:
-`observability.retentionDays = 0` (the default) leaves the operator's OpenObserve policy untouched, while a positive
-value makes the server enforce it on every settings save, at boot, and once delayed (60 s) after the runtime enters
-`running` — first-ingest-created streams exist only then — with drift-only writes (OSS granularity is one day);
-development tooling owns only the 1-day dev-container policy.
+`public.observability.rumStatus` every 10 s, so the maximum detection window is about 25 s plus request time, not zero.
+The canonical `/rpc/public/observability/rumStatus` procedure is mounted in every build, answers `{ enabled: boolean }`
+with `no-store`, reads the gate in the handler because settings changes never re-mount the router, is `publicRead` and
+install-gate exempt, and is excluded from HTTP spans and RUM activity/tracing; the former `/api/rum/status` and DEV-only
+`/api/dev/rum/status` do not exist. Stream retention is opt-in: `observability.retentionDays = 0` (the default) leaves
+the operator's OpenObserve policy untouched, while a positive value makes the server enforce it on every settings save,
+at boot, and once delayed (60 s) after the runtime enters `running` — first-ingest-created streams exist only then —
+with drift-only writes (OSS granularity is one day); development tooling owns only the 1-day dev-container policy.
 
 ### Server instrumentation
 
@@ -250,10 +250,10 @@ the document origin, so batches arrive at same-origin `POST /api/rum/intake/rum/
   address plus the browser's original `User-Agent`. In the default `anonymous` mode no identity header leaves the
   process.
 
-The path is mounted in every build beside `/api/rum/status`, exempt from the install gate, excluded from HTTP spans
-(prefix exclusion in `infra/trace/middleware.ts`) and from RUM activity/tracing/resources (the client URL policy drops
-`/api/rum/intake`). `buildCspHeader` never widens `connect-src`: same-origin `'self'` covers the relay, the OpenObserve
-origin never appears in a policy, `script-src`/`worker-src` are unchanged, and OpenObserve needs no
+The path is mounted in every build beside the RUM status procedure, exempt from the install gate, excluded from HTTP
+spans (prefix exclusion in `infra/trace/middleware.ts`) and from RUM activity/tracing/resources (the client URL policy
+drops `/api/rum/intake`). `buildCspHeader` never widens `connect-src`: same-origin `'self'` covers the relay, the
+OpenObserve origin never appears in a policy, `script-src`/`worker-src` are unchanged, and OpenObserve needs no
 `ZO_CORS_ALLOWED_ORIGINS` entry for the site (the dev container keeps its setting for direct browser→O2 debugging only).
 
 ### Request identity forwarding (`observability.frontend.clientIdentity`)
@@ -328,11 +328,12 @@ before classification.
   match.
 - Dynamic paths fold to families: `/posts/:slug`, `/page/:num`, `/cats/:slug`, `/cats/:slug/page/:num`, `/tags/:slug`,
   `/tags/:slug/feed`, `/search/:keyword`, `/search/:keyword/page/:num`, admin/editor dynamic ids, `/admin/:path`,
-  `/editor/:path`, `/api/admin/backup/download/:id`, `/api/:endpoint`, `/images/:asset`, `/storage/:key`,
-  `/fonts/:asset`, `/fonts-package/:asset`, `/music/:asset`, and one unknown public segment as `/:slug` only when
-  slug-like. `.data` suffixes classify the base path and re-append `.data`.
-- Dropped: cross-origin (including S3/signed), credentialed, non-http(s), self-telemetry (`/api/analytics/env`,
-  `/api/analytics/events`), `/api/rum/intake`, probes, and unknown multi-segment paths.
+  `/editor/:path`, `/rpc/admin.backup.download`, `/api/:endpoint`, `/images/:asset`, `/storage/:key`, `/fonts/:asset`,
+  `/fonts-package/:asset`, `/music/:asset`, and one unknown public segment as `/:slug` only when slug-like. `.data`
+  suffixes classify the base path and re-append `.data`.
+- Dropped: cross-origin (including S3/signed), credentialed, non-http(s), self-telemetry
+  (`/rpc/public/analytics/recordDeviceEnv`, `/rpc/admin/analytics/events`, `/rpc/public/observability/rumStatus`),
+  `/api/rum/intake`, probes, and unknown multi-segment paths.
 
 Budgets: 500 resource and 100 error events per SDK session, reset on a session-id change; only accepted events consume
 budget and excess is dropped without retry. State is one `kobato.dev-rum.budget` `sessionStorage` entry holding the SDK

@@ -58,7 +58,8 @@ class FakeXhr {
 
   send(): void {
     queueMicrotask(() => {
-      const body = this.url === '/api/admin/backup/upload-restore' ? '{"encrypted":true,"token":"tok-1"}' : '{}'
+      const body =
+        this.url === '/rpc/admin/backup/uploadRestore' ? '{"json":{"encrypted":true,"token":"tok-1"}}' : '{"json":{}}'
       this.status = 200
       this.responseText = body
       this.onload?.()

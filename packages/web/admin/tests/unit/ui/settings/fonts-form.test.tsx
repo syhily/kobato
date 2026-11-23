@@ -68,7 +68,7 @@ describe('FontsForm upload wiring', () => {
     renderForm()
     for (const slot of ['og', 'calendar']) {
       const options = optionsForSlot(slot)
-      expect(options.endpoint).toBe('/api/admin/fonts/upload')
+      expect(options.submit).toEqual(expect.any(Function))
       expect(options.fields).toEqual({ slot })
       expect(options.accept).toEqual(['.ttf', '.otf'])
       expect(options.maxBytes).toBe(60 * 1024 * 1024)

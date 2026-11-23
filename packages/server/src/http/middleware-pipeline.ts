@@ -9,27 +9,20 @@ import { onErrorHandler } from '@kobato/server/http/errors'
 import { corsMiddleware } from '@kobato/server/http/middlewares/cors'
 import { honoInstallGateMiddleware } from '@kobato/server/http/middlewares/install-gate'
 import { requestContextMiddleware } from '@kobato/server/http/middlewares/request-context'
-import { requestTimeout, type TimeoutOverride } from '@kobato/server/http/middlewares/request-timeout'
+import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@kobato/server/http/middlewares/trailing-slash'
 import { trustProxy } from '@kobato/server/http/middlewares/trust-proxy'
 import { honoWpDecoyMiddleware } from '@kobato/server/http/middlewares/wp-decoy'
 import { readyHandler } from '@kobato/server/http/ready'
 import { requestContext } from '@kobato/server/http/request-context'
-import { analyticsEventsRouter } from '@kobato/server/http/resources/analytics'
+import { REQUEST_TIMEOUT_OVERRIDES } from '@kobato/server/http/request/rpc-timeout-overrides'
 import { assetsRouter } from '@kobato/server/http/resources/assets'
-import { backupRouter } from '@kobato/server/http/resources/backup'
-import { brandingRouter } from '@kobato/server/http/resources/branding'
 import { feedRouter } from '@kobato/server/http/resources/feed'
-import { fontsRouter } from '@kobato/server/http/resources/fonts'
 import { fontsEmbeddedRouter } from '@kobato/server/http/resources/fonts-embedded'
-import { fontsPackageRouter } from '@kobato/server/http/resources/fonts-package'
 import { imagesRouter } from '@kobato/server/http/resources/images'
 import { localStorageRouter } from '@kobato/server/http/resources/local-storage'
-import { maxmindRouter } from '@kobato/server/http/resources/maxmind'
-import { musicProxyRouter } from '@kobato/server/http/resources/music-proxy'
 import { redirectsRouter } from '@kobato/server/http/resources/redirects'
 import { rumIntakeRouter } from '@kobato/server/http/resources/rum-intake'
-import { rumStatusRouter } from '@kobato/server/http/resources/rum-status'
 import { sitemapRouter } from '@kobato/server/http/resources/sitemap'
 import { webmentionRouter } from '@kobato/server/http/resources/webmention'
 import { root } from '@kobato/server/infra/logger'
@@ -87,13 +80,6 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
 export function siteUsesHttps(bundle: BlogSettingsBundle | null): boolean {
   return URL.parse(bundle?.siteIdentity?.website ?? '')?.protocol === 'https:'
 }
-
-/** The restore endpoints run on a 30-minute budget — every other request gets the 30s default above. */
-export const REQUEST_TIMEOUT_OVERRIDES: readonly TimeoutOverride[] = [
-  { prefix: '/api/admin/backup/upload-restore', timeoutMs: 30 * 60_000 },
-  { prefix: '/rpc/admin/backup/uploadRestoreDecrypt', timeoutMs: 30 * 60_000 },
-  { prefix: '/api/setup/restore', timeoutMs: 30 * 60_000 },
-]
 
 export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
@@ -168,21 +154,12 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.get('/ready', readyHandler)
 
-  app.route('/', rumStatusRouter)
   app.route('/', rumIntakeRouter)
-
-  app.route('/', backupRouter)
-  app.route('/', fontsRouter)
-  app.route('/', fontsPackageRouter)
-  app.route('/', maxmindRouter)
-  app.route('/', musicProxyRouter)
-
   app.route('/', createApiApp())
 
   app.all('/assets/*', (c) => c.body(null, 404))
 
   app.route('/', assetsRouter)
-  app.route('/', analyticsEventsRouter)
   app.route('/', feedRouter)
   app.route('/', imagesRouter)
   app.route('/', localStorageRouter)
@@ -190,8 +167,6 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
   app.route('/', webmentionRouter)
-
-  app.route('/', brandingRouter)
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {

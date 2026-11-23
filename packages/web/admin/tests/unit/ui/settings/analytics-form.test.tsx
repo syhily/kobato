@@ -58,7 +58,7 @@ describe('AnalyticsForm MaxMind upload wiring', () => {
   it('hands the MaxMind row the shared upload options', () => {
     renderUi(<AnalyticsForm analytics={analytics} />)
     const opts = options()
-    expect(opts.endpoint).toBe('/api/admin/maxmind/upload')
+    expect(opts.submit).toEqual(expect.any(Function))
     expect(opts.fields).toBeUndefined()
     expect(opts.accept).toEqual(['.mmdb'])
     expect(opts.maxBytes).toBe(100 * 1024 * 1024)

@@ -3,9 +3,11 @@ import type { RumBudgetSnapshot, RumBudgetStore } from '@kobato/web-client/lib/r
 import type { RumRouteContext } from '@kobato/web-client/lib/rum/rum-route'
 import type { DatadogRum, RumInitConfiguration } from '@openobserve/browser-rum-slim'
 
+import { createRumIntakeProxyUrl } from '@kobato/api/client/rum-intake'
 import { APP_VERSION } from '@kobato/distribution/app'
-import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN } from '@kobato/settings/telemetry/rum'
+import { RUM_RELAY_CLIENT_TOKEN } from '@kobato/settings/telemetry/rum'
 import { getLogger } from '@kobato/ui/lib/logger'
+import { orpc } from '@kobato/web-client/api/client'
 import { createRumEventPolicy } from '@kobato/web-client/lib/rum/rum-sanitizer'
 import { isSelfTelemetryRumUrl, isTraceableRumUrl } from '@kobato/web-client/lib/rum/rum-url-policy'
 
@@ -27,7 +29,6 @@ interface RumRuntimeState {
 
 const RUM_RUNTIME_KEY = Symbol.for('kobato.rum.runtime')
 const BUDGET_STORAGE_KEY = 'kobato.rum.budget'
-export const RUM_STATUS_PATH = '/api/rum/status'
 export const RUM_STATUS_POLL_INTERVAL_MS = 10_000
 
 function isBudgetSnapshot(value: unknown): value is RumBudgetSnapshot {
@@ -122,8 +123,7 @@ function documentOrigin(): string | null {
 }
 
 export function rumIntakeProxyUrl({ path, parameters }: { path: string; parameters: string }): string {
-  const origin = documentOrigin()
-  return `${origin ?? ''}${RUM_INTAKE_PATH}${path}?${parameters}`
+  return createRumIntakeProxyUrl({ origin: documentOrigin(), path, parameters })
 }
 
 function isTrackingAllowed(): boolean {
@@ -155,18 +155,7 @@ async function pollStatus(state: RumRuntimeState): Promise<void> {
   state.pollAbort?.abort()
   state.pollAbort = controller
   try {
-    const res = await fetch(RUM_STATUS_PATH, {
-      cache: 'no-store',
-      credentials: 'same-origin',
-      headers: { accept: 'application/json' },
-      redirect: 'manual',
-      signal: controller.signal,
-    })
-    if (!res.ok) {
-      throw new Error(`status ${res.status}`)
-    }
-    const payload: unknown = await res.json()
-    const enabled: unknown = typeof payload === 'object' && payload !== null ? Reflect.get(payload, 'enabled') : null
+    const { enabled } = await orpc.public.observability.rumStatus({}, { signal: controller.signal })
     if (typeof enabled !== 'boolean') {
       throw new TypeError('invalid status payload')
     }
@@ -253,7 +242,11 @@ export function stopRum(): void {
 }
 
 export async function __pollRumStatusForTests(): Promise<void> {
-  await pollStatus(runtime())
+  const state = runtime()
+  while (state.pollInFlight) {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  }
+  await pollStatus(state)
 }
 
 export async function startRum(bootstrap: FrontendRumBootstrap, route: RumRouteContext): Promise<void> {

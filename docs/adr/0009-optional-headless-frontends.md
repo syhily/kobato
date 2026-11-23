@@ -42,7 +42,7 @@ settings section: public procedures are always mounted, and an external frontend
 ### 2. The public contract is the `public` subtree of `apiContract` — the only externally stable surface
 
 The headless wire surface is the existing oRPC contract tree mounted at `/rpc/*`, not a parallel REST API. It is
-`publicContract` — the `public` group root of `apiContract`, composed in `@kobato/api/public-contract.ts` — whose seven
+`publicContract` — the `public` group root of `apiContract`, composed in `@kobato/api/public-contract.ts` — whose nine
 domains are `content`, `comments` (the public comment thread plus the comment-token procedures), `webmentions`,
 `avatar`, `github`, `images`, and `music`. The last four are the built-in renderer's own read helpers (music player
 metadata, thumbhash resolution, release/avatar lookups): they sit on the public read face as deployed wire shapes, and
@@ -86,8 +86,9 @@ Route-local machinery — role guards (`requireRole`), install gates, CSRF valid
 domain operation service gains no second entry point beside its contract; internal callers — jobs, sibling domains
 through the injected seams — keep calling services directly, and that is out of scope here.
 
-Operational and protocol endpoints that happen to answer JSON — `/health`, `/ready`, `/api/rum/status`, the telemetry
-intakes — are not application API surface. §8 owns them, and they set no precedent for JSON business operations on Hono.
+Operational and protocol endpoints that happen to answer JSON — `/health`, `/ready`, and the OpenObserve RUM intake —
+are not application API surface. §8 owns them, and they set no precedent for JSON business operations on Hono. RUM
+status and the device beacon are application procedures, not operational Hono resources.
 
 Retired routes stay retired: the migrated `upload-restore/decrypt`-era paths and the other `RETIRED_JSON_ROUTES` fail
 the architecture test
@@ -168,45 +169,45 @@ inside the JSON payload.
 The public contract keeps exactly its current semantics: the Live gate (draft, scheduled, unpublished, and soft-deleted
 content invisible), `visible` orthogonality, ETag fingerprinting with `not-modified`/`redirect` signal unions, a page
 view recorded for a served document, comment-token cookies, and the stateless `__csrf` double-submit — which guards
-every `/rpc/*` call except the anonymous public-read procedures: the sixteen canonical paths (all nine `content.*` reads
-plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`, `github.release`,
-`images.resolveThumbhash`, `music.get`). The comment-token reads (`getRaw`/`myComments`), every mutation, and the whole
-`account`/`admin` surface keep the full guard; a headless consumer therefore reads bare while interactive comment flows
-remain same-origin cookie + CSRF. A served document counts a page view no matter who rendered it.
+every `/rpc/*` call except the anonymous public-read procedures: the seventeen canonical paths (all nine `content.*`
+reads plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`, `github.release`,
+`images.resolveThumbhash`, `music.get`, `observability.rumStatus`). The comment-token reads (`getRaw`/`myComments`),
+every mutation, and the whole `account`/`admin` surface keep the full guard; a headless consumer therefore reads bare
+while interactive comment flows remain same-origin cookie + CSRF. A served document counts a page view no matter who
+rendered it.
 
 Eligibility for that exemption is declared where the procedure itself is declared:
 `defineProcedure(route, { publicRead: true })` writes `publicRead: true` onto the procedure's `~orpc.meta` through
-oRPC's own `$meta` chain — never the route compatibility record — with the literal type pinned (`PublicReadMeta` vs
-`NoMeta`). The server's `packages/server/src/http/request/public-read-rpc-path.ts` contains no path table: it walks
-`publicContract`, and only for leaves whose meta carries `publicRead === true` converts the tree key into the canonical
-`/rpc/public/<key>` path — the same tree keys the transport routes on, so the exemption cannot disagree with the served
-URL. It never derives eligibility from the route metadata, never from the HTTP method (the transport POSTs reads too),
-and never scans account/admin; the match stays exact and fail-closed, so a removed alias earns nothing and a newly added
-GET gains nothing automatically. Opting a procedure in is a deliberate, security-sensitive API-side change, made loud by
-freezing the set in tests on both sides independently of the production derivation:
-`packages/api/tests/unit/public-read-meta.test.ts` freezes the sixteen marked keys (and proves account/admin carry
-none), and the server's `public-read-rpc-path.test.ts` freezes the sixteen expected canonical paths and proves the
-derived set equals them exactly, tracks the markers leaf-by-leaf, and grants account/admin nothing.
+oRPC's own `$meta` chain — never the route compatibility record — with literal fields pinned on the shared
+`RpcProcedureMeta` (unmarked procedures stay `NoMeta`). The server's
+`packages/server/src/http/request/public-read-rpc-path.ts` contains no path table: it walks `publicContract`, and only
+for leaves whose meta carries `publicRead === true` converts the tree key into the canonical `/rpc/public/<key>` path —
+the same tree keys the transport routes on, so the exemption cannot disagree with the served URL. It never derives
+eligibility from the route metadata, never from the HTTP method (the transport POSTs reads too), and never scans
+account/admin; the match stays exact and fail-closed, so a removed alias earns nothing and a newly added GET gains
+nothing automatically. Opting a procedure in is a deliberate, security-sensitive API-side change, made loud by freezing
+the set in tests on both sides independently of the production derivation:
+`packages/api/tests/unit/public-read-meta.test.ts` freezes the seventeen marked keys (and proves account/admin carry
+none), and the server's `public-read-rpc-path.test.ts` freezes the seventeen expected canonical paths and proves the
+derived set equals them exactly, tracks the markers leaf-by-leaf, and grants account/admin nothing. A separate frozen
+`csrfExempt` set covers only the anonymous device beacon, backup download, and two author music media GETs; it does not
+bypass authentication or role guards.
 
 Framework coupling already present in the wire is accepted: listing DTOs carry `seo: MetaDescriptor[]` (React Router
 meta descriptors). Consumers not on React Router map them; neutralizing the SEO projection is neither required nor
 planned.
 
-### 8. Hono resources are justified by transport, protocol, or operational role — mixed-surface features are the expected shape
+### 8. Hono resources are limited to external protocols, preserved public URLs, and operations
 
-A resource is justified when the payload, the protocol, or an operational role — not the application operation — calls
-for HTTP machinery the contract tree does not carry. The current registry, by justification:
+A resource is justified only by an external protocol, a preserved public URL, or an operational role — never by a
+first-party payload being multipart, binary, or streamed. oRPC handles File/Blob multipart bodies, `ReadableStream`
+responses, and `eventIterator` SSE, so those application operations all belong in the contract tree.
 
-- **Multipart uploads** (file bodies with per-resource caps): `POST /api/admin/branding/upload`,
-  `/api/admin/fonts/upload`, `/api/admin/fonts/package/upload`, `/api/admin/maxmind/upload`,
-  `/api/admin/backup/upload-restore`, and the pre-install `/api/setup/restore` (install-state, setup-token, and CSRF
-  gates inside the resource).
-- **Binary download**: `GET /api/admin/backup/download/:timestamp` — a streamed gzip/octet attachment.
-- **Streaming and SSE**: `GET /api/analytics/events` (`text/event-stream`), and the admin music proxy
-  (`/admin/music/proxy/cover|audio`) streaming remote provider bytes through the server.
-- **External protocols and browser telemetry intake**: `POST /webmention` (the W3C Webmention receive endpoint, an
-  external protocol, never an RPC per §2), the RUM intake relay `POST /api/rum/intake/*` with its `GET /api/rum/status`
-  bootstrap, and the device-env beacon `POST /api/analytics/env`.
+The remaining registry, by justification:
+
+- **External protocols**: `POST /webmention` (the W3C receive endpoint, never an RPC per §2), and the OpenObserve RUM
+  intake relay `POST /api/rum/intake/*`. The relay must preserve the SDK's raw track path, query, body, content
+  encoding, rate limits, token injection, and 202/502 semantics. RUM status is instead `public.observability.rumStatus`.
 - **Preserved public URLs serving binary or generated output**: the six feed URLs, `/sitemap.xml`,
   `/manifest.webmanifest`, `/robots.txt`, `/storage/*` (with the S3 storage redirect), `/fonts/embedded/*`,
   `/images/og/*` and the calendar image endpoints, plus the legacy `/tags` and `/search` redirects kept for
@@ -214,18 +215,18 @@ for HTTP machinery the contract tree does not carry. The current registry, by ju
 - **Operational probes**: `/health` and `/ready` on the middleware pipeline itself — infrastructure endpoints outside
   the application API.
 
-The dividing rule: if the operation is a normal application JSON status read or mutation, it is a procedure even when it
-accompanies an upload or a stream. The resource owns the bytes or the protocol; the procedure owns the application JSON
-around it. Convenience, route symmetry, or "the sibling endpoint is already a resource" are not transport reasons.
+Every former first-party upload, download, SSE, and beacon is now a procedure: branding/font/GeoIP/backup/setup
+multipart uploads, streamed backup download and author music media, `admin.analytics.events` as an `eventIterator`,
+`public.analytics.recordDeviceEnv` as a standard-envelope `sendBeacon`, and RUM status as a `publicRead`. Binary GETs
+that must work from `<img>`, `<audio>`, or `window.open` use the separate, exact-path `csrfExempt` declaration while
+retaining their admin/author guards; the anonymous beacon uses the same declaration for its legacy header-less write.
 
-So one feature may span both faces, split by payload rather than by feature. Backup is the reference case:
-`restoreStatus` and `restoreProgress` are plain procedures on the shared admin implementer; `uploadRestoreDecrypt` — the
-JSON completion of a parked encrypted upload — rides its own implementer so its IP rate limit burns before input
-parsing, with a dedicated 64 KiB body-limit mount and a 30-minute timeout override alongside the other restore
-endpoints; the multipart uploads and the binary download stay resources. Branding mirrors it in one line:
-`admin.branding.clear` is a procedure, the 2 MiB upload stays a resource. This is not a special case to explain away —
-it is what correct looks like, and new upload-plus-JSON features should follow the same split instead of dragging their
-JSON steps onto the resource face (the mistake `upload-restore/decrypt` made before its migration).
+Backup remains the reference case: status/progress, upload/decrypt, upload, download, and stored-backup restore are all
+procedures. Upload/decrypt and setup restore keep their independent rate limiters, body caps declared as
+`requestBodyLimit`, and 30-minute timeouts declared as `requestTimeoutMs`; download keeps `getBackupStream` and its
+attachment headers. Install gate and self-telemetry exemptions are likewise derived from procedure metadata, never
+parallel path tables. Browser upload progress uses XHR only as a transport detail, with the API package's standard RPC
+serializer rather than a second wire protocol.
 
 A new Hono resource requires a justification from this section, stated where the resource is declared. For the `/api`
 namespace, the arch test

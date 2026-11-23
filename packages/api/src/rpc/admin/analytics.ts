@@ -1,4 +1,5 @@
 import {
+  adminAnalyticsEventsInputSchema,
   adminAnalyticsMentionsOutputSchema,
   adminAnalyticsOverviewOutputSchema,
   adminAnalyticsSearchInputSchema,
@@ -8,9 +9,12 @@ import {
   analyticsMetricsOutputSchema,
   analyticsQuerySchema,
   countersDto,
+  realtimeEventDto,
   viewsDto,
 } from '@kobato/api/contracts/admin/analytics'
 import { defineProcedure } from '@kobato/api/rpc/define-procedure'
+import { eventIterator } from '@orpc/contract'
+import { z } from 'zod'
 
 export const analyticsContract = {
   counters: defineProcedure({ method: 'GET', path: '/analytics/counters' })
@@ -32,4 +36,7 @@ export const analyticsContract = {
   mentions: defineProcedure({ method: 'GET', path: '/analytics/mentions' })
     .input(adminAnalyticsSearchInputSchema)
     .output(adminAnalyticsMentionsOutputSchema),
+  events: defineProcedure({ method: 'GET', path: '/analytics/events' }, { telemetryExcluded: true })
+    .input(adminAnalyticsEventsInputSchema)
+    .output(eventIterator(z.array(realtimeEventDto))),
 }

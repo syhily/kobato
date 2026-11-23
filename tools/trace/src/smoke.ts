@@ -770,16 +770,14 @@ async function waitForRumStatus(origin: string, expected: boolean, timeoutMs = 3
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     try {
-      const res = await fetch(`${origin}/api/rum/status`, {
-        cache: 'no-store',
-        headers: { accept: 'application/json' },
-        signal: AbortSignal.timeout(2000),
-      })
-      if (res.ok) {
-        const body = unsafeCast<{ enabled?: unknown }>(await res.json())
-        if (body.enabled === expected) {
-          return
-        }
+      const res = await callE2eRpc<{ enabled?: unknown }>(
+        new E2eClient(origin),
+        '/public/observability/rumStatus',
+        {},
+        '',
+      )
+      if (res.status === 200 && res.json.enabled === expected) {
+        return
       }
     } catch {}
     await sleep(500)

@@ -119,6 +119,34 @@ describe('canonical-only /rpc/* transport (real HTTP)', () => {
       },
     )
 
+    it('serves RUM status without CSRF and keeps setup restore protected', async () => {
+      const app = makeApiApp()
+      expect((await rpcNoCsrf(app, '/rpc/public/observability/rumStatus', JSON.stringify({ json: {} }))).status).toBe(
+        200,
+      )
+      expect((await rpcNoCsrf(app, '/rpc/account/setup/restore', JSON.stringify({ json: {} }))).status).toBe(403)
+    })
+
+    it('lets the explicit no-CSRF media/download procedures reach their auth guards', async () => {
+      const app = makeApiApp()
+      const music = await app.request(
+        '/rpc/admin/music/proxyCover?data=%7B%22json%22%3A%7B%22source%22%3A%22netease%22%2C%22sourceId%22%3A%221%22%7D%7D',
+      )
+      const backup = await app.request('/rpc/admin/backup/download?data=%7B%22json%22%3A%7B%22key%22%3A%221%22%7D%7D')
+      expect(music.status).toBe(401)
+      expect(backup.status).toBe(401)
+    })
+
+    it('lets the anonymous device beacon through CSRF without weakening schema validation', async () => {
+      const app = makeApiApp()
+      const response = await rpcNoCsrf(
+        app,
+        '/rpc/public/analytics/recordDeviceEnv',
+        JSON.stringify({ json: { eventId: 'invalid', hasStatic: false } }),
+      )
+      expect(response.status).toBe(400)
+    })
+
     it.each(['/rpc/account/notifications/list', '/rpc/admin/analytics/overview'])(
       'keeps the auth guard on the canonical account/admin surface %s behind a valid CSRF token',
       async (path) => {

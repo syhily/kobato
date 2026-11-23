@@ -2,14 +2,10 @@ import type { Env } from '@kobato/server/http/hono-env'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
-import {
-  buildCspHeader,
-  buildLoadContext,
-  configureMiddleware,
-  REQUEST_TIMEOUT_OVERRIDES,
-} from '@kobato/server/http/middleware-pipeline'
+import { buildCspHeader, buildLoadContext, configureMiddleware } from '@kobato/server/http/middleware-pipeline'
 import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
 import { requestContext } from '@kobato/server/http/request-context'
+import { REQUEST_TIMEOUT_OVERRIDES } from '@kobato/server/http/request/rpc-timeout-overrides'
 import { getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { emptySession } from '@kobato/server/tests/utils/session'
@@ -70,7 +66,8 @@ describe('RUM status mount', () => {
       const app = new Hono<Env>()
       configureMiddleware(app)
       const paths = app.routes.map((route) => route.path)
-      expect(paths).toContain('/api/rum/status')
+      expect(paths).toContain('/rpc/*')
+      expect(paths).not.toContain('/api/rum/status')
       expect(paths).toContain('/api/rum/intake/*')
       expect(paths).not.toContain('/api/dev/rum/status')
     }
@@ -234,20 +231,20 @@ describe('request-timeout restore exemptions', () => {
     return app
   }
 
-  it('pins the exempt restore endpoints: Hono upload/setup plus the canonical decrypt RPC path', () => {
+  it('pins the restore upload/setup/decrypt RPC timeout overrides', () => {
     expect([...REQUEST_TIMEOUT_OVERRIDES].sort((a, b) => a.prefix.localeCompare(b.prefix))).toEqual([
-      { prefix: '/api/admin/backup/upload-restore', timeoutMs: 1_800_000 },
-      { prefix: '/api/setup/restore', timeoutMs: 1_800_000 },
+      { prefix: '/rpc/account/setup/restore', timeoutMs: 1_800_000 },
+      { prefix: '/rpc/admin/backup/uploadRestore', timeoutMs: 1_800_000 },
       { prefix: '/rpc/admin/backup/uploadRestoreDecrypt', timeoutMs: 1_800_000 },
     ])
   })
 
   it.each([
-    ['/api/admin/backup/upload-restore', false],
-    ['/api/admin/backup/upload-restore/decrypt', false],
+    ['/rpc/admin/backup/uploadRestore', false],
+    ['/rpc/admin/backup/uploadRestoreDecrypt', false],
     ['/rpc/admin/backup/uploadRestoreDecrypt', false],
     ['/rpc/admin/backup/uploadRestoreDecrypt/timeout-probe', false],
-    ['/api/setup/restore', false],
+    ['/rpc/account/setup/restore', false],
     ['/rpc/timeout-control-probe', true],
   ])('budgets %s — default-abort=%s', async (path, expectDefaultAbort) => {
     vi.useFakeTimers()

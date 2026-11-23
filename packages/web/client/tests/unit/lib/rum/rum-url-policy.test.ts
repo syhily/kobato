@@ -28,7 +28,7 @@ describe('RUM resource URL policy', () => {
     ['/editor/page/8', '/editor/page/:id'],
     ['/images/og/cats/private-slug.png?x=1', '/images/:asset'],
     ['/storage/uploads/private.jpg?X-Amz-Signature=abc', '/storage/:key'],
-    ['/api/admin/backup/download/secret-token', '/api/admin/backup/download/:id'],
+    ['/rpc/admin/backup/download?data=secret', '/rpc/admin.backup.download'],
     ['/api/admin/anything/else', '/api/:endpoint'],
     ['/private-page', '/:slug'],
     ['/src/root.tsx', '/src/root.tsx'],
@@ -45,8 +45,8 @@ describe('RUM resource URL policy', () => {
 
   it('drops self-telemetry, probe, and intake paths', () => {
     const origin = 'http://localhost:4321'
-    expect(sanitizeResourceUrl(`${origin}/api/analytics/env`, origin)).toBeNull()
-    expect(sanitizeResourceUrl(`${origin}/api/analytics/events`, origin)).toBeNull()
+    expect(sanitizeResourceUrl(`${origin}/rpc/public/analytics/recordDeviceEnv`, origin)).toBeNull()
+    expect(sanitizeResourceUrl(`${origin}/rpc/admin/analytics/events`, origin)).toBeNull()
     expect(sanitizeResourceUrl(`${origin}/rum/v1/default/rum?o2-api-key=abc`, origin)).toBeNull()
     expect(sanitizeResourceUrl(`${origin}/health`, origin)).toBeNull()
     expect(sanitizeResourceUrl(`${origin}/ready`, origin)).toBeNull()

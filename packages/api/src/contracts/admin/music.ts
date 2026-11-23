@@ -1,4 +1,4 @@
-import { idString, isoDateTime } from '@kobato/api/contracts/primitives'
+import { binaryOutput, idString, isoDateTime } from '@kobato/api/contracts/primitives'
 import { z } from 'zod'
 
 export const METING_SOURCES = ['netease', 'tencent'] as const
@@ -97,3 +97,12 @@ export type AdminMusicUpdateInput = z.infer<typeof adminMusicUpdateInput>
 
 export const adminMusicIdInput = z.object({ id: z.string().min(1) })
 export type AdminMusicIdInput = z.infer<typeof adminMusicIdInput>
+
+export const adminMusicProxyInput = z.object({
+  source: metingSource,
+  sourceId: z.string().trim().min(1),
+})
+export type AdminMusicProxyInput = z.infer<typeof adminMusicProxyInput>
+
+export const adminMusicProxyOutput = binaryOutput
+export type AdminMusicProxyOutput = z.infer<typeof adminMusicProxyOutput>

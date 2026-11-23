@@ -61,6 +61,8 @@ describe('apiContract composition', () => {
       'github',
       'images',
       'music',
+      'analytics',
+      'observability',
     ])
     expect(Object.keys(apiContract.admin)).toHaveLength(25)
   })

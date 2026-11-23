@@ -1,4 +1,4 @@
-import type { NoMeta, ProcedureRouteOf, PublicReadMeta } from '@kobato/api/rpc/define-procedure'
+import type { NoMeta, ProcedureRouteOf, RpcProcedureMeta } from '@kobato/api/rpc/define-procedure'
 import type { InferContractRouterInputs, InferContractRouterOutputs } from '@orpc/contract'
 
 import { likeDecreaseOutput, likeIncreaseInput, likeIncreaseOutput } from '@kobato/api/contracts/account/likes'
@@ -154,7 +154,6 @@ describe('defineProcedure publicRead metadata', () => {
     expect(read['~orpc'].meta).toEqual({ publicRead: true })
     expect(read['~orpc'].meta.publicRead).toBe(true)
     expect(readOutputOnly['~orpc'].meta).toEqual({ publicRead: true })
-    // Identity with what the native chain produces — the runtime write is oRPC's, not the brand assertion's.
     const plain = oc
       .$meta({ publicRead: true })
       .route({ method: 'GET', path: '/content/home' })
@@ -171,7 +170,7 @@ describe('defineProcedure publicRead metadata', () => {
   })
 
   it('pins the literal meta type through every chain shape and keeps the unmarked default', () => {
-    expectTypeOf(read['~orpc'].meta).toEqualTypeOf<PublicReadMeta>()
+    expectTypeOf(read['~orpc'].meta).toMatchTypeOf<RpcProcedureMeta>()
     expectTypeOf(read['~orpc'].meta.publicRead).toEqualTypeOf<true>()
     expectTypeOf(readOutputOnly['~orpc'].meta.publicRead).toEqualTypeOf<true>()
     expectTypeOf(increase['~orpc'].meta).toEqualTypeOf<NoMeta>()

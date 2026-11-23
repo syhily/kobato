@@ -1,5 +1,8 @@
 import { authMessageDescriptorSchema } from '@kobato/api/contracts/account/auth'
+import { fileSchema } from '@kobato/api/contracts/primitives'
 import { z } from 'zod'
+
+export const BACKUP_FILE_MAX_BYTES = 500 * 1024 * 1024
 
 export const setupStatusInput = z.object({})
 export type SetupStatusInput = z.input<typeof setupStatusInput>
@@ -35,3 +38,12 @@ export const setupInstallInput = z.object({
   locale: z.string().optional(),
 })
 export type SetupInstallInput = z.input<typeof setupInstallInput>
+
+export const setupRestoreInput = z.object({
+  file: fileSchema,
+  password: z.string().max(512).optional(),
+})
+export type SetupRestoreInput = z.input<typeof setupRestoreInput>
+
+export const setupRestoreOutputSchema = z.object({ accepted: z.literal(true) }).strict()
+export type SetupRestoreOutput = z.infer<typeof setupRestoreOutputSchema>

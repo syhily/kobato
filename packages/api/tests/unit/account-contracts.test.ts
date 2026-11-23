@@ -65,6 +65,8 @@ import {
 } from '@kobato/api/contracts/account/self'
 import {
   setupInstallInput,
+  setupRestoreInput,
+  setupRestoreOutputSchema,
   setupStatusInput,
   setupStatusOutputSchema,
   setupVerifyTokenInput,
@@ -331,6 +333,7 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         output: setupVerifyTokenOutputSchema,
       },
       install: { method: 'POST', path: '/setup/install', input: setupInstallInput, output: authFlowOutputSchema },
+      restore: { method: 'POST', path: '/setup/restore', input: setupRestoreInput, output: setupRestoreOutputSchema },
     },
   },
 }

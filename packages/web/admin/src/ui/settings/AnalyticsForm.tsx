@@ -1,6 +1,7 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { AnalyticsSettings } from '@kobato/settings/types'
 
+import { MAXMIND_MAX_BYTES } from '@kobato/api/contracts/admin/geoip'
 import { Button } from '@kobato/ui/components/button'
 import { FieldLabel } from '@kobato/ui/components/field'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -11,6 +12,7 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpc } from '@kobato/web-client/api/client'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
@@ -40,10 +42,10 @@ function MaxMindUploadRow() {
   const queryClient = useQueryClient()
   const { t } = useI18n()
   const { upload, pending } = useFileUpload({
-    endpoint: '/api/admin/maxmind/upload',
+    submit: (file) => orpc.admin.geoip.upload({ file }),
     t,
     accept: ['.mmdb'],
-    maxBytes: 100 * 1024 * 1024,
+    maxBytes: MAXMIND_MAX_BYTES,
     messages: {
       invalidType: {
         title: t('admin.settings.analytics.geoip.invalidTypeTitle'),

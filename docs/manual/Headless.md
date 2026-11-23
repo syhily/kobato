@@ -39,16 +39,17 @@ switch (result.kind) {
 }
 ```
 
-Anonymous public reads work bare — no cookie, no `x-csrf-token` header. The sixteen public-read procedures (all nine
+Anonymous public reads work bare — no cookie, no `x-csrf-token` header. The seventeen public-read procedures (all nine
 `content.*` reads, plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`, `github.release`,
-`images.resolveThumbhash`, `music.get`) are exempt from the CSRF double-submit guard. Eligibility is an explicit
-per-procedure declaration in `@kobato/api` — `~orpc.meta.publicRead === true` — and the server derives the exact-path
-exemption set from that declaration and enforces it: never an HTTP-method rule (the RPC transport POSTs reads too),
-never derived from route metadata, and frozen by independent tests on both sides so a new read gains the exemption only
-by deliberate opt-in. The exemption matches the canonical paths only: the pre-grouping aliases (`/rpc/content/home`)
-were removed and no longer answer. Everything else keeps the full guard: the comment mutations
-(`replyComment`/`edit`/`revokeToken`), the comment-token reads (`getRaw`/`myComments`), and the whole `account`/`admin`
-surface.
+`images.resolveThumbhash`, `music.get`, `observability.rumStatus`) are exempt from the CSRF double-submit guard.
+Eligibility is an explicit per-procedure declaration in `@kobato/api` — `~orpc.meta.publicRead === true` — and the
+server derives the exact-path exemption set from that declaration and enforces it: never an HTTP-method rule (the RPC
+transport POSTs reads too), never derived from route metadata, and frozen by independent tests on both sides so a new
+read gains the exemption only by deliberate opt-in. The exemption matches the canonical paths only: the pre-grouping
+aliases (`/rpc/content/home`) were removed and no longer answer. Everything else keeps the full guard: the comment
+mutations (`replyComment`/`edit`/`revokeToken`), the comment-token reads (`getRaw`/`myComments`), and the whole
+`account`/`admin` surface. The separate `csrfExempt` escape hatch is limited to the anonymous device beacon and
+role-guarded binary GETs; it is not anonymous-read eligibility.
 
 - `url` is the FULL RPC URL (`https://host/rpc`), never the site origin. Optional `fetch` and `getHeaders` map onto the
   transport (custom fetch adapter; plain, promise, or per-call headers) — a read-only consumer needs neither.

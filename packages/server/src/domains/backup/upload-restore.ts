@@ -1,9 +1,11 @@
 import type { Database } from '@kobato/db/sqlite/database'
 import type { StagedBackup } from '@kobato/server/domains/backup/services/restore'
+import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
 import {
   claimEncryptedUploadForDecrypt,
   endDecryptClaim,
+  parkEncryptedUpload,
   releaseEncryptedUpload,
 } from '@kobato/server/domains/backup/pending-uploads'
 import { withRestoreClaim } from '@kobato/server/domains/backup/restore-machine'
@@ -15,13 +17,16 @@ import {
 import {
   assertStagedBackupContainsAdmin,
   BackupPasswordError,
+  EncryptedBackupPasswordRequired,
   restoreFromStagedBackup,
   stageBackup,
 } from '@kobato/server/domains/backup/services/restore'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createReadStream, rmSync } from 'node:fs'
+import { Readable } from 'node:stream'
 
 const log = getLogger('backup.upload-restore')
 
@@ -31,6 +36,59 @@ export type StagedRestoreAfterReopen = (db: Database, fileName: string) => Promi
 export interface StagedRestoreOptions {
   withAnalytics?: boolean
   afterReopen?: StagedRestoreAfterReopen
+}
+
+export interface StageUploadedBackupOptions {
+  allowAnalyticsOnly: boolean
+  password?: string
+  parkEncrypted?: boolean
+}
+
+export async function stageUploadedBackup(
+  file: File,
+  options: StageUploadedBackupOptions,
+): Promise<StagedBackup | { encrypted: true; token: string }> {
+  const progressOwned = beginStagingProgress()
+  let staged: StagedBackup
+  try {
+    staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())), {
+      password: options.password,
+      onProgress: progressOwned
+        ? (stage, doneBytes, totalBytes) => reportStagingProgress(stage, doneBytes, totalBytes)
+        : undefined,
+    })
+  } catch (error) {
+    if (error instanceof EncryptedBackupPasswordRequired) {
+      if (options.parkEncrypted === false) {
+        rmSync(error.dir, { recursive: true, force: true })
+        throw new ActionFailure(400, descriptorFor('backup.error.passwordMissingUpload'))
+      }
+      try {
+        const token = parkEncryptedUpload({ dir: error.dir, uploadPath: error.uploadPath, fileName: file.name })
+        return { encrypted: true, token }
+      } catch (parkError) {
+        rmSync(error.dir, { recursive: true, force: true })
+        throw parkError
+      }
+    }
+    if (error instanceof ActionFailure) {
+      throw error
+    }
+    throw new ActionFailure(400, descriptorFor('backup.error.invalidFile'))
+  } finally {
+    if (progressOwned) {
+      endStagingProgress()
+    }
+  }
+  if (!options.allowAnalyticsOnly || staged.content !== null) {
+    try {
+      await assertStagedBackupContainsAdmin(staged)
+    } catch {
+      rmSync(staged.dir, { recursive: true, force: true })
+      throw new ActionFailure(400, descriptorFor('backup.error.invalidFileNoAdmin'))
+    }
+  }
+  return staged
 }
 
 /**
@@ -63,6 +121,25 @@ export async function startRestoreFromStaged(
     return 'busy'
   }
   return 'started'
+}
+
+export async function restoreSetupUploadedBackup(
+  staged: StagedBackup,
+  fileName: string,
+  afterReopen: (db: Database) => Promise<void> | void,
+): Promise<{ accepted: true }> {
+  const outcome = await withRestoreClaim(async () => ({
+    restoreFn: () => restoreFromStagedBackup(staged, fileName, { withAnalytics: false }),
+    afterReopenFn: async (db) => afterReopen(db),
+    onFailureFn: () => {
+      rmSync(staged.dir, { recursive: true, force: true })
+    },
+  }))
+  if (outcome === 'busy') {
+    rmSync(staged.dir, { recursive: true, force: true })
+    throw new ActionFailure(409, descriptorFor('backup.error.restoreRunning'))
+  }
+  return { accepted: true }
 }
 
 export async function decryptParkedUploadAndRestore(

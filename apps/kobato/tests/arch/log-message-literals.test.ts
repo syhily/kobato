@@ -6,7 +6,6 @@ import {
 import { describe, expect, it } from 'vitest'
 
 const ALLOWLIST: readonly LogMessageAllowlistEntry[] = [
-  { path: 'packages/server/src/http/resources/admin-upload-route.ts', text: 'options.logMessage' },
   { path: 'packages/server/src/domains/webmentions/queue-scheduler.ts', text: 'options.rowThrewMessage' },
   { path: 'packages/server/src/infra/trace/config.ts', text: 'message' },
   { path: 'packages/server/src/infra/logger.ts', rule: 'dynamic-message', text: 'wrap(ctx)' },
@@ -30,7 +29,6 @@ describe('server log messages are static', () => {
     expect(result.scannedFiles.some((file) => file.startsWith('packages/server/src/'))).toBe(true)
     expect([...new Set(result.allowlisted.map((violation) => `${violation.file}:${violation.rule}`))]).toEqual([
       'packages/server/src/domains/webmentions/queue-scheduler.ts:dynamic-message',
-      'packages/server/src/http/resources/admin-upload-route.ts:dynamic-message',
       'packages/server/src/infra/logger.ts:dynamic-message',
       'packages/server/src/infra/trace/config.ts:dynamic-message',
     ])

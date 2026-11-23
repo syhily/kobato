@@ -336,8 +336,8 @@ describe('production sources', () => {
         'packages/server/src/domains/backup/services/restore.ts',
         'packages/server/src/domains/backup/services/backup.ts',
         'packages/server/src/domains/backup/pending-uploads.ts',
-        'packages/server/src/http/resources/backup.ts',
         'packages/server/src/http/controllers/admin/backup.controller.ts',
+        'packages/server/src/http/controllers/account/setup.controller.ts',
 
         'packages/server/src/domains/storage/s3-migration.ts',
         'packages/server/src/domains/images/services/upload.ts',
@@ -348,7 +348,6 @@ describe('production sources', () => {
         'packages/server/src/infra/storage/backends/s3.ts',
         'packages/server/src/infra/image/process-worker.ts',
         'packages/server/src/http/resources/storage-redirect.ts',
-        'packages/server/src/http/resources/admin-upload-route.ts',
         'packages/server/src/http/controllers/admin/images.controller.ts',
 
         'packages/server/src/domains/users/services/admin.ts',

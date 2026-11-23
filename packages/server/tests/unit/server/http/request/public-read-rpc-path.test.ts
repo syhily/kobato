@@ -26,6 +26,7 @@ const EXPECTED_PUBLIC_READ_PATHS: readonly string[] = [
   '/rpc/public/github/release',
   '/rpc/public/images/resolveThumbhash',
   '/rpc/public/music/get',
+  '/rpc/public/observability/rumStatus',
 ]
 
 const REMOVED_LEGACY_ALIASES: readonly string[] = [

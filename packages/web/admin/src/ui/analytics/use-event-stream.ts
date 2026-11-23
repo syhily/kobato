@@ -1,17 +1,9 @@
 import type { RealtimeEvent } from '@kobato/api/contracts/admin/analytics'
 
+import { orpc } from '@kobato/web-client/api/client'
 import { useEffect, useRef, useState } from 'react'
 
-function isRealtimeEvent(value: unknown): value is RealtimeEvent {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'ts' in value &&
-    typeof (value as Record<string, unknown>).ts === 'string' &&
-    'path' in value &&
-    typeof (value as Record<string, unknown>).path === 'string'
-  )
-}
+const RECONNECT_DELAY_MS = 1_000
 
 function eventKey(event: RealtimeEvent): string {
   return [event.ts, event.path, event.country, event.city, event.browser, event.os, event.deviceType, event.isBot].join(
@@ -28,52 +20,84 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const [events, setEvents] = useState<RealtimeEvent[]>([])
   const [state, setState] = useState<'connecting' | 'live' | 'lost'>('connecting')
   const lastSeenRef = useRef<string | null>(null)
-  const size = Math.max(bufferSize, 50)
+  const sizeRef = useRef(50)
+  useEffect(() => {
+    sizeRef.current = Math.max(bufferSize, 50)
+  }, [bufferSize])
 
   useEffect(() => {
-    if (!enabled || window?.EventSource === undefined) {
+    if (!enabled) {
       return
     }
 
-    const url = new URL('/api/analytics/events', window.location.origin)
-    if (lastSeenRef.current) {
-      url.searchParams.set('since', lastSeenRef.current)
-    }
-    const source = new EventSource(url.toString(), { withCredentials: true })
+    let stopped = false
+    let controller: AbortController | null = null
+    let activeIterator: AsyncIterator<RealtimeEvent[]> | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-    source.onopen = () => setState('live')
-    source.onerror = () => setState('lost')
+    const waitForReconnect = () =>
+      new Promise<void>((resolve) => {
+        reconnectTimer = setTimeout(resolve, RECONNECT_DELAY_MS)
+      })
 
-    source.addEventListener('events', (raw) => {
-      try {
-        if (!(raw instanceof MessageEvent)) {
+    const run = async () => {
+      for (;;) {
+        if (stopped) {
           return
         }
-        const data: unknown = JSON.parse(String(raw.data))
-        if (!Array.isArray(data)) {
-          return
-        }
-        const incoming = data.filter(isRealtimeEvent)
-        if (incoming.length === 0) {
-          return
-        }
-        lastSeenRef.current = incoming[incoming.length - 1]!.ts
-        setEvents((prev) => {
-          const seen = new Set(prev.map(eventKey))
-          const fresh = incoming.filter((event) => !seen.has(eventKey(event)))
-          if (fresh.length === 0) {
-            return prev
+        controller = new AbortController()
+        setState('connecting')
+        try {
+          const iterator = await orpc.admin.analytics.events(
+            { since: lastSeenRef.current ?? undefined },
+            { signal: controller.signal },
+          )
+          activeIterator = iterator
+          if (stopped) {
+            await iterator.return?.()
+            return
           }
-          const next = [...prev, ...fresh]
-          return next.length > size ? next.slice(next.length - size) : next
-        })
-      } catch {}
-    })
-
-    return () => {
-      source.close()
+          setState('live')
+          for await (const incoming of iterator) {
+            if (stopped || incoming.length === 0) {
+              continue
+            }
+            lastSeenRef.current = incoming[incoming.length - 1]!.ts
+            setEvents((previous) => {
+              const seen = new Set(previous.map(eventKey))
+              const fresh = incoming.filter((event) => !seen.has(eventKey(event)))
+              if (fresh.length === 0) {
+                return previous
+              }
+              const next = [...previous, ...fresh]
+              return next.length > sizeRef.current ? next.slice(next.length - sizeRef.current) : next
+            })
+          }
+          if (!stopped) {
+            setState('lost')
+          }
+        } catch {
+          if (!stopped) {
+            setState('lost')
+          }
+        }
+        if (stopped) {
+          return
+        }
+        await waitForReconnect()
+      }
     }
-  }, [size, enabled])
+
+    void run()
+    return () => {
+      stopped = true
+      controller?.abort()
+      void activeIterator?.return?.()
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer)
+      }
+    }
+  }, [enabled])
 
   return { events, state }
 }

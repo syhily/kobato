@@ -10,7 +10,8 @@ that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the o
 ## Structure
 
 - `hooks/` — the seven document-level hooks, each mounted once per document: `use-rum`, `use-rum-consent`,
-  `use-device-env-beacon` (one `sendBeacon` per page view, DNT honored), `use-ios-no-zoom`, `use-chunk-error-recovery`,
+  `use-device-env-beacon` (one standard-oRPC-envelope `sendBeacon` per page view to
+  `/rpc/public/analytics/recordDeviceEnv`, DNT honored), `use-ios-no-zoom`, `use-chunk-error-recovery`,
   `use-detach-public-css`, `use-focus-hash`. Product-level hooks live in the product leaves.
 - `use-rum`: mounted once by the root `App`, renders no DOM, runs only in an effect. It returns before the dynamic
   import when the bootstrap is absent, DNT/GPC deny, or the schema check fails. A `clientIdentity: 'forward'` bootstrap
@@ -30,10 +31,11 @@ that leaf), and must NOT import `@kobato/server` or use Node-only APIs — the o
   URLs, and any thrown error drop it. It overwrites the view's free fields with the trusted route BEFORE any risky work;
   `error.stack` is always overwritten. The OpenObserve ingest pipeline is the authoritative fail-closed boundary — run
   `trace:init` before enabling frontend RUM.
-- Status polling: `/api/rum/status` every 10s; false/error calls `setTrackingConsent('not-granted')`, recovery restores
-  `granted` and calls `startView(current route id)`. A null bootstrap calls `suspendRum()`; DNT/GPC, invalid bootstrap,
-  and real unmount call `stopRum()`. `rum-url-policy.ts` is the single telemetry-exclusion predicate; `rum-budget.ts`
-  owns the 500 resources / 100 errors session cap.
+- Status polling: typed `orpc.public.observability.rumStatus` every 10s; false/error/malformed responses call
+  `setTrackingConsent('not-granted')`, recovery restores `granted` and calls `startView(current route id)`. A null
+  bootstrap calls `suspendRum()`; DNT/GPC, invalid bootstrap, and real unmount call `stopRum()`. The external intake
+  path and SDK proxy URL builder live in `@kobato/api`; `rum-url-policy.ts` derives self-telemetry exclusions from
+  procedure metadata; `rum-budget.ts` owns the 500 resources / 100 errors session cap.
 - `device-env` reads every browser API defensively — absent/non-finite values are omitted, never sent as null.
 - `locale-sync` is the cross-tab locale transport: a `BroadcastChannel` announcement, not state — peers reload from the
   server after flushing their own dirty cards and never re-publish. The ROOT-level `LocaleSyncProvider` (mounted in

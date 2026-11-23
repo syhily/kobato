@@ -1,6 +1,8 @@
 import type { BackupFileDto } from '@kobato/api/contracts/admin/backup'
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { serializeKobatoRpcQueryInput } from '@kobato/api/client/rpc-serialization'
+import { ADMIN_BACKUP_DOWNLOAD_RPC_PATH } from '@kobato/api/rpc/admin/backup'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,7 +124,11 @@ export function BackupFileList({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        onClick={() => window.open(`/api/admin/backup/download/${encodeURIComponent(file.key)}`)}
+                        onClick={() =>
+                          window.open(
+                            `${ADMIN_BACKUP_DOWNLOAD_RPC_PATH}?data=${encodeURIComponent(serializeKobatoRpcQueryInput({ key: file.key }))}`,
+                          )
+                        }
                       >
                         {t('admin.settings.backup.files.download')}
                       </Button>

@@ -1,5 +1,6 @@
 import type { FontsSettings } from '@kobato/settings/types'
 
+import { CANVAS_FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
@@ -8,6 +9,7 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpc } from '@kobato/web-client/api/client'
 import { UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Link } from 'react-router'
@@ -20,11 +22,11 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { t } = useI18n()
   const { upload, pending } = useFileUpload({
-    endpoint: '/api/admin/fonts/upload',
+    submit: (file) => orpc.admin.fonts.uploadCanvas({ file, slot }),
     t,
     fields: { slot },
     accept: ['.ttf', '.otf'],
-    maxBytes: 60 * 1024 * 1024,
+    maxBytes: CANVAS_FONT_MAX_BYTES,
     messages: {
       invalidType: {
         title: t('admin.settings.fonts.upload.invalidTypeTitle'),

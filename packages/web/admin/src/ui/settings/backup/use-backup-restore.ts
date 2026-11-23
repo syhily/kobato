@@ -3,6 +3,7 @@ import type { RestoreStep } from '@kobato/web-admin/ui/settings/backup/RestorePr
 import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
 
 import { extractApiErrorMessage } from '@kobato/api/client/error'
+import { decodeKobatoRpcResponse, serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { orpc } from '@kobato/web-client/api/client'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
@@ -52,9 +53,10 @@ function uploadWithProgress(
     xhr.onload = () => {
       xhrRef.current = null
       try {
-        resolve({ status: xhr.status, json: JSON.parse(xhr.responseText) })
-      } catch {
-        resolve({ status: xhr.status, json: null })
+        const payload: unknown = JSON.parse(xhr.responseText)
+        resolve({ status: xhr.status, json: decodeKobatoRpcResponse(payload, xhr.status) })
+      } catch (error) {
+        reject(error)
       }
     }
     xhr.onerror = () => {
@@ -65,9 +67,12 @@ function uploadWithProgress(
       xhrRef.current = null
       reject(new DOMException(errorMessages.aborted, 'AbortError'))
     }
-    const formData = new FormData()
-    formData.append('file', file)
-    xhr.send(formData)
+    const body = serializeKobatoRpcInput({ file })
+    if (!(body instanceof FormData)) {
+      reject(new Error(errorMessages.network))
+      return
+    }
+    xhr.send(body)
   })
 }
 
@@ -272,7 +277,7 @@ export function useBackupUploadRestore({ csrfToken }: { csrfToken: string | unde
         let result: XhrResult
         try {
           result = await uploadWithProgress(
-            '/api/admin/backup/upload-restore',
+            '/rpc/admin/backup/uploadRestore',
             file,
             csrfToken,
             (percent) => setState((prev) => (prev.active && prev.step === 'uploading' ? { ...prev, percent } : prev)),

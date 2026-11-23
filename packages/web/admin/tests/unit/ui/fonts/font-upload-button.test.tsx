@@ -72,7 +72,7 @@ describe('FontUploadButton', () => {
     expect(await screen.findByDisplayValue('OPPOSans')).toBeInTheDocument()
 
     const opts = options()
-    expect(opts.endpoint).toBe('/api/admin/fonts/package/upload')
+    expect(opts.submit).toEqual(expect.any(Function))
     expect(opts.accept).toEqual(['.ttf', '.otf'])
     expect(opts.maxBytes).toBe(60 * 1024 * 1024)
     expect(opts.fields).toEqual({ familyName: 'OPPOSans' })

@@ -1,9 +1,15 @@
 import { adminFontsContract } from '@kobato/api/rpc/admin/fonts'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
+import { uploadCanvasFont } from '@kobato/server/domains/fonts/services/canvas-upload'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
 import { listFonts, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
+import { uploadFont } from '@kobato/server/domains/fonts/services/upload'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
+import { getLogger } from '@kobato/server/infra/logger'
+import { resetCanvasFont, resetFontCache } from '@kobato/server/render/canvas-fonts'
 import { idFromString } from '@kobato/utils/id'
+
+const log = getLogger('fonts.controller')
 
 const impl = implementAdmin(adminFontsContract)
 
@@ -31,8 +37,41 @@ const setSlot = impl.setSlot.handler(async ({ input, context }) => {
   return undefined
 })
 
+const upload = impl.upload.handler(async ({ input, context }) => {
+  const buffer = new Uint8Array(await input.file.arrayBuffer())
+  const font = await uploadFont(context.db, {
+    buffer,
+    sourceName: input.file.name || 'font.ttf',
+    familyName: input.familyName,
+  })
+  recordAuditEventFromContext(context, {
+    action: 'font_uploaded',
+    resourceType: 'font',
+    resourceId: font.id,
+    details: { familyName: font.familyName, hash: font.hash, size: buffer.length },
+  })
+  log.info('Font package uploaded', { id: font.id, familyName: font.familyName, size: buffer.length })
+  return { font }
+})
+
+const uploadCanvas = impl.uploadCanvas.handler(async ({ input, context }) => {
+  const result = await uploadCanvasFont(input.file, input.slot)
+  resetFontCache()
+  resetCanvasFont(input.slot)
+  recordAuditEventFromContext(context, {
+    action: 'font_uploaded',
+    resourceType: 'font',
+    resourceId: input.slot,
+    details: { size: result.size, contentType: result.contentType },
+  })
+  log.info('Canvas font uploaded', { slot: input.slot, size: result.size, dest: result.destination })
+  return { slot: result.slot, size: result.size }
+})
+
 export const adminFontsRouter = impl.router({
   list,
   delete: remove,
   setSlot,
+  upload,
+  uploadCanvas,
 })

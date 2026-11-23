@@ -11,12 +11,11 @@ import {
   RUM_PRIVACY_VRL_SHA256,
   RUM_STREAM_NAME,
 } from '@kobato/settings/telemetry/pipeline'
-import { RUM_INTAKE_PATH, RUM_RELAY_CLIENT_TOKEN, frontendRumBootstrapSchema } from '@kobato/settings/telemetry/rum'
+import { RUM_RELAY_CLIENT_TOKEN, frontendRumBootstrapSchema } from '@kobato/settings/telemetry/rum'
 import { describe, expect, it } from 'vitest'
 
 describe('telemetry protocol vocabulary', () => {
-  it('keeps the same-origin relay path and placeholder token stable', () => {
-    expect(RUM_INTAKE_PATH).toBe('/api/rum/intake')
+  it('keeps the same-origin relay placeholder token stable', () => {
     expect(RUM_RELAY_CLIENT_TOKEN).toBe('kobato-relay')
   })
 

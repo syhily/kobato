@@ -8,6 +8,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes } from '@kobato/utils/format'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
+import { orpc } from '@kobato/web-client/api/client'
 import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
@@ -37,9 +38,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
   const pollAbortRef = useRef<AbortController | null>(null)
 
   const { upload: uploadRestore, pending: isRestoring } = useFileUpload({
-    endpoint: '/api/setup/restore',
-    credentials: 'include',
-    parseJson: true,
+    submit: (file, fields) => orpc.account.setup.restore({ file, password: fields.password }),
     t,
     messages: {
       httpFailure: () => t('auth.install.restoreFailed'),

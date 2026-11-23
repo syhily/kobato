@@ -51,7 +51,8 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(backup.json.fileName).toMatch(/^backup-.*\.db\.tar\.gz$/)
     expect(backup.json.size).toBeGreaterThan(0)
 
-    const download = await admin.get(`/api/admin/backup/download/${backup.json.timestamp}`)
+    const downloadData = encodeURIComponent(JSON.stringify({ json: { key: backup.json.timestamp } }))
+    const download = await admin.get(`/rpc/admin/backup/download?data=${downloadData}`)
     expect(download.status).toBe(200)
     expect(download.headers.get('content-disposition')).toContain(backup.json.fileName)
     const archive = new Uint8Array(await download.arrayBuffer())

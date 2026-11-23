@@ -1,3 +1,4 @@
+import { binaryOutput, fileSchema } from '@kobato/api/contracts/primitives'
 import { z } from 'zod'
 
 export type UploadRestoreResponse = { accepted: true } | { encrypted: true; token: string }
@@ -88,3 +89,18 @@ export type AdminBackupUploadRestoreDecryptInput = z.infer<typeof adminBackupUpl
 
 export const adminBackupUploadRestoreDecryptOutputDto = z.object({ accepted: z.boolean() })
 export type AdminBackupUploadRestoreDecryptOutput = z.infer<typeof adminBackupUploadRestoreDecryptOutputDto>
+
+export const adminBackupUploadRestoreInput = z.object({ file: fileSchema })
+export type AdminBackupUploadRestoreInput = z.infer<typeof adminBackupUploadRestoreInput>
+
+export const adminBackupUploadRestoreOutputDto = z.union([
+  z.object({ accepted: z.literal(true) }).strict(),
+  z.object({ encrypted: z.literal(true), token: z.string() }).strict(),
+])
+export type AdminBackupUploadRestoreOutput = z.infer<typeof adminBackupUploadRestoreOutputDto>
+
+export const adminBackupDownloadInput = z.object({ key: z.string() })
+export type AdminBackupDownloadInput = z.infer<typeof adminBackupDownloadInput>
+
+export const adminBackupDownloadOutput = binaryOutput
+export type AdminBackupDownloadOutput = z.infer<typeof adminBackupDownloadOutput>

@@ -52,15 +52,22 @@ own.
   from `src/contracts/` by reference, never a copy. Anonymous-read eligibility is declared the same way, per procedure:
   `defineProcedure({ method, path }, { publicRead: true })` writes `publicRead: true` onto `~orpc.meta` through oRPC's
   own `$meta` chain (never the route compatibility record), preserved by every `.input()`/`.output()` link and pinned at
-  the type level (`PublicReadMeta` vs `NoMeta`). The flag is the transport-visible declaration that a procedure may
-  answer with neither cookie nor CSRF header; the server derives its frozen CSRF exemption set from it, while
-  enforcement stays entirely server-side. Eligibility is an explicit opt-in — never inferred from the HTTP method (the
-  RPC transport POSTs reads too) — and `tests/unit/public-read-meta.test.ts` freezes the exact marked key set (the
-  sixteen public reads; token reads, comment mutations, and the whole account/admin surface stay unmarked). Three groups
-  mirror the contract tree: `rpc/public/` (anonymous consumers: `content`, `comments` — the `commentsPublicContract` +
-  `commentsTokenContract` merge exported as `commentsContract`, `webmentions`, `avatar`, `github`, `images`, `music`),
-  `rpc/account/` (the signed-in viewer: `self` exporting `accountSelfContract`, `auth` exporting `accountAuthContract` —
-  the sign-in flow (`status`/`identify`/`login`/
+  the type level (the shared `RpcProcedureMeta` vs `NoMeta`). The flag is the transport-visible declaration that a
+  procedure may answer with neither cookie nor CSRF header; the server derives its frozen CSRF exemption set from it,
+  while enforcement stays entirely server-side. Eligibility is an explicit opt-in — never inferred from the HTTP method
+  (the RPC transport POSTs reads too) — and `tests/unit/public-read-meta.test.ts` freezes the exact marked key set (the
+  seventeen public reads; token reads, comment mutations, and the whole account/admin surface stay unmarked). A separate
+  `csrfExempt` meta is frozen to the anonymous device beacon, backup download, and two author music media GETs; it never
+  implies anonymous access and never replaces the procedure's role guard. Long-running transport budgets use
+  `requestTimeoutMs`; the server derives its request-timeout overrides from that metadata instead of a parallel path
+  table. `requestBodyLimit` owns per-procedure multipart/JSON caps (including localized error copy), while
+  `installGateExempt` and `telemetryExcluded` drive the server's and browser's exact-path policy sets. All transport
+  metadata options compose on one procedure; canonical-path derivations share `rpc/metadata.ts`. Three groups mirror the
+  contract tree: `rpc/public/` (anonymous consumers: `content`, `comments` — the `commentsPublicContract` +
+  `commentsTokenContract` merge exported as `commentsContract`, `webmentions`, `avatar`, `github`, `images`, `music`,
+  `analytics` — the CSRF-exempt device beacon, and `observability` — the publicRead RUM status), `rpc/account/` (the
+  signed-in viewer: `self` exporting `accountSelfContract`, `auth` exporting `accountAuthContract` — the sign-in flow
+  (`status`/`identify`/`login`/
   `logout`/`magicLink`/`otpVerify`/`otpResend`/`otpCancel`/`passwordResetRequest`/`passwordReset`) plus `authFinish` in
   `passkey`, `setup` exporting `accountSetupContract` — the install flow (`status`/`verifyToken`/`install`), `comments`
   — `commentsAuthedContract` only, `notifications`, `passkey`, `likes`, `friends`, `newsletter`; several of these are
@@ -82,8 +89,8 @@ own.
   sub-trees. Like the top root, they compose domain contracts; they do not declare, forward, or re-export procedures.
   The account group carries the authentication + install surface on the wire: `account.auth.*` (status/identify/login/
   logout/magic-link/OTP/password reset), `account.passkey.authBegin`/`authFinish`, and `account.setup.*` (status/
-  verify-token/install) are the single such surface — the React Router signin and setup routes drive them in-process
-  through `createSsrCaller`, and full-tree workspace clients may reach them over `/rpc/account/auth/*` and
+  verify-token/install/restore) are the single such surface — the React Router signin and setup routes drive them
+  in-process through `createSsrCaller`, and full-tree workspace clients may reach them over `/rpc/account/auth/*` and
   `/rpc/account/setup/*`; `createKobatoPublicClient` exposes none of them, and ADR-0009 gives them no external stability
   guarantee. `public.content.bootstrap` still carries the public `currentUser` state for the headless seam.
 - `src/contract.ts` — the composition root (path unchanged: `@kobato/api/contract`), mirroring the server's `apiRouter`
@@ -105,7 +112,8 @@ own.
   singleton). `error.ts` decodes wire error/response payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey` read
   the error payload (the latter from an `ORPCError` rejection's `data.descriptor`), while `isApiAccepted` is a
   RESPONSE-payload guard (`{ accepted: true }`), not an error-object test — keep the two sides distinct when adding
-  helpers.
+  helpers. `rpc-serialization.ts` owns standard RPC input/query/multipart encoding and response/error decoding for
+  `sendBeacon` and the backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.
 
 ## Rules
 
@@ -121,8 +129,8 @@ own.
 - No barrel `index.ts`, no `export { X } from 'y'` re-exports — consumers import `@kobato/api/<module>.ts` straight from
   the source file.
 - Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side — a contract carries only
-  transport-visible metadata, never behavior. `publicRead` is the one such eligibility declaration: it says a procedure
-  MAY serve anonymous reads; the CSRF exemption enforcing that claim is derived and enforced server-side.
+  transport-visible metadata, never behavior. `publicRead` declares anonymous-read eligibility; `csrfExempt` is the
+  separate, frozen escape hatch for legacy transports that cannot send CSRF headers. Both are enforced server-side.
 - Tests: `tests/unit/` (`api-unit`) — contract shape pins: key sets, route method/path values, schema-object identity
   against `@kobato/api/contracts`, input/output parse behavior, split by group (`public-contracts`, `account-contracts`,
   `admin`, `contract` composition); `define-procedure.test.ts` pins the `defineProcedure` factory (runtime route/schema

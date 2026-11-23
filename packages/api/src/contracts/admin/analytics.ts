@@ -153,54 +153,20 @@ export interface AnalyticsOverviewData {
   initialMetrics: Partial<Record<MetricType, MetricRow[]>>
 }
 
-export interface RealtimeEvent {
-  ts: string
-  path: string
-  country: string | null
-  city: string | null
-  browser: string | null
-  os: string | null
-  deviceType: string | null
-  isBot: boolean
-}
-
-const pixelDimension = z.number().int().min(0).max(32768).optional()
-
-const deviceEnvStaticFields = {
-  screenW: pixelDimension,
-  screenH: pixelDimension,
-  availW: pixelDimension,
-  availH: pixelDimension,
-  colorDepth: z.number().int().min(0).max(64).optional(),
-  touchPoints: z.number().int().min(0).max(64).optional(),
-  pointer: z.enum(['coarse', 'fine']).optional(),
-  hover: z.enum(['hover', 'none']).optional(),
-  locale: z.string().max(64).optional(),
-  timezone: z.string().max(64).optional(),
-  hardwareConcurrency: z.number().int().min(0).max(1024).optional(),
-  deviceMemory: z.number().min(0).max(1024).optional(),
-}
-
-const deviceEnvDynamicFields = {
-  viewportW: pixelDimension,
-  viewportH: pixelDimension,
-  dpr: z.number().min(0).max(10).optional(),
-  colorScheme: z.enum(['dark', 'light']).optional(),
-  reducedMotion: z.boolean().optional(),
-  netEffectiveType: z.enum(['slow-2g', '2g', '3g', '4g']).optional(),
-  netDownlink: z.number().min(0).max(10000).optional(),
-  netRtt: z.number().int().min(0).max(60000).optional(),
-  netSaveData: z.boolean().optional(),
-}
-
-export const deviceEnvBeaconSchema = z.object({
-  eventId: z.uuid(),
-  hasStatic: z.boolean(),
-  ...deviceEnvStaticFields,
-  ...deviceEnvDynamicFields,
+export const realtimeEventDto = z.object({
+  ts: z.string(),
+  path: z.string(),
+  country: z.string().nullable(),
+  city: z.string().nullable(),
+  browser: z.string().nullable(),
+  os: z.string().nullable(),
+  deviceType: z.string().nullable(),
+  isBot: z.boolean(),
 })
+export type RealtimeEvent = z.infer<typeof realtimeEventDto>
 
-export type DeviceEnvBeacon = z.infer<typeof deviceEnvBeaconSchema>
+export const adminAnalyticsEventsInputSchema = z.object({ since: z.string().optional() }).strict()
+export type AdminAnalyticsEventsInput = z.infer<typeof adminAnalyticsEventsInputSchema>
 
 export const adminAnalyticsSearchInputSchema = z.object({
   search: z.string().max(16_384),

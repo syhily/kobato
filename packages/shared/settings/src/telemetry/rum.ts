@@ -14,5 +14,3 @@ export const frontendRumBootstrapSchema = z
 export type FrontendRumBootstrap = z.infer<typeof frontendRumBootstrapSchema>
 
 export const RUM_RELAY_CLIENT_TOKEN = 'kobato-relay'
-
-export const RUM_INTAKE_PATH = '/api/rum/intake'

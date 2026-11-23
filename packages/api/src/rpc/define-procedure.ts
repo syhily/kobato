@@ -1,3 +1,4 @@
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type {
   AnySchema,
   ContractProcedureBuilder,
@@ -34,16 +35,22 @@ export type ProcedureRouteOf<T> = T extends {
   : unknown
 
 /**
- * The transport-visible anonymous-read eligibility marker, carried on the procedure's `~orpc.meta` — oRPC's
- * sanctioned custom-metadata slot, never the route compatibility record. Declared by passing `{ publicRead: true }`
- * to `defineProcedure`; the server derives its frozen CSRF public-read exemption from this flag. Eligibility is an
- * explicit per-procedure opt-in — never inferred from the HTTP method (the RPC transport POSTs reads too).
+ * Transport-visible policy, carried on `~orpc.meta` — oRPC's sanctioned custom-metadata slot, never the route
+ * compatibility record. Security eligibility, body caps, request timeouts, install-gate exemptions, and telemetry
+ * exclusions are independent declarations that may be composed on one procedure.
  */
-export interface PublicReadMeta extends Meta {
-  readonly publicRead: true
+export interface RpcProcedureMeta extends Meta {
+  readonly publicRead?: true
+  readonly csrfExempt?: true
+  readonly requestTimeoutMs?: number
+  readonly requestBodyLimit?: {
+    readonly maxBytes: number
+    readonly messageKey: UiMessageId
+    readonly formatMaxBytes?: boolean
+  }
+  readonly installGateExempt?: true
+  readonly telemetryExcluded?: true
 }
-
-const PUBLIC_READ_META: PublicReadMeta = { publicRead: true }
 
 type OcBase = ReturnType<typeof oc.route>
 type NoSchema = Schema<unknown, unknown>
@@ -110,24 +117,36 @@ export interface ProcedureDefinitionWithInputOutput<
  * `~orpc.route` type keeps the declared literals so a server router can be checked against the contract tree.
  * The type parameters are `const` so a path built from a generic base (e.g. `` `${basePath}/save-draft` `` inside a
  * factory) keeps that placeholder instead of widening it to `string` — see `rpc/admin/revision.ts`.
- * Passing `{ publicRead: true }` opts the procedure into anonymous-read eligibility: the flag is written through
- * oRPC's own `$meta`/`route` chain (runtime `~orpc.meta.publicRead === true`, never a fabricated cast) and preserved
- * by every `.input()`/`.output()` link; without the option no `publicRead` metadata exists at all.
+ * Transport options are written through oRPC's own `$meta`/`route` chain and preserved through every
+ * `.input()`/`.output()` link; without an option no policy metadata exists.
  * The single `as` below is backed by the route/schema/meta identity tests in `tests/unit/define-procedure.test.ts`.
  */
 export function defineProcedure<const M extends HTTPMethod, const P extends HTTPPath>(route: {
   method: M
   path: P
 }): ProcedureDefinition<M, P>
+export function defineProcedure<
+  const M extends HTTPMethod,
+  const P extends HTTPPath,
+  const TMeta extends RpcProcedureMeta,
+>(route: { method: M; path: P }, options: TMeta): ProcedureDefinition<M, P, TMeta>
 export function defineProcedure<const M extends HTTPMethod, const P extends HTTPPath>(
   route: { method: M; path: P },
-  options: { readonly publicRead: true },
-): ProcedureDefinition<M, P, PublicReadMeta>
-export function defineProcedure<const M extends HTTPMethod, const P extends HTTPPath>(
-  route: { method: M; path: P },
-  options?: { readonly publicRead?: boolean },
-): ProcedureDefinition<M, P> | ProcedureDefinition<M, P, PublicReadMeta> {
-  const builder = options?.publicRead === true ? oc.$meta(PUBLIC_READ_META).route(route) : oc.route(route)
+  options?: RpcProcedureMeta,
+): ProcedureDefinition<M, P, RpcProcedureMeta> {
+  if (
+    options?.requestTimeoutMs !== undefined &&
+    (!Number.isInteger(options.requestTimeoutMs) || options.requestTimeoutMs <= 0)
+  ) {
+    throw new RangeError('requestTimeoutMs must be a positive integer')
+  }
+  if (
+    options?.requestBodyLimit !== undefined &&
+    (!Number.isInteger(options.requestBodyLimit.maxBytes) || options.requestBodyLimit.maxBytes <= 0)
+  ) {
+    throw new RangeError('requestBodyLimit.maxBytes must be a positive integer')
+  }
+  const builder = options === undefined ? oc.route(route) : oc.$meta(options).route(route)
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ONE brand assertion; runtime route/schema/meta identity is pinned by tests/unit/define-procedure.test.ts
-  return builder as ProcedureDefinition<M, P> | ProcedureDefinition<M, P, PublicReadMeta>
+  return builder as ProcedureDefinition<M, P, RpcProcedureMeta>
 }

@@ -178,9 +178,9 @@ and store nothing.
 Configuring and testing the connection is mandatory before frontend RUM can enable: that is what installs the pipeline.
 At runtime the server verifies the pipeline name/version/hash, enabled state, exact input→function→output graph, and the
 stored function body hash; the probe fails safe (server signals continue, browser RUM is withheld) and rechecks every 15
-s. The browser polls `/api/rum/status` every 10 s, so a tampered or offline pipeline is detected within about 25 s and
-the relay closes with it. The browser never learns the OpenObserve origin, the RUM client token, or a widened CSP: all
-RUM traffic relays through `/api/rum/intake` with the token injected server-side.
+s. The browser polls `public.observability.rumStatus` every 10 s, so a tampered or offline pipeline is detected within
+about 25 s and the relay closes with it. The browser never learns the OpenObserve origin, the RUM client token, or a
+widened CSP: all RUM traffic relays through `/api/rum/intake` with the token injected server-side.
 
 The smoke injects a real RUM event carrying an unknown secret-bearing field and verifies the field is absent from
 storage; the allowlist is intentional, and a safe new field requires an allowlist change plus a smoke rerun.
@@ -226,12 +226,12 @@ pnpm run trace:smoke
 Requires Docker and Playwright Chromium (or a locally installed Chrome). It starts a **throwaway** O2 container/volume
 and a throwaway DEV server whose config carries no tracing keys, seeds synthetic admin + post data, then configures
 observability through the real product path over HTTP (settings save → `testConnection` → status polling → enable logs +
-RUM → `/api/rum/status` gate opens). It drives Chromium through a public page with secret fixtures, an SPA navigation, a
-real oRPC call, an uncaught browser error, an admin login/navigation, an editor save, a large image transform, a
-scheduled `job.run`, and a traced 404; then queries OpenObserve for the stored traces/metrics/RUM/server logs, the
-waterfall, W3C correlation, the closed log columns, 1-day retention, every dashboard panel query, the fail-closed
-privacy pipeline, and the absence of every fixture. Finally it stops O2, proves the site still serves, restarts O2, and
-verifies no outage-window data is replayed. Everything is cleaned up on success and on failure.
+RUM → `/rpc/public/observability/rumStatus` gate opens). It drives Chromium through a public page with secret fixtures,
+an SPA navigation, a real oRPC call, an uncaught browser error, an admin login/navigation, an editor save, a large image
+transform, a scheduled `job.run`, and a traced 404; then queries OpenObserve for the stored traces/metrics/RUM/server
+logs, the waterfall, W3C correlation, the closed log columns, 1-day retention, every dashboard panel query, the
+fail-closed privacy pipeline, and the absence of every fixture. Finally it stops O2, proves the site still serves,
+restarts O2, and verifies no outage-window data is replayed. Everything is cleaned up on success and on failure.
 
 Not part of `pnpm test`: unit/integration builds never require Docker or Playwright.
 

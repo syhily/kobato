@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream'
 
+import { BACKUP_FILE_MAX_BYTES } from '@kobato/api/contracts/account/setup'
 import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { stagedContentDbHasLiveAdmin } from '@kobato/db/sqlite/operations/system/backup'
 import {
@@ -40,7 +41,7 @@ import { createGunzip } from 'node:zlib'
 
 const log = getLogger('backup.service')
 
-export const MAX_BACKUP_FILE_SIZE = 500 * 1024 * 1024
+export const MAX_BACKUP_FILE_SIZE = BACKUP_FILE_MAX_BYTES
 
 const SQLITE_MAGIC = Buffer.from('SQLite format 3\0', 'latin1')
 

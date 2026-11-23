@@ -2,12 +2,13 @@ import type { Env } from '@kobato/server/http/hono-env'
 
 import { getInstallState } from '@kobato/server/domains/settings/install-gate'
 import { errorJsonResponse } from '@kobato/server/http/errors'
+import { isInstallGateExemptRpcPath } from '@kobato/server/http/request/install-gate-rpc-path'
 import { getLogger } from '@kobato/server/infra/logger'
 import { createMiddleware } from 'hono/factory'
 
 const log = getLogger('install.gate')
 
-const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/api/setup/restore', '/api/rum/status', '/ready'])
+const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/ready'])
 
 const EXEMPT_PATH_PREFIXES = [
   '/assets/',
@@ -31,7 +32,7 @@ function isExempt(pathname: string): boolean {
 }
 
 export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) => {
-  if (isExempt(c.var.requestContext.url.pathname)) {
+  if (isExempt(c.var.requestContext.url.pathname) || isInstallGateExemptRpcPath(c.req.path)) {
     return next()
   }
 

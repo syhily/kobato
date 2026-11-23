@@ -1,4 +1,4 @@
-import type { DeviceEnvBeacon } from '@kobato/api/contracts/admin/analytics'
+import type { DeviceEnvBeacon } from '@kobato/api/contracts/public/analytics'
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 

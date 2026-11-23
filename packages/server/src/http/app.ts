@@ -8,7 +8,10 @@ import { csrfGuard } from '@kobato/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@kobato/server/http/middlewares/dynamic-body-limit'
 import { orpcInputValidationInterceptor } from '@kobato/server/http/orpc-base'
 import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace'
+import { RPC_BODY_LIMITS } from '@kobato/server/http/request/rpc-body-limits'
+import { resolveAppLocalization } from '@kobato/settings/app-localization'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
+import { formatBytes } from '@kobato/utils/format'
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
@@ -25,9 +28,6 @@ function resolveMaxBodySize(): number {
   return typeof configured === 'number' && configured > 0 ? configured : DEFAULT_MAX_BODY_SIZE
 }
 
-const DECRYPT_RPC_PATH = '/rpc/admin/backup/uploadRestoreDecrypt'
-const DECRYPT_BODY_LIMIT = 64 * 1024
-
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
@@ -36,13 +36,23 @@ export function createApiApp(): Hono<Env> {
     await next()
   })
 
-  app.use(
-    DECRYPT_RPC_PATH,
-    bodyLimit({
-      maxSize: DECRYPT_BODY_LIMIT,
-      onError: (c: Context<Env>) => errorJsonResponse(c, 413, 'error.api.payloadTooLarge'),
-    }),
-  )
+  for (const limit of RPC_BODY_LIMITS) {
+    app.use(
+      limit.path,
+      bodyLimit({
+        maxSize: limit.maxBytes,
+        onError: (c: Context<Env>) =>
+          errorJsonResponse(
+            c,
+            413,
+            limit.messageKey,
+            limit.formatMaxBytes === true
+              ? { max: formatBytes(limit.maxBytes, { locale: resolveAppLocalization().locale }) }
+              : undefined,
+          ),
+      }),
+    )
+  }
 
   app.use(
     dynamicBodyLimit({

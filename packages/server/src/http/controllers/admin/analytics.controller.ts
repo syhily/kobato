@@ -11,6 +11,8 @@ import { getAnalyticsReader } from '@kobato/server/bootstrap/analytics-lifecycle
 import { queryExportCsv } from '@kobato/server/domains/analytics/services/export'
 import { loadAnalyticsOverview } from '@kobato/server/domains/analytics/services/overview'
 import { parseAnalyticsSearch } from '@kobato/server/domains/analytics/services/query-input'
+import { realtimeEventBatches } from '@kobato/server/domains/analytics/services/realtime'
+import { realtimeConnectionKey } from '@kobato/server/domains/analytics/services/realtime-connections'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
 
 const impl = implementAdmin(analyticsContract)
@@ -45,6 +47,11 @@ const mentions = impl.mentions.handler(async ({ input }) => {
   return { referers }
 })
 
+const events = impl.events.handler(({ input, context, signal }) => {
+  const connectionKey = realtimeConnectionKey(context.session.id, context.clientAddress)
+  return realtimeEventBatches(getAnalyticsReader, connectionKey, input.since, signal ?? context.request.signal)
+})
+
 export const analyticsRouter = impl.router({
   counters,
   views,
@@ -53,4 +60,5 @@ export const analyticsRouter = impl.router({
   export: exportCsv,
   overview,
   mentions,
+  events,
 })

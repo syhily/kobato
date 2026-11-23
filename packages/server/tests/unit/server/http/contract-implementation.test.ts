@@ -17,7 +17,7 @@ import {
   type NoMeta,
   type ProcedureRoute,
   type ProcedureRouteOf,
-  type PublicReadMeta,
+  type RpcProcedureMeta,
 } from '@kobato/api/rpc/define-procedure'
 import { apiRouter } from '@kobato/server/http/api-router'
 import { likesRouter } from '@kobato/server/http/controllers/account/likes.controller'
@@ -182,7 +182,7 @@ describe('router composition against the contract', () => {
   })
 
   it('carries the declared publicRead meta through implementation and mounting', () => {
-    expectTypeOf(apiRouter.public.content.home['~orpc'].meta).toEqualTypeOf<PublicReadMeta>()
+    expectTypeOf(apiRouter.public.content.home['~orpc'].meta).toMatchTypeOf<RpcProcedureMeta>()
     expectTypeOf(apiRouter.public.content.home['~orpc'].meta.publicRead).toEqualTypeOf<true>()
     expect(apiRouter.public.content.home['~orpc'].meta.publicRead).toBe(true)
     expectTypeOf(apiRouter.public.comments.getRaw['~orpc'].meta).toEqualTypeOf<NoMeta>()

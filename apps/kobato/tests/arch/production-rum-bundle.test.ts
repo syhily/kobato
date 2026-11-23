@@ -8,7 +8,7 @@ const SERVER_DIR = join(PROJECT_ROOT, 'apps/kobato/build/server')
 
 const RUM_SDK_MARKERS = ['o2-api-key', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
-const RUM_LOADER_MARKER = '/api/rum/status'
+const RUM_LOADER_MARKER = '/api/rum/intake'
 
 const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 

@@ -17,12 +17,12 @@ The isomorphic settings model and its single source of truth.
 - `snapshot`, `app-localization`, `representation-scopes`, `rate-limit-bucket` + `rate-limit-defaults`, `socials`,
   `presentation`, `timezones` remain isomorphic model helpers. The RUM client identity schema lives in
   `sections/observability.ts`. Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
-- `telemetry/` is the observability protocol layer — `rum.ts` (browser-safe RUM bootstrap + same-origin intake
-  vocabulary), `logs.ts` / `metrics.ts` / `pipeline.ts` (OpenObserve stream, metric, and privacy-pipeline identity). It
-  lives here for locality with the observability configuration: `sections/observability.ts` owns the RUM client identity
-  the bootstrap schema composes. Runtime SDK adapters stay with their consumers (server `infra/trace/`, web-client
-  `lib/rum/`); local container tooling lives in `@kobato/trace`. No OpenTelemetry SDK, OpenObserve client, Docker,
-  retention mutation, or server config.
+- `telemetry/` is the observability protocol layer — `rum.ts` (browser-safe RUM bootstrap + relay placeholder token),
+  `logs.ts` / `metrics.ts` / `pipeline.ts` (OpenObserve stream, metric, and privacy-pipeline identity). The intake path
+  and SDK proxy URL builder belong to `@kobato/api`. It lives here for locality with the observability configuration:
+  `sections/observability.ts` owns the RUM client identity the bootstrap schema composes. Runtime SDK adapters stay with
+  their consumers (server `infra/trace/`, web-client `lib/rum/`); local container tooling lives in `@kobato/trace`. No
+  OpenTelemetry SDK, OpenObserve client, Docker, retention mutation, or server config.
 - Allowed deps: `@kobato/i18n`, `@kobato/cache`, `@kobato/assets` (the avatar source vocabulary), `@kobato/utils`. Never
   `@kobato/api` (the wire contracts), server, db, web, UI, or React.
 - Tests: `tests/unit/` (`shared-unit`). `tests/utils/blog-settings.ts` is the WORKSPACE-canonical settings fixture

@@ -24,9 +24,16 @@ const PUBLIC_ROUTE_MANIFEST: Record<string, string> = {
   'github.release': 'GET /github/release',
   'images.resolveThumbhash': 'GET /image/resolve-thumbhash',
   'music.get': 'GET /music/get',
+  'analytics.recordDeviceEnv': 'POST /analytics/env',
+  'observability.rumStatus': 'GET /rum/status',
 }
 
-const PUBLIC_POST_PROCEDURES: readonly string[] = ['comments.replyComment', 'comments.edit', 'comments.revokeToken']
+const PUBLIC_POST_PROCEDURES: readonly string[] = [
+  'comments.replyComment',
+  'comments.edit',
+  'comments.revokeToken',
+  'analytics.recordDeviceEnv',
+]
 
 interface ContractProcedure {
   '~orpc': { route: { method: string; path: string } }
@@ -60,7 +67,7 @@ function routeOf(procedure: ContractProcedure): string {
 describe('public API contract seam', () => {
   const publicProcedures = flatten(publicContract)
 
-  it('exposes exactly the seven public domains', () => {
+  it('exposes exactly the nine public domains', () => {
     expect(Object.keys(publicContract)).toEqual([
       'content',
       'comments',
@@ -69,6 +76,8 @@ describe('public API contract seam', () => {
       'github',
       'images',
       'music',
+      'analytics',
+      'observability',
     ])
   })
 
@@ -85,6 +94,7 @@ describe('public API contract seam', () => {
     // surface; the pre-grouping aliases (e.g. /rpc/content/home) are gone.
     const canonicalPaths = [...publicProcedures.keys()].sort().map((key) => `/rpc/public/${key.replaceAll('.', '/')}`)
     expect(canonicalPaths).toEqual([
+      '/rpc/public/analytics/recordDeviceEnv',
       '/rpc/public/avatar/find',
       '/rpc/public/comments/edit',
       '/rpc/public/comments/getRaw',
@@ -105,11 +115,12 @@ describe('public API contract seam', () => {
       '/rpc/public/github/release',
       '/rpc/public/images/resolveThumbhash',
       '/rpc/public/music/get',
+      '/rpc/public/observability/rumStatus',
       '/rpc/public/webmentions/list',
     ])
   })
 
-  it('keeps public mutations to the three deployed comment exceptions', () => {
+  it('keeps public mutations to the three comment procedures and the anonymous device beacon', () => {
     const posts = [...publicProcedures]
       .filter(([, procedure]) => routeOf(procedure).startsWith('POST'))
       .map(([key]) => key)

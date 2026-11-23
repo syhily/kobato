@@ -3,94 +3,81 @@
 import type { RealtimeEvent } from '@kobato/api/contracts/admin/analytics'
 
 import { useEventStream } from '@kobato/web-admin/ui/analytics/use-event-stream'
-import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderHook, waitFor } from '@testing-library/react'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-class FakeEventSource {
-  static instances: FakeEventSource[] = []
+const api = vi.hoisted(() => ({ events: vi.fn() }))
+const apiClientMod = await import('@kobato/web-client/api/client')
+vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
+  () => ({ admin: { analytics: { events: api.events } } }) as never,
+)
 
-  onopen: (() => void) | null = null
-  onerror: (() => void) | null = null
-  closed = false
-  private readonly listeners = new Map<string, ((event: MessageEvent) => void)[]>()
-
-  constructor(
-    public readonly url: string,
-    public readonly init?: EventSourceInit,
-  ) {
-    FakeEventSource.instances.push(this)
-  }
-
-  addEventListener(type: string, listener: (event: MessageEvent) => void): void {
-    const list = this.listeners.get(type) ?? []
-    list.push(listener)
-    this.listeners.set(type, list)
-  }
-
-  close(): void {
-    this.closed = true
-  }
-
-  emit(payload: unknown): void {
-    const event = new MessageEvent('events', { data: JSON.stringify(payload) })
-    for (const listener of this.listeners.get('events') ?? []) {
-      listener(event)
-    }
-  }
-}
+afterAll(() => {
+  vi.restoreAllMocks()
+})
 
 function makeEvent(ts: string, path: string): RealtimeEvent {
   return { ts, path, country: null, city: null, browser: null, os: null, deviceType: null, isBot: false }
 }
 
-beforeEach(() => {
-  FakeEventSource.instances = []
-  vi.stubGlobal('EventSource', FakeEventSource)
-})
+function iteratorOf(batches: RealtimeEvent[][]) {
+  let index = 0
+  const iterator = {
+    closed: false,
+    async next(): Promise<IteratorResult<RealtimeEvent[]>> {
+      if (index >= batches.length) {
+        return new Promise(() => {})
+      }
+      return { done: false, value: batches[index++]! }
+    },
+    async return(): Promise<IteratorResult<RealtimeEvent[]>> {
+      iterator.closed = true
+      return { done: true, value: undefined }
+    },
+    [Symbol.asyncIterator]() {
+      return iterator
+    },
+  }
+  return iterator
+}
 
-afterEach(() => {
-  vi.unstubAllGlobals()
+beforeEach(() => {
+  api.events.mockReset()
 })
 
 describe('useEventStream', () => {
-  it('dedupes the resent tail after a native reconnect', () => {
-    const { result } = renderHook(() => useEventStream({ bufferSize: 10 }))
-    const source = FakeEventSource.instances[0]!
-
-    const e1 = makeEvent('2026-08-01T00:00:01.000Z', '/a')
-    const e2 = makeEvent('2026-08-01T00:00:02.000Z', '/b')
-    act(() => source.emit([e1, e2]))
-    expect(result.current.events).toEqual([e1, e2])
-
-    const e3 = makeEvent('2026-08-01T00:00:03.000Z', '/c')
-    act(() => source.emit([e2, e3]))
-    expect(result.current.events).toEqual([e1, e2, e3])
-  })
-
-  it('keeps distinct events that share a timestamp', () => {
-    const { result } = renderHook(() => useEventStream({ bufferSize: 10 }))
-    const source = FakeEventSource.instances[0]!
-
+  it('dedupes the resent tail and keeps distinct events that share a timestamp', async () => {
     const e1 = makeEvent('2026-08-01T00:00:01.000Z', '/a')
     const e2 = makeEvent('2026-08-01T00:00:01.000Z', '/b')
-    act(() => source.emit([e1, e2]))
-    expect(result.current.events).toEqual([e1, e2])
+    const e3 = makeEvent('2026-08-01T00:00:02.000Z', '/c')
+    api.events.mockResolvedValue(
+      iteratorOf([
+        [e1, e2],
+        [e2, e3],
+      ]),
+    )
+    const { result } = renderHook(() => useEventStream({ bufferSize: 10 }))
+
+    await waitFor(() => expect(result.current.events).toEqual([e1, e2, e3]))
+    expect(result.current.state).toBe('live')
   })
 
-  it('advances the since watermark past resent events for the next subscribe', () => {
-    const { rerender } = renderHook(({ enabled }) => useEventStream({ bufferSize: 10, enabled }), {
+  it('advances the since watermark and closes the old iterator on resubscribe', async () => {
+    const first = iteratorOf([
+      [makeEvent('2026-08-01T00:00:01.000Z', '/a')],
+      [makeEvent('2026-08-01T00:00:01.000Z', '/a'), makeEvent('2026-08-01T00:00:02.000Z', '/b')],
+    ])
+    const second = iteratorOf([])
+    api.events.mockResolvedValueOnce(first).mockResolvedValueOnce(second)
+    const { result, rerender } = renderHook(({ enabled }) => useEventStream({ bufferSize: 10, enabled }), {
       initialProps: { enabled: true },
     })
-    const first = FakeEventSource.instances[0]!
-    expect(first.url).not.toContain('since=')
-
-    act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a')]))
-    act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a'), makeEvent('2026-08-01T00:00:02.000Z', '/b')]))
+    await waitFor(() => expect(result.current.events).toHaveLength(2))
 
     rerender({ enabled: false })
     expect(first.closed).toBe(true)
     rerender({ enabled: true })
-    const second = FakeEventSource.instances[1]!
-    expect(second.url).toContain(`since=${encodeURIComponent('2026-08-01T00:00:02.000Z')}`)
+    await waitFor(() => expect(api.events).toHaveBeenCalledTimes(2))
+    expect(api.events.mock.calls[1]![0]).toEqual({ since: '2026-08-01T00:00:02.000Z' })
   })
 })

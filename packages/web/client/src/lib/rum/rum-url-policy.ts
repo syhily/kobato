@@ -1,8 +1,6 @@
-const SELF_TELEMETRY_PATHS: ReadonlySet<string> = new Set([
-  '/api/analytics/env',
-  '/api/analytics/events',
-  '/api/rum/status',
-])
+import { TELEMETRY_EXCLUDED_RPC_PATHS } from '@kobato/api/rpc/telemetry'
+
+const SELF_TELEMETRY_PATHS = TELEMETRY_EXCLUDED_RPC_PATHS
 const DROPPED_PATH_PREFIXES = ['/rum/', '/api/rum/intake', '/health', '/ready'] as const
 
 const STATIC_PATHS: ReadonlySet<string> = new Set([
@@ -66,7 +64,6 @@ const DYNAMIC_PATH_FAMILIES: readonly (readonly [RegExp, string])[] = [
   [/^\/editor\/post\/[^/]+$/, '/editor/post/:id'],
   [/^\/editor\/page\/[^/]+$/, '/editor/page/:id'],
   [/^\/editor\/.+$/, '/editor/:path'],
-  [/^\/api\/admin\/backup\/download\/[^/]+$/, '/api/admin/backup/download/:id'],
   [/^\/api\/.+$/, '/api/:endpoint'],
   [/^\/images\/.+$/, '/images/:asset'],
   [/^\/storage\/.+$/, '/storage/:key'],

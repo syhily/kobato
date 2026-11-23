@@ -1,12 +1,16 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
 import { upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { ensureCsrfToken } from '@kobato/server/domains/auth/csrf'
+import { createApiApp } from '@kobato/server/http/app'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
-import { adminSession, adminUser } from '@kobato/server/tests/utils/session'
+import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
+import { adminSession } from '@kobato/server/tests/utils/session'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
+import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Hono } from 'hono'
 import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -39,15 +43,10 @@ function createApp() {
   const session = adminSession()
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', {
-      session,
-      viewer: adminUser(),
-      clientAddress: '127.0.0.1',
-      requestFacts: { userAgent: 'vitest' },
-      db,
-    } as never)
+    c.set('requestContext', makeRequestContext({ session, db }))
     await next()
   })
+  app.route('/', createApiApp())
   return { app, csrf: { 'x-csrf-token': ensureCsrfToken(session) } }
 }
 
@@ -65,57 +64,52 @@ afterEach(async () => {
 describe('brandingRouter', () => {
   it('uploads a valid branding asset', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
 
-    const form = new FormData()
-    form.append('slot', 'logoSvg')
-    form.append('file', new File([SVG_BYTES], 'logo.svg', { type: 'image/svg+xml' }))
+    const uploadBody = unsafeCast<BodyInit>(
+      serializeKobatoRpcInput({
+        slot: 'logoSvg',
+        file: new File([SVG_BYTES], 'logo.svg', { type: 'image/svg+xml' }),
+      }),
+    )
 
-    const res = await app.request('/api/admin/branding/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/branding/upload', { method: 'POST', body: uploadBody, headers: csrf })
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { slot: string; ref: { etag: string } }
-    expect(body.slot).toBe('logoSvg')
-    expect(body.ref.etag).toBe(createHash('sha256').update(SVG_BYTES, 'utf8').digest('hex'))
+    const body = (await res.json()) as { json: { slot: string; ref: { etag: string } } }
+    expect(body.json.slot).toBe('logoSvg')
+    expect(body.json.ref.etag).toBe(createHash('sha256').update(SVG_BYTES, 'utf8').digest('hex'))
     expect(mem.store.size).toBe(1)
     expect([...mem.store.values()][0]!.body.toString('utf8')).toBe(SVG_BYTES)
   })
 
   it('rejects upload with unknown slot', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
 
     const form = new FormData()
     form.append('slot', 'nope')
     form.append('file', new File([SVG_BYTES], 'logo.svg', { type: 'image/svg+xml' }))
 
-    const res = await app.request('/api/admin/branding/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/branding/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
   it('rejects upload when file is missing', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
 
     const form = new FormData()
     form.append('slot', 'logoSvg')
 
-    const res = await app.request('/api/admin/branding/upload', { method: 'POST', body: form, headers: csrf })
+    const res = await app.request('/rpc/admin/branding/upload', { method: 'POST', body: form, headers: csrf })
     expect(res.status).toBe(400)
   })
 
   it('rejects uploads that exceed the body limit', async () => {
     const { app, csrf } = createApp()
-    const { brandingRouter } = await import('@kobato/server/http/resources/branding')
-    app.route('/', brandingRouter)
 
     const form = new FormData()
     form.append('slot', 'logoSvg')
     form.append('file', new File(['x'], 'logo.svg', { type: 'image/svg+xml' }))
 
-    const res = await app.request('/api/admin/branding/upload', {
+    const res = await app.request('/rpc/admin/branding/upload', {
       method: 'POST',
       body: form,
       headers: { ...csrf, 'Content-Length': String(3 * 1024 * 1024) },
