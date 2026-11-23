@@ -5,8 +5,7 @@
   "scripts": {
     "build": "pnpm -C apps/kobato build",
     "bump": "taze && pnpm update",
-    "db:gen": "pnpm -C packages/db db:gen",
-    "db:migrate": "pnpm -C packages/db db:migrate",
+    "db:gen": "pnpm -C packages/db db:gen && pnpm -C packages/db db:gen:duckdb",
     "demo": "vite apps/inkling-demo",
     "demo:content": "pnpm -C apps/inkling-demo generate:content",
     "dev": "pnpm -C apps/kobato dev",
@@ -52,6 +51,7 @@
     "@kobato/pack": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "husky": "catalog:",

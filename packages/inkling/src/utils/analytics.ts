@@ -1,3 +1,10 @@
+declare global {
+  interface Window {
+    plausible?: ((eventName: string, options?: unknown) => void) & { q?: unknown[] }
+    posthog?: { capture: (event: string, props: Record<string, unknown>) => void }
+  }
+}
+
 export type TelemetryHandler = (eventName: string, props: Record<string, unknown>) => void
 
 function defaultTelemetryHandler(eventName: string, props: Record<string, unknown>): void {

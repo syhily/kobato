@@ -18,9 +18,12 @@ export interface MigrateDatabaseOptions {
   logger?: MigrationLogger
 }
 
-export function defaultMigrationsFolder(): string {
+export function defaultMigrationsFolder(root?: string): string {
+  if (root !== undefined) {
+    return join(root, 'sqlite')
+  }
   const require = createRequire(import.meta.url)
-  return join(dirname(require.resolve('@kobato/db/package.json')), 'drizzle')
+  return join(dirname(require.resolve('@kobato/db/package.json')), 'drizzle', 'sqlite')
 }
 
 export function migrateDatabase(db: Database, options: MigrateDatabaseOptions = {}): void {

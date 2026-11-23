@@ -3,6 +3,14 @@
   "version": "8.2.1-dev",
   "private": true,
   "type": "module",
+  "types": "./types/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "types": [
+        "./types/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": "./src/index.ts",
     "./headless": "./src/headless/index.ts",
@@ -11,6 +19,7 @@
       "./src/headless/*.tsx"
     ],
     "./host-cards": "./src/host-cards/index.ts",
+    "./types": "./types/index.d.ts",
     "./styles/*": "./src/styles/*",
     "./assets/*": "./src/assets/*",
     "./tests/*": "./tests/*"
@@ -24,9 +33,11 @@
     "@codemirror/language": "catalog:",
     "@codemirror/view": "catalog:",
     "@kobato/assets": "workspace:*",
+    "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/sanitize": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@lexical/clipboard": "catalog:",

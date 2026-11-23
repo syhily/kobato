@@ -2,8 +2,7 @@ import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { NOTIFICATION_SOURCES } from '@kobato/api/contracts/notifications'
 import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
-import { migrateDatabase } from '@kobato/db/sqlite/migrate'
-import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
+import { defaultMigrationsFolder, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import {
   closeAnalyticsForRestore,
   initAnalyticsDatabase,
@@ -50,7 +49,7 @@ import {
   wireJobFailureNotifier,
   wireJobRunRecorder,
 } from '@kobato/server/infra/db/job-run-recorder'
-import { resolveDatabasePath } from '@kobato/server/infra/db/paths'
+import { resolveDatabasePath, resolveEmbeddedMigrationsRoot } from '@kobato/server/infra/db/paths'
 import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
@@ -65,7 +64,6 @@ import '@kobato/server/domains/analytics/services/batcher'
 import '@kobato/server/domains/analytics/services/pv-batcher'
 import '@kobato/server/domains/audit/services/batcher'
 import { getLogger } from '@kobato/server/infra/logger'
-import { seaAssetPath } from '@kobato/server/infra/sea/sea'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
 import { isRecord } from '@kobato/utils/type-guards'
 
@@ -92,9 +90,9 @@ const engine = new ManagedEngine<DatabaseHandle>(
 const migrationLog = getLogger('db:migrations')
 
 async function migrateContentDatabase(db: Database): Promise<void> {
-  const embeddedFolder = seaAssetPath(SEA_DRIZZLE_ASSET_PREFIX.replace(/\/$/, ''))
+  const embeddedFolder = resolveEmbeddedMigrationsRoot()
   migrateDatabase(db, {
-    migrationsFolder: embeddedFolder ?? undefined,
+    migrationsFolder: defaultMigrationsFolder(embeddedFolder ?? undefined),
     embedded: embeddedFolder !== null,
     logger: migrationLog,
   })

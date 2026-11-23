@@ -14,18 +14,6 @@ import {
 import { writerConnection } from '@kobato/db/duckdb/connection'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
-export const ACCESS_EVENTS_DDL = `
-CREATE TABLE IF NOT EXISTS access_events (
-  event_id UUID PRIMARY KEY,
-  index1 VARCHAR NOT NULL DEFAULT '',
-  timestamp TIMESTAMPTZ NOT NULL,
-  is_bot BOOLEAN NOT NULL,
-  ${Array.from({ length: 16 }, (_, i) => `blob${i + 1} VARCHAR NOT NULL DEFAULT ''`).join(',\n  ')},
-  double1 DOUBLE,
-  double2 DOUBLE
-)
-`
-
 export const ACCESS_EVENTS_RETENTION_DAYS = 180
 
 export const blobsMap = {

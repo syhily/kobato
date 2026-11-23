@@ -22,6 +22,7 @@
     "@kobato/pack": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",

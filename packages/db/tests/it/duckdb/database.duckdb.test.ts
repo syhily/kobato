@@ -1,10 +1,10 @@
-import type { DuckDBLogger } from '@kobato/db/duckdb/database'
+import type { DuckDBLogger } from '@kobato/db/duckdb/logger'
 
 import { DuckDBInstance } from '@duckdb/node-api'
 import { engineOf } from '@kobato/db/duckdb/connection'
 import { checkpointAnalyticsDatabase, closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { defaultAnalyticsMigrationsFolder } from '@kobato/db/duckdb/migrate'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { open, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -55,7 +55,7 @@ function makeDir(): string {
 describe('analytics sidecar storage format', () => {
   it('stamps the DuckDB 2.0 storage version (999) on a fresh file', async () => {
     const analyticsPath = join(makeDir(), 'analytics.duckdb')
-    const handle = await openAnalyticsDatabase(analyticsPath, ANALYTICS_DDL)
+    const handle = await openAnalyticsDatabase(analyticsPath)
 
     expect(await readStorageVersion(analyticsPath)).toBe(999n)
 
@@ -68,8 +68,12 @@ describe('analytics sidecar storage format', () => {
 
     const legacy = await DuckDBInstance.create(analyticsPath, { storage_compatibility_version: 'v1.5.6' })
     const legacyWriter = await legacy.connect()
-    for (const ddl of ANALYTICS_DDL) {
-      await legacyWriter.run(ddl)
+    const baseline = readFileSync(
+      join(defaultAnalyticsMigrationsFolder(), '20261123020640_initial_analytics_schema', 'migration.sql'),
+      'utf8',
+    )
+    for (const statement of baseline.split('--> statement-breakpoint')) {
+      await legacyWriter.run(statement)
     }
     await legacyWriter.run(
       `INSERT INTO access_events (event_id, timestamp, is_bot, blob1) VALUES (uuid(), to_timestamp(?), false, '/old-format')`,
@@ -80,7 +84,7 @@ describe('analytics sidecar storage format', () => {
     legacy.closeSync()
     expect(await readStorageVersion(analyticsPath)).toBe(68n)
 
-    const handle = await openAnalyticsDatabase(analyticsPath, ANALYTICS_DDL, log)
+    const handle = await openAnalyticsDatabase(analyticsPath, { logger: log })
 
     expect(await readStorageVersion(analyticsPath)).toBe(999n)
     const rows = await engineOf(handle).reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
@@ -99,14 +103,14 @@ describe('analytics sidecar storage format', () => {
   it('reopens an upgraded file without re-converting or losing rows', async () => {
     const analyticsPath = join(makeDir(), 'analytics.duckdb')
     const log = captureLogger()
-    const first = await openAnalyticsDatabase(analyticsPath, ANALYTICS_DDL)
+    const first = await openAnalyticsDatabase(analyticsPath)
     await engineOf(first).writer.run(
       `INSERT INTO access_events (event_id, timestamp, is_bot, blob1) VALUES (uuid(), to_timestamp(?), false, '/kept')`,
       [Math.floor(Date.now() / 1000)],
     )
     await closeAnalyticsDatabase(first)
 
-    const second = await openAnalyticsDatabase(analyticsPath, ANALYTICS_DDL, log)
+    const second = await openAnalyticsDatabase(analyticsPath, { logger: log })
 
     expect(await readStorageVersion(analyticsPath)).toBe(999n)
     const rows = await engineOf(second).reader.runAndReadAll('SELECT blob1 AS path FROM access_events')
@@ -122,7 +126,7 @@ describe('analytics sidecar storage format', () => {
 describe('checkpointAnalyticsDatabase', () => {
   it('flushes the WAL into the database file after writes', async () => {
     const analyticsPath = join(makeDir(), 'analytics.duckdb')
-    const handle = await openAnalyticsDatabase(analyticsPath, ANALYTICS_DDL)
+    const handle = await openAnalyticsDatabase(analyticsPath)
     await engineOf(handle).writer.run(
       `INSERT INTO access_events (event_id, timestamp, is_bot, blob1) VALUES (uuid(), to_timestamp(?), false, '/wal')`,
       [Math.floor(Date.now() / 1000)],
@@ -140,7 +144,7 @@ describe('checkpointAnalyticsDatabase', () => {
   })
 
   it('is safe on an in-memory handle', async () => {
-    const handle = await openAnalyticsDatabase(':memory:', ANALYTICS_DDL)
+    const handle = await openAnalyticsDatabase(':memory:')
     await checkpointAnalyticsDatabase(handle)
     await closeAnalyticsDatabase(handle)
   })

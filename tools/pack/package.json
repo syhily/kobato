@@ -27,6 +27,7 @@
     "@kobato/harness": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "sharp": "catalog:",

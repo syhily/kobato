@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite'
 
 export function routeWarmupScriptStubPlugin(): Plugin {
-  const specifier = 'virtual:route-warmup-script'
+  const specifier = '@kobato/web-client/route-warmup/compiled-script'
   const resolved = `\0${specifier}`
   return {
     name: 'route-warmup-script-stub',

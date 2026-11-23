@@ -10,6 +10,7 @@
     ]
   },
   "devDependencies": {
+    "@kobato/tsconfig": "workspace:*",
     "@types/jsdom": "catalog:",
     "dompurify": "catalog:",
     "jsdom": "catalog:",

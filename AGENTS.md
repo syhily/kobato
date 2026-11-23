@@ -12,15 +12,15 @@ pnpm monorepo with four top-level roots; nothing else is created at the root:
   `@kobato/ui` (design system), `@kobato/inkling` (Lexical editor: React runtime, React-free `/headless/` document
   model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`, `web-admin`), and nine isomorphic
   React-free leaves under `packages/shared/*`.
-- `tools/` — dev-support packages (`toolchain`, `test`, `harness`, `browser`, `email`, `i18n-tools`, `trace`, `pack`);
-  nothing ships in the product binary, and product `src/` never imports a tools package.
+- `tools/` — dev-support packages (`toolchain`, `tsconfig`, `test`, `harness`, `browser`, `email`, `i18n-tools`,
+  `trace`, `pack`); nothing ships in the product binary, and product `src/` never imports a tools package.
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
   `tools/`.
 
 Every product package (`apps/` + `packages/`) has the same shape — `package.json`, `AGENTS.md` (required), `src/`
 (runtime source only), `tests/` mirroring `src/`, plus `drizzle/` (db) or `assets|styles/` when owned. Config files
 (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`, `drizzle.config.ts`) live at the package root. `tools/` packages
-carry `package.json`, `AGENTS.md`, `src/`, with `tests/` optional.
+carry `package.json`, `AGENTS.md`, `src/` (except config-only `tsconfig`), with `tests/` optional.
 
 Naming (pinned by `apps/kobato/tests/arch/structure-conventions.test.ts`): `kebab-case.ts` modules, `PascalCase.tsx`
 components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `*.controller.ts` controllers. Entity
@@ -50,8 +50,8 @@ Runtime facts:
 ## Import conventions
 
 All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single workspace path table is
-`@kobato/toolchain/tsconfig.base.json` (consumer tsconfigs only extend it). Workspace export wildcards carry
-`.ts`/`.tsx` fallback targets so the same specifiers resolve under native Node.
+`@kobato/tsconfig/tsconfig.base.json` (consumer tsconfigs only extend it). Workspace export wildcards carry `.ts`/`.tsx`
+fallback targets so the same specifiers resolve under native Node.
 
 - App source: `@/...`; app test helpers: `@tests/...` (app tests only).
 - Everything else: `@kobato/<package>/...`. Source never imports a package's `tests/` tree; the canonical shared

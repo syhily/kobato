@@ -1,15 +1,15 @@
+import type { DuckDBLogger } from '@kobato/db/duckdb/logger'
+import type { MigrateAnalyticsDatabaseOptions } from '@kobato/db/duckdb/migrate'
+
 import { DuckDBInstance } from '@duckdb/node-api'
 import { analyticsHandleOf, engineOf, type AnalyticsHandle, type DuckDbEngine } from '@kobato/db/duckdb/connection'
+import { migrateAnalyticsDatabase } from '@kobato/db/duckdb/migrate'
 import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { mkdirSync } from 'node:fs'
 import { open, rename, rm } from 'node:fs/promises'
 import path from 'node:path'
 
-export interface DuckDBLogger {
-  info(message: string, context?: Record<string, unknown>): void
-  warn(message: string, context?: Record<string, unknown>): void
-  error(message: string, context?: Record<string, unknown>): void
-}
+export type OpenAnalyticsDatabaseOptions = MigrateAnalyticsDatabaseOptions
 
 const STORAGE_VERSION_OFFSET = 12
 const DUCKDB2_STORAGE_VERSION = 999n
@@ -55,8 +55,7 @@ async function upgradeStorageFormat(analyticsPath: string, logger: DuckDBLogger 
 
 export async function openAnalyticsDatabase(
   analyticsPath: string,
-  ddl: string | string[],
-  logger?: DuckDBLogger,
+  options: OpenAnalyticsDatabaseOptions = {},
 ): Promise<AnalyticsHandle> {
   const inMemory = isInMemoryPath(analyticsPath)
   if (!inMemory) {
@@ -64,10 +63,10 @@ export async function openAnalyticsDatabase(
     const storageVersion = await readStorageVersion(analyticsPath)
     if (storageVersion !== null && storageVersion < DUCKDB2_STORAGE_VERSION) {
       try {
-        await upgradeStorageFormat(analyticsPath, logger)
+        await upgradeStorageFormat(analyticsPath, options.logger)
       } catch (error) {
         await rm(`${analyticsPath}.v2-upgrade`, { force: true })
-        logger?.warn('Analytics sidecar storage upgrade failed; keeping the 1.x format', {
+        options.logger?.warn('Analytics sidecar storage upgrade failed; keeping the 1.x format', {
           error: error instanceof Error ? error.message : String(error),
         })
       }
@@ -76,11 +75,18 @@ export async function openAnalyticsDatabase(
   const instance = inMemory ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
   const writer = await instance.connect()
   const reader = await instance.connect()
-  for (const statement of typeof ddl === 'string' ? [ddl] : ddl) {
-    await writer.run(statement)
-  }
   const engine: DuckDbEngine = { instance, writer, reader, path: analyticsPath, inMemory, closed: false }
-  return analyticsHandleOf(engine)
+  const handle = analyticsHandleOf(engine)
+  try {
+    await migrateAnalyticsDatabase(handle, options)
+    return handle
+  } catch (error) {
+    handle.closed = true
+    writer.closeSync()
+    reader.closeSync()
+    instance.closeSync()
+    throw error
+  }
 }
 
 export async function checkpointAnalyticsDatabase(handle: AnalyticsHandle): Promise<void> {

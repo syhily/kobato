@@ -28,8 +28,8 @@
     "./drizzle/*": "./drizzle/*"
   },
   "scripts": {
-    "db:gen": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:gen": "JITI_ALIAS=\"{\\\"@kobato/inkling-internal\\\":\\\"$PWD/../inkling/src\\\"}\" drizzle-kit generate",
+    "db:gen:duckdb": "drizzle-kit generate --config drizzle.duckdb.config.ts"
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
@@ -37,6 +37,7 @@
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",

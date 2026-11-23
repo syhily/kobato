@@ -32,6 +32,7 @@
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@maxmind/geoip2-node": "catalog:",
     "@napi-rs/canvas": "catalog:",

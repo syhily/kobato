@@ -1,32 +1,12 @@
 /// <reference types="node" />
 /// <reference types="vite/client" />
-
-import type { ViteDevServer } from 'vite'
-
-declare global {
-  interface ImportMetaEnv {
-    readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
-    readonly REACT_ROUTER_HONO_SERVER_ASSETS_DIR: string
-    readonly REACT_ROUTER_HONO_SERVER_BASENAME: string
-  }
-
-  var __viteDevServer: ViteDevServer | undefined
-  const __APP_NAME__: string
-  const __APP_VERSION__: string
-  const __APP_DESCRIPTION__: string
-  const __APP_AUTHOR_NAME__: string
-  const __APP_HOMEPAGE__: string
-  const __APP_REPOSITORY__: string
-
-  interface Window {
-    plausible?: ((...args: unknown[]) => void) & { q?: unknown[] }
-    posthog?: { capture: (event: string, props?: Record<string, unknown>) => void }
-    __APP_VERSION__?: string
-  }
-}
+/// <reference types="@kobato/inkling/types" />
 
 declare module '@hono/node-server/serve-static' {
-  import type { MiddlewareHandler, ServeStaticOptions } from 'hono'
-  const serveStatic: (options?: ServeStaticOptions) => MiddlewareHandler
+  type ServeStaticOptions<E extends import('hono').Env = import('hono').Env> = import('hono').ServeStaticOptions<E>
+  export type { ServeStaticOptions }
+  const serveStatic: <E extends import('hono').Env = any>(
+    options?: ServeStaticOptions<E>,
+  ) => import('hono').MiddlewareHandler<E>
   export { serveStatic }
 }

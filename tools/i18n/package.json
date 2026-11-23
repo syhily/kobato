@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@kobato/i18n": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "vite-node": "catalog:"
   }

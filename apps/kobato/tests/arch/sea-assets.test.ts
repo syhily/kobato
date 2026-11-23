@@ -113,7 +113,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     forbiddenLiterals: [`'wasm/cnfs.wasm'`],
   },
   {
-    file: 'packages/server/src/bootstrap/db-lifecycle.ts',
+    file: 'packages/server/src/infra/db/paths.ts',
     names: ['SEA_DRIZZLE_ASSET_PREFIX'],
     forbiddenLiterals: [`'drizzle/'`],
   },

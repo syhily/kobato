@@ -13,6 +13,7 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "react-router": "catalog:",
     "vitest": "catalog:"

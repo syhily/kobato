@@ -5,20 +5,26 @@ import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migratio
 import { analyticsReaderOf, analyticsWriterOf } from '@kobato/db/duckdb/connection'
 import { checkpointAnalyticsDatabase, closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { runAccessLogRetention } from '@kobato/db/duckdb/maintenance'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import { ManagedEngine } from '@kobato/server/bootstrap/managed-engine'
 import { wireAnalyticsQueryTelemetry } from '@kobato/server/domains/analytics/services/analytics-sql'
 import { wireAccessLogBatcher } from '@kobato/server/domains/analytics/services/batcher'
 import { wireDeviceEnvBeaconBatcher } from '@kobato/server/domains/analytics/services/env-beacon'
 import { getBatcher } from '@kobato/server/infra/db/batcher-registry'
-import { resolveAnalyticsPath } from '@kobato/server/infra/db/paths'
+import { resolveAnalyticsPath, resolveEmbeddedMigrationsRoot } from '@kobato/server/infra/db/paths'
 import { getLogger } from '@kobato/server/infra/logger'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-utils'
 import { copyFile } from 'node:fs/promises'
 
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
-    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ANALYTICS_DDL, getLogger('analytics.duckdb')),
+    open: () => {
+      const migrationsRoot = resolveEmbeddedMigrationsRoot()
+      return openAnalyticsDatabase(resolveAnalyticsPath(), {
+        migrationsRoot: migrationsRoot ?? undefined,
+        embedded: migrationsRoot !== null,
+        logger: getLogger('analytics.duckdb'),
+      })
+    },
     close: closeAnalyticsDatabase,
   },
   'analyticsHandle',

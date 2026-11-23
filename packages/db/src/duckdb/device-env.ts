@@ -14,52 +14,6 @@ import {
 } from '@duckdb/node-api'
 import { writerConnection } from '@kobato/db/duckdb/connection'
 
-export const DEVICE_ENV_SERVER_DDL = `
-CREATE TABLE IF NOT EXISTS device_env_server (
-  event_id UUID PRIMARY KEY,
-  timestamp TIMESTAMPTZ NOT NULL,
-  ua_full_version VARCHAR NOT NULL DEFAULT '',
-  platform VARCHAR NOT NULL DEFAULT '',
-  platform_version VARCHAR NOT NULL DEFAULT '',
-  model VARCHAR NOT NULL DEFAULT '',
-  mobile BOOLEAN,
-  brands VARCHAR NOT NULL DEFAULT '',
-  arch VARCHAR NOT NULL DEFAULT '',
-  bitness VARCHAR NOT NULL DEFAULT '',
-  form_factors VARCHAR NOT NULL DEFAULT '',
-  accept_language VARCHAR NOT NULL DEFAULT ''
-)
-`
-
-export const DEVICE_ENV_CLIENT_DDL = `
-CREATE TABLE IF NOT EXISTS device_env_client (
-  event_id UUID PRIMARY KEY,
-  timestamp TIMESTAMPTZ NOT NULL,
-  screen_w INTEGER,
-  screen_h INTEGER,
-  avail_w INTEGER,
-  avail_h INTEGER,
-  viewport_w INTEGER,
-  viewport_h INTEGER,
-  dpr DOUBLE,
-  color_depth INTEGER,
-  touch_points INTEGER,
-  pointer VARCHAR NOT NULL DEFAULT '',
-  hover VARCHAR NOT NULL DEFAULT '',
-  color_scheme VARCHAR NOT NULL DEFAULT '',
-  reduced_motion BOOLEAN,
-  net_effective_type VARCHAR NOT NULL DEFAULT '',
-  net_downlink DOUBLE,
-  net_rtt INTEGER,
-  net_save_data BOOLEAN,
-  locale VARCHAR NOT NULL DEFAULT '',
-  timezone VARCHAR NOT NULL DEFAULT '',
-  hardware_concurrency INTEGER,
-  device_memory DOUBLE,
-  has_static BOOLEAN NOT NULL
-)
-`
-
 export interface DeviceEnvServerRow {
   eventId: string
   timestamp: Date

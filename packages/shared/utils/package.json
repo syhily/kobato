@@ -12,6 +12,7 @@
   "devDependencies": {
     "@date-fns/tz": "catalog:",
     "@kobato/i18n": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "date-fns": "catalog:",
     "sharp": "catalog:",
     "vitest": "catalog:",

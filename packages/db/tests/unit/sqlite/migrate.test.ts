@@ -23,6 +23,10 @@ describe('db migrations', () => {
     })
   })
 
+  it('resolves the SQLite leaf below an embedded migrations root', () => {
+    expect(defaultMigrationsFolder('/vfs/drizzle')).toBe('/vfs/drizzle/sqlite')
+  })
+
   it('owns the migration lifecycle around a caller-provided adapter', () => {
     const logger = { info: vi.fn(), error: vi.fn() }
     const db = {} as never

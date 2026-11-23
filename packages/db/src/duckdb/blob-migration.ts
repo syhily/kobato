@@ -1,5 +1,5 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
-import type { DuckDBLogger } from '@kobato/db/duckdb/database'
+import type { DuckDBLogger } from '@kobato/db/duckdb/logger'
 import type { Database } from '@kobato/db/sqlite/database'
 
 import { engineOf } from '@kobato/db/duckdb/connection'

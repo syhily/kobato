@@ -12,6 +12,7 @@
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
     "@kobato/settings": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@types/node": "catalog:"
   }

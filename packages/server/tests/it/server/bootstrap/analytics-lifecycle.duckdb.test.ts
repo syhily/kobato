@@ -3,7 +3,6 @@ import type { AnalyticsHandle, DuckDbEngine } from '@kobato/db/duckdb/connection
 
 import { engineOf } from '@kobato/db/duckdb/connection'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import {
   __adoptAnalyticsHandleForTests,
   __resetAnalyticsEngineForTests,
@@ -88,7 +87,7 @@ describe('snapshotAnalyticsTo', () => {
     const stagingPath = join(stagingDir, 'analytics.duckdb')
     expect(await snapshotAnalyticsTo(stagingPath)).toBe(true)
 
-    const copy = await openAnalyticsDatabase(stagingPath, ANALYTICS_DDL)
+    const copy = await openAnalyticsDatabase(stagingPath)
     try {
       expect(await accessLogPaths(copy)).toEqual(['/a', '/b'])
     } finally {

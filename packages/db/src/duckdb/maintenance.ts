@@ -1,5 +1,5 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
-import type { DuckDBLogger } from '@kobato/db/duckdb/database'
+import type { DuckDBLogger } from '@kobato/db/duckdb/logger'
 
 import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/db/duckdb/access-events'
 import { engineOf } from '@kobato/db/duckdb/connection'

@@ -9,12 +9,11 @@ operations, migrations, and error classification. It depends on `@kobato/setting
 - `src/sqlite/` and `src/duckdb/` are separate engine planes. `sqlite/database.ts` owns the shared `:memory:` sentinels,
   opaque `Database`/`DatabaseHandle` tokens, db-only `SqliteEngine`, and the only SQLite unwrap helpers; server code
   passes tokens without unwrapping them.
-- `drizzle/` contains package-owned migrations and the drizzle-kit snapshot. `sqlite/migrate.ts` resolves and executes
-  them; the server only injects `MigrationLogger` and an optional SEA folder. `drizzle.config.ts` stays at the package
-  root.
+- `drizzle/{sqlite,duckdb}/` hold versioned migrations applied by db during engine initialization; server supplies only
+  loggers and the generic SEA root.
 - `duckdb/` owns the native engine, every DuckDB statement, and Drizzle query building/execution. `connection.ts` is the
-  only token conversion seam; `database.ts` owns lifecycle; `schema.ts` owns DDL and Drizzle tables; `query.ts` owns the
-  standalone builder and executor seam. Dashboard reads live in `duckdb/queries/`.
+  only token conversion seam; `database.ts` owns lifecycle; `migrate.ts` applies schema migrations; `schema.ts` owns
+  Drizzle tables; `query.ts` owns the standalone builder and executor seam. Dashboard reads live in `duckdb/queries/`.
 - DuckDB diagnostics use an injected `DuckDBLogger`. Wire DTOs, URL parsing, SSE caps, CSV serialization, lifecycle
   orchestration, and logging stay in their owning packages. Tests reset the analytics executor to `null`.
 - `sqlite/schema/` contains persistence schema and canonical enum lists only. Domain validation and wire DTOs stay in

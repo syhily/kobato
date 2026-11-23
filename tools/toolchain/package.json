@@ -15,6 +15,7 @@
     "@kobato/utils": "workspace:*"
   },
   "devDependencies": {
+    "@kobato/tsconfig": "workspace:*",
     "oxc-transform-react": "catalog:",
     "vite": "catalog:"
   }

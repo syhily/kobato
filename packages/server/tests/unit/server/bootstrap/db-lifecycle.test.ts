@@ -34,9 +34,11 @@ vi.mock('@kobato/db/sqlite/database', () => ({
 
 vi.mock('@kobato/server/infra/db/paths', () => ({
   resolveDatabasePath: () => ':memory:',
+  resolveEmbeddedMigrationsRoot: () => null,
 }))
 
 vi.mock('@kobato/db/sqlite/migrate', () => ({
+  defaultMigrationsFolder: () => '/migrations/sqlite',
   migrateDatabase: (...args: unknown[]) => migrateDatabase(...args),
 }))
 

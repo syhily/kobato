@@ -72,7 +72,7 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
 const WARMUP_ENTRY = fileURLToPath(
   new URL('../../../../packages/web/client/src/route-warmup/idle-script.entry.ts', import.meta.url),
 )
-const VIRTUAL_ID = 'virtual:route-warmup-script'
+const VIRTUAL_ID = '@kobato/web-client/route-warmup/compiled-script'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
 let compiledWarmupPromise: Promise<string> | null = null

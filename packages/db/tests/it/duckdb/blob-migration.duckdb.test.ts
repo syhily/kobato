@@ -1,12 +1,14 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 
-import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events'
 import { runAnalyticsBlobMigrationAtBoot } from '@kobato/db/duckdb/blob-migration'
 import { engineOf } from '@kobato/db/duckdb/connection'
 import { openAnalyticsDatabase } from '@kobato/db/duckdb/database'
+import { defaultAnalyticsMigrationsFolder } from '@kobato/db/duckdb/migrate'
 import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/db/tests/utils/analytics-db'
 import { clearAllTables, getTestDb } from '@kobato/db/tests/utils/integration-db'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
@@ -131,7 +133,11 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
     expect(await tableExists('access_log')).toBe(true)
     expect(findSettingByScope(db, 'system.analytics-blob-migration')).toBeNull()
 
-    await engineOf(handle).writer.run(ACCESS_EVENTS_DDL)
+    const baseline = readFileSync(
+      join(defaultAnalyticsMigrationsFolder(), '20261123020640_initial_analytics_schema', 'migration.sql'),
+      'utf8',
+    )
+    await engineOf(handle).writer.run(baseline.split('--> statement-breakpoint')[0]!)
     await engineOf(handle).writer.run(
       `INSERT INTO access_events (event_id, index1, timestamp, is_bot, blob1, blob5)
        VALUES (uuid(), '', to_timestamp(1768000200), FALSE, '/live', 'live-visitor')`,
@@ -187,7 +193,7 @@ describe('analytics blob migration (legacy access_log → access_events)', () =>
   })
 
   it('skips in-memory sidecars gracefully (no flag written)', async () => {
-    const memory = await openAnalyticsDatabase(':memory:', 'CREATE TABLE IF NOT EXISTS access_events (event_id UUID)')
+    const memory = await openAnalyticsDatabase(':memory:')
     try {
       expect(memory.inMemory).toBe(true)
       await runAnalyticsBlobMigrationAtBoot(db, memory)

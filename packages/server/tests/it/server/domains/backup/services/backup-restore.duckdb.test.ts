@@ -132,9 +132,8 @@ describe('backup and restore integration', () => {
     }
 
     const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@kobato/db/duckdb/database')
-    const { ACCESS_EVENTS_DDL } = await import('@kobato/db/duckdb/access-events')
     writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
-    const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_EVENTS_DDL)
+    const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'))
     try {
       const result = await engineOf(restoredAnalytics).reader.runAndReadAll('SELECT count(*) AS c FROM access_events')
       expect(Number(result.getRowObjects()[0]?.c)).toBe(2)

@@ -16,6 +16,7 @@
   "devDependencies": {
     "@kobato/harness": "workspace:*",
     "@kobato/pack": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:"

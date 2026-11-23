@@ -47,6 +47,7 @@
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/toolchain": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@kobato/web-admin": "workspace:*",

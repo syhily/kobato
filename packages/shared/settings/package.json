@@ -15,6 +15,7 @@
     "@kobato/cache": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "vitest": "catalog:",
     "zod": "catalog:"

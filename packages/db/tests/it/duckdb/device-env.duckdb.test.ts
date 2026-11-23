@@ -3,12 +3,7 @@ import type { DeviceEnvClientRow, DeviceEnvServerRow } from '@kobato/db/duckdb/d
 
 import { analyticsWriterOf, engineOf } from '@kobato/db/duckdb/connection'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
-import {
-  DEVICE_ENV_CLIENT_DDL,
-  DEVICE_ENV_SERVER_DDL,
-  appendDeviceEnvClientRows,
-  appendDeviceEnvServerRows,
-} from '@kobato/db/duckdb/device-env'
+import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -24,7 +19,7 @@ function tempDir(): string {
 }
 
 async function openAt(analyticsPath: string): Promise<AnalyticsHandle> {
-  const handle = await openAnalyticsDatabase(analyticsPath, [DEVICE_ENV_SERVER_DDL, DEVICE_ENV_CLIENT_DDL])
+  const handle = await openAnalyticsDatabase(analyticsPath)
   handles.push(handle)
   return handle
 }

@@ -10,6 +10,7 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "vite-node": "catalog:"

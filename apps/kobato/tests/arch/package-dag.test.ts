@@ -4,6 +4,7 @@ import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
+const CONFIG_PACKAGE = '@kobato/tsconfig'
 
 const IGNORE_DIRS = new Set([
   'node_modules',
@@ -51,8 +52,10 @@ const API_SHARED_DEPS = [
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
+  '@kobato/tsconfig': [],
   '@kobato/inkling': [
     '@kobato/i18n',
+    '@kobato/distribution',
     '@kobato/sanitize',
     '@kobato/assets',
     '@kobato/utils',
@@ -143,7 +146,14 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/sanitize', '@kobato/assets', '@kobato/utils'],
+  '@kobato/inkling': [
+    '@kobato/inkling',
+    '@kobato/ui',
+    '@kobato/distribution',
+    '@kobato/sanitize',
+    '@kobato/assets',
+    '@kobato/utils',
+  ],
   '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-public'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
@@ -336,6 +346,9 @@ describe('package DAG', () => {
     for (const pkg of REPO_PACKAGES) {
       const allowed = ALLOWED_DECLARED_INTERNAL_DEPS[pkg.name]!
       for (const dep of declaredInternalDeps(pkg.name)) {
+        if (dep === CONFIG_PACKAGE) {
+          continue
+        }
         if (dep === pkg.name) {
           offenders.push(`${pkg.dir}/package.json declares itself`)
         } else if (!allowed.includes(dep)) {
@@ -362,8 +375,8 @@ describe('package DAG', () => {
       }
 
       const tsconfig = `${REPO_ROOT}/${pkg.dir}/tsconfig.json`
-      if (existsSync(tsconfig) && readFileSync(tsconfig, 'utf8').includes('@kobato/toolchain/')) {
-        actual.add('@kobato/toolchain')
+      if (existsSync(tsconfig) && readFileSync(tsconfig, 'utf8').includes(`${CONFIG_PACKAGE}/`)) {
+        actual.add(CONFIG_PACKAGE)
       }
 
       for (const target of actual) {
@@ -498,7 +511,7 @@ describe('package DAG', () => {
   })
 
   it('has exactly one shared import-path table', () => {
-    const baseConfigPath = 'tools/toolchain/tsconfig.base.json'
+    const baseConfigPath = 'tools/tsconfig/tsconfig.base.json'
     const base = JSON.parse(readFileSync(`${REPO_ROOT}/${baseConfigPath}`, 'utf8')) as {
       compilerOptions: { paths?: Record<string, string[]> }
     }
@@ -518,7 +531,7 @@ describe('package DAG', () => {
 
     for (const [alias, targets] of Object.entries(paths!)) {
       for (const target of targets) {
-        const resolved = posixNormalize(`tools/toolchain/${target.replace(/\*$/, '')}`)
+        const resolved = posixNormalize(`tools/tsconfig/${target.replace(/\*$/, '')}`)
         expect(existsSync(`${REPO_ROOT}/${resolved}`), `${alias} target must exist: ${target}`).toBe(true)
       }
     }
@@ -680,6 +693,9 @@ describe('package DAG', () => {
       }
       for (const specifier of importSpecifiers(readSource(file))) {
         if (!specifier.startsWith('@kobato/inkling/')) {
+          continue
+        }
+        if (specifier === '@kobato/inkling/types' && file.endsWith('.d.ts')) {
           continue
         }
         if (

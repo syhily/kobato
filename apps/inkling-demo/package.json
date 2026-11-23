@@ -13,7 +13,7 @@
   "devDependencies": {
     "@kobato/inkling": "workspace:*",
     "@kobato/test": "workspace:*",
-    "@kobato/toolchain": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/web-public": "workspace:*",
     "@lexical/headless": "catalog:",

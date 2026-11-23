@@ -1,3 +1,5 @@
+import { APP_VERSION } from '@kobato/distribution/app'
+
 export type { Transformer } from '@lexical/markdown'
 export type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 
@@ -68,4 +70,4 @@ export { default as BASIC_NODES } from '@kobato/inkling-internal/nodes/BasicNode
 export { default as MINIMAL_NODES } from '@kobato/inkling-internal/nodes/MinimalNodes'
 export { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@kobato/inkling-internal/markdown/transformers-core'
 
-export const version = __APP_VERSION__
+export const version = APP_VERSION

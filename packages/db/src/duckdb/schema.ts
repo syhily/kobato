@@ -1,40 +1,45 @@
-import { ACCESS_EVENTS_DDL } from '@kobato/db/duckdb/access-events'
-import { DEVICE_ENV_CLIENT_DDL, DEVICE_ENV_SERVER_DDL } from '@kobato/db/duckdb/device-env'
 import { boolean, doublePrecision, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
-const ANALYTICS_SCHEMA = [
-  { name: 'access_events', ddl: ACCESS_EVENTS_DDL },
-  { name: 'device_env_server', ddl: DEVICE_ENV_SERVER_DDL },
-  { name: 'device_env_client', ddl: DEVICE_ENV_CLIENT_DDL },
-] as const
-
-export const ANALYTICS_TABLES = ANALYTICS_SCHEMA.map((table) => table.name)
-
-export const ANALYTICS_DDL: string[] = ANALYTICS_SCHEMA.map((table) => table.ddl)
+export const ANALYTICS_TABLES = ['access_events', 'device_env_server', 'device_env_client'] as const
 
 export const accessEvents = pgTable('access_events', {
   eventId: uuid('event_id').primaryKey(),
-  index1: text('index1').notNull(),
+  index1: text('index1').notNull().default(''),
   timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
   isBot: boolean('is_bot').notNull(),
-  blob1: text('blob1').notNull(),
-  blob2: text('blob2').notNull(),
-  blob3: text('blob3').notNull(),
-  blob4: text('blob4').notNull(),
-  blob5: text('blob5').notNull(),
-  blob6: text('blob6').notNull(),
-  blob7: text('blob7').notNull(),
-  blob8: text('blob8').notNull(),
-  blob9: text('blob9').notNull(),
-  blob10: text('blob10').notNull(),
-  blob11: text('blob11').notNull(),
-  blob12: text('blob12').notNull(),
-  blob13: text('blob13').notNull(),
-  blob14: text('blob14').notNull(),
-  blob15: text('blob15').notNull(),
-  blob16: text('blob16').notNull(),
+  blob1: text('blob1').notNull().default(''),
+  blob2: text('blob2').notNull().default(''),
+  blob3: text('blob3').notNull().default(''),
+  blob4: text('blob4').notNull().default(''),
+  blob5: text('blob5').notNull().default(''),
+  blob6: text('blob6').notNull().default(''),
+  blob7: text('blob7').notNull().default(''),
+  blob8: text('blob8').notNull().default(''),
+  blob9: text('blob9').notNull().default(''),
+  blob10: text('blob10').notNull().default(''),
+  blob11: text('blob11').notNull().default(''),
+  blob12: text('blob12').notNull().default(''),
+  blob13: text('blob13').notNull().default(''),
+  blob14: text('blob14').notNull().default(''),
+  blob15: text('blob15').notNull().default(''),
+  blob16: text('blob16').notNull().default(''),
   double1: doublePrecision('double1'),
   double2: doublePrecision('double2'),
+})
+
+export const deviceEnvServer = pgTable('device_env_server', {
+  eventId: uuid('event_id').primaryKey(),
+  timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
+  uaFullVersion: text('ua_full_version').notNull().default(''),
+  platform: text('platform').notNull().default(''),
+  platformVersion: text('platform_version').notNull().default(''),
+  model: text('model').notNull().default(''),
+  mobile: boolean('mobile'),
+  brands: text('brands').notNull().default(''),
+  arch: text('arch').notNull().default(''),
+  bitness: text('bitness').notNull().default(''),
+  formFactors: text('form_factors').notNull().default(''),
+  acceptLanguage: text('accept_language').notNull().default(''),
 })
 
 export const deviceEnvClient = pgTable('device_env_client', {
@@ -49,16 +54,16 @@ export const deviceEnvClient = pgTable('device_env_client', {
   dpr: doublePrecision('dpr'),
   colorDepth: integer('color_depth'),
   touchPoints: integer('touch_points'),
-  pointer: text('pointer').notNull(),
-  hover: text('hover').notNull(),
-  colorScheme: text('color_scheme').notNull(),
+  pointer: text('pointer').notNull().default(''),
+  hover: text('hover').notNull().default(''),
+  colorScheme: text('color_scheme').notNull().default(''),
   reducedMotion: boolean('reduced_motion'),
-  netEffectiveType: text('net_effective_type').notNull(),
+  netEffectiveType: text('net_effective_type').notNull().default(''),
   netDownlink: doublePrecision('net_downlink'),
   netRtt: integer('net_rtt'),
   netSaveData: boolean('net_save_data'),
-  locale: text('locale').notNull(),
-  timezone: text('timezone').notNull(),
+  locale: text('locale').notNull().default(''),
+  timezone: text('timezone').notNull().default(''),
   hardwareConcurrency: integer('hardware_concurrency'),
   deviceMemory: doublePrecision('device_memory'),
   hasStatic: boolean('has_static').notNull(),

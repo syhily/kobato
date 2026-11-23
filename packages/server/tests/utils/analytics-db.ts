@@ -6,7 +6,6 @@ import { appendAccessEvents } from '@kobato/db/duckdb/access-events'
 import { analyticsWriterOf, engineOf } from '@kobato/db/duckdb/connection'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { appendDeviceEnvClientRows, appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
-import { ANALYTICS_DDL } from '@kobato/db/duckdb/schema'
 import { settleAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -19,7 +18,7 @@ const dirs: string[] = []
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
-  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ANALYTICS_DDL)
+  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'))
   handles.push(handle)
   return handle
 }

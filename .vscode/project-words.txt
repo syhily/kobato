@@ -129,6 +129,7 @@ iosevka
 iroha
 iseeklife
 isodate
+isodow
 isready
 jamo
 jefc
@@ -284,6 +285,7 @@ recma
 recognise
 redmi
 referer
+referers
 regclass
 rehype
 replyable

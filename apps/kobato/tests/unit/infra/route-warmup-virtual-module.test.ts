@@ -1,7 +1,7 @@
 import { routeWarmupPlugin } from '@kobato/toolchain/src/vite/route-warmup'
 import { describe, expect, it } from 'vitest'
 
-const VIRTUAL = 'virtual:route-warmup-script'
+const VIRTUAL = '@kobato/web-client/route-warmup/compiled-script'
 const RESOLVED = `\0${VIRTUAL}`
 
 describe('routeWarmupPlugin — virtual module hooks', () => {

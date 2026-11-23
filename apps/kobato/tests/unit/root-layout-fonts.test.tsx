@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { Layout } from '@/root'
 
-vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
+vi.mock('@kobato/web-client/route-warmup/compiled-script', () => ({ default: '' }))
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()
