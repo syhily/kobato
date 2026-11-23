@@ -100,9 +100,6 @@ export const serverMessagesZhCN = {
   'notification.job.failed.title': '后台任务失败：{taskKey}',
   'notification.job.failed.body':
     '任务「{taskKey}」最近一次执行失败{hasError, select, yes {：{error}} other {。}}请到「任务」页面查看详情。',
-  'notification.mail.zeaburCleanup.title': '邮件服务已自动关闭',
-  'notification.mail.zeaburCleanup.body':
-    'Zeabur 邮件服务已下线，系统检测到站点仍在使用它，已自动关闭邮件发送。请到「系统设置 → 邮件」重新配置 SMTP 或 Mailgun 后重新启用。',
   'notification.backup.cacheWipeFailed.title': '恢复已生效，但缓存清理失败',
   'notification.backup.cacheWipeFailed.body':
     '恢复已完成，恢复的内容已经生效。部分无修订的缓存条目可能仍会被使用，直到正常 TTL 到期后自愈。请查看服务器日志了解详情。',

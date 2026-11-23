@@ -439,7 +439,6 @@ export const uiMessagesZhTW = {
   'notifications.kind.broadcast': '公告',
   'notifications.kind.direct': '私訊',
   'notifications.kind.job': '任務提醒',
-  'notifications.kind.system': '系統提醒',
   'admin.list.noun.comments': '留言',
   'admin.list.noun.friendLinks': '友鏈',
   'admin.list.noun.images': '圖片',

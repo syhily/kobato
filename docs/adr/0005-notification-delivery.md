@@ -37,9 +37,9 @@ Reversal is the same UPDATE with NULL: a database-level escape hatch, not a UI f
 recall.
 
 `recallMessage` (`src/server/domains/notifications/service.ts`) refuses `direct` messages so private threads between
-people stay honest. `admin`-kind system alerts (e.g. a stale Zeabur-cleanup alert) are recallable through the same gate
-as broadcasts. One admin procedure `admin.notifications.recall({ id })` covers both and is idempotent: a second call is
-a no-op returning the current state and writes no second audit row. The audit verb splits by the recalled row's kind —
+people stay honest. `admin`-kind system alerts (e.g. a stale job-failure alert) are recallable through the same gate as
+broadcasts. One admin procedure `admin.notifications.recall({ id })` covers both and is idempotent: a second call is a
+no-op returning the current state and writes no second audit row. The audit verb splits by the recalled row's kind —
 `notification_broadcast_recalled` (operator withdrawing an announcement) vs `notification_admin_recalled` (housekeeping
 on a system alert) — recorded via `recordAuditEventFromContext` only when the row was newly recalled.
 

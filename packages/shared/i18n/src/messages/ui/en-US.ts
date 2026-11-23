@@ -449,7 +449,6 @@ export const uiMessagesEnUS = {
   'notifications.kind.broadcast': 'Announcement',
   'notifications.kind.direct': 'Direct message',
   'notifications.kind.job': 'Task alert',
-  'notifications.kind.system': 'System alert',
   'admin.list.noun.comments': 'comments',
   'admin.list.noun.friendLinks': 'friend links',
   'admin.list.noun.images': 'images',

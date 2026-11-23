@@ -127,8 +127,8 @@ describe('notification message — descriptor resolution', () => {
 
 describe('notification message — write-time validation', () => {
   const valid = {
-    titleKey: 'notification.mail.zeaburCleanup.title' as const,
-    bodyKey: 'notification.mail.zeaburCleanup.body' as const,
+    titleKey: 'notification.backup.cacheWipeFailed.title' as const,
+    bodyKey: 'notification.backup.cacheWipeFailed.body' as const,
   }
 
   it('persists the English fallback plus JSON params', () => {
@@ -177,7 +177,7 @@ describe('notification message — write-time validation', () => {
       bodyParams: { message: "Unexpected token '<'" },
     })
 
-    expect(encoded.title).toBe('Mail sending was turned off automatically')
+    expect(encoded.title).toBe('Restored content is live, but cache cleanup failed')
     expect(JSON.parse(encoded.titleParams!)).toEqual({ taskKey: '<script>alert(1)</script>' })
     expect(JSON.parse(encoded.bodyParams!)).toEqual({ message: "Unexpected token '<'" })
   })

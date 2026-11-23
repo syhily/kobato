@@ -439,7 +439,6 @@ export const uiMessagesZhCN = {
   'notifications.kind.broadcast': '公告',
   'notifications.kind.direct': '私信',
   'notifications.kind.job': '任务提醒',
-  'notifications.kind.system': '系统提醒',
   'admin.list.noun.comments': '评论',
   'admin.list.noun.friendLinks': '友链',
   'admin.list.noun.images': '图片',

@@ -246,8 +246,8 @@ describe('integration / notifications controller', () => {
     const adminId = await seedUser('admin', 'admin')
     const adminCtx = makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
     const row = notifyAdmins(db, {
-      titleKey: 'notification.mail.zeaburCleanup.title',
-      bodyKey: 'notification.mail.zeaburCleanup.body',
+      titleKey: 'notification.backup.cacheWipeFailed.title',
+      bodyKey: 'notification.backup.cacheWipeFailed.body',
     })!
 
     const recalled = await callJson('/admin/notifications/recall', { id: String(row.id) }, adminCtx)

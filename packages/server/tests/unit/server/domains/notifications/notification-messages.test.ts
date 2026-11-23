@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 const RELEASED_NOTIFICATION_KEYS = [
   'notification.job.failed.body',
   'notification.job.failed.title',
-  'notification.mail.zeaburCleanup.body',
-  'notification.mail.zeaburCleanup.title',
   'notification.backup.cacheWipeFailed.body',
   'notification.backup.cacheWipeFailed.title',
 ] as const
@@ -76,28 +74,6 @@ const CASES: Case[] = [
         '還原已完成，還原的內容已經生效。部分無修訂的快取項目可能仍會被使用，直到正常 TTL 到期後自癒。請查看伺服器日誌了解詳情。',
       'zh-HK':
         '還原已完成，還原的內容已經生效。部分無修訂的快取項目可能仍會被使用，直到正常 TTL 到期後自動恢復。請查看伺服器日誌了解詳情。',
-    },
-  },
-  {
-    key: 'notification.mail.zeaburCleanup.title',
-    messages: {
-      'en-US': 'Mail sending was turned off automatically',
-      'zh-CN': '邮件服务已自动关闭',
-      'zh-TW': '郵件服務已自動關閉',
-      'zh-HK': '郵件服務已自動關閉',
-    },
-  },
-  {
-    key: 'notification.mail.zeaburCleanup.body',
-    messages: {
-      'en-US':
-        'The Zeabur mail service is gone. This site still used it, so sending was turned off automatically. Reconfigure SMTP or Mailgun under Settings > Mail and turn it back on.',
-      'zh-CN':
-        'Zeabur 邮件服务已下线，系统检测到站点仍在使用它，已自动关闭邮件发送。请到「系统设置 → 邮件」重新配置 SMTP 或 Mailgun 后重新启用。',
-      'zh-TW':
-        'Zeabur 郵件服務已下線，系統偵測到站點仍在使用它，已自動關閉郵件傳送。請到「系統設定 → 郵件」重新設定 SMTP 或 Mailgun 後重新啟用。',
-      'zh-HK':
-        'Zeabur 郵件服務已下線，系統偵測到站點仍在使用它，已自動關閉郵件傳送。請到「系統設定 → 郵件」重新設定 SMTP 或 Mailgun 後重新啟用。',
     },
   },
 ]

@@ -382,7 +382,6 @@ describe('production sources', () => {
         'packages/server/src/domains/notifications/email.ts',
         'packages/server/src/domains/notifications/service.ts',
         'packages/server/src/bootstrap/db-lifecycle.ts',
-        'packages/server/src/domains/settings/services/zeabur-mail-cleanup.ts',
 
         'packages/server/src/render/feed/generator.tsx',
         'packages/server/src/render/calendar/render.ts',

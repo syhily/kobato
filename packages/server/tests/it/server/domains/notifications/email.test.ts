@@ -24,9 +24,8 @@ function emailLogs(level: 'warn' | 'error') {
 const db = getTestDb()
 
 const SYSTEM_NOTICE = {
-  titleKey: 'notification.mail.zeaburCleanup.title',
-  bodyKey: 'notification.mail.zeaburCleanup.body',
-  source: 'zeabur-mail-cleanup',
+  titleKey: 'notification.backup.cacheWipeFailed.title',
+  bodyKey: 'notification.backup.cacheWipeFailed.body',
 } as const
 const ZH_NOTICE = createServerTranslator('zh-CN')
 const EN_NOTICE = createServerTranslator('en-US')
@@ -162,12 +161,12 @@ describe('notifications email — direct and admin kinds', () => {
     expect(recipients).not.toContain('author-3@example.com')
 
     const html = sentMessage(0).get('html') as string
-    const expectedTitle = ZH_NOTICE.format('notification.mail.zeaburCleanup.title')
+    const expectedTitle = ZH_NOTICE.format(SYSTEM_NOTICE.titleKey)
     expect(sentMessage(0).get('subject')).toBe(
       `【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】系统提醒：${expectedTitle}`,
     )
     expect(html).toContain(expectedTitle)
-    expect(html).toContain(ZH_NOTICE.format('notification.mail.zeaburCleanup.body'))
+    expect(html).toContain(ZH_NOTICE.format(SYSTEM_NOTICE.bodyKey))
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(NOTIFICATION_EMAIL_FOOTER)
     expect(secondAdminId).toBeGreaterThan(0)
@@ -318,13 +317,13 @@ describe('notifications email — site locale at send time', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
     const body = sentMessage(0)
-    const expectedTitle = EN_NOTICE.format('notification.mail.zeaburCleanup.title')
+    const expectedTitle = EN_NOTICE.format(SYSTEM_NOTICE.titleKey)
     expect(body.get('subject')).toBe(`${title}: System alert: ${expectedTitle}`)
     const html = body.get('html') as string
     expect(html).toContain('Open the admin panel')
     expect(html).toContain('href="https://example.com/admin"')
     expect(html).toContain(expectedTitle)
-    expect(html).toContain(EN_NOTICE.format('notification.mail.zeaburCleanup.body').replaceAll('>', '&gt;'))
+    expect(html).toContain(EN_NOTICE.format(SYSTEM_NOTICE.bodyKey))
   })
 })
 

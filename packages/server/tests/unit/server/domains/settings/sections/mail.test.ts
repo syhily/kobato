@@ -45,20 +45,18 @@ describe('settings/sections/mail', () => {
   })
 
   it('coerces out-of-union transport values stored by older builds to smtp', () => {
-    for (const legacy of ['zeabur', 'sendgrid']) {
-      const result = mailSchema.safeParse({
-        mail: {
-          enabled: true,
-          sender: 'noreply@example.com',
-          transport: legacy,
-          smtpHost: 'smtp.example.com',
-        },
-      })
-      expect(result.success, `transport=${legacy}`).toBe(true)
-      if (result.success) {
-        expect(result.data.mail.transport).toBe('smtp')
-        expect(result.data.mail.smtpHost).toBe('smtp.example.com')
-      }
+    const result = mailSchema.safeParse({
+      mail: {
+        enabled: true,
+        sender: 'noreply@example.com',
+        transport: 'sendgrid',
+        smtpHost: 'smtp.example.com',
+      },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.mail.transport).toBe('smtp')
+      expect(result.data.mail.smtpHost).toBe('smtp.example.com')
     }
   })
 

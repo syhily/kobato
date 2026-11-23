@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { NOTIFICATION_SOURCES } from '@kobato/api/contracts/notifications'
+import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/notifications'
 import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
 import { defaultMigrationsFolder, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import {
@@ -33,7 +33,6 @@ import { syncObservabilityRuntime } from '@kobato/server/domains/observability/r
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@kobato/server/domains/settings/services/section-changes'
-import { runZeaburMailCleanupAtBoot } from '@kobato/server/domains/settings/services/zeabur-mail-cleanup'
 import { wireS3Migration } from '@kobato/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@kobato/server/domains/webmentions/enqueue'
 import { clearLocalizedOutputs, wipeCacheForRestore } from '@kobato/server/infra/cache/registry'
@@ -98,8 +97,6 @@ async function migrateContentDatabase(db: Database): Promise<void> {
   })
 }
 
-const JOB_RUN_SOURCE = NOTIFICATION_SOURCES[1]
-
 function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
@@ -111,7 +108,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
       titleParams: { taskKey },
       bodyKey: 'notification.job.failed.body',
       bodyParams: { taskKey, hasError: error !== null ? 'yes' : 'no', error: error ?? '' },
-      source: JOB_RUN_SOURCE,
+      source: JOB_RUN_NOTIFICATION_SOURCE,
       actionUrl: '/admin/tasks',
     })
   })
@@ -206,12 +203,7 @@ if (!migrationsRanInHmr()) {
 }
 
 if (!isVitest()) {
-  void (async () => {
-    await runAssetUrlBackfillOnceAtBoot(getDb())
-    await runZeaburMailCleanupAtBoot(getDb(), (message) => {
-      notifyAdmins(getDb(), message)
-    })
-  })()
+  void runAssetUrlBackfillOnceAtBoot(getDb())
 }
 
 export async function prepareDatabaseForRestore(): Promise<void> {

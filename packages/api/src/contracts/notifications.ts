@@ -7,8 +7,7 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number]
 export const NOTIFICATION_TABS = ['all', 'unread', 'direct', 'announce'] as const
 export type NotificationTab = (typeof NOTIFICATION_TABS)[number]
 
-export const NOTIFICATION_SOURCES = ['zeabur-mail-cleanup', 'job-run'] as const
-export type NotificationSource = (typeof NOTIFICATION_SOURCES)[number]
+export const JOB_RUN_NOTIFICATION_SOURCE = 'job-run'
 
 export const notificationSenderDto = z.object({
   id: idString,

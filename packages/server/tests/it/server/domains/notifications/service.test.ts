@@ -31,9 +31,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 const db = getTestDb()
 
 const SYSTEM_NOTICE = {
-  titleKey: 'notification.mail.zeaburCleanup.title',
-  bodyKey: 'notification.mail.zeaburCleanup.body',
-  source: 'zeabur-mail-cleanup',
+  titleKey: 'notification.backup.cacheWipeFailed.title',
+  bodyKey: 'notification.backup.cacheWipeFailed.body',
 } as const
 
 let seq = 0

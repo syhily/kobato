@@ -1,21 +1,13 @@
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
 import { formatNotificationTime, notificationMeta } from '@kobato/web-public/ui/shared/notifications/notification-meta'
-import { MailWarningIcon, MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
+import { MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')
-const tEnUS = makeTranslator('en-US')
 
 const TIME_ZONE = 'Asia/Shanghai'
 
 describe('ui/shared/notifications/notification-meta', () => {
-  it('maps the Zeabur mail-cleanup source to the system-alert chrome', () => {
-    const meta = notificationMeta({ kind: 'admin', source: 'zeabur-mail-cleanup' })
-    expect(tZhCN(meta.kindLabelId)).toBe('系统提醒')
-    expect(tEnUS(meta.kindLabelId)).toBe('System alert')
-    expect(meta.icon).toBe(MailWarningIcon)
-  })
-
   it('maps the job-run source to the task-alert chrome', () => {
     const meta = notificationMeta({ kind: 'admin', source: 'job-run' })
     expect(tZhCN(meta.kindLabelId)).toBe('任务提醒')

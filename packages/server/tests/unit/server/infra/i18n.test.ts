@@ -16,7 +16,9 @@ describe('server/infra/i18n', () => {
   it('formats server-only messages, which the UI catalog does not carry', () => {
     expect(createServerTranslator('en-US').format('email.common.greeting', { receiver: 'Ada' })).toBe('Hello Ada,')
     expect(createServerTranslator('zh-CN').format('email.common.greeting', { receiver: '雨帆' })).toBe('你好，雨帆')
-    expect(createServerTranslator('zh-TW').format('notification.mail.zeaburCleanup.title')).toBe('郵件服務已自動關閉')
+    expect(createServerTranslator('zh-TW').format('notification.backup.cacheWipeFailed.title')).toBe(
+      '還原已生效，但快取清理失敗',
+    )
   })
 
   it('formats a rich-text message through the caller-supplied tag renderer', () => {
