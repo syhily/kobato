@@ -1,4 +1,4 @@
-import { fontSplit, type FontSplitOutputFile } from '@kobato/server/domains/fonts/vendor/wasm-split'
+import { fontSplit, type FontSplitOutputFile } from '@kobato/server/domains/fonts/vendor/napi-split'
 import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('fonts.slice')
@@ -18,14 +18,13 @@ export async function sliceFont(sourceBuffer: Uint8Array, options: SliceOptions 
   const outputs = await fontSplit({
     input: sourceBuffer,
     css: options.fontFamily ? { fontFamily: options.fontFamily } : {},
-    reporter: false,
   })
 
   log.info('fontSplit returned', { outputCount: outputs.length, names: outputs.map((f) => f.name) })
 
   const css = findOutput(outputs, 'result.css')
   if (!css) {
-    throw new Error('cn-font-split did not emit result.css — the JS↔wasm contract may have drifted')
+    throw new Error('font-split did not emit result.css — the JS↔napi contract may have drifted')
   }
   const chunks = outputs.filter(isWoff2File)
 

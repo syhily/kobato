@@ -6,8 +6,6 @@ export const SEA_PROCESS_WORKER_BUNDLE_KEY = 'worker/process-worker.mjs'
 
 export const SEA_SMOKE_WORKER_BUNDLE_KEY = 'worker/smoke-worker.mjs'
 
-export const SEA_WASM_CNFS_KEY = 'wasm/cnfs.wasm'
-
 export const SEA_CLIENT_ASSET_PREFIX = 'client/'
 
 export const SEA_DRIZZLE_ASSET_PREFIX = 'drizzle/'
@@ -21,6 +19,8 @@ export const SEA_NATIVE_SKIA_ADDON_KEY = 'natives/skia.node'
 export const SEA_NATIVE_SKIA_ICU_KEY = 'natives/icudtl.dat'
 
 export const SEA_NATIVE_DUCKDB_ADDON_KEY = 'natives/duckdb.node'
+
+export const SEA_NATIVE_FONT_SPLIT_ADDON_KEY = 'natives/font-split.node'
 
 export const SEA_OBSERVABILITY_ASSET_PREFIX = 'observability/'
 

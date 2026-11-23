@@ -214,13 +214,13 @@ describe('tools/pack/src/sea/assets — shouldPackAsset packing policy', () => {
     expect(shouldPackAsset('natives/sharp.node')).toBe(true)
     expect(shouldPackAsset('natives/skia.node')).toBe(true)
     expect(shouldPackAsset('natives/libvips-cpp.dylib')).toBe(true)
+    expect(shouldPackAsset('natives/font-split.node')).toBe(true)
   })
 
   it('keeps every VFS-read asset raw — a packed payload is unreadable through node:fs', () => {
     const rawKeys = [
       'client/assets/app.js',
       'drizzle/0001_init/migration.sql',
-      'wasm/cnfs.wasm',
       'worker/process-worker.mjs',
       'worker/smoke-worker.mjs',
       'natives-meta/libvips-versions.json',

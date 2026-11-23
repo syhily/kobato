@@ -189,9 +189,6 @@ catalogs:
     '@base-ui/react':
       specifier: ^1.9.0
       version: 1.9.0
-    '@bufbuild/protobuf':
-      specifier: ^2.17.0
-      version: 2.17.0
     '@chenglou/pretext':
       specifier: ^1.0.0
       version: 1.0.0
@@ -605,6 +602,9 @@ importers:
       '@duckdb/node-api':
         specifier: 'catalog:'
         version: 2.0.1-r.1
+      '@kobato/font-split':
+        specifier: workspace:*
+        version: link:tools/font-split
       '@napi-rs/canvas':
         specifier: 'catalog:'
         version: 1.2.0
@@ -1188,9 +1188,6 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
         version: 3.1175.0
-      '@bufbuild/protobuf':
-        specifier: 'catalog:'
-        version: 2.17.0
       '@chenglou/pretext':
         specifier: 'catalog:'
         version: 1.0.0
@@ -1978,6 +1975,8 @@ importers:
         specifier: 'catalog:'
         version: 6.0.0(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
 
+  tools/font-split: {}
+
   tools/harness:
     devDependencies:
       '@duckdb/node-api':
@@ -2347,9 +2346,6 @@ packages:
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
-
-  '@bufbuild/protobuf@2.17.0':
-    resolution: {integrity: sha512-hcPkSz6D7MiTU/5VBBhK+kxaYDoOdQ6yJRFJ3kS8Nydp+VZXfg1vrpABKPNod8bXMufsVCmiUJVIKFzCzta4uw==}
 
   '@chenglou/pretext@1.0.0':
     resolution: {integrity: sha512-BxKiDMxWJhyzL8asvcgg3T9YnUU7OUFsKO8oRaR2SYAPX4Sh2wM9gqTBjrBaZ4fnl84cEQ8czC0Q1M83z3chsA==}
@@ -6759,8 +6755,6 @@ snapshots:
       '@types/react': 19.3.0
 
   '@bcoe/v8-coverage@1.0.2': {}
-
-  '@bufbuild/protobuf@2.17.0': {}
 
   '@chenglou/pretext@1.0.0': {}
 

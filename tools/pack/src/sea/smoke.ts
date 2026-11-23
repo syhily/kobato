@@ -76,13 +76,14 @@ function checkVersion(binaryPath: string) {
   return line
 }
 
-const NATIVES_FILE_COUNT = process.platform === 'win32' ? 7 : 5
+const NATIVES_FILE_COUNT = process.platform === 'win32' ? 8 : 6
 
 function isExpectedNativeFile(name: string): boolean {
   return (
     name === 'sharp.node' ||
     name === 'skia.node' ||
     name === 'duckdb.node' ||
+    name === 'font-split.node' ||
     name === 'duckdb.dll' ||
     name === 'icudtl.dat' ||
     name.startsWith('libvips') ||
@@ -108,8 +109,15 @@ async function checkNativesLayout(cacheDir: string) {
   if (names.length !== NATIVES_FILE_COUNT) {
     throw new Error(`expected ${NATIVES_FILE_COUNT} extracted native files, found ${names.length}: ${names.join(', ')}`)
   }
-  if (!names.includes('sharp.node') || !names.includes('skia.node') || !names.includes('duckdb.node')) {
-    throw new Error(`sharp.node / skia.node / duckdb.node missing from the extraction: ${names.join(', ')}`)
+  if (
+    !names.includes('sharp.node') ||
+    !names.includes('skia.node') ||
+    !names.includes('duckdb.node') ||
+    !names.includes('font-split.node')
+  ) {
+    throw new Error(
+      `sharp.node / skia.node / duckdb.node / font-split.node missing from the extraction: ${names.join(', ')}`,
+    )
   }
   if (process.platform === 'win32' && !names.includes('icudtl.dat')) {
     throw new Error(`icudtl.dat missing from the extraction (win32 skia crashes without it): ${names.join(', ')}`)

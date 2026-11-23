@@ -1,0 +1,21 @@
+{
+  "name": "@kobato/font-split",
+  "version": "8.2.1-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": [
+      "./src/index.ts"
+    ],
+    "./font-split.node": "./font-split.node",
+    "./package.json": "./package.json",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "scripts": {
+    "build": "cargo build --release && node scripts/copy-addon.ts",
+    "test": "cargo test"
+  }
+}

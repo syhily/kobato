@@ -14,6 +14,11 @@ package (`tools/<name>` ↔ `@kobato/<specifier>`):
 - `email` — localized email-template previews (`emails:generate`).
 - `i18n` — regional terminology diff report (`i18n:regional-diff`).
 - `pack` — packaging tooling: the SEA pipeline, release automation, and the shared vite config helpers (`src/vite/`).
+- `font-split` — the ONE exception to "nothing ships": a vendored cn-font-split Rust fork compiled into a Node-API addon
+  the production server loads at runtime. Product src still never imports it — the server reaches the addon only through
+  `nativeRequire('@kobato/font-split/font-split.node')` (a plain specifier string, not an import), so the package-dag
+  boundary holds; the workspace link is declared in the ROOT `package.json` next to the other production
+  native-dynamic-library dependencies. Details: `font-split/AGENTS.md`.
 
 ## Boundary rules
 

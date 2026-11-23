@@ -35,8 +35,8 @@ Usage:
   kobato --version, -v     Print the version and exit
   kobato --help, -h        Print this help and exit
   kobato --smoke-natives   Extract and load the native packages (sharp,
-                           @napi-rs/canvas, the DuckDB engine), run a tiny
-                           render + a tiny aggregate, and exit
+                           @napi-rs/canvas, the DuckDB engine, font-split),
+                           run a tiny render + a tiny aggregate, and exit
   kobato --smoke-worker    Round-trip a real sharp job through the
                            worker_threads image pool and exit. Requires
                            the full configuration (validated, never
@@ -106,6 +106,12 @@ async function smokeNatives(quiet = false): Promise<void> {
 
   const { runDuckDbSelfCheck } = await import('@kobato/db/duckdb/self-check')
   await runDuckDbSelfCheck()
+
+  const { FONT_SPLIT_ADDON_SPEC, nativeRequire } = await import('@kobato/server/infra/sea/native-require')
+  const fontSplitBinding = unsafeCast<{ fontSplit?: unknown }>(nativeRequire(FONT_SPLIT_ADDON_SPEC))
+  if (typeof fontSplitBinding.fontSplit !== 'function') {
+    throw new TypeError('font-split addon loaded but fontSplit export is missing')
+  }
 
   if (!quiet) {
     process.stdout.write(`SEA natives smoke passed: ${process.platform}-${process.arch}\n`)

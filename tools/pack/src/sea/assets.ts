@@ -4,6 +4,7 @@ import {
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
   SEA_NATIVE_DUCKDB_ADDON_KEY,
+  SEA_NATIVE_FONT_SPLIT_ADDON_KEY,
   SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
@@ -14,7 +15,6 @@ import {
   SEA_OBSERVABILITY_ASSET_PREFIX,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
-  SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
 } from '@kobato/distribution/sea-assets'
 import { fail, run } from '@kobato/pack/sea/exec'
@@ -264,6 +264,12 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
   await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 
+  const fontSplitAddon = join(resolvePackageRoot('@kobato/font-split'), 'font-split.node')
+  if (!existsSync(fontSplitAddon)) {
+    fail(`@kobato/font-split addon missing: ${fontSplitAddon}. Run pnpm --filter @kobato/font-split run build first.`)
+  }
+  await addAsset(assets, files, SEA_NATIVE_FONT_SPLIT_ADDON_KEY, fontSplitAddon, ctx)
+
   await addAsset(assets, files, SEA_NATIVE_META_SHARP_PACKAGE_KEY, join(sharpPkg.root, 'package.json'), ctx)
   const sharpVersions = join(sharpPkg.root, 'versions.json')
   if (existsSync(sharpVersions)) {
@@ -322,7 +328,7 @@ async function addTree(
   }
 }
 
-export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
+export async function collectSeaAssets() {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
   const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
@@ -338,8 +344,6 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
     ctx,
     isDrizzleSnapshotArtifact,
   )
-
-  await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)
 
   await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
@@ -365,9 +369,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { assets, manifest, stats } = await collectSeaAssets({
-    wasmPath: process.argv[2] ?? fail('Usage: node tools/pack/src/sea/assets.ts <path-to-cnfs-wasm>'),
-  })
+  const { assets, manifest, stats } = await collectSeaAssets()
   const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
   console.log(
     `Collected ${assets.size} assets for ${manifest.target} (${manifest.files.length} manifest files, ` +

@@ -35,10 +35,12 @@ CLI-only probes (`doctor-report.ts`, `intl-probe.ts`).
 
 - Build-side mechanics live in `tools/pack/AGENTS.md`. Native packages are imported through their owning packages —
   `sharp` and `@napi-rs/canvas` directly, the DuckDB engine through `@kobato/db/duckdb/self-check` (the
-  `--smoke-natives` aggregate leg); server code never imports `@duckdb/node-api` itself. A
-  `requireExternal('sharp' | ...)` call site hides the package from the bundler and crashes under SEA; `requireExternal`
-  remains only as `nativeRequire`'s resolver. The boundaries contract test bans such sites; the native-specifiers test
-  enumerates every platform `require` so a new specifier fails at upgrade time.
+  `--smoke-natives` aggregate leg); server code never imports `@duckdb/node-api` itself. The font-slicing addon is the
+  one workspace native: `domains/fonts/vendor/napi-split.ts` loads it through `nativeRequire(FONT_SPLIT_ADDON_SPEC)` — a
+  specifier string, never a static import, so the tools boundary stays intact. A `requireExternal('sharp' | ...)` call
+  site hides the package from the bundler and crashes under SEA; `requireExternal` remains only as `nativeRequire`'s
+  resolver. The boundaries contract test bans such sites; the native-specifiers test enumerates every platform `require`
+  so a new specifier fails at upgrade time.
 - SEA-safe file reads go through `seaAssetPath` (raw assets, main thread only) or `getEmbeddedAsset` (packed
   `natives/*`, worker-safe). Never `seaAssetPath` a `natives/*` key — it throws on zstd bytes. New resource types go
   into `tools/pack/src/sea/assets.ts` AND are read via the sea helpers with a non-SEA fallback.

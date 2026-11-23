@@ -3,6 +3,7 @@ import {
   SEA_DRIZZLE_ASSET_PREFIX,
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
+  SEA_NATIVE_FONT_SPLIT_ADDON_KEY,
   SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
@@ -15,7 +16,6 @@ import {
   SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
-  SEA_WASM_CNFS_KEY,
 } from '@kobato/distribution/sea-assets'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
@@ -29,13 +29,13 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       'SEA_MANIFEST_KEY',
       'SEA_PROCESS_WORKER_BUNDLE_KEY',
       'SEA_SMOKE_WORKER_BUNDLE_KEY',
-      'SEA_WASM_CNFS_KEY',
       'SEA_CLIENT_ASSET_PREFIX',
       'SEA_DRIZZLE_ASSET_PREFIX',
       'SEA_NATIVE_ASSET_PREFIX',
       'SEA_NATIVE_SHARP_ADDON_KEY',
       'SEA_NATIVE_SKIA_ADDON_KEY',
       'SEA_NATIVE_SKIA_ICU_KEY',
+      'SEA_NATIVE_FONT_SPLIT_ADDON_KEY',
       'SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY',
       'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
       'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
@@ -47,10 +47,10 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       `'server/server.mjs'`,
       `'worker/process-worker.mjs'`,
       `'worker/smoke-worker.mjs'`,
-      `'wasm/cnfs.wasm'`,
       `'natives/sharp.node'`,
       `'natives/skia.node'`,
       `'natives/icudtl.dat'`,
+      `'natives/font-split.node'`,
       `'natives-meta/`,
       `'observability/`,
     ],
@@ -82,6 +82,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       'SEA_NATIVE_ASSET_PREFIX',
       'SEA_NATIVE_SHARP_ADDON_KEY',
       'SEA_NATIVE_SKIA_ADDON_KEY',
+      'SEA_NATIVE_FONT_SPLIT_ADDON_KEY',
       'SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY',
       'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
       'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
@@ -91,6 +92,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       `'natives/'`,
       `'natives/sharp.node'`,
       `'natives/skia.node'`,
+      `'natives/font-split.node'`,
       `'natives-meta/libvips-versions.json'`,
       `'natives-meta/libvips-package.json'`,
       `'natives-meta/sharp-platform-package.json'`,
@@ -106,11 +108,6 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     file: 'packages/server/src/render/warmup/manifest.ts',
     names: ['SEA_CLIENT_ASSET_PREFIX'],
     forbiddenLiterals: [`'client/assets/warmup-manifest.json'`, `'client/assets/manifest-'`],
-  },
-  {
-    file: 'packages/server/src/domains/fonts/vendor/wasm-split.ts',
-    names: ['SEA_WASM_CNFS_KEY'],
-    forbiddenLiterals: [`'wasm/cnfs.wasm'`],
   },
   {
     file: 'packages/server/src/infra/db/paths.ts',
@@ -142,13 +139,13 @@ describe('contract: SEA embedded-asset keys', () => {
     expect(SEA_MANIFEST_KEY).toBe('manifest.json')
     expect(SEA_PROCESS_WORKER_BUNDLE_KEY).toBe('worker/process-worker.mjs')
     expect(SEA_SMOKE_WORKER_BUNDLE_KEY).toBe('worker/smoke-worker.mjs')
-    expect(SEA_WASM_CNFS_KEY).toBe('wasm/cnfs.wasm')
     expect(SEA_CLIENT_ASSET_PREFIX).toBe('client/')
     expect(SEA_DRIZZLE_ASSET_PREFIX).toBe('drizzle/')
     expect(SEA_NATIVE_ASSET_PREFIX).toBe('natives/')
     expect(SEA_NATIVE_SHARP_ADDON_KEY).toBe('natives/sharp.node')
     expect(SEA_NATIVE_SKIA_ADDON_KEY).toBe('natives/skia.node')
     expect(SEA_NATIVE_SKIA_ICU_KEY).toBe('natives/icudtl.dat')
+    expect(SEA_NATIVE_FONT_SPLIT_ADDON_KEY).toBe('natives/font-split.node')
     expect(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY).toBe('natives-meta/libvips-versions.json')
     expect(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY).toBe('natives-meta/libvips-package.json')
     expect(SEA_NATIVE_META_SHARP_PACKAGE_KEY).toBe('natives-meta/sharp-platform-package.json')

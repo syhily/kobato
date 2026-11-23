@@ -2,15 +2,9 @@ import { collectSeaAssets } from '@kobato/pack/sea/assets'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
 import { fail, run } from '@kobato/pack/sea/exec'
 import { runInjectStep } from '@kobato/pack/sea/inject'
-import {
-  repoRoot,
-  seaBinaryFileName,
-  seaBinaryPath,
-  seaBinarySha256Path,
-  seaIntermediatesDir,
-} from '@kobato/pack/sea/paths'
+import { seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'
-import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const REQUIRED_NODE_VERSION = '26.10.0'
@@ -27,16 +21,6 @@ function ensureNodeVersion() {
       fail(`SEA build requires Node.js >= ${REQUIRED_NODE_VERSION}, current ${process.versions.node}.`)
     }
   }
-}
-
-async function locateCnfsWasm() {
-  const assetsDir = join(repoRoot, 'apps', 'kobato', 'build', 'server', 'assets')
-  const entries = await readdir(assetsDir)
-  const matches = entries.filter((name) => /^cnfs-.+\.wasm$/.test(name))
-  if (matches.length !== 1) {
-    fail(`Expected exactly one cnfs-*.wasm in ${assetsDir}, found ${matches.length}. Run pnpm run build first.`)
-  }
-  return join(assetsDir, matches[0])
 }
 
 async function writeBinaryChecksum() {
@@ -64,8 +48,7 @@ async function main() {
   run(process.execPath, [join(import.meta.dirname, 'check-bundle.ts')])
 
   console.log('==> collect assets')
-  const wasmPath = await locateCnfsWasm()
-  const { assets, stats } = await collectSeaAssets({ wasmPath })
+  const { assets, stats } = await collectSeaAssets()
   const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
   console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
 

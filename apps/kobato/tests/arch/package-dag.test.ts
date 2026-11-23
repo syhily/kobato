@@ -143,6 +143,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
+  '@kobato/font-split': [],
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
@@ -237,6 +238,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
   '@kobato/i18n-tools': INTERNAL_SCOPES,
+  '@kobato/font-split': [],
 }
 
 const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []

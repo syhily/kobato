@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "catalog:",
-    "@bufbuild/protobuf": "catalog:",
     "@chenglou/pretext": "catalog:",
     "@date-fns/tz": "catalog:",
     "@hono/node-server": "catalog:",

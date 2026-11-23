@@ -14,13 +14,19 @@ jobs:
   check:
     name: lint + typecheck + test + coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       security__sessionSecret: ci-session-secret-not-a-real-one
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
       - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/font-split
+      - run: pnpm --filter @kobato/font-split run build
+      - run: pnpm --filter @kobato/font-split run test
       - run: pnpm run type
       - run: pnpm run fmt:check
       - run: pnpm run lint
@@ -47,6 +53,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
         if: github.event_name != 'pull_request'
+      - uses: dtolnay/rust-toolchain@stable
+        if: github.event_name == 'pull_request'
+      - uses: Swatinem/rust-cache@v2
+        if: github.event_name == 'pull_request'
+        with:
+          workspaces: tools/font-split
+      - run: pnpm --filter @kobato/font-split run build
+        if: github.event_name == 'pull_request'
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
         if: github.event_name == 'pull_request'
       - run: pnpm run sea:build

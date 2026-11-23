@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@duckdb/node-api": "catalog:",
+    "@kobato/font-split": "workspace:*",
     "@napi-rs/canvas": "catalog:",
     "sharp": "catalog:"
   },

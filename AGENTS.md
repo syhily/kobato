@@ -13,7 +13,9 @@ pnpm monorepo with four top-level roots; nothing else is created at the root:
   model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`, `web-admin`), and nine isomorphic
   React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`toolchain`, `tsconfig`, `test`, `harness`, `browser`, `email`, `i18n-tools`,
-  `trace`, `pack`); nothing ships in the product binary, and product `src/` never imports a tools package.
+  `trace`, `pack`, `font-split`); nothing ships in the product binary, and product `src/` never imports a tools package
+  — `font-split` is the sole carve-out: its compiled Node-API addon ships as a SEA native, loaded only through
+  `nativeRequire` specifier strings (never an import).
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
   `tools/`.
 
@@ -183,8 +185,8 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
   `"workspace:*"`. The server/app `drizzle-orm` devDependencies are test-only for seed/assertion code; production source
   must not import them.
 - Only native-dynamic-library packages required at production runtime belong in the ROOT `package.json` `dependencies`:
-  `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`. Everything else is a devDependencies entry of the importing package —
-  the SEA binary builds from the full dev install.
+  `@napi-rs/canvas`, `sharp`, `@duckdb/node-api`, `@kobato/font-split` (workspace addon, `nativeRequire`-only).
+  Everything else is a devDependencies entry of the importing package — the SEA binary builds from the full dev install.
 - Upgrade `drizzle-orm` / `drizzle-kit` together and re-run the migration contract tests on upgrades. Raw integer `sql`
   fields in mapped selects need an explicit `.mapWith(Number)` — rc.6 decodes them as `bigint` on `node:sqlite`.
 - `@duckdbfan/drizzle-duckdb`'s DuckDB 2.0 peer exception requires the real DuckDB suites on upgrades.

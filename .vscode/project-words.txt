@@ -23,7 +23,6 @@ blogster
 blurhash
 bradlc
 braindamage
-bufbuild
 buildx
 burstable
 bxaw
@@ -34,7 +33,6 @@ chenglou
 cimage
 ckenh
 cking
-cnfs
 cnip
 codegen
 codegraph
@@ -270,7 +268,6 @@ preopen
 prerender
 procfile
 prosemirror
-protoc
 psql
 pswp
 pthread

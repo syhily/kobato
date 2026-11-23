@@ -48,11 +48,13 @@ server bundle CARRIES the OpenTelemetry SDK and must never carry the browser RUM
 
 ## Natives
 
-Extraction writes exactly 5 files (7 on win32) into the FLAT `<cache>/natives-<manifest-hash>/`: rpath-patched
-`sharp.node` + libvips, `skia.node`, rpath-patched `duckdb.node` + libduckdb, win32-only `icudtl.dat` (missing = FATAL).
-rpath patches run at build time (`install_name_tool` / `patchelf`). sharp / @napi-rs/canvas / @duckdb/node-api are
-statically imported and bundled; `redirect-native-requires.ts` rewrites their platform `require(...)` sites to
-`nativeRequire` against the flat dir.
+Extraction writes exactly 6 files (8 on win32) into the FLAT `<cache>/natives-<manifest-hash>/`: rpath-patched
+`sharp.node` + libvips, `skia.node`, rpath-patched `duckdb.node` + libduckdb, the self-contained `font-split.node`,
+win32-only `icudtl.dat` (missing = FATAL). rpath patches run at build time (`install_name_tool` / `patchelf`). sharp /
+@napi-rs/canvas / @duckdb/node-api are statically imported and bundled; `redirect-native-requires.ts` rewrites their
+platform `require(...)` sites to `nativeRequire` against the flat dir. `font-split.node` is staged from the workspace
+build of `@kobato/font-split` (`pnpm --filter @kobato/font-split run build` must precede `sea:build`) — it carries no
+companion libraries and no rpath patch, and server code reaches it only through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`.
 
 ## Instance harness
 

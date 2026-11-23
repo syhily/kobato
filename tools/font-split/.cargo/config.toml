@@ -1,0 +1,2 @@
+[env]
+HARFBUZZ_SYS_NO_PKG_CONFIG = "1"

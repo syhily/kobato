@@ -18,5 +18,5 @@
   "compilerOptions": {
     "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"]
   },
-  "exclude": ["build", "dist", "node_modules", "apps/kobato/build"]
+  "exclude": ["build", "dist", "node_modules", "apps/kobato/build", "**/target"]
 }

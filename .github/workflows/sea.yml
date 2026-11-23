@@ -73,6 +73,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
       - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/font-split
+          key: ${{ matrix.target }}
+      - run: pnpm --filter @kobato/font-split run build
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
         if: runner.os == 'Linux'
       - run: pnpm run sea:build
@@ -107,6 +113,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
       - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/font-split
+          key: linux-x64
+      - run: pnpm --filter @kobato/font-split run build
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato

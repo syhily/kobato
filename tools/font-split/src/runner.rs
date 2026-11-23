@@ -1,0 +1,74 @@
+use crate::config::FontSplitConfig;
+use crate::link_subset::link_subset;
+use crate::loader::smart_load_woff2;
+use crate::output::OutputFile;
+use crate::pre_subset::fvar::FvarTable;
+use crate::pre_subset::name_table::NameTableSets;
+use crate::pre_subset::pre_subset;
+use crate::run_subset::{RunSubsetResult, run_subset};
+use harfbuzz_rs_now::{Face, Owned};
+use log::info;
+
+pub struct Context<'a, 'b, 'c>
+where
+    'b: 'a,
+    'c: 'a,
+{
+    pub input: &'c FontSplitConfig,
+    pub binary: &'c [u8],
+    pub pre_subset_result: Vec<Vec<u32>>,
+    pub run_subset_result: Vec<RunSubsetResult>,
+    pub name_table: NameTableSets,
+    pub face: &'a mut Owned<Face<'b>>,
+    pub callback: &'a dyn Fn(OutputFile),
+    pub fvar_table: Option<FvarTable>,
+}
+
+pub fn create_context<'a, 'b, 'c, F: Fn(OutputFile)>(
+    config: &'c FontSplitConfig,
+    binary: &'c [u8],
+    face: &'a mut Owned<Face<'b>>,
+    callback: &'a F,
+) -> Context<'a, 'b, 'c> {
+    info!("version {}", env!("CARGO_PKG_VERSION"));
+    Context {
+        input: config,
+        binary,
+        pre_subset_result: vec![],
+        run_subset_result: vec![],
+        name_table: NameTableSets { table: vec![] },
+        callback,
+        face,
+        fvar_table: None,
+    }
+}
+
+pub fn font_split<F: Fn(OutputFile)>(config: FontSplitConfig, callback: F) {
+    let binary = smart_load_woff2(&config.input);
+    let mut face = Face::from_bytes(&binary, 0);
+    let mut ctx = create_context(&config, &binary, &mut face, &callback);
+
+    for process in [pre_subset, run_subset, link_subset] {
+        process(&mut ctx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_context() {
+        let input = FontSplitConfig { ..Default::default() };
+        let binary = vec![0u8; 100];
+        let mut face = Face::from_bytes(&binary, 0);
+        let callback = |_msg: OutputFile| {};
+
+        let ctx = create_context(&input, &binary, &mut face, &callback);
+
+        assert!(ctx.pre_subset_result.is_empty());
+        assert!(ctx.run_subset_result.is_empty());
+        assert!(ctx.name_table.table.is_empty());
+        assert!(ctx.fvar_table.is_none());
+    }
+}
