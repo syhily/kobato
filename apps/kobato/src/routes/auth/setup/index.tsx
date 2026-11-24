@@ -63,8 +63,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (intent === 'install' || intent === null) {
-    // Preserve the historical visible-error priority: the session gate answers before CSRF, while the
-    // setup-token liveness re-check stays server-side in the controller.
     if (session.get('setupTokenVerified') !== true) {
       return fail('auth.setup.error.tokenNotVerified', locale)
     }

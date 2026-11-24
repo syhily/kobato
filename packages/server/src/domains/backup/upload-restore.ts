@@ -30,7 +30,6 @@ import { Readable } from 'node:stream'
 
 const log = getLogger('backup.upload-restore')
 
-/** Runs after the engines reopen, inside the restore machine — the perimeter records its audit here. */
 export type StagedRestoreAfterReopen = (db: Database, fileName: string) => Promise<void> | void
 
 export interface StagedRestoreOptions {
@@ -91,10 +90,6 @@ export async function stageUploadedBackup(
   return staged
 }
 
-/**
- * Claims the single restore slot for an already-staged upload and starts the background job.
- * A busy slot sweeps the staged dir — the caller can only answer a conflict.
- */
 export async function startRestoreFromStaged(
   staged: StagedBackup,
   fileName: string,

@@ -21,10 +21,6 @@ export interface SqliteMaintenanceStats {
   after: SqlitePageStats
 }
 
-/**
- * Runs the periodic SQLite PRAGMA maintenance (incremental vacuum + optimize) and returns the page statistics
- * before and after the pass. The native client never leaves this package.
- */
 export function runSqlitePragmaMaintenance(handle: DatabaseHandle): SqliteMaintenanceStats {
   const engine = sqliteEngineOf(handle)
   const before = pageStats(engine)

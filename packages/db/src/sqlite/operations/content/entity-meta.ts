@@ -11,10 +11,6 @@ import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 export type AnyNewMeta = NewPostMeta & NewPageMeta
 export type AnyMetaRow = PostMetaRow | PageMetaRow
 
-/**
- * Raised inside entity mutation transactions when the requested slug is already taken by another entity (own-table
- * collision or cross-entity `slug_registry` occupant). The server maps it to its user-facing conflict error.
- */
 export class SlugOccupiedError extends Error {
   constructor(
     readonly slug: string,

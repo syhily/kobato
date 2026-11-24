@@ -35,9 +35,6 @@ export async function deleteOneTimeToken(db: Database, key: string): Promise<voi
   await sqliteOf(db).delete(oneTimeToken).where(eq(oneTimeToken.key, key))
 }
 
-/**
- * Atomically deletes a still-live one-time token row (challenge consumption) and returns its payload.
- */
 export async function consumeLiveOneTimeToken(db: Database, key: string): Promise<unknown> {
   const rows = await sqliteOf(db)
     .delete(oneTimeToken)

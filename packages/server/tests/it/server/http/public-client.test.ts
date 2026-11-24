@@ -14,9 +14,6 @@ const { createApiApp } = await import('@kobato/server/http/app')
 const { ensureCsrfToken } = await import('@kobato/server/domains/auth/csrf')
 
 function makeApiApp() {
-  // The production request-context perimeter creates an anonymous session and pre-seeds its CSRF token before the
-  // /rpc mount — the bootstrap procedure asserts that invariant. The headless CLIENT below still sends no cookie and
-  // no x-csrf-token header; only the server-side session object mirrors the perimeter's work.
   const session = makeSession()
   ensureCsrfToken(session)
   const rc = makeRequestContext({ db, session })

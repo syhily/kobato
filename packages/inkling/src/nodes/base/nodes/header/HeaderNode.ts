@@ -62,7 +62,7 @@ export const headerCardWidth = (node: LexicalNode): CardWidth | undefined => {
   return normalizeCardWidth(layout === 'split' ? 'full' : layout)
 }
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseHeaderNode extends NestedEditorFieldMap<typeof headerNestedEditors> {}
 export class BaseHeaderNode extends generateDecoratorNode({
   nodeType: 'header',

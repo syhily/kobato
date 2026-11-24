@@ -4,8 +4,6 @@ import { z } from 'zod'
 
 export const authMessageDescriptorSchema = z.custom<ErrorMessageDescriptor>()
 
-// Auth wire semantics: the redirect target every auth procedure falls back to when the caller-supplied
-// `redirectTo` fails `safeRedirectPath` — action flows land on the admin entry, the status view on the site root.
 export const AUTH_ACTION_REDIRECT_FALLBACK = '/admin'
 export const AUTH_STATUS_REDIRECT_FALLBACK = '/'
 

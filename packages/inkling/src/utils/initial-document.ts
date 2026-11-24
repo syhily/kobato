@@ -10,7 +10,7 @@ const FULL_EMPTY_PARAGRAPH: SerializedParagraphNode = {
   textFormat: 0,
   textStyle: '',
   type: 'paragraph',
-  // oxlint-disable-next-line typescript/no-deprecated -- persisted payloads carry version and a live export still emits it; dropping it changes the stored shape
+  // oxlint-disable-next-line typescript/no-deprecated
   version: 1,
 }
 
@@ -30,7 +30,7 @@ export const MINIMAL_DOCUMENT: SerializedEditorState = {
     format: '',
     indent: 0,
     type: 'root',
-    // oxlint-disable-next-line typescript/no-deprecated -- persisted payloads carry the deprecated key; a live export still emits it
+    // oxlint-disable-next-line typescript/no-deprecated
     version: 1,
   },
 }

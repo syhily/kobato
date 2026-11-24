@@ -39,7 +39,7 @@ export function useInfiniteScrollSentinel({
       instance.unobserveUsing(observer)
       observer.disconnect()
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- tailKey is the deliberate re-arm trigger: a new tail item mounts a new fragment instance the observer must re-observe
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [instance, hasNextPage, isFetchingNextPage, fetchNextPage, root, rootMargin, tailKey])
 
   return sentinelRef

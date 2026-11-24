@@ -34,11 +34,6 @@ type RouteBrand<Route> = { '~orpc': { route: Route } }
 
 declare const defineProcedureRequired: unique symbol
 
-/**
- * What an unbranded contract leaf (declared with `oc.route` instead of `defineProcedure`) demands from an
- * implementation. No procedure can carry this symbol, so such a leaf fails closed: neither `impl.router()` nor the
- * `apiRouter satisfies` accepts it, which is what stops a new endpoint from slipping past the method/path check.
- */
 export interface UnbrandedContractRoute {
   readonly [defineProcedureRequired]: 'declare this procedure with defineProcedure from @kobato/api/rpc/define-procedure'
 }
@@ -48,10 +43,6 @@ type RouteBrandOf<T> =
     ? RouteBrand<ProcedureRoute<M, P>>
     : UnbrandedContractRoute
 
-/**
- * A procedure implementer whose `.handler()` result keeps the contract route brand, so `impl.router()` can require it.
- * `use` is re-declared only to carry the brand (and the merged contexts) through the chain.
- */
 export interface ContractProcedureImplementer<
   TMethod extends HTTPMethod,
   TPath extends HTTPPath,
@@ -117,10 +108,6 @@ export interface ContractProcedureImplementer<
     RouteBrand<ProcedureRoute<TMethod, TPath>>
 }
 
-/**
- * The router an `impl.router(...)` call returns: oRPC rebuilds every leaf as a plain `Procedure` with the same `~orpc`,
- * so the leaf type is the merged-context procedure plus the route brand the handler attached.
- */
 export type ImplementedRouter<U, TInitialContext extends Context, TCurrentContext extends Context> =
   U extends Procedure<
     infer UInitialContext,
@@ -141,12 +128,6 @@ export type ImplementedRouter<U, TInitialContext extends Context, TCurrentContex
         RouteBrandOf<U>
     : { [K in keyof U]: ImplementedRouter<U[K], TInitialContext, TCurrentContext> }
 
-/**
- * The shape a server router must have to implement `T`: every contract key, each leaf a `Procedure` over the same
- * schemas carrying the contract's route brand. Every production contract is declared with `defineProcedure`, so every
- * leaf is branded; an `oc.route` leaf instead demands `UnbrandedContractRoute` and nothing satisfies it — this is what
- * `apiRouter satisfies ContractImplementation<typeof apiContract>` checks, fail closed.
- */
 export type ContractImplementation<T extends AnyContractRouter, TInitialContext extends Context = any> =
   T extends ContractProcedure<
     infer TInputSchema extends AnySchema,
@@ -181,11 +162,6 @@ type ContractRouterImplementer<
   ): ImplementedRouter<U, TInitialContext, TCurrentContext>
 }
 
-/**
- * The implementer tree for a contract: branded leaves get `ContractProcedureImplementer`, unbranded ones keep oRPC's
- * plain `ProcedureImplementer` (their handlers still type-check, but the result carries no brand and is rejected by
- * `router()`), and router nodes keep oRPC's `use`/`router` with contract-derived constraints.
- */
 export type ContractImplementer<
   T extends AnyContractRouter,
   TInitialContext extends Context,
@@ -215,18 +191,12 @@ export type ContractImplementer<
           : never
       }
 
-/**
- * `implementerInternal` typed as a `ContractImplementer`. This holds the ONE assertion behind the contract-derived
- * types: at runtime every leaf Builder copies the contract procedure's `~orpc` (route included), `.handler()` spreads it
- * into the DecoratedProcedure, and `impl.router()` rebuilds each leaf with that same route — the route/schema identity
- * parity tests (`api-contract`, `likes-contract`) pin each step.
- */
 export function contractImplementer<
   T extends AnyContractRouter,
   TInitialContext extends Context,
   TCurrentContext extends Context,
 >(contract: T, middlewares: readonly AnyMiddleware[]): ContractImplementer<T, TInitialContext, TCurrentContext> {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ONE implementer assertion; runtime route/schema parity is pinned by api-contract.test.ts and likes-contract.test.ts
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return implementerInternal(contract, {}, [...middlewares]) as unknown as ContractImplementer<
     T,
     TInitialContext,

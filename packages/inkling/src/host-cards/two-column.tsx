@@ -24,7 +24,7 @@ const twoColumnNestedEditors = [
   { ...TWO_COLUMN_NESTED_EDITORS[1]!, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseTwoColumnNode extends CardSpecFieldMapFor<readonly [], typeof twoColumnNestedEditors> {}
 export class BaseTwoColumnNode extends generateDecoratorNode({
   nodeType: TWO_COLUMN_NODE_TYPE,
@@ -58,7 +58,7 @@ function TwoColumnPane({
       <InklingNestedComposer
         initialEditor={editor}
         initialEditorState={initialState}
-        // oxlint-disable-next-line typescript/no-deprecated -- load-bearing upstream seam (see InklingNestedComposer)
+        // oxlint-disable-next-line typescript/no-deprecated
         initialNodes={EDITOR_BASE_NODES}
       >
         <InklingComposableEditor

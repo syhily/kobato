@@ -81,10 +81,6 @@ export async function resolveEntitiesForComments(
   return out
 }
 
-// ---------------------------------------------------------------------------
-// Asset URL backfill persistence
-// ---------------------------------------------------------------------------
-
 export interface ContentBodyRow {
   id: number
   body: unknown
@@ -156,10 +152,6 @@ export async function updateEntityCover(
       await sdb.update(category).set({ cover }).where(eq(category.id, id))
   }
 }
-
-// ---------------------------------------------------------------------------
-// Body projection rebuild (dashboard re-project)
-// ---------------------------------------------------------------------------
 
 export interface ContentProjectionRow {
   id: number

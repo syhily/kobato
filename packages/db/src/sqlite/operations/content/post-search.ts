@@ -22,10 +22,6 @@ export function removePostSearchIndex(db: Database, postId: number): void {
   sqliteOf(db).delete(postSearchIndex).where(eq(postSearchIndex.postId, postId)).run()
 }
 
-/**
- * The slugs of live posts (draft gate + publish instant reached; hidden posts stay searchable) whose title,
- * summary, or indexed plain text match the query, newest first.
- */
 export async function searchPostSlugs(
   db: Database,
   query: string,

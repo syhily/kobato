@@ -64,7 +64,7 @@ export function assembleCardNode<
 
   ensureLexicalNodeOwnMethods(AssembledCardNode)
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the assembled class carries every member at runtime
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return AssembledCardNode as unknown as CardNodeClass<TNode, D>
 }
 
@@ -79,7 +79,7 @@ export function assembleCardNodeOnce<
   assembledCardNodeCache ??= new WeakMap()
   const cached = assembledCardNodeCache.get(declaration)
   if (cached) {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- memoization cache; the key identity carries the type
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return cached as unknown as CardNodeClass<TNode, D>
   }
   const assembled = assembleCardNode(declaration)

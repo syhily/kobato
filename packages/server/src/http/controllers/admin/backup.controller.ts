@@ -40,8 +40,6 @@ const log = getLogger('backup.controller')
 
 const DECRYPT_RATE_LIMIT_BUCKET = { windowSeconds: 3600, maxAttempts: 30 }
 
-// The decrypt procedure rides its own implementer: router-level `.use` re-positions input validation AFTER the
-// leading middlewares, so the limiter burns the budget before parsing (procedure-level `.use` would not).
 const impl = implementAdmin({
   status: adminBackupContract.status,
   list: adminBackupContract.list,

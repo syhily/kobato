@@ -82,10 +82,6 @@ export async function deleteAllPasskeyCredentialsForUser(db: Database, userId: n
   return result.length
 }
 
-/**
- * Drops credentials and, inside the same transaction, reverts the user's `login_method` to `password` when no
- * credential remains. `credentialId` omitted drops every credential of the user.
- */
 export function deletePasskeyCredentialsAndMaybeRevertLogin(
   db: Database,
   input: { credentialId?: string; userId: number },
@@ -125,9 +121,6 @@ export function deletePasskeyCredentialsAndMaybeRevertLogin(
   })
 }
 
-/**
- * Switches the login method, requiring at least one credential when switching to passkey.
- */
 export function setUserLoginMethod(
   db: Database,
   userId: number,

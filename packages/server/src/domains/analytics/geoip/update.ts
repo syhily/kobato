@@ -1,5 +1,3 @@
-// (CC-BY-NC-SA-4.0 / MaxMind GeoLite2 EULA, attribution required). Installed
-
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
 import { resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup'

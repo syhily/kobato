@@ -13,10 +13,6 @@ import { isDeepStrictEqual } from 'node:util'
 
 export type ContentType = 'page' | 'post'
 
-/**
- * Thrown by the revision save/publish scripts when the owning meta row does not exist. The server maps it to its
- * user-facing not-found error.
- */
 export class MissingContentOwnerError extends Error {
   constructor(
     readonly entityType: ContentType,
@@ -55,10 +51,6 @@ export type SaveRevisionResult =
 export type PublishRevisionResult =
   | { status: 'published'; row: ContentRow }
   | { status: 'conflict'; latest: ContentRow; expectedToken: string }
-
-// ---------------------------------------------------------------------------
-// Reads
-// ---------------------------------------------------------------------------
 
 export function findContentById(db: Database, id: number): ContentRow | null {
   const rows = sqliteOf(db).select().from(contentTable).where(eq(contentTable.id, id)).limit(1).all()
@@ -121,10 +113,6 @@ export async function listRevisions(
     .orderBy(desc(contentTable.revisionNo))
     .limit(limit)
 }
-
-// ---------------------------------------------------------------------------
-// Save / publish transaction scripts
-// ---------------------------------------------------------------------------
 
 interface LockedMeta {
   id: number

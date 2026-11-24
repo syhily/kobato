@@ -261,7 +261,7 @@ export function generateDecoratorNode<
         obj[prop.name] = prop.default
         return obj
       }, {})
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the reduce builds the full mapped shape by construction
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       return defaults as DecoratorNodeValueMap<Props>
     }
 
@@ -339,7 +339,7 @@ export function generateDecoratorNode<
           return obj
         }, {}),
       }
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the dataset is TSerialized's default shape; remapping subclasses override wholesale
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       return this.serializeNestedEditorHtml(dataset) as unknown as TSerialized
     }
 
@@ -364,7 +364,7 @@ export function generateDecoratorNode<
 
       const context = createRenderContext(options)
       return defaultRenderFn(
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated class supplies every instance member at runtime; TS cannot see past the index signature
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         this as unknown as GeneratedDecoratorNodeInstance<GeneratedDataset, TOutput, TSerialized>,
         context,
       )
@@ -415,7 +415,7 @@ export function generateDecoratorNode<
     )
   })
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- class-factory boundary; the generated class is the interface at runtime
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return GeneratedDecoratorNode as unknown as GeneratedDecoratorNodeClass<
     DecoratorNodeValueMap<Props>,
     TOutput,

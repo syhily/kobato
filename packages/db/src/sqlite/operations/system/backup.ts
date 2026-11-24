@@ -47,10 +47,6 @@ export async function listBackupStoragePaths(db: Database): Promise<string[]> {
   return rows.map((r) => r.path)
 }
 
-/**
- * Verifies a staged content-database file carries at least one live admin. The read-only open, the probe, and the
- * close all stay inside `@kobato/db` — the caller only passes the staged file path.
- */
 export function stagedContentDbHasLiveAdmin(stagedContentPath: string): boolean {
   const client = new DatabaseSync(stagedContentPath, { readOnly: true })
   try {

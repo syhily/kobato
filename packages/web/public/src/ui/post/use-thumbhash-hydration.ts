@@ -64,6 +64,6 @@ export function useThumbhashHydration(containerRef: RefObject<HTMLElement | null
         cleanup()
       }
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [containerRef, bodyHtml])
 }

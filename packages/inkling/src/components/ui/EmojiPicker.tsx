@@ -32,8 +32,6 @@ export default function EmojiPicker({
     <EmojiPickerReact
       autoFocusSearch
       colorScheme={colorScheme}
-      // The picker injects its stylesheet at runtime; without a cascade layer it would beat the
-      // app's layered CSS (including the --epr-* overrides in styles/components/inkling-lexical.css).
       cssLayer="inkling"
       emojiStyle="native"
       height={height}

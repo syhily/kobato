@@ -52,7 +52,7 @@ export type FileData = DecoratorNodeData<typeof fileProperties>
 
 export type SerializedFileNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof fileProperties>>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseFileNode extends CardSpecFieldMapFor<typeof fileTransientProps> {}
 export class BaseFileNode extends generateDecoratorNode({
   nodeType: 'file',

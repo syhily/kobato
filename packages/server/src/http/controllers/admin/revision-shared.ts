@@ -16,10 +16,6 @@ export interface RevisionRouterAudit {
   publishedAction: string
 }
 
-/**
- * The two revision implementers an author implementer exposes for `RevisionContract<TBase>`; `TBase` is inferred from
- * the host controller's `impl`, so the routers built here keep the exact `/<base>/save-draft` path brand.
- */
 type RevisionRouterImplementer<TBase extends string> = Pick<
   ContractImplementer<RevisionContract<TBase>, HandlerContext, AuthedHandlerContext>,
   'saveDraft' | 'publishLatest'

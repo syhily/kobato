@@ -58,9 +58,6 @@ function sha256Hex(buffer: Uint8Array): string {
   return createHash('sha256').update(buffer).digest('hex')
 }
 
-// Coalesce concurrent uploads of the same font bytes (identical sha256) into one slice+store
-// pass — slicing a CJK font takes seconds and the work is deterministic, so followers just await
-// the leader's result. Process-local is sufficient: the deployment is a single instance.
 const inFlightUploads = new Map<string, Promise<AdminFontDto>>()
 
 export interface UploadFontInput {
@@ -128,8 +125,6 @@ async function uploadFontExclusive(
   const cssKey = fontCssKey(hash, algorithmVersion)
 
   if (existing) {
-    // Same font bytes, stale slicing algorithm: re-slice into the versioned keys and repoint the
-    // row; the stale package is removed best-effort afterwards.
     await updateFontPackage(db, existing.id, {
       cssKey,
       etag,

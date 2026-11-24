@@ -1,5 +1,4 @@
 #!/bin/sh
-# configure: fresh install → bootstrap + enable --now; upgrade → restart.
 set -e
 
 APP_USER="kobato"
@@ -17,7 +16,6 @@ configure)
   install -d -o "$APP_USER" -g "$APP_USER" -m 0755 \
     /opt/kobato /opt/kobato/incoming "$CONFIG_DIR" "$DATA_DIR" "$DATA_DIR/data" "$DATA_DIR/cache"
 
-  # The process generates the secrets and writes them back on first boot.
   if [ ! -f "$CONFIG_DIR/kobato.config.json" ]; then
     install -o "$APP_USER" -g "$APP_USER" -m 0600 /dev/stdin "$CONFIG_DIR/kobato.config.json" <<'JSON'
 {
@@ -31,8 +29,6 @@ JSON
   if [ -z "${2:-}" ]; then
     systemctl enable --now kobato.service
   else
-    # restart (not try-restart) also starts a unit that was stopped before
-    # the upgrade — a downed service must come back with the new deb.
     systemctl restart kobato.service
   fi
   ;;

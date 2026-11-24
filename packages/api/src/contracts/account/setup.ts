@@ -28,8 +28,6 @@ export const setupVerifyTokenOutputSchema = z.discriminatedUnion('kind', [
 export type SetupVerifyTokenOutput = z.infer<typeof setupVerifyTokenOutputSchema>
 export type SetupVerifyTokenError = Extract<SetupVerifyTokenOutput, { kind: 'error' }>
 
-// Plain strings on purpose: the server's signUpAdminSchema safeParse owns the per-field error copy — an unsupported
-// locale or empty field must surface the auth.setup.error.* descriptors, never an oRPC BAD_REQUEST.
 export const setupInstallInput = z.object({
   title: z.string(),
   name: z.string(),

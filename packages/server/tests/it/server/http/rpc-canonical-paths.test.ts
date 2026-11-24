@@ -93,7 +93,6 @@ describe('canonical-only /rpc/* transport (real HTTP)', () => {
         '/rpc/public/comments/loadComments',
         JSON.stringify({ json: { page_key: '/p', offset: 0 } }),
       )
-      // Exempt from the CSRF guard; the handler's own answer is out of scope here.
       expect(loadComments.status).not.toBe(403)
     })
 

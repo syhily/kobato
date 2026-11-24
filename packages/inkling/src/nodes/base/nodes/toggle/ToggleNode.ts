@@ -56,7 +56,7 @@ export type ToggleData = DecoratorNodeData<typeof toggleProperties>
 
 export type SerializedToggleNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof toggleProperties>>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseToggleNode extends NestedEditorFieldMap<typeof toggleNestedEditors> {}
 export class BaseToggleNode extends generateDecoratorNode({
   nodeType: 'toggle',

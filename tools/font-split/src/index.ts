@@ -14,7 +14,7 @@ export function loadNativeBinding(): NativeBinding {
   const nodeRequire = createRequire(import.meta.url)
   const addonPath = join(import.meta.dirname, '..', 'font-split.node')
   try {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the .node addon is untyped at runtime
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     cached = nodeRequire(addonPath) as NativeBinding
   } catch (error) {
     throw new Error(

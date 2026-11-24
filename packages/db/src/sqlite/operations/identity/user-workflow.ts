@@ -23,10 +23,6 @@ function adminCountTx(tx: NodeSQLiteDatabase): number {
   return rows[0]?.count ?? 0
 }
 
-/**
- * Changes a user's role in one transaction, guarding the last remaining admin against demotion. Business error
- * mapping (which descriptor to surface) stays with the caller.
- */
 export function changeUserRoleGuarded(
   db: Database,
   targetId: number,
@@ -52,9 +48,6 @@ export type UserDeletionOutcome =
   | { outcome: 'sole-admin' }
   | { outcome: 'deleted'; previousRole: 'admin' | 'author' | 'visitor' | null }
 
-/**
- * Soft-deletes a user in one transaction, guarding the last remaining admin against deletion.
- */
 export function softDeleteUserGuarded(db: Database, targetId: number): UserDeletionOutcome {
   return sqliteOf(db).transaction((tx) => {
     const target = tx.select().from(user).where(eq(user.id, targetId)).limit(1).all()[0]
@@ -77,9 +70,6 @@ export function softDeleteUserGuarded(db: Database, targetId: number): UserDelet
   })
 }
 
-/**
- * Creates an invited author and their setup token in one transaction so a failure rolls both back.
- */
 export function inviteAuthorWithVerification(
   db: Database,
   input: {
@@ -130,9 +120,6 @@ export function inviteAuthorWithVerification(
   })
 }
 
-/**
- * Creates the first admin and seeds the install settings rows in one transaction (install flow).
- */
 export function installInitialAdminWithSections(
   db: Database,
   input: {

@@ -103,7 +103,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
           {tRich('admin.posts.row.authorIn', {
             author: post.authorName || '—',
             categoryName: post.category || t('admin.posts.row.noCategory'),
-            // oxlint-disable-next-line react/no-unstable-nested-components -- tRich render-prop, not a component definition
+            // oxlint-disable-next-line react/no-unstable-nested-components
             category: (chunks) =>
               post.categoryId !== null && onFilterCategory ? (
                 <button

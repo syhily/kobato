@@ -36,8 +36,6 @@ const SHARED_SPLIT = [
   '@kobato/sanitize',
 ] as const
 
-// The shared leaves @kobato/api depends on (rpc procedures + contracts schemas) — every new edge changes exactly this
-// list.
 const API_SHARED_DEPS = [
   '@kobato/auth',
   '@kobato/catalog',

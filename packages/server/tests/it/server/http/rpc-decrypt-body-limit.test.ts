@@ -79,7 +79,6 @@ describe('64 KiB body cap on the canonical decrypt RPC path (real HTTP)', () => 
       body: JSON.stringify({ json: { token: 'tok', password: 'pw' } }),
     })
     expect(res.status).not.toBe(413)
-    // No viewer on the session — the admin guard answers 401, proving the body cap let it through.
     expect(res.status).toBe(401)
   })
 })

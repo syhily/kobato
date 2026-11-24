@@ -78,7 +78,7 @@ export function observeExporter<T extends ExporterLike>(exporter: T, token: obje
     shutdown: () => exporter.shutdown(),
     ...(innerForceFlush !== undefined ? { forceFlush: () => innerForceFlush() } : {}),
   }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the wrapper IS the exporter contract at runtime; TS cannot see T past the structural shape
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return wrapped as T
 }
 

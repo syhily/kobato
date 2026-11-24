@@ -86,6 +86,6 @@ export function useFootnotePreviews(containerRef: RefObject<HTMLElement | null>,
       window.removeEventListener('scroll', hide)
       popover.remove()
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [containerRef, bodyHtml])
 }

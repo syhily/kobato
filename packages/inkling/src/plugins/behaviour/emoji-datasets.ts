@@ -2,11 +2,6 @@ import type { EmojiData } from 'emoji-picker-react/data'
 
 type EmojiDatasetModule = { default: EmojiData }
 
-// Literal dynamic imports only: Rolldown splits each dataset into its own lazy chunk, while a
-// concatenated specifier survives the build as a bare-specifier import browsers cannot resolve.
-// Single loader table for the whole editor — the search seam and the picker portal share these
-// specifiers, so each locale's dataset is exactly one chunk and one cache entry. The table is the
-// source of truth for EmojiLocale; adding a locale is a one-line change.
 const EMOJI_DATASET_LOADERS = {
   en: () => import('emoji-picker-react/data/emojis-en'),
   zh: () => import('emoji-picker-react/data/emojis-zh'),

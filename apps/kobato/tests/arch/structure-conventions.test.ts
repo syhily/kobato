@@ -281,7 +281,6 @@ describe('structure conventions', () => {
     const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
     const groups = ['public', 'account', 'admin'] as const
 
-    // Same-layer base modules composed by sibling contracts — they deliberately have no rpc module of their own.
     const BASES: Record<(typeof groups)[number], string[]> = {
       public: [],
       account: [],

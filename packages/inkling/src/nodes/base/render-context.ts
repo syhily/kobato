@@ -77,12 +77,7 @@ export interface RenderContext {
   readonly imageOptimization: ImageOptimizationOptions | undefined
   readonly canTransformImage: ((src: string) => boolean) | undefined
   readonly canTransformImageToFormat: ((format: string) => boolean) | undefined
-  /**
-   * The markdown card's slug-policy input, consumed by `@kobato/inkling-internal/markdown/paste-dialect`.
-   *
-   * @deprecated Read `resolveExportPolicy('inkling-version')` instead — this
-   * field is that call's resolved value, kept for renderer compatibility.
-   */
+  /** @deprecated */
   readonly inklingVersion: string | undefined
   readonly pictureImageFormats: boolean | undefined
   resolveExportPolicy(key: ExportPolicyKey): string | undefined
@@ -179,7 +174,7 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
 
   const context: RenderContext = {
     ...pickVerbatimOptions(options),
-    // oxlint-disable-next-line typescript/no-deprecated -- the deprecated compatibility field is populated here, at the seam, so external renderers reading it keep working
+    // oxlint-disable-next-line typescript/no-deprecated
     inklingVersion: resolveExportPolicy('inkling-version'),
     resolveExportPolicy,
     imageOptimization,
@@ -203,7 +198,7 @@ export function createRenderContext(options: ExportDOMOptions): RenderContext {
         cleanDOM(container, config.allowedTags, context)
         return container.innerHTML
       }
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- structural window types are unrelated by construction; the seam binds a real window
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       boundDOMPurify ??= DOMPurify(resolveWindow() as unknown as WindowLike)
       return boundDOMPurify.sanitize(html, config)
     },

@@ -5,10 +5,6 @@ import { sqliteOf } from '@kobato/db/sqlite/database'
 import { comment } from '@kobato/db/sqlite/schema/comment'
 import { and, count, eq, isNotNull, isNull } from 'drizzle-orm'
 
-/**
- * Inserts a comment inside one transaction, resolving its pending flag from the author's approved-comment count
- * (first comment is always pending).
- */
 export function insertCommentWithPendingGate(db: Database, values: NewComment): Comment | null {
   return sqliteOf(db).transaction((tx) => {
     const approvedRows = tx

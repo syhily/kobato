@@ -108,7 +108,7 @@ export type VideoData = DecoratorNodeData<typeof videoProperties>
 
 export type SerializedVideoNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof videoProperties>>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseVideoNode extends CardSpecFieldMapFor<typeof videoTransientProps, typeof videoNestedEditors> {}
 export class BaseVideoNode extends generateDecoratorNode({
   nodeType: 'video',

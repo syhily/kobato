@@ -125,7 +125,6 @@ export default defineConfig({
     'typescript/no-base-to-string': 'error',
     'typescript/no-misused-spread': 'error',
     'typescript/switch-exhaustiveness-check': 'warn',
-    // Discourage blind @ts-ignore; @ts-expect-error is preferred.
     'typescript/ban-ts-comment': 'warn',
     'typescript/no-unnecessary-template-expression': 'warn',
 

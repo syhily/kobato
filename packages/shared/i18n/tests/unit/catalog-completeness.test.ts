@@ -42,8 +42,6 @@ const LOCALIZED: readonly LocalizedLocale[] = ['zh-CN', 'zh-HK', 'zh-TW']
 
 const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
-// Brand names, protocols, identifiers, and input placeholders a Chinese catalog legitimately keeps byte-identical to
-// the English baseline (`<namespace>:<key>`). Anything else identical to English is an untranslated copy — translate it.
 const SHARED_WITH_ENGLISH: readonly string[] = [
   'inkling:menu.html.label',
   'inkling:settings.emoji',
@@ -105,7 +103,6 @@ const SHARED_WITH_ENGLISH_BY_LOCALE: Readonly<Record<LocalizedLocale, readonly s
   'zh-TW': SHARED_WITH_ENGLISH,
 }
 
-// The only English baseline values allowed to carry Chinese: illustrative defaults and brand names.
 const HAN_IN_ENGLISH: readonly string[] = [
   'ui:admin.settings.content.footnotes.description',
   'ui:admin.settings.general.footer.icpPlaceholder',

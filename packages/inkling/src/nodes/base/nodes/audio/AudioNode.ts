@@ -68,7 +68,7 @@ export type AudioData = DecoratorNodeData<typeof audioProperties>
 
 export type SerializedAudioNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof audioProperties>>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseAudioNode extends CardSpecFieldMapFor<typeof audioTransientProps> {}
 export class BaseAudioNode extends generateDecoratorNode({
   nodeType: 'audio',

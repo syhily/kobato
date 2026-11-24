@@ -84,8 +84,6 @@
   }
 }
 
-/* stylelint-disable at-rule-disallowed-list */
-
 .inkling-lexical-caption {
   .inkling-prose {
     :where(p, blockquote, aside, ul, ol):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
@@ -193,8 +191,6 @@
     }
   }
 }
-
-/* stylelint-enable at-rule-disallowed-list */
 
 .inkling-header-accent,
 .inkling-callout-accent {

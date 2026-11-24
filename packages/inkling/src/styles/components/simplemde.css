@@ -5,21 +5,18 @@
   width: 100%;
   padding-top: 2px;
 
-  /* Workaround: the `.inkling-lexical .inkling-prose:where(div):not(...)`
-     inheritance breaks the markdown editor. */
   div {
     max-width: initial;
     line-height: initial;
   }
 
-  /* Avoid a flash of unstyled textarea while initializing */
   .markdown-editor textarea {
     opacity: 0;
   }
 
   .editor-toolbar {
     position: sticky;
-    position: -webkit-sticky; /* Safari */
+    position: -webkit-sticky;
     bottom: 0;
     z-index: 2;
     display: flex;
@@ -33,7 +30,6 @@
     border-radius: 0;
   }
 
-  /* override simplemde.css */
   .editor-toolbar:hover {
     opacity: 1;
   }
@@ -97,7 +93,6 @@
     border: none;
   }
 
-  /* Prevent confusing select behaviour */
   .CodeMirror-code:not([contenteditable='true']) {
     user-select: none;
   }
@@ -112,10 +107,9 @@
     border-color: var(--green);
   }
 
-  /* fix visible scrollbars when OSX is set to show them */
   .CodeMirror-scroll {
     overflow: visible !important;
-    padding-bottom: 5rem; /* pad so text doesn't go behind toolbar */
+    padding-bottom: 5rem;
   }
 
   .CodeMirror-scroll:hover {

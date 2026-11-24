@@ -185,10 +185,6 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   return next({})
 })
 
-/**
- * The oRPC twin of the Hono `rateLimitByIp` middleware: rides the implementer so the budget is consumed BEFORE
- * input parsing, under the same `rate-limit:<key>:<clientAddress>` key space as the Hono routes.
- */
 export function rateLimitByIp(key: string, bucket: RateLimitBucket) {
   return root.middleware(async ({ context, next }) => {
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${context.clientAddress}`, bucket)

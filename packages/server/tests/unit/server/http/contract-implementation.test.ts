@@ -194,7 +194,6 @@ describe('router composition against the contract', () => {
     expectTypeOf<AllBranded<typeof apiRouter>>().toEqualTypeOf<true>()
     expectTypeOf<AllBranded<typeof likesContract>>().toEqualTypeOf<true>()
     expectTypeOf<AllBranded<typeof adminPostsContract>>().toEqualTypeOf<true>()
-    // one unbranded leaf anywhere turns the whole-tree check false
     expectTypeOf<AllBranded<typeof plainPing>>().toEqualTypeOf<false>()
     expectTypeOf<
       AllBranded<{ nested: { ok: typeof apiRouter.account.likes.increase; plain: typeof plainPing } }>

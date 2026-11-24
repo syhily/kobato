@@ -162,8 +162,6 @@ describe('cold /rpc/public/content/bootstrap', () => {
     expect(getBlogSettingsBundleSync()).toBeNull()
 
     const { app } = makeApiApp()
-    // A non-exempt procedure: the anonymous public reads are CSRF-exempt, so the guard's cold rejection needs a
-    // protected path (the token read getRaw) to stay observable.
     const response = await app.request('/rpc/public/comments/getRaw', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

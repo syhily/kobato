@@ -35,18 +35,10 @@ export interface ExportDOMOptions {
   canTransformImage?: (src: string) => boolean
   canTransformImageToFormat?: (format: string) => boolean
   imageOptimization?: ImageOptimizationOptions
-  /**
-   * @deprecated Resolve `'inkling-version'` through `resolveExportPolicy`
-   * instead. Still honored as the fallback when the resolver leaves the key
-   * unanswered.
-   */
+  /** @deprecated */
   inklingVersion?: string
   pictureImageFormats?: boolean
-  /**
-   * @deprecated Resolve `'footnotes-section-title'` through
-   * `resolveExportPolicy` instead. Still honored as the fallback when the
-   * resolver leaves the key unanswered.
-   */
+  /** @deprecated */
   footnotesSectionTitle?: string
   resolveExportPolicy?: (key: ExportPolicyKey) => string | undefined
   resolveRenderMeta?: (kind: string, id: string) => unknown

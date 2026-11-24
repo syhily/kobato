@@ -109,7 +109,7 @@ export type ImageData = DecoratorNodeData<typeof imageProperties>
 
 export type SerializedImageNode = SerializedGeneratedDecoratorNode<DecoratorNodeValueMap<typeof imageProperties>>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseImageNode extends CardSpecFieldMapFor<typeof imageTransientProps, typeof imageNestedEditors> {}
 export class BaseImageNode extends generateDecoratorNode({
   nodeType: 'image',

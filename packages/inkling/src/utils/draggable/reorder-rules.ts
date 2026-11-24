@@ -1,7 +1,5 @@
 import type { DroppablePosition } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
 
-// Deliberately NOT vendor-synced with inkling-card-gallery (see the header in draggable-utils.ts).
-
 export type ReorderDirection = 'vertical' | 'horizontal'
 
 export interface ReorderGeometry {

@@ -23,7 +23,7 @@ export function safeMediaSrc(value: string | null | undefined): string | undefin
 export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bodyHtml: string): void {
   const intl = useContext(IntlContext)
   const { locale } = useI18n()
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- I18nProvider only supplies string catalogs.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const getI18nProps = useEffectEvent(() => ({ locale, messages: intl?.messages as I18nMessages }))
 
   useEffect(() => {
@@ -75,6 +75,6 @@ export function useMusicPlayers(containerRef: RefObject<HTMLElement | null>, bod
         }
       })
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [containerRef, bodyHtml])
 }

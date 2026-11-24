@@ -9,8 +9,6 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-# Data-generation pipeline (ADR-0010): the `corpus` bin (download/build/generate) is gated behind
-# this feature so the production addon build and CI never compile these dependencies.
 [features]
 corpus = ["dep:memchr", "dep:opencc-fmmseg"]
 
@@ -24,7 +22,7 @@ harfbuzz_rs_now = "2.3.2"
 log = "0.4.35"
 md5 = "0.8.1"
 opentype = "0.39.1"
-rayon = "1.10.0" # pinned to 1.10.x: opencc-fmmseg (corpus feature) requires exactly =1.10
+rayon = "1.10.0"
 woff = "0.6.4"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
 indexmap = "2.14.2"

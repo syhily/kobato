@@ -42,11 +42,6 @@ export function upsertSetting(
   return result[0]
 }
 
-/**
- * Transactional setting read-modify-write: reads the stored row, hands it to the caller's PURE compute callback
- * (validation/merge/encryption — no persistence), and upserts the produced row in the SAME transaction. Errors the
- * callback throws propagate and roll the transaction back.
- */
 export function updateSettingTransactionally(
   db: Database,
   scope: string,

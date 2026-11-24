@@ -130,10 +130,6 @@ export async function existsActiveLikeToken(db: Database, target: EntityTarget, 
   return rows.length > 0
 }
 
-/**
- * Consumes an active like token and decrements the metric's vote count in one transaction; returns whether the
- * token was consumed.
- */
 export function consumeLikeAndDecrement(db: Database, target: EntityTarget, token: string): boolean {
   return sqliteOf(db).transaction((tx) => {
     const consumed = consumeActiveLikeTokenTx(tx, target, token)

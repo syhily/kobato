@@ -59,7 +59,6 @@ describe('i18n/locales', () => {
     expect(toEmojiLocale('en-US')).toBe('en')
     expect(toEmojiLocale('zh-CN')).toBe('zh')
     expect(toEmojiLocale('zh-TW')).toBe('zh-hant')
-    // zh-HK has no Cantonese dataset; Traditional Chinese is the documented fallback.
     expect(toEmojiLocale('zh-HK')).toBe('zh-hant')
   })
 

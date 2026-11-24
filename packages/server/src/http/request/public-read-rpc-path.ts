@@ -9,10 +9,6 @@ const exemptPaths = new Set(
   }),
 )
 
-/**
- * True only for declared anonymous public-read RPC procedures — exact canonical-path match. Eligibility is never
- * inferred from route metadata or HTTP method, and account/admin paths fail closed even when shaped like public reads.
- */
 export function isPublicReadRpcPath(pathname: string): boolean {
   return exemptPaths.has(pathname)
 }

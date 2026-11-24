@@ -175,9 +175,6 @@ export async function setWebmentionStatus(
   return rows[0] ?? null
 }
 
-/**
- * Whether the target entity (post/page) has webmentions enabled.
- */
 export async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
   const sdb = sqliteOf(db)
   if (target.type === 'post') {

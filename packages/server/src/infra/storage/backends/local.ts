@@ -20,7 +20,7 @@ import { pipeline } from 'node:stream/promises'
 
 const log = getLogger('storage.local')
 
-// eslint-disable-next-line no-control-regex -- intentional security guard
+// eslint-disable-next-line no-control-regex
 const UNSAFE_KEY_CHARS = /[\x00-\x1f\x7f]/
 
 function errnoCode(error: unknown): string | undefined {

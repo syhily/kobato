@@ -14,7 +14,6 @@ const PROGRESS_POLL_MS = 500
 const READY_POLL_MS = 2000
 const READY_MAX_ATTEMPTS = 150
 
-/** oRPC rejections carry the wire status; anything else (network, abort) has none. */
 function orpcErrorStatus(error: unknown): number | undefined {
   if (error instanceof Error && 'status' in error) {
     const status: unknown = error.status

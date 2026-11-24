@@ -59,8 +59,6 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
   return outputs.map((file) => ({ name: file.name, data: new Uint8Array(file.data) }))
 }
 
-/// ADR-0010 decision 5: content fingerprint of the addon's slicing algorithm (tables, frequencies,
-/// DP parameters, WOFF2 quality). Part of the sliced-package storage identity.
 export function fontSplitAlgorithmVersion(): string {
   return loadBinding().fontSplitAlgorithmVersion()
 }

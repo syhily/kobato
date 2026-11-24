@@ -32,7 +32,7 @@ const footnoteDefinitionProperties = [
 
 export type FootnoteDefinitionData = DecoratorNodeData<typeof footnoteDefinitionProperties>
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseFootnoteDefinitionNode extends NestedEditorFieldMap<typeof footnoteDefinitionNestedEditors> {}
 export class BaseFootnoteDefinitionNode extends generateDecoratorNode({
   nodeType: 'footnotedefinition',

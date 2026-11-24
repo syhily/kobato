@@ -6,9 +6,6 @@ import { page as pageMetaTable } from '@kobato/db/sqlite/schema/page'
 import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { and, asc, count, sql } from 'drizzle-orm'
 
-/**
- * The earliest future publish instant across live-gated posts and pages (scheduled publish job wake-up).
- */
 export function findNextScheduledPublishAt(db: Database): Date | null {
   const sdb = sqliteOf(db)
   const now = new Date()
@@ -50,9 +47,6 @@ export interface LivePostReindexRow {
   publishedRevisionId: number | null
 }
 
-/**
- * One reindex batch of live posts (scheduled included) in id order, plus the total live count.
- */
 export async function listLivePostReindexBatch(
   db: Database,
   offset: number,

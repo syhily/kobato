@@ -120,9 +120,6 @@ async function findPostWithRevisionWhere(db: Database, where: SQL): Promise<Post
   return { meta: post as PostMetaRow, revision: content as ContentRow | null }
 }
 
-/**
- * Finds a live post by slug first, then by alias, joining the published revision.
- */
 export async function findLivePostWithRevisionBySlugOrAlias(
   db: Database,
   slug: string,

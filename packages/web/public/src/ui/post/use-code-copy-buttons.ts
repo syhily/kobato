@@ -73,11 +73,11 @@ function copyViaClipboardEvent(text: string): boolean {
 }
 
 function runLegacyCopyCommand(): boolean {
-  // eslint-disable-next-line ts/no-deprecated -- deliberate fallback for browsers without the async clipboard API
+  // eslint-disable-next-line ts/no-deprecated
   if (typeof document.execCommand !== 'function') {
     return false
   }
-  // eslint-disable-next-line ts/no-deprecated -- deliberate fallback for browsers without the async clipboard API
+  // eslint-disable-next-line ts/no-deprecated
   return document.execCommand('copy')
 }
 
@@ -151,6 +151,6 @@ export function useCodeCopyButtons(containerRef: RefObject<HTMLElement | null>, 
         cleanup()
       }
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyHtml is the deliberate re-scan key: navigation swaps the reused container's innerHTML
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [containerRef, bodyHtml])
 }

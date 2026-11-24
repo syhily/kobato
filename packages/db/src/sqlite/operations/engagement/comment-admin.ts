@@ -10,10 +10,6 @@ import { metric } from '@kobato/db/sqlite/schema/metric'
 import { user } from '@kobato/db/sqlite/schema/user'
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
-/**
- * Criteria vocabulary mirroring the wire filters (`@kobato/api/contracts/admin/comments`); value parity is pinned by the
- * wire-parity tests.
- */
 export type AdminCommentStatusCriteria = 'all' | 'pending' | 'approved' | 'deleteRequested'
 
 export type CommentTextMatchCriteria = 'contains' | 'does-not-contain'

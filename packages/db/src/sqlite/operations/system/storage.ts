@@ -31,9 +31,6 @@ export async function countLocalStorageObjects(db: Database): Promise<LocalStora
   return { images: localImages.length, music: localMusic.length, backups: localBackups.length }
 }
 
-/**
- * The storage migration bookkeeping row is a singleton (id 1).
- */
 export async function findStorageMigrationRow(db: Database): Promise<StorageMigrationRow | null> {
   const rows = await sqliteOf(db).select().from(storageMigration).where(eq(storageMigration.id, 1))
   return rows[0] ?? null

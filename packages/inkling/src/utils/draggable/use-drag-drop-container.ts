@@ -80,7 +80,7 @@ export function useDragDropContainer({
       registered.destroy()
       containerRef.current = null
     }
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- reRegisterKey is a deliberate re-registration trigger (DOM re-scan, e.g. the gallery's images array); the effect body reads every callback through callbacksRef, so the rule cannot see a use for it
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [element, handler, draggable.draggableSelector, droppable.droppableSelector, reRegisterKey])
 
   return container

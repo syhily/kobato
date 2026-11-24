@@ -5,10 +5,6 @@ import { isPublicReadRpcPath } from '@kobato/server/http/request/public-read-rpc
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
-// FROZEN expectation, independent of the production derivation: the exact canonical `/rpc/public/*` paths that may
-// serve anonymous reads. The production set is DERIVED from `@kobato/api`'s `~orpc.meta.publicRead` declarations, so
-// this list is the safety pin — adding a marker (or a new marked procedure) without deliberately updating this frozen
-// expectation fails here, and removing one fails the per-path exemptions below.
 const EXPECTED_PUBLIC_READ_PATHS: readonly string[] = [
   '/rpc/public/content/bootstrap',
   '/rpc/public/content/home',
@@ -106,9 +102,6 @@ describe('isPublicReadRpcPath', () => {
   })
 
   it('exempts exactly the frozen set — no more, no fewer', () => {
-    // Catches both directions the per-path tests miss: a NEW marked procedure (exempt but not frozen) and a silently
-    // dropped one (frozen but no longer exempt — also covered above). The walk reads the contract independently of
-    // the production collector, so a derivation bug cannot cancel out against itself.
     const exempt = [...leavesOf(publicContract).keys()]
       .map((key) => `/rpc/public/${key}`)
       .filter((pathname) => isPublicReadRpcPath(pathname))
@@ -120,8 +113,6 @@ describe('isPublicReadRpcPath', () => {
     for (const [key, leaf] of leavesOf(publicContract)) {
       expect(isPublicReadRpcPath(`/rpc/public/${key}`), key).toBe(publicReadMetaOf(leaf) === true)
     }
-    // The frozen expectation is tied to the declaration: every expected path terminates at a marked procedure, so
-    // dropping the marker in `@kobato/api` breaks here even before behavior is considered.
     for (const [key, leaf] of leavesOf(publicContract)) {
       const expected = EXPECTED_PUBLIC_READ_PATHS.includes(`/rpc/public/${key}`)
       expect(publicReadMetaOf(leaf) === true, key).toBe(expected)

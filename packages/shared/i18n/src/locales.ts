@@ -53,8 +53,6 @@ export function toOpenGraphLocale(locale: AppLocale): string {
   return OPEN_GRAPH_LOCALES[locale]
 }
 
-// The emoji picker's dataset ids (emoji-picker-react). zh-HK has no Cantonese dataset; Traditional
-// Chinese is the documented fallback.
 const EMOJI_LOCALES = {
   'en-US': 'en',
   'zh-HK': 'zh-hant',

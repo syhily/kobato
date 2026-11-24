@@ -39,7 +39,7 @@ export type SerializedCodeBlockNode = SerializedGeneratedDecoratorNode<
 >
 
 export interface BaseCodeBlockNode
-  // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+  // oxlint-disable-next-line typescript/no-empty-object-type
   extends CardSpecFieldMapFor<typeof codeBlockTransientProps, typeof codeBlockNestedEditors> {}
 export class BaseCodeBlockNode extends generateDecoratorNode({
   nodeType: 'codeblock',

@@ -10,10 +10,6 @@ export interface LiveContentOptions {
   includeScheduled?: boolean
 }
 
-/**
- * Pure in-memory draft gate; the SQL counterpart lives in `@kobato/db/sqlite/operations/content/entity-meta`
- * (`liveEntityWhere`). Keep the two value-identical (pinned by parity tests).
- */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
     return false

@@ -92,7 +92,7 @@ const InklingCaptionEditor = ({
     <InklingNestedComposer
       initialEditor={captionEditor}
       initialEditorState={captionEditorInitialState}
-      // oxlint-disable-next-line typescript/no-deprecated -- load-bearing: the caption editor's node set arrives via this prop; see InklingNestedComposer
+      // oxlint-disable-next-line typescript/no-deprecated
       initialNodes={MINIMAL_NODES}
     >
       <InklingComposableEditor

@@ -7,18 +7,10 @@ import { DatabaseSync } from 'node:sqlite'
 declare const databaseBrand: unique symbol
 declare const databaseHandleBrand: unique symbol
 
-/**
- * Opaque content-database engine token. Carries no query surface — only `@kobato/db` unwraps it into the Drizzle
- * engine; `@kobato/server` holds the token and passes it back into db operations (mirrors the DuckDB
- * `AnalyticsHandle`).
- */
 export interface Database {
   readonly [databaseBrand]: true
 }
 
-/**
- * Opaque content-database lifecycle handle. Lifecycle metadata only — no native client or Drizzle engine fields.
- */
 export interface DatabaseHandle {
   readonly [databaseHandleBrand]: true
   readonly path: string
@@ -26,10 +18,6 @@ export interface DatabaseHandle {
   closed: boolean
 }
 
-/**
- * The SQLite anatomy behind the opaque tokens (Drizzle engine + native client). Db-plane only: never part of a
- * `@kobato/server` signature. Tests reach it through `sqliteEngineOf`.
- */
 export interface SqliteEngine {
   db: NodeSQLiteDatabase
   client: DatabaseSync
@@ -38,24 +26,14 @@ export interface SqliteEngine {
   closed: boolean
 }
 
-/**
- * The single sanctioned unwrap seam from the opaque `Database` token to the Drizzle engine. Db-plane only — never
- * import this from `@kobato/server`.
- */
 export function sqliteOf(database: Database): NodeSQLiteDatabase {
   return unsafeCast<NodeSQLiteDatabase>(database)
 }
 
-/**
- * The single sanctioned unwrap seam from the opaque `DatabaseHandle` to the engine anatomy. Db-plane only.
- */
 export function sqliteEngineOf(handle: DatabaseHandle): SqliteEngine {
   return unsafeCast<SqliteEngine>(handle)
 }
 
-/**
- * Extract the opaque engine token from a lifecycle handle. Safe for any plane — the result is still opaque.
- */
 export function databaseOf(handle: DatabaseHandle): Database {
   return unsafeCast<Database>(sqliteEngineOf(handle).db)
 }

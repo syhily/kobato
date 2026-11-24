@@ -23,7 +23,7 @@ const solutionNestedEditors = [
   { ...SOLUTION_NESTED_EDITOR, nodes: EDITOR_BASE_NODES, nullable: true },
 ] as const satisfies readonly NestedEditorSpec[]
 
-// oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+// oxlint-disable-next-line typescript/no-empty-object-type
 export interface BaseSolutionNode extends CardSpecFieldMapFor<readonly [], typeof solutionNestedEditors> {}
 export class BaseSolutionNode extends generateDecoratorNode({
   nodeType: SOLUTION_NODE_TYPE,
@@ -57,7 +57,7 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }) {
       <InklingNestedComposer
         initialEditor={node.__contentEditor}
         initialEditorState={node.__contentEditorInitialState}
-        // oxlint-disable-next-line typescript/no-deprecated -- load-bearing upstream seam (see InklingNestedComposer)
+        // oxlint-disable-next-line typescript/no-deprecated
         initialNodes={EDITOR_BASE_NODES}
       >
         <InklingComposableEditor

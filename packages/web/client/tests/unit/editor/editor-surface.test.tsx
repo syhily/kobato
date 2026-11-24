@@ -75,7 +75,6 @@ describe('client/editor/EditorSurfaceComposer — host constants', () => {
 
     renderComposer({}, 'zh-HK')
     expect(composerProps.current?.wordCountLanguage).toBe('zh-HK')
-    // zh-HK has no Cantonese emoji dataset; Traditional Chinese is the documented fallback.
     expect(composerProps.current?.emojiLocale).toBe('zh-hant')
   })
 

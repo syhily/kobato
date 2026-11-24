@@ -20,10 +20,6 @@ const PICKER_HEIGHT = 352
 const PICKER_WIDTH = 350
 const SHIFT_PIXELS = 35
 
-// en stays absent: the picker's entry import already registers the bundled English dataset, so an
-// en loader would only add an async hop over the same data. Hoisted at module scope — the library
-// reloads a dataset on every new loader identity. Delegates to the shared dataset table, so the
-// picker and the typeahead search share each locale's chunk and cache entry.
 const EMOJI_PICKER_DATASET_LOADERS: Partial<Record<EmojiLocale, EmojiDataLoader>> = {
   zh: () => loadEmojiDataset('zh'),
   'zh-hant': () => loadEmojiDataset('zh-hant'),

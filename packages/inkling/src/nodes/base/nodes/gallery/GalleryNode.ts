@@ -58,7 +58,7 @@ export function recalculateImageRows(images: GalleryImage[]) {
 }
 
 export interface BaseGalleryNode
-  // oxlint-disable-next-line typescript/no-empty-object-type -- class+interface merging: self-types the spec-driven fields
+  // oxlint-disable-next-line typescript/no-empty-object-type
   extends CardSpecFieldMapFor<typeof galleryTransientProps, typeof galleryNestedEditors> {}
 export class BaseGalleryNode extends generateDecoratorNode({
   nodeType: 'gallery',

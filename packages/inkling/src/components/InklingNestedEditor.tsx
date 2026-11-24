@@ -67,7 +67,7 @@ const InklingNestedEditor = ({
     <InklingNestedComposer
       initialEditor={initialEditor}
       initialEditorState={initialEditorState}
-      // oxlint-disable-next-line typescript/no-deprecated -- load-bearing: the nested editor's node set arrives via this prop; see InklingNestedComposer
+      // oxlint-disable-next-line typescript/no-deprecated
       initialNodes={initialNodes}
       initialTheme={initialTheme}
     >

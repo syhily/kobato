@@ -67,7 +67,7 @@ export function defineCard<
     throw new Error(`[defineCard] '${spec.nodeType}': a card with this nodeType is already declared`)
   }
   const node = assembleCardNodeOnce<LexicalNode, HostCardSpecWithParts<Spec, Transient, Nested>>(spec)
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- storage-only widening; the checked shape is narrower than the registry's raw entry type
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   registerHostCard({ nodeType: spec.nodeType, spec: spec as HostCardSpec<NodeType> })
   const host: HostCard<NodeType, HostCardSpecWithParts<Spec, Transient, Nested>> = {
     nodeType: spec.nodeType,

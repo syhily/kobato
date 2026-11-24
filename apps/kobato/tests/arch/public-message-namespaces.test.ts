@@ -30,9 +30,6 @@ const PUBLIC_ENTRY_DIRS = ['apps/kobato/src/routes/public'] as const
 
 const SERVER_ONLY_PREFIXES = ['packages/server/src/'] as const
 
-// `sections/observability.ts` composes the public RUM bootstrap vocabulary (`rumClientIdentitySchema`), so its module
-// rides the public bundle; the admin write-validation keys it declares are inert schema constants consumed by the
-// server registry, never runtime lookups from public code. Any NEW workspace-only key in the module fails loudly.
 const DECLARED_WORKSPACE_KEYS: Record<string, readonly string[]> = {
   'packages/shared/settings/src/sections/observability.ts': [
     'admin.settings.observability.error.endpointInvalid',

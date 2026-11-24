@@ -3,10 +3,6 @@ import type { StorageDriver } from '@kobato/settings/types'
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@kobato/server/infra/storage/key-policy'
 import { activeBackend, backendFor } from '@kobato/server/infra/storage/registry'
 
-// Sliced packages are keyed by font hash AND slicing-algorithm version (ADR-0010 decision 5): an
-// algorithm change derives a new version, so fresh slices never share keys with stale ones.
-// Pre-versioning packages lived at `fonts/<hash>/result.css`; those keys stay served as-is until
-// the font is re-uploaded (re-slicing needs the original bytes, which are not stored).
 export function fontPrefix(hash: string, algorithmVersion: string): string {
   return `fonts/${hash}/${algorithmVersion}/`
 }
@@ -50,8 +46,6 @@ export async function deleteFontPackage(hash: string, driver: StorageDriver): Pr
   await backend.deletePrefix(`fonts/${hash}/`)
 }
 
-/// After a re-slice upgrade, remove the stale package of the same font. Old-format rows stored
-/// files flat at `fonts/<hash>/…`; versioned rows nest them under `fonts/<hash>/<version>/`.
 export async function deleteStaleFontPackage(hash: string, driver: StorageDriver, keepVersion: string): Promise<void> {
   const backend = backendFor(driver)
   const keep = fontPrefix(hash, keepVersion)

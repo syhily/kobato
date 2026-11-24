@@ -15,30 +15,17 @@ import type {
 
 import { oc } from '@orpc/contract'
 
-/**
- * The method/path pair a `defineProcedure` route keeps on `~orpc.route` at the type level. oRPC's own
- * `ContractProcedureDef.route` is the wide `Route`, so this brand is what lets the server derive an implementation
- * shape from the contract tree (`@kobato/server/http/contract-implementation`).
- */
 export interface ProcedureRoute<M extends HTTPMethod = HTTPMethod, P extends HTTPPath = HTTPPath> {
   method: M
   path: P
 }
 
-/**
- * The route brand carried by a procedure-like type, or `unknown` when it was declared without `defineProcedure`.
- */
 export type ProcedureRouteOf<T> = T extends {
   '~orpc': { route: { method: infer M extends HTTPMethod; path: infer P extends HTTPPath } }
 }
   ? ProcedureRoute<M, P>
   : unknown
 
-/**
- * Transport-visible policy, carried on `~orpc.meta` — oRPC's sanctioned custom-metadata slot, never the route
- * compatibility record. Security eligibility, body caps, request timeouts, install-gate exemptions, and telemetry
- * exclusions are independent declarations that may be composed on one procedure.
- */
 export interface RpcProcedureMeta extends Meta {
   readonly publicRead?: true
   readonly csrfExempt?: true
@@ -56,10 +43,6 @@ type OcBase = ReturnType<typeof oc.route>
 type NoSchema = Schema<unknown, unknown>
 type NoErrors = OcBase['~orpc']['errorMap']
 
-/**
- * The empty meta of a procedure declared without any metadata options — what `defineProcedure(route)` carries when no
- * `{ publicRead: true }` opt-in is given. Kept as an oRPC-derived alias so call sites never spell the literal shape.
- */
 export type NoMeta = OcBase['~orpc']['meta']
 
 type DefinitionDef<
@@ -112,15 +95,6 @@ export interface ProcedureDefinitionWithInputOutput<
   '~orpc': DefinitionDef<TInputSchema, TOutputSchema, M, P, TMeta>
 }
 
-/**
- * `oc.route` plus a type-level method/path brand: the runtime value is the untouched oRPC contract procedure, but its
- * `~orpc.route` type keeps the declared literals so a server router can be checked against the contract tree.
- * The type parameters are `const` so a path built from a generic base (e.g. `` `${basePath}/save-draft` `` inside a
- * factory) keeps that placeholder instead of widening it to `string` — see `rpc/admin/revision.ts`.
- * Transport options are written through oRPC's own `$meta`/`route` chain and preserved through every
- * `.input()`/`.output()` link; without an option no policy metadata exists.
- * The single `as` below is backed by the route/schema/meta identity tests in `tests/unit/define-procedure.test.ts`.
- */
 export function defineProcedure<const M extends HTTPMethod, const P extends HTTPPath>(route: {
   method: M
   path: P
@@ -147,6 +121,6 @@ export function defineProcedure<const M extends HTTPMethod, const P extends HTTP
     throw new RangeError('requestBodyLimit.maxBytes must be a positive integer')
   }
   const builder = options === undefined ? oc.route(route) : oc.$meta(options).route(route)
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the ONE brand assertion; runtime route/schema/meta identity is pinned by tests/unit/define-procedure.test.ts
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return builder as ProcedureDefinition<M, P, RpcProcedureMeta>
 }

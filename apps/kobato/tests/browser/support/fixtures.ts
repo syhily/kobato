@@ -19,7 +19,7 @@ interface TestFixtures {
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   settingsApi: [
-    // eslint-disable-next-line no-empty-pattern -- Playwright requires the destructuring form.
+    // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       await use(await SettingsApi.connect(browserEnv()))
     },

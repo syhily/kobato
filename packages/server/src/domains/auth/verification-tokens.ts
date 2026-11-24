@@ -33,10 +33,6 @@ export function issueSetupToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'author-invite', SETUP_TTL_MS)
 }
 
-/**
- * Mints the raw token plus its stored verification values (id + hashed value + expiry) for the author-invite
- * purpose WITHOUT writing — the persistence script (`inviteAuthorWithVerification`) inserts them transactionally.
- */
 export function mintSetupTokenValues(): {
   raw: string
   id: string

@@ -24,7 +24,7 @@ export interface InklingNestedComposerProps extends Pick<
 const InklingNestedComposer = ({
   initialEditor,
   initialEditorState,
-  // oxlint-disable-next-line typescript/no-deprecated -- load-bearing: per-card nested-editor node sets arrive via this prop; migrating to createEditor({nodes}) at editor-creation time is a separate architecture change
+  // oxlint-disable-next-line typescript/no-deprecated
   initialNodes,
   initialTheme,
   skipCollabChecks,
@@ -41,7 +41,7 @@ const InklingNestedComposer = ({
   return (
     <LexicalNestedComposer
       initialEditor={initialEditor}
-      // oxlint-disable-next-line typescript/no-deprecated -- load-bearing: per-card nested-editor node sets arrive via this prop; migrating to createEditor({nodes}) at editor-creation time is a separate architecture change
+      // oxlint-disable-next-line typescript/no-deprecated
       initialNodes={initialNodes}
       initialTheme={initialTheme}
       skipCollabChecks={skipCollabChecks}

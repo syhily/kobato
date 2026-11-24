@@ -86,8 +86,6 @@
   color: var(--grey-500);
 }
 
-/* The picker mounts as real DOM inside the portal's .inkling-lexical scope; emoji-picker-react is
-   mounted with cssLayer="inkling", so these layered overrides win over its injected tokens. */
 .inkling-lexical .epr-structural-root {
   --epr-font-family:
     Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Droid Sans', 'Helvetica Neue',

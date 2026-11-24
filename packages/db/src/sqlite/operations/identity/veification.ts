@@ -70,10 +70,6 @@ export interface OtpConsumption {
   userId: number
 }
 
-/**
- * Consumes a sign-in OTP in one transaction: loads the row for `(purpose='signin-otp', userId)`, drops it when
- * expired, and deletes + returns it only when the caller-supplied pure hash predicate accepts the stored value.
- */
 export function consumeSignInOtp(
   db: Database,
   userId: number,
