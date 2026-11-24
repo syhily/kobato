@@ -1,5 +1,6 @@
 #![cfg(feature = "corpus")]
 
+use kobato_font_split::corpus::blog::{page_codepoints, parse_rows};
 use kobato_font_split::corpus::clean::{Dim, clean_wikitext};
 use kobato_font_split::corpus::dump::{parse_page, xml_unescape};
 
@@ -85,4 +86,50 @@ fn parse_page_self_closing_text_and_redirect() {
     let page = parse_page(blob);
     assert!(page.redirect);
     assert_eq!(page.text, "T\n");
+}
+
+fn projected(html: &str) -> String {
+    page_codepoints(html).unwrap().into_iter().map(|cp| char::from_u32(cp).unwrap()).collect()
+}
+
+#[test]
+fn blog_page_text_skips_code_math_svg_and_form_controls() {
+    let html = "<p>甲<code>xyz</code>乙<pre>abc</pre><math><mi>Q</mi>Q</math><svg><rect/></svg>\
+                <select><option>opt</option></select>丙</p>";
+    assert_eq!(projected(html), "丙乙甲");
+}
+
+#[test]
+fn blog_page_ordered_list_markers_count_but_bullets_do_not() {
+    assert_eq!(projected("<ol><li>甲</li><li>乙</li></ol><ul><li>丙</li></ul>"), ".12丙乙甲");
+    assert_eq!(projected("<ol><li><p>甲</p></li></ol>"), ".1甲");
+}
+
+#[test]
+fn blog_page_entities_decode_and_unknown_names_fail() {
+    assert_eq!(projected("a&amp;b&#x4E2D;&#20013;&nbsp;"), "&ab\u{a0}中");
+    assert_eq!(projected("AT&T 1 < 2"), " &12<AT");
+    assert!(page_codepoints("a&copy;b").is_err());
+}
+
+#[test]
+fn blog_page_comments_and_attributes_are_not_text() {
+    let html = "<!-- c --><img alt=\"a > b\" src=\"x\">甲<br>乙<p title=\"丙\">丁</p>";
+    assert_eq!(projected(html), "丁乙甲");
+}
+
+#[test]
+fn blog_page_mismatched_end_tag_fails() {
+    assert!(page_codepoints("<p>甲</div>").is_err());
+}
+
+#[test]
+fn blog_page_quote_mode_rows_parse() {
+    let stdout = "'a'\u{1f}1700000000000\u{1f}'<p>x</p>'\n''''\u{1f}1\u{1f}'it''s\nmulti'\n";
+    let rows = parse_rows(stdout).unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!((rows[0].slug.as_str(), rows[0].published_at, rows[0].html.as_str()), ("a", 1700000000000, "<p>x</p>"));
+    assert_eq!((rows[1].slug.as_str(), rows[1].html.as_str()), ("'", "it's\nmulti"));
+    assert!(parse_rows("NULL\u{1f}1\u{1f}'x'\n").is_err());
+    assert!(parse_rows("'a'\u{1f}1\n").is_err());
 }

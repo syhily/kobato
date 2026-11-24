@@ -1,3 +1,4 @@
+pub mod blog;
 pub mod clean;
 pub mod count;
 pub mod dump;
@@ -38,11 +39,13 @@ pub fn run() {
         "download" => dump::download(),
         "build" => count::build(),
         "generate" => generate::generate(),
+        "blog-pages" => blog::generate(),
         _ => {
-            eprintln!("usage: corpus <download|build|generate>");
+            eprintln!("usage: corpus <download|build|generate|blog-pages>");
             eprintln!("  download  fetch the zhwiki dump into .cache/ (resumable)");
             eprintln!("  build     one pass over the dump: char frequencies and held-out page fixtures");
             eprintln!("  generate  regenerate src/unicode/cjk_tables.rs from scripts/cjk-tables/");
+            eprintln!("  blog-pages  regenerate the production-blog page fixture from a Kobato content database");
             std::process::exit(2);
         }
     }

@@ -111,7 +111,7 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
 3. **Evaluation harness as the gate — landed at `tools/font-split/tests/page_cost.rs`.** Runs the real `font_split`
    pipeline on a committed OFL fixture font (ASCII + `ZH_SYMBOL` + 通用规范汉字表 一级字表) against 64 held-out pages
    **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`) plus the
-   234 pages of the production-blog fixture (`blog-zh-hans-234.txt`, produced by `scripts/blog-pages.ts`), parses
+   234 pages of the production-blog fixture (`blog-zh-hans-234.txt`, produced by `corpus blog-pages`), parses
    `result.css`, and pins page-cost metrics as recorded constants (chunk count, total bytes, mean/p90 bytes and chunks
    per page, 5-page cold-session bytes, incremental bytes) under the same intersection rule as the measurements above.
    It is benchmark-class: `#[ignore]`d (coverage/disjointness invariants included), run explicitly via

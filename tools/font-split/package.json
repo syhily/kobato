@@ -22,7 +22,7 @@
     "corpus:generate": "cargo run --release --features corpus --bin corpus -- generate",
     "corpus:test": "cargo test --features corpus --test corpus",
     "corpus:update": "pnpm run corpus:generate && cargo test --features corpus && pnpm run build",
-    "fixture:blog": "node scripts/blog-pages.ts",
+    "fixture:blog": "cargo run --release --features corpus --bin corpus -- blog-pages",
     "pagecost:report": "cargo test --release --test page_cost page_cost_font_report -- --ignored --nocapture",
     "pagecost:sweep": "cargo test --release --features bench --test page_cost page_cost_lambda_sweep -- --ignored --nocapture",
     "test": "cargo test"

@@ -38,8 +38,8 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   `oxfmt-ignore` opt-outs itself, so the root lint/format configs need no ignorePatterns entry.
 - `src/index.ts` — thin wrapper typed from `src/binding.d.ts` (no hand-written type mirror): `fontSplit` /
   `fontSplitAlgorithmVersion` pass the native signatures through, lazy-loading `font-split.node` with an actionable
-  error when missing. It and the generated `binding.d.ts` are the only TS in `src/`; `tsconfig.json` is the standard
-  package shape and also covers `scripts/`.
+  error when missing. It and the generated `binding.d.ts` are the only TS here; `tsconfig.json` is the standard package
+  shape. The package is Rust: every tool lives in the crate, never in a TS/JS script.
 - `font-split.node` (package root, gitignored) — the addon binary, built and placed by `@napi-rs/cli`
   (`napi build --release --output-dir .`); the stable specifier both `nativeRequire` and SEA staging rely on. The file
   name comes from `napi.binaryName` in `package.json`. The CLI always compiles with `--target <host triple>`, so cargo
@@ -50,12 +50,12 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   into gitignored `.cache/`, resumable), `build` (one streaming pass: wikitext clean → OpenCC t2s/s2t → per-dimension
   char document frequencies → `scripts/cjk-tables/freq-zhwiki-20261101-{hans,hant}.tsv`, held-out page fixtures →
   `tests/fixtures/pages/zh-{hans,hant}-heldout-64.txt` with fixture pages EXCLUDED from the counts), `generate`
-  (vendored lists + frequency TSVs → `cjk_tables.rs`). Never runs in CI: `download`/`build` need the 3.4 GB local dump.
-  Its tests run via `pnpm run corpus:test`.
-- `scripts/blog-pages.ts` — regenerates the real-content page fixture from a Kobato content database
-  (`pnpm run fixture:blog <kobato.db> <out>`): projects every live post/page body to the codepoints the public theme
-  renders in the post font slot and stores codepoint sets only. Node builtins only; it opens the database read-only
-  (hand it a copy together with its `-wal`) and throws on any entity or tag shape it does not model.
+  (vendored lists + frequency TSVs → `cjk_tables.rs`), `blog-pages` (the production-blog page fixture: exports the
+  published post/page bodies of a Kobato content database and projects each to the codepoints the public theme renders
+  in the post font slot — text outside `pre`/`code`, form controls, svg and MathML, plus ordered-list markers, stored as
+  codepoint sets only; fails on any entity or tag shape it does not model). Like `curl` and `bzip2`, it shells out to
+  system tools (`sqlite3 -readonly`, `date`) instead of taking a dependency. Never runs in CI: `download`/`build` need
+  the 3.4 GB local dump. Its tests run via `pnpm run corpus:test`.
 - `tests/` — ALL Rust tests live here (`src/` carries no `#[cfg(test)]`): one file per covered module (`auto_chunk.rs`,
   `features.rs`, `link_subset.rs`, `unicode.rs`, `range.rs`, `utils.rs`, …) running in CI via `cargo test`, plus the two
   baseline/benchmark suites that never run in CI:
@@ -80,7 +80,7 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   and `pages/zh-{hans,hant}-heldout-64.txt` (64 held-out pages per script dimension as sorted codepoint sets; produced
   by `corpus build` from the pinned zhwiki dump and EXCLUDED from the frequency counts; provenance in the file headers)
   and `pages/blog-zh-hans-234.txt` (234 published posts and pages of a production blog in publish order, as sorted
-  codepoint sets — real prose, independent of the zhwiki training corpus; produced by `scripts/blog-pages.ts`, snapshot
+  codepoint sets — real prose, independent of the zhwiki training corpus; produced by `corpus blog-pages`, snapshot
   2026-11-25, provenance in the file header).
 
 ## Toolchain pins
@@ -114,7 +114,8 @@ the upstream demo fonts were dropped. Output = `result.css` + `*.woff2` only.
 - `pnpm --filter @kobato/font-split run pagecost:sweep` — the DP λ/μ sweep on that font (`--features bench`; local
   only); the retuning evidence of ADR-0010 comes from this run.
 - `pnpm --filter @kobato/font-split run fixture:blog <kobato.db> <out>` — regenerate the production-blog page fixture
-  from a copy of a Kobato content database (local only; a new snapshot needs re-pinning the `blog` baseline).
+  through the `corpus` bin from a Kobato content database (local only; opened read-only via the system `sqlite3`, so
+  hand it a copy together with its `-wal`; a new snapshot needs re-pinning the `blog` baseline).
 - `pnpm --filter @kobato/font-split run corpus:download` / `corpus:build` — fetch the pinned zhwiki dump and run the
   one-pass frequency/fixture build (local only, never CI).
 - `pnpm --filter @kobato/font-split run corpus:generate` — regenerate `src/unicode/cjk_tables.rs` via the `corpus` bin
