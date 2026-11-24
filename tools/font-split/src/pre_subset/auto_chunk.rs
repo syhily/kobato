@@ -9,7 +9,7 @@ use crate::unicode::cjk::char_touch_probability;
 
 use super::PreSubsetContext;
 
-pub(crate) const DP_LAMBDA_BYTES: f64 = 30_000.0;
+pub(crate) const DP_LAMBDA_BYTES: f64 = 55_000.0;
 pub(crate) const DP_MU_BYTES: f64 = 500.0;
 
 #[cfg(feature = "bench")]

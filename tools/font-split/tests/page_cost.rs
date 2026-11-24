@@ -21,33 +21,32 @@ struct Baseline {
 }
 
 const HANS_BASELINE: Baseline = Baseline {
-    chunk_count: 100,
-    total_bytes: 1_548_404,
-    mean_bytes_per_page: 871_719.0,
-    p90_bytes_per_page: 1_125_584.0,
-    mean_chunks_per_page: 42.8,
-    mean_session_bytes: 1_307_477.0,
-    mean_incremental_bytes: 184_704.0,
+    chunk_count: 77,
+    total_bytes: 1_515_080,
+    mean_bytes_per_page: 926_149.0,
+    p90_bytes_per_page: 1_144_896.0,
+    mean_chunks_per_page: 34.9,
+    mean_session_bytes: 1_298_882.0,
+    mean_incremental_bytes: 158_931.0,
 };
 const HANT_BASELINE: Baseline = Baseline {
-    chunk_count: 100,
-    total_bytes: 1_548_404,
-    mean_bytes_per_page: 799_602.0,
-    p90_bytes_per_page: 1_012_504.0,
-    mean_chunks_per_page: 35.8,
-    mean_session_bytes: 1_204_333.0,
-    mean_incremental_bytes: 160_284.0,
+    chunk_count: 77,
+    total_bytes: 1_515_080,
+    mean_bytes_per_page: 863_018.0,
+    p90_bytes_per_page: 1_044_896.0,
+    mean_chunks_per_page: 30.2,
+    mean_session_bytes: 1_216_947.0,
+    mean_incremental_bytes: 140_673.0,
 };
 const BLOG_BASELINE: Baseline = Baseline {
-    chunk_count: 100,
-    total_bytes: 1_548_404,
-    mean_bytes_per_page: 964_672.0,
-    p90_bytes_per_page: 1_186_740.0,
-    mean_chunks_per_page: 48.6,
-    mean_session_bytes: 1_435_255.0,
-    mean_incremental_bytes: 214_985.0,
+    chunk_count: 77,
+    total_bytes: 1_515_080,
+    mean_bytes_per_page: 1_024_863.0,
+    p90_bytes_per_page: 1_220_148.0,
+    mean_chunks_per_page: 40.7,
+    mean_session_bytes: 1_425_980.0,
+    mean_incremental_bytes: 187_167.0,
 };
-
 const COUNT_TOLERANCE: usize = 2;
 const BYTES_TOLERANCE: f64 = 0.02;
 const METRIC_TOLERANCE: f64 = 0.03;
@@ -357,7 +356,10 @@ fn page_cost_lambda_sweep() {
         CORPORA.iter().map(|(label, fixture)| (*label, load_pages(fixture))).collect();
     let lambdas = env_list(
         "FONT_SPLIT_SWEEP_LAMBDA_BYTES",
-        &[10_000.0, 20_000.0, 30_000.0, 45_000.0, 60_000.0, 90_000.0, 120_000.0, 240_000.0, 480_000.0],
+        &[
+            10_000.0, 20_000.0, 30_000.0, 37_500.0, 45_000.0, 55_000.0, 70_000.0, 90_000.0, 120_000.0, 240_000.0,
+            480_000.0,
+        ],
     );
     let mus = env_list("FONT_SPLIT_SWEEP_MU_BYTES", &[500.0]);
     let out_dir = std::env::var_os("FONT_SPLIT_BENCH_OUT_DIR").map(PathBuf::from);

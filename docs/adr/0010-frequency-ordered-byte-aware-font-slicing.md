@@ -1,7 +1,8 @@
 # ADR-0010: Data-driven font slicing — frequency-ordered tables and byte-aware DP chunking (MLFont rejected)
 
 - Status: accepted
-- Date: 2026-11-24 (single source of truth for the MLFont / cjk-font-split-native investigations)
+- Date: 2026-11-24; revised 2026-11-25 (λ retuned on production content — see "Re-validation on production content").
+  Single source of truth for the MLFont / cjk-font-split-native investigations.
 
 ## Context
 
@@ -104,21 +105,27 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
    candidates against 1,563,340 counted documents; the shipped rule is `id % 2003 == 7` with a 1200-char floor.)
 2. **Byte-aware DP chunk boundaries** in `pre_subset/auto_chunk.rs`, replacing the cube-root ramp. Chunks are contiguous
    segments of the frequency-ordered sequence; minimize `Σ P(chunk touched)×(bytes+λ)+μ` under a byte cap; P from the
-   frequency table, bytes from the existing 1% sampling estimate. Starting point **λ=30 KB, μ=0.5 KB**: −40%/−46%
-   per-page bytes with fewer requests, fewer files, and smaller CSS than today. Later λ/μ changes are arbitrated by the
-   harness (decision 3).
+   frequency table, bytes from the existing 1% sampling estimate. **λ=55 KB, μ=0.5 KB** — λ was 30 KB when this ADR was
+   accepted and was retuned on production content (see "Re-validation on production content"). Later λ/μ changes are
+   arbitrated by the harness (decision 3).
 3. **Evaluation harness as the gate — landed at `tools/font-split/tests/page_cost.rs`.** Runs the real `font_split`
    pipeline on a committed OFL fixture font (ASCII + `ZH_SYMBOL` + 通用规范汉字表 一级字表) against 64 held-out pages
-   **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`), parses
+   **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`) plus the
+   234 pages of the production-blog fixture (`blog-zh-hans-234.txt`, produced by `scripts/blog-pages.ts`), parses
    `result.css`, and pins page-cost metrics as recorded constants (chunk count, total bytes, mean/p90 bytes and chunks
    per page, 5-page cold-session bytes, incremental bytes) under the same intersection rule as the measurements above.
    It is benchmark-class: `#[ignore]`d (coverage/disjointness invariants included), run explicitly via
    `cargo test --release -- --ignored --nocapture page_cost`, never in CI; the constants update only in the same commit
-   as an intentional algorithm change. Fast unit tests live in the same `tests/` tree (one file per covered module) and
-   do run in CI. Pinned baseline for the accepted algorithm (frequency-ordered tables + DP λ=30/μ=0.5 + WOFF2 q11, on
-   the fixture font): 100 chunks / 1,548,404 B total; hans — mean 871,719 B/page, p90 1,125,584, 42.8 chunks/page,
-   session(5) 1,307,477 B, incremental 184,704 B/page; hant — mean 799,602 B/page, p90 1,012,504, 35.8 chunks/page,
-   session(5) 1,204,333 B, incremental 160,284 B/page.
+   as an intentional algorithm change. Two sibling tests share the file: `page_cost_font_report` prints the same
+   metrics, unpinned, for one real font (`FONT_SPLIT_BENCH_FONT`, default `data/fonts/calendar.ttf`), and
+   `page_cost_lambda_sweep` (Cargo feature `bench`) re-slices per λ/μ through a `#[doc(hidden)]` seam that never reaches
+   the addon. Fast unit tests live in the same `tests/` tree (one file per covered module) and do run in CI. Pinned
+   baseline for the accepted algorithm (frequency-ordered tables + DP λ=55/μ=0.5 + WOFF2 q11, on the fixture font): 77
+   chunks / 1,515,080 B total; hans — mean 926,149 B/page, p90 1,144,896, 34.9 chunks/page, session(5) 1,298,882 B,
+   incremental 158,931 B/page; hant — mean 863,018 B/page, p90 1,044,896, 30.2 chunks/page, session(5) 1,216,947 B,
+   incremental 140,673 B/page; blog — mean 1,024,863 B/page, p90 1,220,148, 40.7 chunks/page, session(5) 1,425,980 B,
+   incremental 187,167 B/page. The fixture font (≈0.3 KB per glyph) trades bytes for requests under the retune; the
+   production-font report is the decision evidence.
 4. **`features_plugin` hoisting under the new order — measured, no change needed.** It runs AFTER the DP chunker, so a
    GSUB/GPOS closure is hoisted whole into the first intersecting chunk. Re-measured on both production fonts with the
    accepted pipeline (2026-11-24): the largest chunk is 75.9 KiB (38 MB font) / 77.8 KiB (22 MB font, 138 codepoints —
@@ -141,6 +148,72 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
    0.34 s; q11: 467 / 15,303,344 B (−15.0%) / 2.8 s · 714 / 25,318,896 B (−17.1%) / 5.3 s. Slicing is upload-time and
    latency-tolerant, so the maximum size win is taken: `WOFF2_QUALITY = 11` in `run_subset.rs`.
 
+## Re-validation on production content (2026-11-25)
+
+Decision 2 was measured on Wikipedia long pages against the Rust port's status quo. Before shipping it was re-run on the
+production font and the production blog — the fixture swap this ADR asked for — with the harness of decision 3
+(`pagecost:sweep`, `pagecost:report`) and throttled headless Chromium for the network side.
+
+- **Setup.** Font `data/fonts/calendar.ttf` = the deployed post font OPPOSerif (38.3 MiB, 29,251 codepoints, variable;
+  never committed). Pages: `blog-zh-hans-234.txt`, all 234 published posts and pages as codepoint sets (median 404
+  distinct codepoints per page). Baseline: the deployed package, reproduced byte-exactly (655 chunks, 30,567,221 B) by
+  re-running the pre-napi wasm slicer from git history.
+- **Correctness holds.** Every package covers each codepoint exactly once. In Chromium, the deployed, λ=30 and λ=60
+  packages loaded every chunk without error, rendered every visible glyph from the web font, and fetched exactly the
+  chunks the offline rule predicts on 234/234 pages. Chinese text renders pixel-identical to the deployed package; only
+  Latin kerning differs (see side findings).
+- **Bytes hold, requests do not.** Mean per blog page — deployed 2,576 KB / 70.0 requests; λ=30: 1,467 KB / 90.5 (p90
+  125, max 233), next page +551 KB / 47.3 instead of +671 KB / 13.3. λ=30 cut the cold page by 43% on all 234 pages but
+  raised requests by 29% cold and 3.6× on the next page, because:
+  - the measurements above compare against `S0`, the Rust port's status quo (861 files), which was never deployed —
+    against the deployed 655-chunk package even the committed wiki held-out pages go 76 → 94 requests;
+  - touch probabilities are whole-document frequencies over a stub-heavy corpus, so the DP optimizes for short
+    documents: pages of realistic length touch the mid-frequency chunks 2–4.6× more often than modeled (expected 53.7
+    chunks per page, measured 90.5 on the blog and 94.2 on the wiki held-out set), and λ=30 over-segments that region
+    (≈210 chunks of 7–27 characters).
+- **The λ frontier is a staircase** (`pagecost:sweep`, μ=0.5 KB; KB / requests per page):
+
+  | λ KB | chunks |   blog cold | blog p90 req | blog next page | wiki hans cold | wiki hant cold |
+  | ---: | -----: | ----------: | -----------: | -------------: | -------------: | -------------: |
+  |   30 |    812 | 1467 / 90.5 |          125 |     551 / 47.3 |    1466 / 94.2 |   2025 / 116.6 |
+  | 37.5 |    774 | 1513 / 78.9 |          111 |     524 / 40.9 |    1512 / 82.1 |   2104 / 104.5 |
+  |   45 |    751 | 1554 / 74.9 |          106 |     513 / 37.9 |    1546 / 77.2 |    2157 / 98.8 |
+  |   55 |    731 | 1586 / 70.5 |           98 |     498 / 34.8 |    1577 / 72.1 |    2212 / 93.4 |
+  |   60 |    724 | 1594 / 70.2 |           99 |     500 / 34.3 |    1578 / 71.2 |    2228 / 91.5 |
+  |  120 |    657 | 1762 / 58.9 |           81 |     460 / 24.4 |    1730 / 58.0 |    2447 / 78.7 |
+
+  Up to 37.5 KB a request saved costs 4 KB; 37.5 → 55 costs 7–10 KB; beyond 60 it roughly doubles (13–16 KB), and 55 →
+  60 changes nothing (70.5 → 70.2 requests for 8 KB).
+
+- **Loading time** (4 page pairs per point on 1.6 Mbps / 150 ms and 10 on 20 Mbps / 40 ms, over HTTP/1.1 and HTTP/2;
+  paired median time until a page's fonts are loaded, relative to λ=30). A request costs 6–10 ms on HTTP/1.1 (six
+  connections) and 1–8 ms on HTTP/2:
+
+  | relative to λ=30         |  37.5 |    45 |    55 |    80 |   120 |
+  | :----------------------- | ----: | ----: | ----: | ----: | ----: |
+  | cold page, HTTP/1.1 slow | 1.061 | 1.089 | 1.090 | 1.140 | 1.153 |
+  | cold page, HTTP/2 slow   | 1.056 | 1.083 | 1.085 | 1.140 | 1.150 |
+  | cold page, HTTP/1.1 fast | 0.976 | 0.955 | 0.925 | 0.927 | 0.980 |
+  | cold page, HTTP/2 fast   | 1.005 | 1.024 | 1.045 | 1.080 | 1.107 |
+  | next page, HTTP/1.1 slow | 0.966 | 0.933 | 0.904 | 0.876 | 0.894 |
+  | next page, HTTP/2 slow   | 0.974 | 0.932 | 0.920 | 0.901 | 0.929 |
+  | next page, HTTP/1.1 fast | 0.942 | 0.861 | 0.840 | 0.736 | 0.681 |
+  | next page, HTTP/2 fast   | 0.954 | 0.916 | 0.915 | 0.866 | 0.868 |
+
+  λ=30 is 4–16% slower than λ=45 on every next-page transition and 19% slower than λ=55 on HTTP/1.1 fast; λ=45 and λ=55
+  are indistinguishable (paired differences within ±2.6%, inside the noise of these samples).
+
+- **λ = 55 KB.** The flat optimum of measured loading time is the 45–55 KB band; 55 was taken for the request side: 4.4
+  fewer requests per cold page (p90 98 vs 106, max 182 vs 191), a strictly better next page (498 KB / 34.8 vs 513 KB /
+  37.9), and the un-modelled S3 302 hop that turns every chunk into two requests on a first visit — for 32 KB (+2.1%)
+  per cold page. It sits on a plateau (55–60 KB give nearly the same package), so small drift around it changes nothing.
+  Going further was left open: 80–120 KB keep improving HTTP/1.1 fast (next page ×0.74 / ×0.68) while cold pages on slow
+  or HTTP/2 links lose 8–15%; on a deployment known to serve fonts over HTTP/1.1, revisit with `pagecost:sweep`.
+- **Side findings.** Latin kerning only works inside one face: the deployed package scatters ASCII over 5 chunks, the
+  frequency-ordered packages over 2, so kerning retention against the source font rises from 19.5% to 68.3% and mixed
+  Chinese/English paragraphs are no longer pixel-identical. The render-blocking `result.css` is 278 KB (deployed: 238
+  KB; λ=30: 293 KB). Slicing the 38 MiB font takes ≈6 s at upload.
+
 ## Rejected alternatives
 
 - **Vendoring mlfont's `strategy.json` partitions** (this ADR's earlier draft): measured +33%/+46% per-page bytes on our
@@ -159,8 +232,10 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
 
 ## Consequences
 
-- Expected per-page CJK font transfer: −40% to −46% at λ=30/μ=0.5 with fewer files and smaller CSS, plus −15% to −17%
-  total package bytes from WOFF2 quality 11; up to −56%/−63% per-page at aggressive λ with more files.
+- Measured on the production font and blog at λ=55/μ=0.5: cold page −38% (2,576 → 1,586 KB), next page −26% (+671 → +498
+  KB), package −16%; requests per page unchanged on average (70.5 vs 70.0) but a heavier tail (p90 98 vs 84, max 182 vs
+  103). λ=30 saves 43% per cold page at +29% requests; WOFF2 quality 11 adds its −15% to −17% package bytes. An
+  already-uploaded font keeps its old slices until it is re-uploaded.
 - The `corpus` pipeline is the single producer of the frequency TSVs and the held-out page fixtures; both are committed
   inside `tools/font-split/` and regenerate together when the dump pin changes.
 - Tables remain editable official lists: frequency changes _order_, not coverage, so the `corpus:generate` size
@@ -173,10 +248,10 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
 
 ## Limitations of the evidence
 
-- The corpus is Wikipedia, not blog prose — re-validate with real site content (the harness makes this a fixture swap)
-  before drawing product conclusions.
-- Request cost enters only through λ; no real network (RTT, HTTP/2 multiplexing, cache headers) was simulated — hence
-  the deliberately few-requests starting point λ=30.
+- The corpus is Wikipedia; production content was re-validated on 2026-11-25 (above) and agrees within ~4% requests per
+  page, but the blog fixture is one site's snapshot and needs re-pinning as the blog grows.
+- Request cost comes from throttled headless Chromium (two link speeds, HTTP/1.1 and HTTP/2), not a real CDN: the S3 302
+  hop in front of every stored chunk and HTTP/3 are not modelled, and both would favour fewer requests.
 - One co-occurrence arm (`S2`) used a k-means stand-in, not mlfont's DNNTM training; the decisive evidence against topic
   clustering is the `A–D` arm, which reused mlfont's own trained matrices directly (±1%).
 - The arXiv paper was not read in full; the analysis rests on the abstract, the repository source at pinned SHA
