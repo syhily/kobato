@@ -26,9 +26,3 @@ pub fn analyze_fvar_table(data: Option<FontVariations>) -> Option<FvarTable> {
 pub fn q32_to_int_truncate(input: q32) -> i32 {
     input.0 >> 16
 }
-
-#[test]
-fn test_q32_to_int_truncate() {
-    assert_eq!(q32_to_int_truncate(q32(400 << 16)), 400);
-    assert_eq!(q32_to_int_truncate(q32(0)), 0);
-}

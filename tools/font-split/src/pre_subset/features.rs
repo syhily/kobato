@@ -8,7 +8,7 @@ use super::PreSubsetContext;
 pub mod cmap;
 pub mod gpos;
 pub mod gsub;
-#[expect(clippy::ptr_arg, reason = "uniform plugin signature; plugin_auto_subset requires Vec::clear/push")]
+#[expect(clippy::ptr_arg, reason = "uniform plugin signature; auto_chunk requires Vec::clear/push")]
 pub fn features_plugin(
     subsets: &mut Vec<IndexSet<u32>>,
     _remaining_chars_set: &mut BTreeSet<u32>,
@@ -24,7 +24,7 @@ pub fn features_plugin(
     move_feature_set_to_front(&pos_map, subsets);
 }
 
-fn move_feature_set_to_front(feature_map: &[IndexSet<u32>], subsets: &mut [IndexSet<u32>]) {
+pub fn move_feature_set_to_front(feature_map: &[IndexSet<u32>], subsets: &mut [IndexSet<u32>]) {
     for feature_set in feature_map {
         let mut have_coverage = false;
         for subset in subsets.iter_mut() {
@@ -47,21 +47,6 @@ fn has_intersection(a: &IndexSet<u32>, b: &IndexSet<u32>) -> bool {
         }
     }
     false
-}
-
-#[test]
-fn test_move_feature_set_to_front() {
-    let feature_map = [IndexSet::from([1, 2]), IndexSet::from([3, 4])];
-    let mut subsets = vec![IndexSet::from([2, 3]), IndexSet::from([4, 5]), IndexSet::from([1])];
-
-    move_feature_set_to_front(&feature_map, &mut subsets);
-
-    assert!(subsets[0].contains(&1));
-    assert!(subsets[0].contains(&2));
-    assert!(subsets[0].contains(&3));
-    assert!(subsets[0].contains(&4));
-    assert!(subsets[1].contains(&5));
-    assert!(subsets[2].is_empty());
 }
 
 pub fn turn_indics_to_unicode_set(

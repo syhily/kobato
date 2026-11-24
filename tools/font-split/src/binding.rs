@@ -102,3 +102,8 @@ pub fn font_split(input: Buffer, options: Option<FontSplitOptions>) -> Result<As
     };
     Ok(AsyncTask::new(FontSplitTask { config }))
 }
+
+#[napi]
+pub fn font_split_algorithm_version() -> String {
+    crate::unicode::cjk::algorithm_fingerprint().to_string()
+}

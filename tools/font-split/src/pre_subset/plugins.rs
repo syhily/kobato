@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use indexmap::IndexSet;
 
-use crate::lang_unicodes::{create_default_unicode_area, create_default_unicode_area_tag};
+use crate::unicode::{create_default_unicode_area, create_default_unicode_area_tag};
 use log::info;
 
 use super::PreSubsetContext;

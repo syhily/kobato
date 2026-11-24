@@ -24,6 +24,7 @@ interface NativeFontSplitOptions {
 
 interface NativeBinding {
   fontSplit(input: Buffer, options?: NativeFontSplitOptions): Promise<FontSplitOutputFile[]>
+  fontSplitAlgorithmVersion(): string
 }
 
 let cached: NativeBinding | null = null
@@ -56,4 +57,10 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
   }
   const outputs = await native.fontSplit(Buffer.from(input), options)
   return outputs.map((file) => ({ name: file.name, data: new Uint8Array(file.data) }))
+}
+
+/// ADR-0010 decision 5: content fingerprint of the addon's slicing algorithm (tables, frequencies,
+/// DP parameters, WOFF2 quality). Part of the sliced-package storage identity.
+export function fontSplitAlgorithmVersion(): string {
+  return loadBinding().fontSplitAlgorithmVersion()
 }

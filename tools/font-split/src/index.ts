@@ -44,6 +44,7 @@ interface NativeFontSplitOptions {
 
 interface NativeBinding {
   fontSplit(input: Buffer, options?: NativeFontSplitOptions): Promise<FontSplitOutputFile[]>
+  fontSplitAlgorithmVersion(): string
 }
 
 let cached: NativeBinding | null = null
@@ -64,6 +65,10 @@ export function loadNativeBinding(): NativeBinding {
     )
   }
   return cached
+}
+
+export function fontSplitAlgorithmVersion(): string {
+  return loadNativeBinding().fontSplitAlgorithmVersion()
 }
 
 export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputFile[]> {

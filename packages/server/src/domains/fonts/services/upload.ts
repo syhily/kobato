@@ -2,10 +2,11 @@ import type { AdminFontDto } from '@kobato/api/contracts/admin/fonts'
 import type { Database } from '@kobato/db/sqlite/database'
 
 import { FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
-import { insertFont } from '@kobato/db/sqlite/operations/system/font'
+import { insertFont, updateFontPackage } from '@kobato/db/sqlite/operations/system/font'
 import { findFontByHash, toAdminFontDto } from '@kobato/server/domains/fonts/services/read'
 import { sliceFont } from '@kobato/server/domains/fonts/slice'
-import { putFont, fontCssKey, type FontPackageFile } from '@kobato/server/domains/fonts/storage'
+import { deleteStaleFontPackage, fontCssKey, putFont, type FontPackageFile } from '@kobato/server/domains/fonts/storage'
+import { fontSplitAlgorithmVersion } from '@kobato/server/domains/fonts/vendor/napi-split'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { createHash } from 'node:crypto'
@@ -57,6 +58,11 @@ function sha256Hex(buffer: Uint8Array): string {
   return createHash('sha256').update(buffer).digest('hex')
 }
 
+// Coalesce concurrent uploads of the same font bytes (identical sha256) into one slice+store
+// pass — slicing a CJK font takes seconds and the work is deterministic, so followers just await
+// the leader's result. Process-local is sufficient: the deployment is a single instance.
+const inFlightUploads = new Map<string, Promise<AdminFontDto>>()
+
 export interface UploadFontInput {
   buffer: Uint8Array
   sourceName: string
@@ -64,7 +70,7 @@ export interface UploadFontInput {
 }
 
 export async function uploadFont(db: Database, input: UploadFontInput): Promise<AdminFontDto> {
-  const { buffer, sourceName, familyName } = input
+  const { buffer, familyName } = input
 
   const trimmedFamily = familyName.trim()
   if (trimmedFamily === '') {
@@ -82,13 +88,31 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   validateFontTableBounds(buffer)
 
   const hash = sha256Hex(buffer)
+  const pending = inFlightUploads.get(hash)
+  if (pending) {
+    return pending
+  }
+  const task = uploadFontExclusive(db, input, trimmedFamily, hash).finally(() => {
+    inFlightUploads.delete(hash)
+  })
+  inFlightUploads.set(hash, task)
+  return task
+}
+
+async function uploadFontExclusive(
+  db: Database,
+  input: UploadFontInput,
+  trimmedFamily: string,
+  hash: string,
+): Promise<AdminFontDto> {
+  const algorithmVersion = fontSplitAlgorithmVersion()
 
   const existing = await findFontByHash(db, hash)
-  if (existing) {
+  if (existing && existing.cssKey === fontCssKey(hash, algorithmVersion)) {
     return toAdminFontDto(existing)
   }
 
-  const sliced = await sliceFont(Buffer.from(buffer), { fontFamily: trimmedFamily })
+  const sliced = await sliceFont(Buffer.from(input.buffer), { fontFamily: trimmedFamily })
 
   const files: FontPackageFile[] = [
     { name: 'result.css', body: Buffer.from(sliced.css), contentType: 'text/css; charset=utf-8' },
@@ -98,14 +122,29 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
       contentType: 'font/woff2',
     })),
   ]
-  const { driver } = await putFont(hash, files)
+  const { driver } = await putFont(hash, algorithmVersion, files)
 
   const etag = sha256Hex(sliced.css)
-  const cssKey = fontCssKey(hash)
+  const cssKey = fontCssKey(hash, algorithmVersion)
+
+  if (existing) {
+    // Same font bytes, stale slicing algorithm: re-slice into the versioned keys and repoint the
+    // row; the stale package is removed best-effort afterwards.
+    await updateFontPackage(db, existing.id, {
+      cssKey,
+      etag,
+      chunkCount: sliced.chunkCount,
+      totalBytes: sliced.totalBytes,
+      storageDriver: driver,
+    })
+    await deleteStaleFontPackage(hash, driver, algorithmVersion).catch(() => undefined)
+    const refreshed = await findFontByHash(db, hash)
+    return toAdminFontDto(refreshed ?? existing)
+  }
 
   const row = await insertFont(db, {
     familyName: trimmedFamily,
-    sourceName,
+    sourceName: input.sourceName,
     hash,
     cssKey,
     storageDriver: driver,

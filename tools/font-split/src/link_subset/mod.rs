@@ -1,6 +1,9 @@
-mod css;
-pub(crate) mod name_template;
-mod output_css;
+#[doc(hidden)]
+pub mod css;
+#[doc(hidden)]
+pub mod name_template;
+#[doc(hidden)]
+pub mod output_css;
 use crate::{output::OutputFile, runner::Context};
 
 fn output_file(ctx: &mut Context, file_name: &str, content: Vec<u8>) {

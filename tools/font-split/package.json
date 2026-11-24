@@ -16,8 +16,11 @@
   },
   "scripts": {
     "build": "cargo build --release && node scripts/copy-addon.ts",
-    "cjk-tables:generate": "node scripts/gen-cjk-tables.ts",
-    "cjk-tables:update": "pnpm run cjk-tables:generate && pnpm run test && pnpm run build",
+    "cjk-tables:generate": "cargo run --release --features corpus --bin datagen -- generate",
+    "cjk-tables:update": "pnpm run cjk-tables:generate && cargo test --features corpus && pnpm run build",
+    "corpus:build": "cargo run --release --features corpus --bin datagen -- build",
+    "corpus:download": "cargo run --release --features corpus --bin datagen -- download",
+    "corpus:test": "cargo test --features corpus --test datagen",
     "test": "cargo test"
   }
 }

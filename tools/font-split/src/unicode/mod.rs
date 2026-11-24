@@ -1,9 +1,9 @@
-use self::cjk_unicodes::{
-    HANGUL_JAMO, HANGUL_SYL, HIRAGANA_AND_KATAKANA, ZH_HK, ZH_JA, ZH_SC_1, ZH_SC_2, ZH_SC_3, ZH_TW,
-};
+use self::cjk::{HANGUL_JAMO, HANGUL_SYL, HIRAGANA_AND_KATAKANA, ZH_HK, ZH_JA, ZH_SC_1, ZH_SC_2, ZH_SC_3, ZH_TW};
 use std::sync::LazyLock;
-mod cjk_tables;
-pub mod cjk_unicodes;
+pub mod cjk;
+#[doc(hidden)]
+pub mod cjk_tables;
+pub mod range;
 pub fn expand_ranges(ranges: &[(u32, u32)]) -> Vec<u32> {
     ranges.iter().flat_map(|&(start, end)| (start..=end).collect::<Vec<u32>>()).collect()
 }
@@ -169,13 +169,4 @@ pub fn create_default_unicode_area_tag() -> [&'static str; 36] {
         "NAXI_DONGBA",
         "HALFWIDTH_FULLWIDTH",
     ]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test() {
-        assert_eq!(LATIN.len(), 127)
-    }
 }

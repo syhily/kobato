@@ -9,20 +9,39 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# Data-generation pipeline (ADR-0010): the `datagen` bin (download/build/generate) is gated behind
+# this feature so the production addon build and CI never compile these dependencies.
+[features]
+corpus = ["dep:jieba-rs", "dep:memchr", "dep:opencc-fmmseg"]
+
+[[bin]]
+name = "datagen"
+path = "src/bin/datagen/main.rs"
+required-features = ["corpus"]
+
 [dependencies]
 harfbuzz_rs_now = "2.3.2"
 log = "0.4.35"
 md5 = "0.8.1"
 opentype = "0.39.1"
-rayon = "1.12.0"
+rayon = "1.10.0" # pinned to 1.10.x: opencc-fmmseg (corpus feature) requires exactly =1.10
 woff = "0.6.4"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
 indexmap = "2.14.2"
+jieba-rs = { version = "0.8.1", optional = true }
+memchr = { version = "2.8.3", optional = true }
 napi = { version = "3.16.3", features = ["napi10", "async"] }
 napi-derive = "3.7.2"
+opencc-fmmseg = { version = "0.13.1", optional = true }
 
 [build-dependencies]
 napi-build = "2.7.0"
+
+[dev-dependencies]
+harfbuzz_rs_now = "2.3.2"
+indexmap = "2.14.2"
+opentype = "0.39.1"
+woff = "0.6.4"
 
 [profile.release]
 lto = true

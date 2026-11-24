@@ -1,17 +1,18 @@
+#[doc(hidden)]
+pub mod auto_chunk;
 pub mod features;
 pub mod fvar;
 pub mod name_table;
-pub mod plugin;
-mod plugin_auto_subset;
+pub mod plugins;
 
 use crate::runner::Context;
+use auto_chunk::auto_chunk;
 use features::features_plugin;
 use fvar::analyze_fvar_table;
 use harfbuzz_rs_now::{Face, Owned};
 use indexmap::IndexSet;
 use opentype::tables::FontVariations;
-use plugin::{add_remain_chars_plugin, language_area_plugin, reduce_min_plugin};
-use plugin_auto_subset::plugin_auto_subset;
+use plugins::{add_remain_chars_plugin, language_area_plugin, reduce_min_plugin};
 use std::{
     collections::{BTreeSet, HashMap},
     io::Cursor,
@@ -30,6 +31,8 @@ where
     used_languages: HashMap<usize, String>,
 }
 
+pub const DEFAULT_PREDICT_BYTES_PER_SUBSET: u32 = 1024 * 70;
+
 pub fn pre_subset(ctx: &mut Context) {
     let file_binary = ctx.binary;
     let mut all_unicodes: BTreeSet<u32> = BTreeSet::from_iter(ctx.face.collect_unicodes());
@@ -45,7 +48,7 @@ pub fn pre_subset(ctx: &mut Context) {
         all_unicodes: all_unicodes.clone(),
         face: ctx.face,
 
-        predict_bytes_pre_subset: ctx.input.chunk_size.unwrap_or(1024 * 70) as u32,
+        predict_bytes_pre_subset: ctx.input.chunk_size.unwrap_or(DEFAULT_PREDICT_BYTES_PER_SUBSET as i32) as u32,
         font: &font,
         font_file: &mut font_file,
         used_languages: HashMap::new(),
@@ -61,7 +64,7 @@ pub fn pre_subset(ctx: &mut Context) {
         process.push(add_remain_chars_plugin);
     }
     if ctx.input.auto_subset.unwrap_or(true) {
-        process.push(plugin_auto_subset);
+        process.push(auto_chunk);
     }
     if ctx.input.font_feature.unwrap_or(true) {
         process.push(features_plugin);

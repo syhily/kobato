@@ -8,9 +8,20 @@ event loop is never blocked.
 
 `vendor/` holds only the binding seam now:
 
-| File                   | Source    | Role                                                                                |
-| ---------------------- | --------- | ----------------------------------------------------------------------------------- |
-| `vendor/napi-split.ts` | This repo | `fontSplit(props)` — loads the addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)` |
+| File                   | Source    | Role                                                                                                                |
+| ---------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- |
+| `vendor/napi-split.ts` | This repo | `fontSplit(props)` + `fontSplitAlgorithmVersion()` — loads the addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)` |
+
+## Sliced-package storage (ADR-0010 decisions 5–6)
+
+- Packages live at `fonts/<sha256>/<algorithmVersion>/` (`storage.ts`); the fingerprint comes from the addon
+  (`algorithm_fingerprint()` — tables, frequencies, DP λ/μ, WOFF2 quality), so an algorithm change derives new keys and
+  never mixes with stale slices. The row's `cssKey` embeds the version — no schema column.
+- Re-uploading the same bytes under a new algorithm version re-slices, repoints the row, and removes the stale package
+  best-effort (`deleteStaleFontPackage`). Pre-versioning flat packages (`fonts/<hash>/result.css`) stay served until the
+  font is re-uploaded — font source bytes are not stored.
+- Concurrent uploads of identical bytes coalesce process-locally on the sha256 (`inFlightUploads` in
+  `services/upload.ts`); the local storage backend writes temp-file + atomic rename.
 
 Product src never statically imports `@kobato/font-split` (the tools boundary in `package-dag.test.ts`); the addon is
 reached exclusively through `nativeRequire` — dev resolves the workspace package's `./font-split.node` export, SEA

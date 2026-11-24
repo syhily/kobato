@@ -1,5 +1,6 @@
 import type { Database } from '@kobato/db/sqlite/database'
 import type { FontRow, NewFont } from '@kobato/db/sqlite/types'
+import type { StorageDriver } from '@kobato/settings/types'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { font } from '@kobato/db/sqlite/schema/font'
@@ -34,6 +35,18 @@ export async function insertFont(db: Database, values: NewFont): Promise<FontRow
 
 export async function deleteFontRowById(db: Database, id: string): Promise<void> {
   await sqliteOf(db).delete(font).where(eq(font.id, id))
+}
+
+export interface FontPackageUpdate {
+  cssKey: string
+  storageDriver: StorageDriver
+  chunkCount: number
+  totalBytes: number
+  etag: string
+}
+
+export async function updateFontPackage(db: Database, id: string, values: FontPackageUpdate): Promise<void> {
+  await sqliteOf(db).update(font).set(values).where(eq(font.id, id))
 }
 
 export async function findFontById(db: Database, id: string): Promise<FontRow | null> {
