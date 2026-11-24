@@ -1,8 +1,8 @@
-# ADR-0010: Data-driven font slicing — frequency-ordered tables and byte-aware DP chunking (MLFont rejected)
+# ADR-0010: Data-driven font slicing — frequency-ordered tables and byte-aware DP chunking
 
 - Status: accepted
 - Date: 2026-11-24; revised 2026-11-25 (λ retuned on production content — see "Re-validation on production content").
-  Single source of truth for the MLFont / cjk-font-split-native investigations.
+  Single source of truth for the font-slicing design and its measurements.
 
 ## Context
 
@@ -17,57 +17,33 @@ The CJK tables are frequency-_tiered_ but stroke-_ordered_ (`一乙二十丁厂�
 at positions 0–2,744 of the 3,500-entry level-1 pack, so hot characters land in every chunk and a page intersects nearly
 all of them. The cube-root ramp assumes frequency-ordered input; stroke order defeats that assumption.
 
-### What MLFont is (pinned commit `f6df5df`, v0.1.3)
-
-[MLFont](https://github.com/wq2012/mlfont) (Apache-2.0; arXiv:2610.24937) is an unofficial reproduction of Google's 2017
-ML font slicing: tier-1 document-frequency slices (`most=[1000,500]` for SC), Online LDA or a 2-layer-MLP topic model
-over document-codepoint co-occurrence for the tail, and a range-compact genetic algorithm for CSS `unicode-range`
-compactness. Established by source reading and first-hand replay:
-
-- **No runnable model.** Inference is `strategy.json` (a static codepoint→slice partition) replayed through
-  `fontTools.subset`; the network is never serialized. `model.safetensors` holds only `frequency_array`, two 100×29,259
-  topic matrices, and assignments — no weights anywhere. Nothing to embed via `ort`/`candle`.
-- **Strategies are pinned to one exact font version.** The shipped SC strategy partitions Noto Sans SC's 30,759
-  codepoints, balanced by codepoint _count_ (279–1,000 per slice; replayed slices 30–428 KB). The font at mlfont's own
-  download URL now carries 44,810 codepoints — 14,053 uncovered. Replaying their inference path reproduced their 5,935
-  CSS ranges exactly but 1.58× their published bytes (font drift).
-- **Small training corpus**: 1,600 train + 400 test Wikipedia articles per font, truncated to 2,500 chars.
-- **Minimal maturity**: created 2026-10-12, 13 commits, single author, 0 stars, no releases, self-reported benchmarks
-  against tail slices cut in _codepoint order_ — the same defect our tables have, not a baseline we run.
-- License is clean (Apache-2.0; their sliced Noto binaries are OFL derivatives we would not redistribute). The blocker
-  is fitness, not legal.
-
 ### Measurements on Kobato's fonts (2026-11-24, our engine, our fonts)
 
 Method: our own pipeline (feature-closure plugin → harfbuzz subset → woff2) driven through a harness that builds
 explicit partitions, validated by reproducing the shipped output's page cost exactly. Fonts: the two production CJK
 fonts in `data/fonts/` (38.3 MB / 29,252 codepoints; 21.7 MB / 29,198 codepoints; per-chunk cost ≈0.95 / 0.88 KB fixed
 
-- ≈1.05 / 0.63 KB per CJK char). Corpus: `wikimedia/wikipedia` 20231101.zh — 5,000 training articles, 1,000 held-out
-  long articles (median 488 distinct codepoints/page) plus a 1,200-char "mid" cut. Metric: bytes of chunks whose
-  codepoints intersect the page (what a browser fetches under `unicode-range`), plus chunk count. Strategies: `S0`
+- ≈1.05 / 0.63 KB per CJK char). Corpus: `wikimedia/wikipedia` 20231101.zh — 5,000 frequency-estimation articles, 1,000
+  held-out long articles (median 488 distinct codepoints/page) plus a 1,200-char "mid" cut. Metric: bytes of chunks
+  whose codepoints intersect the page (what a browser fetches under `unicode-range`), plus chunk count. Strategies: `S0`
   shipped output; `R1` frequency re-order only; `S1` frequency order + byte-aware DP, chunk cost
-  `P(touched)×(bytes+λ)+μ`; `S2` = `S1` + k-means co-occurrence clustering of the sub-5% tail; `S3` mlfont's shipped SC
-  strategy by cmap intersection; `A–D` mlfont's frequency array / + DNNTM topics / + LDA topics / + final GA assignment
-  feeding our DP.
+  `P(touched)×(bytes+λ)+μ`; `S2` = `S1` + k-means co-occurrence clustering of the sub-5% tail.
 
 Long pages, mean KB per page (chunks per page):
 
-| Font  | Strategy                       | KB/page | vs `S0` | chunks/page | files |    CSS |
-| :---- | :----------------------------- | ------: | ------: | ----------: | ----: | -----: |
-| 38 MB | `S0` status quo                |   3,363 |       — |       110.5 |   861 | 303 KB |
-|       | `R1` frequency order only      |   1,983 |    −41% |        79.2 |   854 | 305 KB |
-|       | `S1` λ=30 μ=0.5                |   1,821 |    −46% |        40.9 |   761 | 291 KB |
-|       | `S1` λ=10 μ=0.5                |   1,534 |    −54% |        63.4 |   910 | 320 KB |
-|       | `S1` λ=3 μ=0.5                 |   1,244 |    −63% |       109.1 | 1,109 | 359 KB |
-|       | `S1` λ=1 μ=0.2                 |     885 |    −74% |       193.4 | 1,936 | 522 KB |
-|       | `S3` mlfont strategy, vendored |   4,925 |    +46% |        17.2 |   105 | 102 KB |
-| 22 MB | `S0` status quo                |   2,232 |       — |        79.0 |   531 | 236 KB |
-|       | `R1` frequency order only      |   1,383 |    −38% |        56.7 |   529 | 240 KB |
-|       | `S1` λ=30 μ=0.5                |   1,337 |    −40% |        25.6 |   457 | 228 KB |
-|       | `S1` λ=10 μ=0.5                |   1,161 |    −48% |        38.6 |   550 | 246 KB |
-|       | `S1` λ=3 μ=0.5                 |     984 |    −56% |        69.7 |   686 | 273 KB |
-|       | `S3` mlfont strategy, vendored |   2,976 |    +33% |        17.0 |   104 | 101 KB |
+| Font  | Strategy                  | KB/page | vs `S0` | chunks/page | files |    CSS |
+| :---- | :------------------------ | ------: | ------: | ----------: | ----: | -----: |
+| 38 MB | `S0` status quo           |   3,363 |       — |       110.5 |   861 | 303 KB |
+|       | `R1` frequency order only |   1,983 |    −41% |        79.2 |   854 | 305 KB |
+|       | `S1` λ=30 μ=0.5           |   1,821 |    −46% |        40.9 |   761 | 291 KB |
+|       | `S1` λ=10 μ=0.5           |   1,534 |    −54% |        63.4 |   910 | 320 KB |
+|       | `S1` λ=3 μ=0.5            |   1,244 |    −63% |       109.1 | 1,109 | 359 KB |
+|       | `S1` λ=1 μ=0.2            |     885 |    −74% |       193.4 | 1,936 | 522 KB |
+| 22 MB | `S0` status quo           |   2,232 |       — |        79.0 |   531 | 236 KB |
+|       | `R1` frequency order only |   1,383 |    −38% |        56.7 |   529 | 240 KB |
+|       | `S1` λ=30 μ=0.5           |   1,337 |    −40% |        25.6 |   457 | 228 KB |
+|       | `S1` λ=10 μ=0.5           |   1,161 |    −48% |        38.6 |   550 | 246 KB |
+|       | `S1` λ=3 μ=0.5            |     984 |    −56% |        69.7 |   686 | 273 KB |
 
 Mid pages rank identically (38 MB: 2,938 → 1,638 / 1,323 / 993 KB; 22 MB: 2,015 → 1,218 / 1,024 / 820 KB).
 
@@ -76,12 +52,7 @@ Findings:
 - **Frequency ordering is the whole first-order gain** (−38%/−41%, zero code change); the DP adds the rest while
   _reducing_ file count and CSS at λ=30.
 - **Topic clustering adds little**: `S2` vs `S1` at similar request counts −1.3% to −2.7%; best case −7.6% needed 75%
-  more files. mlfont's own trained matrices on our DP (`A` 1,376 / `B` 1,380 / `C` 1,377 / `D` 1,366 KB) are within ±1%
-  of frequency order alone.
-- **The vendored mlfont strategy fails on byte balance**: calibrated for Noto's ≈0.3 KB/codepoint (≈90 KB slices), in
-  our fonts its touched chunks average 175–286 KB, peaking at 439–653 KB. Re-chunking its slices by our byte budget
-  (`D`) recovers the loss but then equals frequency order alone. Coverage intersects fine (29,079/29,198 and
-  29,146/29,252 codepoints).
+  more files.
 - **The DP needs a nonzero per-chunk cost μ**: at λ=μ=0 the tail fragments (8,644 files, +39% total bytes, 1.8 MB CSS).
   λ tunes requests/page, μ tunes tail granularity. Uniform per-char byte weight suffices (960 vs 984 KB against
   per-chunk weights).
@@ -92,7 +63,7 @@ Findings:
 
 ## Decision
 
-Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlfont's artifacts or ML stages.
+Adopt the two measured wins inside our existing Rust pipeline.
 
 1. **Frequency-order the CJK tables.** Keep pack membership unchanged (official lists stay the coverage authority);
    replace stroke order with corpus document-frequency order inside each pack, in the existing `corpus:generate`
@@ -220,14 +191,6 @@ production font and the production blog — the fixture swap this ADR asked for 
 
 ## Rejected alternatives
 
-- **Vendoring mlfont's `strategy.json` partitions** (this ADR's earlier draft): measured +33%/+46% per-page bytes on our
-  fonts — count-balanced slices calibrated to Noto's byte profile, pinned to one font version, demonstrated coverage
-  drift against current releases.
-- **mlfont's topic clustering and range-compact GA**, vendored or reimplemented: ≤7% (usually ≤3%) at equal request
-  counts; their own matrices add ±1% over frequency order. The GA optimizes CSS compactness, not our bottleneck (the DP
-  already reduces CSS). A Rust LDA+GA reimplementation is weeks of numerical code for that margin.
-- **Running mlfont's Python training pipeline** at upload time: torch + scikit-learn + HF `datasets` inside a SEA binary
-  is a deployment contradiction, for a gain the measurements do not show.
 - **Per-page exact subsetting (cjk-font-split-native's model)**: one WOFF2 per built page, injected at Vite
   `closeBundle`. The premise is a static build — pages known and frozen at build time — which Kobato inverts
   (runtime-uploaded fonts, continuously published posts, dynamic SSR); it also forfeits cross-page cache reuse. Its
@@ -256,7 +219,5 @@ production font and the production blog — the fixture swap this ADR asked for 
   page, but the blog fixture is one site's snapshot and needs re-pinning as the blog grows.
 - Request cost comes from throttled headless Chromium (two link speeds, HTTP/1.1 and HTTP/2), not a real CDN: the S3 302
   hop in front of every stored chunk and HTTP/3 are not modelled, and both would favour fewer requests.
-- One co-occurrence arm (`S2`) used a k-means stand-in, not mlfont's DNNTM training; the decisive evidence against topic
-  clustering is the `A–D` arm, which reused mlfont's own trained matrices directly (±1%).
-- The arXiv paper was not read in full; the analysis rests on the abstract, the repository source at pinned SHA
-  `f6df5df`, and first-hand replay of its inference path and raw experiment data.
+- The co-occurrence arm (`S2`) uses k-means over the sub-5% tail; it is an experimental comparison, not part of the
+  shipped pipeline.
