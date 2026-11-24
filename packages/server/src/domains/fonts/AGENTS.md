@@ -20,9 +20,9 @@ resolves the extracted `natives/font-split.node` (asset key owned by `@kobato/di
 ## Build prerequisite
 
 The addon is compiled, not vendored as a binary: `pnpm --filter @kobato/font-split run build` (stable Rust via
-`rust-toolchain.toml`, cmake, C++ toolchain) must run once per machine before `pnpm dev` or any test touching
-`sliceFont`, and in CI before `sea:build` / the server unit tests. `vendor/napi-split.ts` throws an actionable error
-when the addon is missing.
+`rust-toolchain.toml`, C++ toolchain) must run once per machine before `pnpm dev` or any test touching `sliceFont`, and
+in CI before `sea:build` / the server unit tests. `vendor/napi-split.ts` throws an actionable error when the addon is
+missing.
 
 ## Updating
 

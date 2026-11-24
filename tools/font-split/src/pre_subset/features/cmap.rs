@@ -8,7 +8,7 @@ pub fn analyze_cmap(font: &Font, font_file: &mut Cursor<&[u8]>) -> HashMap<u16, 
     let mut cmap: HashMap<u16, u32> = HashMap::new();
     fn inject_unicode_glyph_id_map(map: HashMap<u32, u16>, cmap: &mut HashMap<u16, u32>) {
         map.iter().for_each(|(k, v)| {
-            cmap.insert(v.clone(), k.clone() as u32);
+            cmap.insert(*v, *k);
         })
     }
     data.encodings.iter().for_each(|e| match e {

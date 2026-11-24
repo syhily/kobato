@@ -16,18 +16,13 @@ md5 = "0.8.1"
 opentype = "0.39.1"
 rayon = "1.12.0"
 woff = "0.6.4"
-chrono = "0.4.45"
-regex = "1.13.2"
+chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
 indexmap = "2.14.2"
-lazy_static = "1.5.1"
 napi = { version = "3.16.3", features = ["napi10", "async"] }
 napi-derive = "3.7.2"
 
 [build-dependencies]
 napi-build = "2.7.0"
-opencc-rs = "0.6.3"
-regex = "1.13.2"
-lazy_static = "1.5.1"
 
 [profile.release]
 lto = true

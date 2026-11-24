@@ -1,55 +1,73 @@
-use regex::Regex;
-use std::collections::HashMap;
-
-type Replacer = Box<dyn Fn(Option<&str>) -> String>;
-
-fn create_replacer(value: impl Into<String>) -> Replacer {
-    let value_str = value.into();
-    Box::new(move |_| value_str.clone())
-}
-
-fn create_length_replacer(replacer: Replacer) -> Replacer {
-    Box::new(move |arg| {
-        if let Some(length_arg) = arg {
-            if let Ok(length) = length_arg.parse::<usize>() {
-                return replacer(None).chars().take(length).collect();
-            }
-        }
-        replacer(None)
-    })
-}
-
+/// Filename template expander for `[index]`, `[ext]`, `[hash]`/`[md5]` (with an
+/// optional `:length` argument) and `[\tag\]` escapes. Unknown or malformed
+/// brackets are passed through literally.
 pub fn name_template(template: &str, hash: &str, ext: &str, index: &usize) -> String {
-    let mut replacements: HashMap<String, Replacer> = HashMap::new();
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
 
-    replacements.insert("index".to_string(), create_replacer(index.to_string()));
-    replacements.insert("ext".to_string(), create_replacer(ext));
+    while let Some(open) = rest.find('[') {
+        out.push_str(&rest[..open]);
+        rest = &rest[open..];
 
-    replacements.insert("hash".to_string(), create_length_replacer(create_replacer(hash)));
-    replacements.insert("md5".to_string(), create_length_replacer(create_replacer(hash)));
-
-    let re = Regex::new(r"\[(\\\w+\\|\w+(?::\w+)?)\]").unwrap();
-
-    re.replace_all(template, |caps: &regex::Captures| {
-        let inner_tag = caps.get(1).map_or("", |m| m.as_str());
-
-        if inner_tag.starts_with('\\') && inner_tag.ends_with('\\') {
-            let tag = &inner_tag[1..inner_tag.len() - 1];
-            return format!("[{}]", tag);
+        let Some(close) = rest.find(']') else {
+            out.push_str(rest);
+            return out;
+        };
+        if close == 1 {
+            // "[]" — not a tag, emit the bracket and rescan the rest.
+            out.push('[');
+            rest = &rest[1..];
+            continue;
         }
 
-        if let Some(captures) = Regex::new(r"^(\w+)(?::(\w+))?$").unwrap().captures(inner_tag) {
-            let kind = captures.get(1).map_or("", |m| m.as_str());
-            let arg = captures.get(2).map_or("", |m| m.as_str());
-
-            if let Some(replacer) = replacements.get(kind) {
-                return replacer(Some(arg)).to_owned();
+        match resolve_tag(&rest[1..close], hash, ext, index) {
+            Some(replacement) => {
+                out.push_str(&replacement);
+                rest = &rest[close + 1..];
+            }
+            None => {
+                out.push('[');
+                rest = &rest[1..];
             }
         }
+    }
+    out.push_str(rest);
+    out
+}
 
-        caps[0].to_string()
-    })
-    .to_string()
+/// `[\word\]` escapes to `[word]`; `word[:word]` resolves against the known tags.
+/// Returns None when the bracket content is not a well-formed tag.
+fn resolve_tag(inner: &str, hash: &str, ext: &str, index: &usize) -> Option<String> {
+    if inner.len() >= 2 && inner.starts_with('\\') && inner.ends_with('\\') {
+        let tag = &inner[1..inner.len() - 1];
+        return is_word(tag).then(|| format!("[{tag}]"));
+    }
+
+    let (kind, arg) = match inner.split_once(':') {
+        Some((kind, arg)) => (kind, Some(arg)),
+        None => (inner, None),
+    };
+    if !is_word(kind) || arg.is_some_and(|a| !is_word(a)) {
+        return None;
+    }
+
+    match kind {
+        "index" => Some(index.to_string()),
+        "ext" => Some(ext.to_string()),
+        "hash" | "md5" => Some(truncate(hash, arg)),
+        _ => None,
+    }
+}
+
+fn truncate(value: &str, arg: Option<&str>) -> String {
+    if let Some(length) = arg.and_then(|a| a.parse::<usize>().ok()) {
+        return value.chars().take(length).collect();
+    }
+    value.to_string()
+}
+
+fn is_word(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_alphanumeric() || c == '_')
 }
 
 #[cfg(test)]
@@ -102,8 +120,7 @@ mod tests {
 
     #[test]
     fn test_index_placeholder() {
-        let mut fixture = TestFixture::default();
-        fixture.index = 42;
+        let fixture = TestFixture { index: 42, ..TestFixture::default() };
         let template = "item_[index]";
         let result = name_template(template, &fixture.hash, &fixture.ext, &fixture.index);
         assert_eq!(result, "item_42");
@@ -123,5 +140,21 @@ mod tests {
         let template = "!@#$%^&*()_+[hash]";
         let result = name_template(template, &fixture.hash, &fixture.ext, &fixture.index);
         assert_eq!(result, format!("!@#$%^&*()_+{}", fixture.hash));
+    }
+
+    #[test]
+    fn test_unknown_tag_passthrough() {
+        let fixture = TestFixture::default();
+        assert_eq!(name_template("[unknown]", &fixture.hash, &fixture.ext, &fixture.index), "[unknown]");
+        assert_eq!(name_template("[hash:8:2]", &fixture.hash, &fixture.ext, &fixture.index), "[hash:8:2]");
+        assert_eq!(name_template("[hash:]", &fixture.hash, &fixture.ext, &fixture.index), "[hash:]");
+        assert_eq!(name_template("[]", &fixture.hash, &fixture.ext, &fixture.index), "[]");
+        assert_eq!(name_template(r"[\]", &fixture.hash, &fixture.ext, &fixture.index), r"[\]");
+        assert_eq!(name_template("[unclosed", &fixture.hash, &fixture.ext, &fixture.index), "[unclosed");
+        assert_eq!(
+            name_template("a[x[hash]]", &fixture.hash, &fixture.ext, &fixture.index),
+            format!("a[x{}]", fixture.hash)
+        );
+        assert_eq!(name_template("[md5:6]", &fixture.hash, &fixture.ext, &fixture.index), fixture.hash[..6]);
     }
 }

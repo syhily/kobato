@@ -8,14 +8,12 @@ pub struct FvarTable {
 }
 
 pub fn analyze_fvar_table(data: Option<FontVariations>) -> Option<FvarTable> {
-    if data.is_none() {
-        return None;
-    }
+    data.as_ref()?;
 
     let mut vf = FvarTable::default();
     data.unwrap().axis_records.iter().for_each(|x| {
         let tag = x.tag.as_str().unwrap_or("");
-        if tag == "wght".to_string() {
+        if tag == "wght" {
             let max = q32_to_int_truncate(x.max_value);
             let min = q32_to_int_truncate(x.min_value);
             let font_weight = format!("{} {}", min, max).clone();

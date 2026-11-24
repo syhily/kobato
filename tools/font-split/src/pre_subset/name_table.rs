@@ -23,11 +23,11 @@ impl NameTableSets {
 
     pub fn get_name(&self, str: &str, platform: Option<&str>, language: Option<&str>) -> Vec<&NameTable> {
         let platform = platform.unwrap_or("Windows");
-        let table = self.get_language(language.unwrap_or(&"en"));
-        table.iter().filter(|x| x.name == str && x.platform == platform).map(|x| *x).collect()
+        let table = self.get_language(language.unwrap_or("en"));
+        table.iter().filter(|x| x.name == str && x.platform == platform).copied().collect()
     }
     pub fn get_name_first(&self, str: &str) -> Option<String> {
-        match self.get_name(str, None, None).get(0) {
+        match self.get_name(str, None, None).first() {
             Some(val) => Option::from(val.value.clone()),
             _ => None,
         }
@@ -52,16 +52,13 @@ pub fn analyze_name_table(font: &Font, font_file: &mut Cursor<&[u8]>) -> NameTab
     data.iter().for_each(|((platform, _, language, name), value)| {
         let key = name_id_to_string(name);
         let void_language_tag_decode: [Option<&str>; 1] = [None];
-        match value {
-            Some(value) => {
-                table.table.push(NameTable {
-                    language: language.tag(&void_language_tag_decode).unwrap_or("en").to_string(),
-                    platform: platform_to_string(platform),
-                    name: key,
-                    value,
-                });
-            }
-            None => {}
+        if let Some(value) = value {
+            table.table.push(NameTable {
+                language: language.tag(&void_language_tag_decode).unwrap_or("en").to_string(),
+                platform: platform_to_string(platform),
+                name: key,
+                value,
+            });
         };
     });
     table

@@ -31,7 +31,7 @@ where
 }
 
 pub fn pre_subset(ctx: &mut Context) {
-    let file_binary = &*ctx.binary;
+    let file_binary = ctx.binary;
     let mut all_unicodes: BTreeSet<u32> = BTreeSet::from_iter(ctx.face.collect_unicodes());
 
     let mut font_file = Cursor::new(file_binary);
@@ -43,7 +43,7 @@ pub fn pre_subset(ctx: &mut Context) {
     let mut subsets: Vec<IndexSet<u32>> = vec![];
     let mut context = PreSubsetContext {
         all_unicodes: all_unicodes.clone(),
-        face: &mut ctx.face,
+        face: ctx.face,
 
         predict_bytes_pre_subset: ctx.input.chunk_size.unwrap_or(1024 * 70) as u32,
         font: &font,
@@ -51,7 +51,9 @@ pub fn pre_subset(ctx: &mut Context) {
         used_languages: HashMap::new(),
     };
 
-    let mut process: Vec<fn(&mut Vec<IndexSet<u32>>, &mut BTreeSet<u32>, &mut PreSubsetContext<'_, '_, '_>)> = vec![];
+    type ProcessFn = fn(&mut Vec<IndexSet<u32>>, &mut BTreeSet<u32>, &mut PreSubsetContext<'_, '_, '_>);
+
+    let mut process: Vec<ProcessFn> = vec![];
     if ctx.input.language_areas.unwrap_or(true) {
         process.push(language_area_plugin);
     }

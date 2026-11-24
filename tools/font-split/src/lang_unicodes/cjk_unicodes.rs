@@ -1,53 +1,63 @@
+use crate::lang_unicodes::cjk_tables;
 use crate::lang_unicodes::expand_ranges;
-use crate::utils::u8_array_to_u16_array;
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
-static HANGUL_SYL_SOURCE: &[u8] = include_bytes!("../../data/hangul-syl.dat");
-
-static CN_CHAR_RANK: &[u8] = include_bytes!("../../data/cn_char_rank.dat");
-
-fn get_part_from_cn_pkg(part_no: u8) -> Option<Vec<u32>> {
-    let data = u8_array_to_u16_array(CN_CHAR_RANK);
-    let mut last_index = 0;
-    let mut part_no = part_no as isize;
-
-    for (i, &element) in data.iter().enumerate() {
-        if element == 0 {
-            part_no -= 1;
-            if part_no < 0 {
-                return Some(data[last_index..i].to_vec().into_iter().map(|i| i as u32).collect::<Vec<u32>>());
-            }
-            last_index = i + 1;
-        }
-    }
-
-    if part_no == 0 {
-        return Some(data[last_index..].to_vec().into_iter().map(|i| i as u32).collect::<Vec<u32>>());
-    }
-    None
+fn to_codepoints(s: &str) -> Vec<u32> {
+    s.chars().map(|c| c as u32).collect()
 }
 
-lazy_static! {
-    pub static ref ZH_SYMBOL: Vec<u32> = get_part_from_cn_pkg(0).unwrap();
-    pub static ref ZH_SC: Vec<u32> = get_part_from_cn_pkg(1).unwrap();
-    pub static ref ZH_TC: Vec<u32> = get_part_from_cn_pkg(2).unwrap();
-    pub static ref HANGUL_SYL: Vec<u32> =
-        u8_array_to_u16_array(HANGUL_SYL_SOURCE).into_iter().map(|x| x as u32).collect();
-    pub static ref HIRAGANA_AND_KATAKANA: Vec<u32> = expand_ranges(&[(0x3040, 0x309F), (0x30A0, 0x30FF)]);
-    pub static ref HANGUL_JAMO: Vec<u32> = expand_ranges(&[(0x1100, 0x11FF)]);
-}
+pub static ZH_SC_1: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_TGH_L1));
+pub static ZH_SC_2: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_TGH_L2));
+pub static ZH_SC_3: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_TGH_L3));
+pub static ZH_HK: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_HK));
+pub static ZH_TW: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_TW));
+pub static ZH_JA: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::ZH_JA));
+pub static HANGUL_SYL: LazyLock<Vec<u32>> = LazyLock::new(|| to_codepoints(cjk_tables::HANGUL_SYL));
+pub static HIRAGANA_AND_KATAKANA: LazyLock<Vec<u32>> =
+    LazyLock::new(|| expand_ranges(&[(0x3040, 0x309F), (0x30A0, 0x30FF)]));
+pub static HANGUL_JAMO: LazyLock<Vec<u32>> = LazyLock::new(|| expand_ranges(&[(0x1100, 0x11FF)]));
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test() {
-        assert_eq!(HIRAGANA_AND_KATAKANA.len(), 192);
-        assert_eq!(ZH_SYMBOL.len(), 75);
-        assert_eq!(ZH_SC.len(), 6767);
+    use std::collections::HashSet;
 
-        assert_eq!(ZH_TC.len(), 2304);
+    #[test]
+    fn table_sizes() {
+        assert_eq!(ZH_SC_1.len(), 3500);
+        assert_eq!(ZH_SC_2.len(), 3000);
+        assert_eq!(ZH_SC_3.len(), 1605);
+        assert_eq!(ZH_HK.len(), 1709);
+        assert_eq!(ZH_TW.len(), 4551);
+        assert_eq!(ZH_JA.len(), 231);
         assert_eq!(HANGUL_SYL.len(), 2026);
-        println!("{}", ZH_SC.iter().map(|i| { std::char::from_u32(i.clone()).unwrap() }).collect::<String>())
+        assert_eq!(HIRAGANA_AND_KATAKANA.len(), 192);
+        assert_eq!(HANGUL_JAMO.len(), 256);
+    }
+
+    #[test]
+    fn tables_are_pairwise_disjoint() {
+        let tables = [&*ZH_SC_1, &*ZH_SC_2, &*ZH_SC_3, &*ZH_HK, &*ZH_TW, &*ZH_JA];
+        let mut seen: HashSet<u32> = HashSet::new();
+        for table in tables {
+            for &cp in table {
+                assert!(seen.insert(cp), "duplicate codepoint {cp:#X} across zh tables");
+            }
+        }
+    }
+
+    #[test]
+    fn spot_check_membership() {
+        assert!(ZH_SC_1.contains(&('一' as u32)));
+        assert!(ZH_SC_1.contains(&('的' as u32)));
+        assert!(ZH_SC_3.contains(&('𬣙' as u32))); // non-BMP char in the level-3 table
+        assert!(ZH_HK.contains(&('體' as u32)));
+        assert!(ZH_TW.contains(&('裡' as u32))); // Taiwan standard form; HK uses 裏
+        assert!(ZH_HK.contains(&('裏' as u32)));
+        assert!(ZH_TW.contains(&('冇' as u32))); // from the 次常用國字表 supplement
+        assert!(!ZH_TW.contains(&('瓩' as u32))); // unit symbol, ※-marked as removed from the standard
+        assert!(ZH_JA.contains(&('働' as u32))); // kokuji (和制汉字)
+        assert!(ZH_JA.contains(&('峠' as u32))); // kokuji (和制汉字)
+        assert!(ZH_JA.contains(&('桜' as u32))); // shinjitai with no Chinese-standard equivalent
     }
 }

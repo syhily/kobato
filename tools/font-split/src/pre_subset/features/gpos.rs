@@ -22,13 +22,13 @@ pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                     match pair_adjustment {
                         glyph_positioning::PairAdjustment::Format1(pair_adjustment1) => {
                             collect_glyph_id_from_format_1_and_2(
-                                &vec![pair_adjustment1.coverage.clone()],
+                                std::slice::from_ref(&pair_adjustment1.coverage),
                                 &mut linked_pairs,
                             );
                         }
                         glyph_positioning::PairAdjustment::Format2(pair_adjustment2) => {
                             collect_glyph_id_from_format_1_and_2(
-                                &vec![pair_adjustment2.coverage.clone()],
+                                std::slice::from_ref(&pair_adjustment2.coverage),
                                 &mut linked_pairs,
                             )
                         }
@@ -37,16 +37,16 @@ pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                 }
                 Type::CursiveAttachment(cursive_attachment) => {
                     let mut linked_pairs: Vec<u16> = vec![];
-                    collect_glyph_id_from_format_1_and_2(&vec![cursive_attachment.coverage.clone()], &mut linked_pairs);
+                    collect_glyph_id_from_format_1_and_2(
+                        std::slice::from_ref(&cursive_attachment.coverage),
+                        &mut linked_pairs,
+                    );
                     relation_list.push(linked_pairs);
                 }
                 Type::MarkToBaseAttachment(mark_to_base_attachment) => {
                     let mut linked_pairs: Vec<u16> = vec![];
                     collect_glyph_id_from_format_1_and_2(
-                        &vec![
-                            mark_to_base_attachment.base_coverage.clone(),
-                            mark_to_base_attachment.mark_coverage.clone(),
-                        ],
+                        &[mark_to_base_attachment.base_coverage.clone(), mark_to_base_attachment.mark_coverage.clone()],
                         &mut linked_pairs,
                     );
                     relation_list.push(linked_pairs);
@@ -54,7 +54,7 @@ pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                 Type::MarkToLigatureAttachment(mark_to_ligature_attachment) => {
                     let mut linked_pairs: Vec<u16> = vec![];
                     collect_glyph_id_from_format_1_and_2(
-                        &vec![
+                        &[
                             mark_to_ligature_attachment.ligature_coverage.clone(),
                             mark_to_ligature_attachment.mark_coverage.clone(),
                         ],
@@ -65,7 +65,7 @@ pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                 Type::MarkToMarkAttachment(mark_to_mark_attachment) => {
                     let mut linked_pairs: Vec<u16> = vec![];
                     collect_glyph_id_from_format_1_and_2(
-                        &vec![
+                        &[
                             mark_to_mark_attachment.mark1_coverage.clone(),
                             mark_to_mark_attachment.mark2_coverage.clone(),
                         ],

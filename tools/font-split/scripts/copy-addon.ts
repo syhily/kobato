@@ -1,8 +1,7 @@
 import { copyFileSync, existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
-const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)))
+const packageRoot = join(import.meta.dirname, '..')
 
 const LIB_BASE = 'kobato_font_split'
 const CANDIDATES: Record<string, string> = {

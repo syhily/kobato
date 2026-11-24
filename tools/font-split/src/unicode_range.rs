@@ -8,14 +8,14 @@ impl UnicodeRange {
         for range in ranges {
             if range.contains('-') {
                 let parts: Vec<&str> = range.split('-').collect();
-                if parts.len() == 2 {
-                    if let (Ok(start), Ok(end)) = (
+                if parts.len() == 2
+                    && let (Ok(start), Ok(end)) = (
                         u32::from_str_radix(parts[0].trim_start_matches("U+"), 16),
                         u32::from_str_radix(parts[1].trim_start_matches("U+"), 16),
-                    ) {
-                        for code_point in start..=end {
-                            result.push(code_point);
-                        }
+                    )
+                {
+                    for code_point in start..=end {
+                        result.push(code_point);
                     }
                 }
             } else if range.contains('?') {
@@ -37,7 +37,7 @@ impl UnicodeRange {
 
         result
     }
-    pub fn stringify(arr: &Vec<u32>) -> String {
+    pub fn stringify(arr: &[u32]) -> String {
         fn range_string(start: u32, end: Option<u32>) -> String {
             match end {
                 None => format!("U+{:X}", start),
@@ -50,7 +50,7 @@ impl UnicodeRange {
                 }
             }
         }
-        let mut sorted: Vec<u32> = arr.iter().cloned().collect();
+        let mut sorted: Vec<u32> = arr.to_vec();
         sorted.sort_unstable();
         sorted.dedup();
 
@@ -60,26 +60,25 @@ impl UnicodeRange {
         for (idx, &current) in sorted.iter().enumerate() {
             let prev = if idx > 0 { Some(sorted[idx - 1]) } else { None };
 
-            if let Some(start) = range_start {
-                if let Some(prev) = prev {
-                    if current - prev != 1 {
-                        results.push(range_string(start, Option::from(prev)));
-                        range_start = Some(current);
-                    }
-                }
+            if let Some(start) = range_start
+                && let Some(prev) = prev
+                && current - prev != 1
+            {
+                results.push(range_string(start, Option::from(prev)));
+                range_start = Some(current);
             }
 
             if range_start.is_none() {
                 range_start = Some(current);
             }
 
-            if idx == sorted.len() - 1 {
-                if let Some(start) = range_start {
-                    if start == current {
-                        results.push(range_string(current, None));
-                    } else {
-                        results.push(range_string(start, Some(current)));
-                    }
+            if idx == sorted.len() - 1
+                && let Some(start) = range_start
+            {
+                if start == current {
+                    results.push(range_string(current, None));
+                } else {
+                    results.push(range_string(start, Some(current)));
                 }
             }
         }
@@ -94,7 +93,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        let test_cases = vec!["U+ff65", "U+0-7F", "U+007F-00FF", "U+4??"].join(",");
+        let test_cases = ["U+ff65", "U+0-7F", "U+007F-00FF", "U+4??"].join(",");
 
         let mut data = UnicodeRange::parse(&test_cases);
         let mut target: Vec<u32> = vec![0xff65];

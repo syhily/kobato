@@ -16,6 +16,8 @@
   },
   "scripts": {
     "build": "cargo build --release && node scripts/copy-addon.ts",
+    "cjk-tables:generate": "node scripts/gen-cjk-tables.ts",
+    "cjk-tables:update": "pnpm run cjk-tables:generate && pnpm run test && pnpm run build",
     "test": "cargo test"
   }
 }

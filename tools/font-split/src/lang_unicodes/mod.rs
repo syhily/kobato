@@ -1,16 +1,25 @@
-use self::cjk_unicodes::{HANGUL_JAMO, HANGUL_SYL, HIRAGANA_AND_KATAKANA, ZH_SC, ZH_TC};
-use lazy_static::lazy_static;
+use self::cjk_unicodes::{
+    HANGUL_JAMO, HANGUL_SYL, HIRAGANA_AND_KATAKANA, ZH_HK, ZH_JA, ZH_SC_1, ZH_SC_2, ZH_SC_3, ZH_TW,
+};
+use std::sync::LazyLock;
+mod cjk_tables;
 pub mod cjk_unicodes;
 pub fn expand_ranges(ranges: &[(u32, u32)]) -> Vec<u32> {
     ranges.iter().flat_map(|&(start, end)| (start..=end).collect::<Vec<u32>>()).collect()
 }
-lazy_static! {
-    pub static ref LATIN: Vec<u32> = expand_ranges(&[(0x0001, 0x007F)]);
-    pub static ref LATIN_1: Vec<u32> = expand_ranges(&[(0x0080, 0x00FF)]);
-    pub static ref LATIN_EXT_A: Vec<u32> = expand_ranges(&[(0x0100, 0x017F)]);
-    pub static ref LATIN_EXT_B: Vec<u32> = expand_ranges(&[(0x0180, 0x024F)]);
-    pub static ref IPA_SYMBOLS: Vec<u32> = expand_ranges(&[(0x0250, 0x02FF)]);
-    pub static ref ZH_SYMBOL: Vec<u32> = expand_ranges(&[
+macro_rules! lazy_vec {
+    ($name:ident, $($args:tt)*) => {
+        pub static $name: LazyLock<Vec<u32>> = LazyLock::new(|| expand_ranges($($args)*));
+    };
+}
+lazy_vec!(LATIN, &[(0x0001, 0x007F)]);
+lazy_vec!(LATIN_1, &[(0x0080, 0x00FF)]);
+lazy_vec!(LATIN_EXT_A, &[(0x0100, 0x017F)]);
+lazy_vec!(LATIN_EXT_B, &[(0x0180, 0x024F)]);
+lazy_vec!(IPA_SYMBOLS, &[(0x0250, 0x02FF)]);
+lazy_vec!(
+    ZH_SYMBOL,
+    &[
         (0x3002, 0x3002),
         (0xFF0E, 0xFF0E),
         (0xFF0C, 0xFF0C),
@@ -56,43 +65,32 @@ lazy_static! {
         (0xFE41, 0xFE42),
         (0xFE43, 0xFE44),
         (0x3018, 0x3019),
-    ]);
-    pub static ref HALFWIDTH_FULLWIDTH: Vec<u32> = expand_ranges(&[(0xFF00, 0xFFEF)]);
-    pub static ref GREEK: Vec<u32> = expand_ranges(&[(0x0370, 0x03FF), (0x1F00, 0x1FFF)]);
-    pub static ref CYRILLIC: Vec<u32> =
-        expand_ranges(&[(0x0400, 0x052F), (0x1C80, 0x1C8F), (0x2DE0, 0x2DFF), (0xA640, 0xA69F)]);
-    pub static ref ARABIC: Vec<u32> =
-        expand_ranges(&[(0x0600, 0x06FF), (0x0750, 0x077F), (0x0870, 0x08FF), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF)]);
-    pub static ref BENGALI: Vec<u32> = expand_ranges(&[(0x0980, 0x09FF)]);
-    pub static ref DEVANAGARI: Vec<u32> = expand_ranges(&[(0x0900, 0x097F), (0xA8E0, 0xA8FF), (0x11B00, 0x11B5F)]);
-    pub static ref THAI: Vec<u32> = expand_ranges(&[(0x0E00, 0x0E7F)]);
-    pub static ref KHMER: Vec<u32> = expand_ranges(&[(0x1780, 0x17FF), (0x19E0, 0x19FF)]);
-    pub static ref TIBETAN: Vec<u32> = expand_ranges(&[(0x0F00, 0x0FFF)]);
-    pub static ref MONGOLIAN: Vec<u32> = expand_ranges(&[(0x1800, 0x18AF)]);
-    pub static ref TAI_LE: Vec<u32> = expand_ranges(&[(0x1950, 0x197F)]);
-    pub static ref TAI_LUE: Vec<u32> = expand_ranges(&[(0x1980, 0x19DF)]);
-    pub static ref YI: Vec<u32> = expand_ranges(&[(0xA000, 0xA48F), (0xA490, 0xA4C6)]);
-    pub static ref PHAGS_PA: Vec<u32> = expand_ranges(&[(0xA840, 0xA87F)]);
-    pub static ref LISU: Vec<u32> = expand_ranges(&[(0x10C00, 0x10C4F)]);
-    pub static ref BUHID: Vec<u32> = expand_ranges(&[(0x1740, 0x175F)]);
-    pub static ref MIAO: Vec<u32> = expand_ranges(&[(0x16F00, 0x16F9F)]);
-    pub static ref HANI: Vec<u32> = expand_ranges(&[(0x13A0, 0x13F5)]);
-    pub static ref LAHU: Vec<u32> = expand_ranges(&[(0x10900, 0x1091F)]);
-    pub static ref VA: Vec<u32> = expand_ranges(&[(0x10A00, 0x10A5F)]);
-    pub static ref ZHUANG: Vec<u32> = expand_ranges(&[(0x10D30, 0x10D7F)]);
-    pub static ref NAXI_DONGBA: Vec<u32> = expand_ranges(&[(0x10FB0, 0x10FDF)]);
-}
+    ]
+);
+lazy_vec!(HALFWIDTH_FULLWIDTH, &[(0xFF00, 0xFFEF)]);
+lazy_vec!(GREEK, &[(0x0370, 0x03FF), (0x1F00, 0x1FFF)]);
+lazy_vec!(CYRILLIC, &[(0x0400, 0x052F), (0x1C80, 0x1C8F), (0x2DE0, 0x2DFF), (0xA640, 0xA69F)]);
+lazy_vec!(ARABIC, &[(0x0600, 0x06FF), (0x0750, 0x077F), (0x0870, 0x08FF), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF)]);
+lazy_vec!(BENGALI, &[(0x0980, 0x09FF)]);
+lazy_vec!(DEVANAGARI, &[(0x0900, 0x097F), (0xA8E0, 0xA8FF), (0x11B00, 0x11B5F)]);
+lazy_vec!(THAI, &[(0x0E00, 0x0E7F)]);
+lazy_vec!(KHMER, &[(0x1780, 0x17FF), (0x19E0, 0x19FF)]);
+lazy_vec!(TIBETAN, &[(0x0F00, 0x0FFF)]);
+lazy_vec!(MONGOLIAN, &[(0x1800, 0x18AF)]);
+lazy_vec!(TAI_LE, &[(0x1950, 0x197F)]);
+lazy_vec!(TAI_LUE, &[(0x1980, 0x19DF)]);
+lazy_vec!(YI, &[(0xA000, 0xA48F), (0xA490, 0xA4C6)]);
+lazy_vec!(PHAGS_PA, &[(0xA840, 0xA87F)]);
+lazy_vec!(LISU, &[(0x10C00, 0x10C4F)]);
+lazy_vec!(BUHID, &[(0x1740, 0x175F)]);
+lazy_vec!(MIAO, &[(0x16F00, 0x16F9F)]);
+lazy_vec!(HANI, &[(0x13A0, 0x13F5)]);
+lazy_vec!(LAHU, &[(0x10900, 0x1091F)]);
+lazy_vec!(VA, &[(0x10A00, 0x10A5F)]);
+lazy_vec!(ZHUANG, &[(0x10D30, 0x10D7F)]);
+lazy_vec!(NAXI_DONGBA, &[(0x10FB0, 0x10FDF)]);
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test() {
-        assert_eq!(LATIN.len(), 127)
-    }
-}
-
-pub fn create_default_unicode_area() -> [Vec<u32>; 32] {
+pub fn create_default_unicode_area() -> [Vec<u32>; 36] {
     [
         LATIN.to_vec(),
         LATIN_1.to_vec(),
@@ -102,8 +100,12 @@ pub fn create_default_unicode_area() -> [Vec<u32>; 32] {
         GREEK.to_vec(),
         CYRILLIC.to_vec(),
         ZH_SYMBOL.to_vec(),
-        ZH_SC.to_vec(),
-        ZH_TC.to_vec(),
+        ZH_SC_1.to_vec(),
+        ZH_SC_2.to_vec(),
+        ZH_SC_3.to_vec(),
+        ZH_HK.to_vec(),
+        ZH_TW.to_vec(),
+        ZH_JA.to_vec(),
         HIRAGANA_AND_KATAKANA.to_vec(),
         HANGUL_JAMO.to_vec(),
         HANGUL_SYL.to_vec(),
@@ -128,7 +130,7 @@ pub fn create_default_unicode_area() -> [Vec<u32>; 32] {
         HALFWIDTH_FULLWIDTH.to_vec(),
     ]
 }
-pub fn create_default_unicode_area_tag() -> [&'static str; 32] {
+pub fn create_default_unicode_area_tag() -> [&'static str; 36] {
     [
         "LATIN",
         "LATIN_1",
@@ -138,8 +140,12 @@ pub fn create_default_unicode_area_tag() -> [&'static str; 32] {
         "GREEK",
         "CYRILLIC",
         "ZH_SYMBOL",
-        "ZH_SC",
-        "ZH_TC",
+        "ZH_SC_1",
+        "ZH_SC_2",
+        "ZH_SC_3",
+        "ZH_HK",
+        "ZH_TW",
+        "ZH_JA",
         "HIRAGANA_AND_KATAKANA",
         "HANGUL_JAMO",
         "HANGUL_SYL",
@@ -163,4 +169,13 @@ pub fn create_default_unicode_area_tag() -> [&'static str; 32] {
         "NAXI_DONGBA",
         "HALFWIDTH_FULLWIDTH",
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test() {
+        assert_eq!(LATIN.len(), 127)
+    }
 }

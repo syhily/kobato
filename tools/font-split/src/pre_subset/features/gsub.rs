@@ -25,19 +25,16 @@ pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                 .iter()
                 .flat_map(|t| -> Vec<Vec<u16>> {
                     match t {
-                        Type::LigatureSubstitution(sub) => {
-                            let result = sub
-                                .records
-                                .iter()
-                                .flat_map(|r| {
-                                    r.records
-                                        .iter()
-                                        .map(|ligature| ligature.glyph_ids.clone() as Vec<u16>)
-                                        .collect::<Vec<Vec<u16>>>()
-                                })
-                                .collect::<Vec<Vec<u16>>>();
-                            result
-                        }
+                        Type::LigatureSubstitution(sub) => sub
+                            .records
+                            .iter()
+                            .flat_map(|r| {
+                                r.records
+                                    .iter()
+                                    .map(|ligature| ligature.glyph_ids.clone() as Vec<u16>)
+                                    .collect::<Vec<Vec<u16>>>()
+                            })
+                            .collect::<Vec<Vec<u16>>>(),
                         Type::ContextualSubstitution(context) => {
                             match context {
                                 context::Context::Format1(_context1) => (),
@@ -48,20 +45,14 @@ pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
                             vec![vec![]]
                         }
                         Type::ChainedContextualSubstitution(context) => match context {
-                            ChainedContext::Format1(ctx) => {
-                                let result = match &ctx.coverage {
-                                    Coverage::Format1(cov) => {
-                                        vec![cov.glyph_ids.clone()]
-                                    }
-                                    Coverage::Format2(ctx) => ctx
-                                        .records
-                                        .iter()
-                                        .map(|r| (r.start_glyph_id..=r.end_glyph_id).collect())
-                                        .collect(),
-                                };
-
-                                result
-                            }
+                            ChainedContext::Format1(ctx) => match &ctx.coverage {
+                                Coverage::Format1(cov) => {
+                                    vec![cov.glyph_ids.clone()]
+                                }
+                                Coverage::Format2(ctx) => {
+                                    ctx.records.iter().map(|r| (r.start_glyph_id..=r.end_glyph_id).collect()).collect()
+                                }
+                            },
                             ChainedContext::Format2(ctx) => ctx
                                 .records
                                 .iter()
@@ -86,7 +77,7 @@ pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
 
                         Type::ReverseChainedContextualSubstibution(context) => {
                             let mut result: Vec<u16> = vec![];
-                            collect_glyph_id_from_format_1_and_2(&[context.coverage.clone()].to_vec(), &mut result);
+                            collect_glyph_id_from_format_1_and_2(std::slice::from_ref(&context.coverage), &mut result);
                             collect_glyph_id_from_format_1_and_2(&context.forward_coverages, &mut result);
                             collect_glyph_id_from_format_1_and_2(&context.backward_coverages, &mut result);
 
@@ -103,14 +94,14 @@ pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>>
     all_maybe_relative_glyph
 }
 
-pub fn collect_glyph_id_from_format_1_and_2(coverages: &Vec<Coverage>, result: &mut Vec<u16>) {
+pub fn collect_glyph_id_from_format_1_and_2(coverages: &[Coverage], result: &mut Vec<u16>) {
     coverages.iter().for_each(|c| match c {
         Coverage::Format1(cov) => cov.glyph_ids.iter().for_each(|center| {
-            result.push(center.clone());
+            result.push(*center);
         }),
         Coverage::Format2(cov) => cov.records.iter().for_each(|r| {
             for x in r.start_glyph_id..=r.end_glyph_id {
-                result.push(x.clone());
+                result.push(x);
             }
         }),
     })

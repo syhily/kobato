@@ -8,26 +8,25 @@ use crate::run_subset::build_single_subset;
 
 use super::PreSubsetContext;
 
-#[derive(Copy, Clone, Debug)]
-pub enum OptLevel {
-    NO = 0,
-    LOW = 1,
-    MID = 2,
-    HIGH = 3,
-}
-
 pub fn plugin_auto_subset(
     subsets: &mut Vec<IndexSet<u32>>,
     _remaining_chars_set: &mut BTreeSet<u32>,
     ctx: &mut PreSubsetContext,
 ) {
     let size = ctx.all_unicodes.len();
-    let space: usize = (size / 100).min(1);
-    let sample = extract_every_nth(&ctx.all_unicodes, space);
-    let result = build_single_subset(&ctx.face, &sample);
-    let byte_length = result.len();
+    if size == 0 {
+        return;
+    }
+
+    let sample = sample_unicodes(&ctx.all_unicodes);
+    let byte_length = build_single_subset(ctx.face, &sample).len();
     let bytes_per_char = byte_length / sample.len();
-    let chars_per_subset = ctx.predict_bytes_pre_subset / (bytes_per_char as u32);
+    let chars_per_subset = if bytes_per_char == 0 {
+        ctx.predict_bytes_pre_subset
+    } else {
+        ctx.predict_bytes_pre_subset / (bytes_per_char as u32)
+    }
+    .max(1);
 
     info!(
         "predict subset: {}/subset, {} bytes/char, {}(chunk_size)",
@@ -36,26 +35,17 @@ pub fn plugin_auto_subset(
     let mut count: usize = 0;
     let mut new_used_languages = HashMap::new();
 
-    let opt_level = match size {
-        0..1000 => OptLevel::NO,
-        1000..=10000 => OptLevel::LOW,
-        10001..=30000 => OptLevel::MID,
-        _ => OptLevel::HIGH,
-    };
     let new_subsets = subsets
         .iter()
         .enumerate()
         .flat_map(|(index, subset)| {
             let lang = ctx.used_languages.get(&index);
-            let res = match lang {
-                Some(ref i) if *i == "ZH_TC" => {
-                    split_vector(subset, ((chars_per_subset as f32) * 0.5_f32) as u32, opt_level)
-                }
-                None => {
-                    return split_vector(subset, ((chars_per_subset as f32) * 0.7_f32) as u32, opt_level);
-                }
-                _ => split_vector(subset, chars_per_subset, opt_level),
+            let factor = match lang {
+                Some(tag) if tag == "ZH_HK" || tag == "ZH_TW" || tag == "ZH_JA" => 0.5_f32,
+                None => 0.7_f32,
+                Some(_) => 1.0_f32,
             };
+            let res = split_vector(subset, ((chars_per_subset as f32) * factor) as u32);
             if let Some(language) = lang {
                 for _ in 0..res.len() {
                     new_used_languages.insert(count, language.clone());
@@ -73,19 +63,22 @@ pub fn plugin_auto_subset(
     ctx.used_languages = new_used_languages;
 }
 
-fn length_for_index(x: usize, max_count: u32, level: OptLevel) -> usize {
-    let min_count = (max_count / 5) as u32;
-    let y: f32 = match level {
-        OptLevel::NO => (min_count as f32) * (5 as f32),
-        OptLevel::LOW => (min_count as f32) * (x as f32).cbrt(),
-        OptLevel::MID => (min_count as f32) * (x as f32).cbrt(),
-        OptLevel::HIGH => (min_count as f32) * (x as f32).cbrt(),
-    };
-    let y_ceil = y.ceil();
-
-    std::cmp::min(y_ceil as usize, (max_count) as usize)
+/// Every nth codepoint of the font, n tuned so the sample stays near 1% of the font.
+fn sample_unicodes(all_unicodes: &BTreeSet<u32>) -> Vec<u32> {
+    let nth = (all_unicodes.len() / 100).max(1);
+    all_unicodes.iter().step_by(nth).copied().collect()
 }
-fn split_vector(vec: &IndexSet<u32>, max_count: u32, level: OptLevel) -> Vec<IndexSet<u32>> {
+
+fn length_for_index(x: usize, max_count: u32) -> usize {
+    let min_count = max_count / 5;
+    let y = (min_count as f32) * (x as f32).cbrt();
+    (y.ceil() as usize).clamp(1, max_count as usize)
+}
+
+fn split_vector(vec: &IndexSet<u32>, max_count: u32) -> Vec<IndexSet<u32>> {
+    // The 0.5 language factor can round max_count down to 0 (e.g. chars_per_subset = 1);
+    // treat 0 as "one per chunk" so the clamp below never inverts.
+    let max_count = max_count.max(1);
     let mut result: Vec<IndexSet<u32>> = Vec::new();
     let mut current_start = 0;
     let size = vec.len();
@@ -95,7 +88,7 @@ fn split_vector(vec: &IndexSet<u32>, max_count: u32, level: OptLevel) -> Vec<Ind
             debug!("fold {} -> {} | max {}", size, i - 1, max_count);
             break;
         }
-        let len = length_for_index(i, max_count, level.clone());
+        let len = length_for_index(i, max_count);
 
         let to_take = std::cmp::min(len, size - current_start);
         let new_sub_vec = IndexSet::from_iter(vec[current_start..current_start + to_take].iter().cloned());
@@ -105,6 +98,7 @@ fn split_vector(vec: &IndexSet<u32>, max_count: u32, level: OptLevel) -> Vec<Ind
 
     result
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,7 +106,7 @@ mod tests {
     #[test]
     fn split_vector_empty_input_empty_result() {
         let input = IndexSet::new();
-        let result = split_vector(&input, 150, OptLevel::LOW);
+        let result = split_vector(&input, 150);
         assert!(result.is_empty());
     }
 
@@ -122,7 +116,7 @@ mod tests {
         for x in 1..10 {
             input.insert(x);
         }
-        let result = split_vector(&input, 150, OptLevel::LOW);
+        let result = split_vector(&input, 150);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], input);
     }
@@ -133,36 +127,40 @@ mod tests {
         for x in 1..400 {
             input.insert(x);
         }
-        let result = split_vector(&input, 150, OptLevel::LOW);
+        let result = split_vector(&input, 150);
         println!("result: {:#?}", result);
         assert_eq!(result.len(), 9);
     }
-}
 
-fn extract_every_nth<T: Clone>(set: &BTreeSet<T>, n: usize) -> Vec<T> {
-    let n = if n == 0 { 1_usize } else { n };
-
-    let mut result = Vec::new();
-
-    for (index, value) in set.iter().enumerate() {
-        if index % n == 0 {
-            result.push(value.clone());
+    #[test]
+    fn split_vector_tiny_max_count_still_terminates() {
+        let mut input = IndexSet::new();
+        for x in 1..10 {
+            input.insert(x);
         }
+        let result = split_vector(&input, 1);
+        assert_eq!(result.iter().flatten().copied().collect::<Vec<u32>>(), (1..10).collect::<Vec<u32>>());
     }
-    result
-}
-#[test]
-fn main() {
-    let mut set = BTreeSet::new();
-    set.insert(1);
-    set.insert(2);
-    set.insert(3);
-    set.insert(4);
-    set.insert(5);
-    set.insert(6);
-    set.insert(7);
-    set.insert(8);
 
-    let extracted = extract_every_nth(&set, 2);
-    assert_eq!(extracted, vec![1, 3, 5, 7]);
+    #[test]
+    fn split_vector_zero_max_count_still_terminates() {
+        let mut input = IndexSet::new();
+        for x in 1..10 {
+            input.insert(x);
+        }
+        let result = split_vector(&input, 0);
+        assert_eq!(result.iter().flatten().copied().collect::<Vec<u32>>(), (1..10).collect::<Vec<u32>>());
+    }
+
+    #[test]
+    fn sample_unicodes_picks_every_nth() {
+        let set = BTreeSet::from_iter(1..=8);
+        assert_eq!(sample_unicodes(&set), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+
+        let big = BTreeSet::from_iter(0..1000_u32);
+        let sample = sample_unicodes(&big);
+        assert_eq!(sample.len(), 100);
+        assert_eq!(sample[0], 0);
+        assert_eq!(sample[1], 10);
+    }
 }

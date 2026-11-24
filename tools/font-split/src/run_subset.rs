@@ -10,15 +10,15 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIter
 use std::time::Instant;
 use woff::version2::compress;
 
-pub fn build_single_subset(face: &Owned<Face>, subset: &Vec<u32>) -> Vec<u8> {
+pub fn build_single_subset(face: &Owned<Face>, subset: &[u32]) -> Vec<u8> {
     let subset_runner = Subset::new();
     subset_runner.clear_drop_table();
     subset_runner.adjust_layout();
     subset_runner.add_chars(subset);
-    let new_face = subset_runner.run_subset(&face).face_data();
+    let new_face = subset_runner.run_subset(face).face_data();
     let ttf_binary = new_face.get_data();
-    let woff2_binary = compress(ttf_binary, String::from(""), 1, true).expect("Failed to compress subset");
-    woff2_binary
+
+    compress(ttf_binary, String::from(""), 1, true).expect("Failed to compress subset")
 }
 
 struct ThreadResult {
@@ -37,7 +37,7 @@ pub fn run_subset(ctx: &mut Context) {
         .map(|(index, r)| {
             let start_time = Instant::now();
 
-            let result = build_single_subset(&ctx.face, r);
+            let result = build_single_subset(ctx.face, r);
             let result_bytes = u8_size_in_kb(&result);
             let hash_string = format!("{:x}", md5::compute(result.as_slice()));
             let duration = start_time.elapsed();
