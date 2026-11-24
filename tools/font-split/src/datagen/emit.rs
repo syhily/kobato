@@ -8,8 +8,6 @@ use super::{CORPUS_ID, DUMP_URL, FIXTURE_ID_MOD, FIXTURE_ID_REM, FIXTURE_MIN_CHA
 
 const CHAR_DF_CUT: u64 = 2;
 
-const WORD_DF_CUT: u64 = 3;
-
 const SOURCE_NOTE: &str =
     "Wikimedia dump, article text CC BY-SA 4.0; frequency counts and codepoint sets are factual data";
 const PIPELINE_NOTE: &str = "ns0 non-redirect pages, wikitext-cleaned, OpenCC-converted; per-document distinct counts";
@@ -53,30 +51,6 @@ pub fn char_freq_tsv(path: &Path, dim: Dim, docs: u64, map: &HashMap<u32, u64>) 
     );
     std::fs::write(path, content).expect("write char freq tsv");
     println!("wrote {} ({} codepoints, {docs} documents)", path.display(), kept);
-}
-
-pub fn word_freq_tsv(path: &Path, dim: Dim, docs: u64, map: &HashMap<String, u64>) {
-    let mut entries: Vec<(&String, &u64)> = map.iter().filter(|(_, df)| **df >= WORD_DF_CUT).collect();
-    entries.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
-    let mut body = String::new();
-    for (word, df) in &entries {
-        writeln!(body, "{word}\t{df}").unwrap();
-    }
-    let content = format!(
-        "# Word document frequencies (dimension: {}), jieba segmentation.\n\
-         # Source: {DUMP_URL} ({SOURCE_NOTE})\n\
-         # Generator: {GENERATOR_NOTE}\n\
-         # Pipeline: {PIPELINE_NOTE} {}; fixture pages (page_id % {FIXTURE_ID_MOD} == {FIXTURE_ID_REM}) excluded\n\
-         # Documents: {docs}\n\
-         # Cut: df >= {WORD_DF_CUT} ({} of {} words kept)\n\
-         {body}",
-        dim_label(dim),
-        dim_step(dim),
-        entries.len(),
-        map.len(),
-    );
-    std::fs::write(path, content).expect("write word freq tsv");
-    println!("wrote {} ({} words, {docs} documents)", path.display(), entries.len());
 }
 
 pub fn page_fixture(path: &Path, dim: Dim, pages: &[Candidate]) {

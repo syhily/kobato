@@ -1,7 +1,6 @@
 #![cfg(feature = "corpus")]
 
 use kobato_font_split::datagen::clean::{Dim, clean_wikitext};
-use kobato_font_split::datagen::count::keep_word;
 use kobato_font_split::datagen::dump::{parse_page, xml_unescape};
 
 #[test]
@@ -86,13 +85,4 @@ fn parse_page_self_closing_text_and_redirect() {
     let page = parse_page(blob);
     assert!(page.redirect);
     assert_eq!(page.text, "T\n");
-}
-
-#[test]
-fn word_filter() {
-    assert!(keep_word("汉字"));
-    assert!(!keep_word("汉"));
-    assert!(!keep_word("ab"));
-    assert!(!keep_word("12"));
-    assert!(keep_word("第3次"));
 }

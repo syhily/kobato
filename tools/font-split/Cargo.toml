@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 # Data-generation pipeline (ADR-0010): the `datagen` bin (download/build/generate) is gated behind
 # this feature so the production addon build and CI never compile these dependencies.
 [features]
-corpus = ["dep:jieba-rs", "dep:memchr", "dep:opencc-fmmseg"]
+corpus = ["dep:memchr", "dep:opencc-fmmseg"]
 
 [[bin]]
 name = "datagen"
@@ -28,7 +28,6 @@ rayon = "1.10.0" # pinned to 1.10.x: opencc-fmmseg (corpus feature) requires exa
 woff = "0.6.4"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
 indexmap = "2.14.2"
-jieba-rs = { version = "0.8.1", optional = true }
 memchr = { version = "2.8.3", optional = true }
 napi = { version = "3.16.3", features = ["napi10", "async"] }
 napi-derive = "3.7.2"

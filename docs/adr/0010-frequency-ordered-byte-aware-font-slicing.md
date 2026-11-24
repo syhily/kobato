@@ -99,10 +99,9 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
    per-page bytes, zero algorithm change. Corpus (settled): the pinned `zhwiki-20261101` Wikimedia dump, processed by
    font-split's feature-gated `datagen` bin (`src/bin/datagen/`) in one streaming pass — wikitext cleaning,
    `opencc-fmmseg` conversion into **two script dimensions** (`t2s` Simplified orders the TGH/JA packs, `s2t` orders the
-   HK/TW packs, both over the same document set), per-document character frequencies plus word frequencies (jieba) as a
-   by-product for future consumers. Fixture pages are excluded from the counts. (zhwiki is stub-heavy: the first fixture
-   rule — `id % 5003`, ≥2500 cleaned chars — yielded only 17 of 304 candidates against 1,563,340 counted documents; the
-   shipped rule is `id % 2003 == 7` with a 1200-char floor.)
+   HK/TW packs, both over the same document set), per-document character frequencies. Fixture pages are excluded from
+   the counts. (zhwiki is stub-heavy: the first fixture rule — `id % 5003`, ≥2500 cleaned chars — yielded only 17 of 304
+   candidates against 1,563,340 counted documents; the shipped rule is `id % 2003 == 7` with a 1200-char floor.)
 2. **Byte-aware DP chunk boundaries** in `pre_subset/auto_chunk.rs`, replacing the cube-root ramp. Chunks are contiguous
    segments of the frequency-ordered sequence; minimize `Σ P(chunk touched)×(bytes+λ)+μ` under a byte cap; P from the
    frequency table, bytes from the existing 1% sampling estimate. Starting point **λ=30 KB, μ=0.5 KB**: −40%/−46%
@@ -163,8 +162,7 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
 - Expected per-page CJK font transfer: −40% to −46% at λ=30/μ=0.5 with fewer files and smaller CSS, plus −15% to −17%
   total package bytes from WOFF2 quality 11; up to −56%/−63% per-page at aggressive λ with more files.
 - The `datagen` pipeline is the single producer of the frequency TSVs and the held-out page fixtures; both are committed
-  inside `tools/font-split/` and regenerate together when the dump pin changes. Word frequencies land gitignored in
-  `tools/font-split/out/` until a consumer exists.
+  inside `tools/font-split/` and regenerate together when the dump pin changes.
 - Tables remain editable official lists: frequency changes _order_, not coverage, so the `cjk-tables:generate` size
   invariants (3500/3000/1605, …) keep guarding the generator.
 - Both script dimensions now come from the same document set via OpenCC conversion, so Traditional-heavy sites are

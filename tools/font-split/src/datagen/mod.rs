@@ -28,10 +28,6 @@ pub(crate) fn dump_path() -> PathBuf {
     cache_dir().join(DUMP_FILE)
 }
 
-pub(crate) fn out_dir() -> PathBuf {
-    package_dir().join("out")
-}
-
 pub(crate) fn table_dir() -> PathBuf {
     package_dir().join("scripts/cjk-tables")
 }
@@ -45,7 +41,7 @@ pub fn run() {
         _ => {
             eprintln!("usage: datagen <download|build|generate>");
             eprintln!("  download  fetch the zhwiki dump into .cache/ (resumable)");
-            eprintln!("  build     one pass over the dump: char+word frequencies and held-out page fixtures");
+            eprintln!("  build     one pass over the dump: char frequencies and held-out page fixtures");
             eprintln!("  generate  regenerate src/unicode/cjk_tables.rs from scripts/cjk-tables/");
             std::process::exit(2);
         }

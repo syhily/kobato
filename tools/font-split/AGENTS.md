@@ -37,13 +37,13 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
 - `scripts/copy-addon.ts` — renames the cdylib to the stable `font-split.node` at the package root (the specifier both
   `nativeRequire` and SEA staging rely on); run via Node 26 type stripping.
 - `src/bin/datagen/` + `src/datagen/` — the data-generation pipeline behind Cargo feature `corpus` (never compiled into
-  the addon or CI builds; `jieba-rs`/`opencc-fmmseg`/`memchr` are optional deps). The lib module holds the logic (so
+  the addon or CI builds; `opencc-fmmseg`/`memchr` are optional deps). The lib module holds the logic (so
   `tests/datagen.rs` can reach it); the bin is a thin CLI shim. Subcommands: `download` (fetch the pinned zhwiki dump
   into gitignored `.cache/`, resumable), `build` (one streaming pass: wikitext clean → OpenCC t2s/s2t → per-dimension
   char document frequencies → `scripts/cjk-tables/freq-zhwiki-20261101-{hans,hant}.tsv`, held-out page fixtures →
-  `tests/fixtures/pages/zh-{hans,hant}-heldout-64.txt` with fixture pages EXCLUDED from the counts, word frequencies →
-  gitignored `out/`), `generate` (vendored lists + frequency TSVs → `cjk_tables.rs`). Never runs in CI:
-  `download`/`build` need the 3.4 GB local dump. Its tests run via `pnpm run corpus:test`.
+  `tests/fixtures/pages/zh-{hans,hant}-heldout-64.txt` with fixture pages EXCLUDED from the counts), `generate`
+  (vendored lists + frequency TSVs → `cjk_tables.rs`). Never runs in CI: `download`/`build` need the 3.4 GB local dump.
+  Its tests run via `pnpm run corpus:test`.
 - `tests/` — ALL Rust tests live here (`src/` carries no `#[cfg(test)]`): one file per covered module (`auto_chunk.rs`,
   `features.rs`, `link_subset.rs`, `unicode.rs`, `range.rs`, `utils.rs`, …) running in CI via `cargo test`, plus the two
   baseline/benchmark suites that never run in CI:
