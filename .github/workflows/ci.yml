@@ -27,7 +27,6 @@ jobs:
           workspaces: tools/font-split
       - run: pnpm --filter @kobato/font-split run build
       - run: pnpm --filter @kobato/font-split run test
-      - run: pnpm run type
       - run: pnpm run fmt:check
       - run: pnpm run lint
       - name: standalone editor playground

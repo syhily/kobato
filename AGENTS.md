@@ -113,13 +113,16 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
 
 ## Build & CI
 
-`pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run type`, `pnpm run test`, `pnpm run build`. Before committing:
-`pnpm run fmt && pnpm run lint && pnpm run type`, then `pnpm run test`, then `pnpm run build`.
+`pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run test`, `pnpm run build`. Before committing:
+`pnpm run fmt && pnpm run lint`, then `pnpm run test`, then `pnpm run build`.
 
-`pnpm run type` runs `tsc` once per workspace project: `scripts/typecheck.ts` takes every directory holding both
-`package.json` and `tsconfig.json` from the `pnpm-workspace.yaml` globs, so a new package or config file needs no
-root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files and `scripts/`; build info is
-cached under `node_modules/.cache/typecheck/`.
+`pnpm run lint` is the one static gate: it runs `react-router typegen` (route modules import generated `./+types/*`),
+then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and TypeScript compiler diagnostics in a
+single pass. There is no separate type-check command and `tsc` is never run (`oxlint.config.ts` sets
+`typeAware`/`typeCheck`). Each file type-checks through its nearest `tsconfig.json`, so a new package or config file
+needs no root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files and `scripts/`.
+oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the generated
+`apps/kobato/.react-router/types/`) is never type-checked.
 
 ## Tests
 

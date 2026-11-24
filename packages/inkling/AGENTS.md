@@ -20,8 +20,7 @@
 ## Essential commands
 
 ```bash
-pnpm run type        # root tsc — also covers tests/inkling
-pnpm run lint        # oxlint (root config)
+pnpm run lint        # oxlint: lint + type check (root config), also covers tests/inkling
 pnpm test:inkling    # editor tests through the root Vitest config
 pnpm run fmt
 pnpm demo

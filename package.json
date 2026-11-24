@@ -11,8 +11,8 @@
     "dev": "pnpm -C apps/kobato dev",
     "fmt": "oxfmt -c oxfmt.config.ts --write",
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
-    "lint": "oxlint -c oxlint.config.ts",
-    "lint:fix": "oxlint -c oxlint.config.ts --fix",
+    "lint": "pnpm -C apps/kobato typegen && oxlint -c oxlint.config.ts",
+    "lint:fix": "pnpm -C apps/kobato typegen && oxlint -c oxlint.config.ts --fix",
     "prepare": "pnpx husky",
     "release:bump": "pnpm -C tools/pack release:bump",
     "release:prepare-next": "pnpm -C tools/pack release:prepare-next",
@@ -37,7 +37,6 @@
     "trace:smoke": "pnpm -C tools/trace trace:smoke",
     "trace:status": "pnpm -C tools/trace trace:status",
     "trace:up": "pnpm -C tools/trace trace:up",
-    "type": "pnpm -C apps/kobato typegen && node scripts/typecheck.ts",
     "version:sync": "pnpm -C tools/pack version:sync"
   },
   "dependencies": {

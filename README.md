@@ -84,8 +84,7 @@ pnpm run test        # run tests
 pnpm run test:unit   # run unit tests only
 pnpm run test:snaps  # run snapshot tests only
 pnpm run fmt         # formatting
-pnpm run lint        # lint
-pnpm run type        # TypeScript check
+pnpm run lint        # lint + type check
 pnpm run db:gen      # generate Drizzle migrations
 ```
 
