@@ -1917,9 +1917,15 @@ importers:
 
   tools/font-split:
     devDependencies:
+      '@kobato/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@napi-rs/cli':
         specifier: 'catalog:'
         version: 3.11.1(@emnapi/core@2.0.0-beta.3)(@emnapi/runtime@2.0.0-beta.3)(@types/node@26.6.6)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
 
   tools/pack:
     devDependencies:

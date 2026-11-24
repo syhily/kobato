@@ -116,6 +116,11 @@ Dependency declarations are the enforcement; the graphs are pinned by the arch t
 `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run type`, `pnpm run test`, `pnpm run build`. Before committing:
 `pnpm run fmt && pnpm run lint && pnpm run type`, then `pnpm run test`, then `pnpm run build`.
 
+`pnpm run type` runs `tsc` once per workspace project: `scripts/typecheck.ts` takes every directory holding both
+`package.json` and `tsconfig.json` from the `pnpm-workspace.yaml` globs, so a new package or config file needs no
+root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files and `scripts/`; build info is
+cached under `node_modules/.cache/typecheck/`.
+
 ## Tests
 
 Tests live next to the covered package — no root-level test tree.

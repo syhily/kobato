@@ -1,21 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "extends": "@kobato/tsconfig/tsconfig.base.json",
-  "include": [
-    "apps/kobato/**/*",
-    "packages/**/*",
-    "tools/**/*",
-    "scripts/**/*",
-    "oxfmt.config.ts",
-    "oxlint.config.ts",
-    "vitest.config.ts",
-    "apps/kobato/.react-router/types/**/*",
-    "**/.server/**/*",
-    "**/.client/**/*",
-    "apps/inkling-demo/src/types/vite-env.d.ts"
-  ],
-  "compilerOptions": {
-    "rootDirs": [".", "./apps/kobato", "./apps/kobato/.react-router/types"]
-  },
-  "exclude": ["build", "dist", "node_modules", "apps/kobato/build", "**/target"]
+  "include": ["*.config.ts", "scripts/**/*.ts"]
 }

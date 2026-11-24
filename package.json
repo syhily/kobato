@@ -37,7 +37,7 @@
     "trace:smoke": "pnpm -C tools/trace trace:smoke",
     "trace:status": "pnpm -C tools/trace trace:status",
     "trace:up": "pnpm -C tools/trace trace:up",
-    "type": "pnpm -C apps/kobato typegen && tsc && pnpm -C apps/inkling-demo type",
+    "type": "pnpm -C apps/kobato typegen && node scripts/typecheck.ts",
     "version:sync": "pnpm -C tools/pack version:sync"
   },
   "dependencies": {

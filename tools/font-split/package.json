@@ -25,7 +25,9 @@
     "test": "cargo test"
   },
   "devDependencies": {
-    "@napi-rs/cli": "catalog:"
+    "@kobato/tsconfig": "workspace:*",
+    "@napi-rs/cli": "catalog:",
+    "@types/node": "catalog:"
   },
   "napi": {
     "binaryName": "font-split",

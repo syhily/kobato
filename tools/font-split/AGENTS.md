@@ -38,7 +38,8 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   `oxfmt-ignore` opt-outs itself, so the root lint/format configs need no ignorePatterns entry.
 - `src/index.ts` — thin wrapper typed from `src/binding.d.ts` (no hand-written type mirror): `fontSplit` /
   `fontSplitAlgorithmVersion` pass the native signatures through, lazy-loading `font-split.node` with an actionable
-  error when missing.
+  error when missing. It and the generated `binding.d.ts` are the only TS here; `tsconfig.json` is the standard package
+  shape.
 - `font-split.node` (package root, gitignored) — the addon binary, built and placed by `@napi-rs/cli`
   (`napi build --release --output-dir .`); the stable specifier both `nativeRequire` and SEA staging rely on. The file
   name comes from `napi.binaryName` in `package.json`. The CLI always compiles with `--target <host triple>`, so cargo
