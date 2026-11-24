@@ -3,14 +3,13 @@
 ## Overview
 
 - `packages/inkling/src/` is kobato's rich-text editor (Lexical 0.53, React 19). It owns the stored document model
-  (`src/headless/`, React-free) and the kobato host cards (`src/host-cards/`). Imports only `@kobato/ui`,
-  `@kobato/sanitize`, `@kobato/assets`, `@kobato/utils` — never contracts, server, db, or web. Tests:
-  `packages/inkling/tests/`; demo: `apps/inkling-demo/`.
+  (`src/headless/`, React-free) and the kobato host cards (`src/host-cards/`). It imports only `@kobato/ui`,
+  `@kobato/sanitize`, `@kobato/assets`, `@kobato/utils` — never contracts, server, db, or web.
 - Three public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
   `src/index.ts`), `@kobato/inkling/headless` + per-file imports (`src/headless/`, React-free — the only editor surface
-  `server`/`db`/`contracts`/`catalog` may use), `@kobato/inkling/host-cards` (side-effect registration + image node +
-  music base class). The barrel's top-level `registerCardDecorateAdapter()` call MUST stay explicit; the barrel never
-  re-exports host-cards.
+  `server`/`db`/`contracts`/`catalog` may use), and `@kobato/inkling/host-cards` (side-effect registration + image
+  node + music base class). The barrel's top-level `registerCardDecorateAdapter()` call MUST stay explicit; the barrel
+  never re-exports host-cards.
 - Composer: the Lexical EXTENSION API, not `LexicalComposer`. `InklingComposerBase` mounts `LexicalExtensionComposer`
   with the root extension from `src/components/inkling-root-extension.ts`; `contentEditable={null}` (RichTextPlugin owns
   the editable); decorators render through `ReactExtension`, so the root extension wires the `ErrorBoundary`.
@@ -30,26 +29,22 @@ pnpm demo
 
 `oxfmt`/`oxlint` are configured only at the kobato root; the root oxlint config scopes inkling exceptions in a
 `packages/inkling/src/**` override. Single quotes, no semicolons, print width 120; Tailwind scoped under
-`.inkling-lexical`. Type-aware lint runs against the root tsconfig; `verbatimModuleSyntax` makes `import type`
-mandatory. A tsconfig edit that floods tests with `TS2339` means tsgolint's cached program is stale — re-run
-`pnpm run lint` once.
+`.inkling-lexical`. `verbatimModuleSyntax` makes `import type` mandatory. A tsconfig edit that floods tests with
+`TS2339` means the lint type checker's cached program is stale — re-run `pnpm run lint` once.
 
 ## Directory and naming
 
-- `hooks/` and `services/` at the source root are real editor-island layers (root bans do not apply).
-  `nodes/base/nodes/<card>/` mirrors upstream Lexical (doubled `nodes/` intentional). `$`-prefixed helpers are Lexical
-  idioms; `.declaration.ts` is the card-declaration suffix; non-component modules `kebab-case.ts`, components
-  `PascalCase.tsx`.
+- `hooks/` and `services/` at the source root are real editor-island layers (the root ban does not apply).
+  `nodes/base/nodes/<card>/` mirrors upstream Lexical (the doubled `nodes/` is intentional). `$`-prefixed helpers are
+  Lexical idioms; `.declaration.ts` is the card-declaration suffix; non-component modules are `kebab-case.ts`,
+  components `PascalCase.tsx`.
 - Nine internal `index.ts` alias seams (`nodes/base`, `nodes/base/nodes/at-link`, `nodes/cards`, `transforms`,
   `markdown`, `html/html-to-lexical`, `html/clean-basic-html`, `html/renderer/transformers`, `utils`) are load-bearing
   module entries — keep them and import through them.
 - `transforms/` is flat; `utils/` holds pure helpers plus `utils/draggable/` only; `services/` is the React-free
   request-machine layer.
-
-### Public-barrel export policy (do NOT prune)
-
-`src/index.ts` exports the editor's full API, not today's consumer subset — "unused in kobato" is not dead surface, and
-pruning would churn the public API. Extend it only with deliberately-public API.
+- `src/index.ts` exports the editor's full API, not today's consumer subset — "unused in kobato" is not dead surface,
+  and pruning would churn the public API. Extend it only with deliberately-public API.
 
 ## Architecture
 
@@ -61,7 +56,7 @@ card**, **artifact slot**, **render-time meta**.
 `nodes/` is the model core; `components/` renders it, `plugins/` + `transforms/` mutate it, `context/` carries state,
 `hooks/` is React glue, `services/` the machines, `html/` + `markdown/` the serialization planes, `headless/` the
 React-free model, `host-cards/` the kobato assemblies. `headless/` is the one hard floor: React-free at the
-runtime-closure level, enforced by `tests/unit/headless/headless-boundary.test.ts`.
+runtime-closure level (`tests/unit/headless/headless-boundary.test.ts`).
 
 ### Card pipeline
 
@@ -78,9 +73,8 @@ runtime-closure level, enforced by `tests/unit/headless/headless-boundary.test.t
   labels keys, fence payload). Pins:
   `tests/unit/nodes/card-{cross-registry-consistency,declarations,layering-imports}.test.ts`.
 - Menu dataset typing: `CardDeclaration<...>` (`readonly []` when absent); `checkedCardDeclaration` keeps contextual
-  typing and exact-key-checks; `tests/typecheck/card-menu-params.ts` pins rejection and dataset keys. Host `defineCard`
-  derives the same vocabulary; pre-widened input (variable/return/annotation) is a type-erasure boundary and goes
-  unchecked.
+  typing and exact-key-checks (`tests/typecheck/card-menu-params.ts`). Host `defineCard` derives the same vocabulary;
+  pre-widened input (variable/return/annotation) is a type-erasure boundary and goes unchecked.
 
 ### Decorate slot
 
@@ -102,10 +96,9 @@ headless React-free.
 React-free by construction: Zod storage schemas (`schema.ts` full ARTICLE, `comment-schema.ts` COMMENT + blank/submit
 gates), `node-whitelist.ts`, `dialect.ts` (compact↔full parity), the save-pipeline readers (`walk`, `collect`, `toc`,
 `artifacts`, `equivalence`), and `cards/` (host-card specs + render helpers, incl. `musicPlayerFallbackHtml`).
-`styles/cards.css` is the app-surface Tailwind partial (pinned by the app's `tailwind-source-ownership.test.ts`). The
-server's save/projection pipeline CONSUMES this model; the feed downgrade + defensive host-card substitution live
-server-side (`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the
-reverse.
+`styles/cards.css` is the app-surface Tailwind partial. The server's save/projection pipeline CONSUMES this model; the
+feed downgrade + defensive host-card substitution live server-side
+(`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the reverse.
 
 ### Host cards (`src/host-cards/`)
 
@@ -116,9 +109,8 @@ reverse.
 - The music card ships WITHOUT a picker — the dialog is host data flow; web-admin registers it via
   `registerCardPicker(MUSIC_PLAYER_NODE_TYPE, ...)` in `packages/web/admin/src/ui/editor/music-card-picker.tsx`.
 - `defineCard` (`src/nodes/cards/host-cards.ts`) validates, assembles, registers, and stores the raw spec
-  (`host-card-registry.ts`), projected through the built-in projectors. Pins: `tests/unit/nodes/host-cards.test.ts`.
-  Type preservation: `CardSpecFieldMap`/`CardSpecAccessorMap`; base classes interface-merge (no hand-written
-  `declare __*`).
+  (`host-card-registry.ts`), projected through the built-in projectors (`tests/unit/nodes/host-cards.test.ts`). Type
+  preservation: `CardSpecFieldMap`/`CardSpecAccessorMap`; base classes interface-merge (no hand-written `declare __*`).
 - Markdown: `src/markdown/round-trip.ts` composes every registered host card by default; the `cards` option AUGMENTS and
   replaces on nodeType collision.
 - `getHostCardNodes()` returns every registered class in registration order — hosts spread it into
@@ -132,10 +124,10 @@ reverse.
   flag; `registerCardCommands` is the single write site. Command channel only; `open()` no-ops when not editable. One
   picker per node type, enforced both ways; `registerCardPicker` REJECTS `autoOpenOnInsert`.
 - `CardPickerHostPlugin` (CORE_PLUGINS, gated to non-nested non-read-only surfaces) mounts `picker.render(...)`.
-  Requests cross by node KEY, never instance (Lexical #195); `fromInsert` merges the pick into the insert's history
-  entry (`HISTORY_MERGE_TAG`). Lifecycle pin: `tests/unit/plugins/card-picker.test.tsx`. The registry field is type-only
-  React, so headless stays free of the seam. The barrel re-exports `COMMAND_PRIORITY_*` (name the level, never the
-  number) and `createRenderContext`.
+  Requests cross by node KEY, never instance; `fromInsert` merges the pick into the insert's history entry
+  (`HISTORY_MERGE_TAG`) (`tests/unit/plugins/card-picker.test.tsx`). The registry field is type-only React, so headless
+  stays free of the seam. The barrel re-exports `COMMAND_PRIORITY_*` (name the level, never the number) and
+  `createRenderContext`.
 
 ### Node families
 
@@ -161,10 +153,10 @@ reverse.
 - ui-prefs flags: `isEmojiEnabled` (default true; `false` keeps EmojiPickerPlugin out of nested/caption editors only)
   and `codeEditor` (default `'rich'`; `'plain'` uses the static CodeBlockPlainEditor, no codemirror chunk).
 - Word count: `language` drives `Intl.Segmenter`; state lives in a per-TOP-LEVEL-editor `WordCountState` WeakMap keyed
-  by COUNTER INSTANCE identity — never globals; dedup is PER CALLBACK. Pins:
+  by COUNTER INSTANCE identity — never globals; dedup is PER CALLBACK (pins:
   `tests/unit/plugins/behaviour/word-counter.test.ts`, `wordCountHandle.test.ts`,
-  `tests/unit/plugins/WordCountPlugin.test.tsx`, `tests/unit/components/InklingNestedComposerWordCount.test.tsx`.
-- Backtick chord: unmodified backtick over a non-collapsed range dispatches `FORMAT_TEXT_COMMAND 'code'` (one undo
+  `tests/unit/plugins/WordCountPlugin.test.tsx`, `tests/unit/components/InklingNestedComposerWordCount.test.tsx`).
+- Backtick chord: an unmodified backtick over a non-collapsed range dispatches `FORMAT_TEXT_COMMAND 'code'` (one undo
   entry); collapsed, modifiers, Shift, and IME fall through
   (`tests/unit/plugins/behaviour/backtick-code-selection.test.tsx`).
 
@@ -191,7 +183,6 @@ reverse.
 ## Testing
 
 Own vitest project (`inkling-unit`, jsdom, globals off, `isolate: true`), built by the `inklingUnitProject` factory
-(`@kobato/test/projects/inkling-unit.ts`) and instantiated from `tests/vitest.config.ts`, which the root registry
-references by path (see `tests/AGENTS.md`); the factory inlines `@testing-library/jest-dom` (`server.deps.inline`) —
-keep that inline entry. Rendered-card specs need the decorate adapter (`tests/utils/test-editor.ts`); an unregistered
-slot throws on first card render.
+(`@kobato/test/projects/inkling-unit.ts`) and instantiated from `tests/vitest.config.ts`; the factory inlines
+`@testing-library/jest-dom` (`server.deps.inline`) — keep that inline entry. Rendered-card specs need the decorate
+adapter (`tests/utils/test-editor.ts`); an unregistered slot throws on first card render. See `tests/AGENTS.md`.
