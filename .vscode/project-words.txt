@@ -354,6 +354,7 @@ typname
 ultrahtml
 unconfigured
 undici
+unicodes
 unlayered
 unovis
 unpic
