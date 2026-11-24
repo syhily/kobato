@@ -1,4 +1,5 @@
-import { fail, tryRun } from '@kobato/pack/sea/exec'
+import { fail } from '@kobato/pack/process'
+import { tryRun } from '@kobato/pack/sea/exec'
 import { repoRoot, SEA_SENTINEL_FUSE } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'

@@ -1,10 +1,6 @@
+import { fail } from '@kobato/pack/process'
 import { repoRoot } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
-
-export function fail(message: string): never {
-  console.error(message)
-  process.exit(1)
-}
 
 interface RunOptions {
   env?: NodeJS.ProcessEnv

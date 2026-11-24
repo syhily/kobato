@@ -1,6 +1,7 @@
+import { fail } from '@kobato/pack/process'
 import { collectSeaAssets } from '@kobato/pack/sea/assets'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
-import { fail, run } from '@kobato/pack/sea/exec'
+import { run } from '@kobato/pack/sea/exec'
 import { runInjectStep } from '@kobato/pack/sea/inject'
 import { seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'

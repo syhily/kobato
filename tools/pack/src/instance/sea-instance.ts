@@ -1,5 +1,5 @@
-import type { ExitOutcome, ExitState } from '@kobato/pack/instance/process'
 import type { SmokeDatabases, TempDirs } from '@kobato/pack/instance/temp'
+import type { ExitOutcome, ExitState } from '@kobato/pack/process'
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
@@ -11,7 +11,7 @@ import {
   scrubbedParentEnv,
   sleep,
   watchChildExit,
-} from '@kobato/pack/instance/process'
+} from '@kobato/pack/process'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'

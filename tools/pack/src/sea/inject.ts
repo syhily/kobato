@@ -1,5 +1,6 @@
+import { fail } from '@kobato/pack/process'
 import { writeSeaConfig } from '@kobato/pack/sea/blob'
-import { fail, run, tryRun } from '@kobato/pack/sea/exec'
+import { run, tryRun } from '@kobato/pack/sea/exec'
 import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from '@kobato/pack/sea/paths'
 import { mkdir, readFile } from 'node:fs/promises'
 

@@ -1,4 +1,4 @@
-import { fail } from '@kobato/pack/sea/exec'
+import { fail } from '@kobato/pack/process'
 import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaDistDir } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'

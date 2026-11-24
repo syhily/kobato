@@ -17,7 +17,8 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   type SeaAssetCodec,
 } from '@kobato/distribution/sea-assets'
-import { fail, run } from '@kobato/pack/sea/exec'
+import { fail } from '@kobato/pack/process'
+import { run } from '@kobato/pack/sea/exec'
 import {
   observabilitySourceAssetsDir,
   repoRoot,

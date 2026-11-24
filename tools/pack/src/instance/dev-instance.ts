@@ -1,7 +1,7 @@
-import type { ExitState } from '@kobato/pack/instance/process'
+import type { ExitState } from '@kobato/pack/process'
 import type { ChildProcess } from 'node:child_process'
 
-import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from '@kobato/pack/instance/process'
+import { raceChildExit, scrubbedParentEnv, sleep, watchChildExit } from '@kobato/pack/process'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'

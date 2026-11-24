@@ -11,6 +11,9 @@ out-of-process instance driver, and the binary-suite entry scripts. Nothing here
 - `src/instance/` — the out-of-process instance driver behind `sea:smoke` / `sea:e2e` / `sea:browser` and `trace:smoke`:
   boot, seed, and stop a real kobato process. `src/instance/client/` is the suite-facing half and the ONLY part test
   trees import; the lifecycle modules next to it are for CLI entry scripts (see "Instance driver").
+- `src/process.ts` — the process primitives every CLI script shares, instance-related or not: `fail` (the one
+  print-and-exit failure helper), `sleep`, `pickFreePort`, `fetchManual`, `scrubbedParentEnv`, `watchChildExit` /
+  `raceChildExit`. `sea/exec.ts` keeps only the command runners (`run`, `tryRun`) on top of it.
 - `playwright.config.ts` — the real-browser journey runner config (the journeys live in `apps/kobato/tests/browser/`),
   at this package root so its imports (`@playwright/test`, `@kobato/pack/instance/client/browser-env`) resolve from this
   package's `node_modules`; `browser.ts` spawns `pnpm --filter @kobato/pack exec playwright test` and only boots
@@ -80,8 +83,7 @@ companion libraries and no rpath patch, and server code reaches it only through 
 
 Everything that drives a kobato instance as a REAL separate process — two halves with no dependencies between them:
 
-- **Lifecycle** (CLI entry scripts only) — `process.ts` (`pickFreePort`, `fetchManual`, `scrubbedParentEnv`,
-  `watchChildExit` / `raceChildExit`), `temp.ts` (`makeTempDirs()` per-run data/cache/cwd roots, `smokeDatabases`),
+- **Lifecycle** (CLI entry scripts only) — `temp.ts` (`makeTempDirs()` per-run data/cache/cwd roots, `smokeDatabases`),
   `sea-instance.ts` (the built SEA binary as an HTTP instance: `ensureBinaryExists`, `seaInstanceEnv`, `bootServer`,
   `waitForHttp`, `waitForExit`), `dev-instance.ts` (the repository DEV server: `writeDevConfig`, `bootDevServer`,
   `stopDevServer`), `seed.ts` (plain-SQL state for STOPPED instances: `seedInstalledInstance`, `relaxRateLimits`,
@@ -96,15 +98,15 @@ Everything that drives a kobato instance as a REAL separate process — two halv
 `src/sea/{smoke,e2e,browser}.ts` and `@kobato/trace` compose both halves; `apps/kobato` `tests/e2e` and `tests/browser`
 import `@kobato/pack/instance/client/*`.
 
-- The driver imports only `@kobato/settings`, `@kobato/utils`, and its own modules: it drives built artifacts and
-  running processes, never a source graph, and never reaches `src/sea` or `src/vite` — pinned by
-  `apps/kobato/tests/arch/package-dag.test.ts`.
+- `src/process.ts` and the driver import only `@kobato/settings`, `@kobato/utils`, and their own modules
+  (`src/instance/*`, `src/process.ts`): they drive built artifacts and running processes, never a source graph, and
+  never reach `src/sea` or `src/vite` — pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 - The config file always lives inside the per-run temp root; config vars never come from the parent env (env > file
   would silently override the converged file); seeding only touches a STOPPED database; every boot pairs with a stop
   (`stopDevServer`, `stopSuiteInstance`) that SIGTERMs the child and removes the temp root — entry scripts call it from
   `finally`.
-- Entry scripts run under plain `node` type-stripping, so every module they reach — the lifecycle half and
-  `client/browser-env.ts` — stays free of non-strip TS syntax (no parameter properties, enums, or namespaces);
+- Entry scripts run under plain `node` type-stripping, so every module they reach — `src/process.ts`, the lifecycle half
+  and `client/browser-env.ts` — stays free of non-strip TS syntax (no parameter properties, enums, or namespaces);
   `client/http.ts` and `client/rpc.ts` load under Vitest, Playwright, or `vite-node` only. Keep every module importable
   with zero side effects.
 

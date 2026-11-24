@@ -1,7 +1,6 @@
 import type { SmokeServer } from '@kobato/pack/instance/sea-instance'
 
 import { scanAccessEvents } from '@kobato/pack/instance/analytics'
-import { fetchManual, scrubbedParentEnv, sleep } from '@kobato/pack/instance/process'
 import {
   bootServer,
   ensureBinaryExists,
@@ -11,8 +10,8 @@ import {
 } from '@kobato/pack/instance/sea-instance'
 import { readConvergedConfig, seedInstalledInstance } from '@kobato/pack/instance/seed'
 import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
+import { fail, fetchManual, scrubbedParentEnv, sleep } from '@kobato/pack/process'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
-import { fail } from '@kobato/pack/sea/exec'
 import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'

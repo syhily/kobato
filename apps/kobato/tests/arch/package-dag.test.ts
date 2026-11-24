@@ -406,16 +406,16 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('the instance driver stays product-light and never reaches the build pipeline', () => {
+  it('the instance driver and process primitives stay product-light and off the build pipeline', () => {
     const allowed = new Set(['@kobato/settings', '@kobato/utils'])
     const offenders: string[] = []
-    for (const file of sourceFiles('tools/pack/src/instance')) {
+    for (const file of [...sourceFiles('tools/pack/src/instance'), 'tools/pack/src/process.ts']) {
       for (const specifier of importSpecifiers(readSource(file))) {
         const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
         if (target === undefined || allowed.has(target)) {
           continue
         }
-        if (target === '@kobato/pack' && specifier.startsWith('@kobato/pack/instance/')) {
+        if (target === '@kobato/pack' && /^@kobato\/pack\/(?:instance\/|process$)/.test(specifier)) {
           continue
         }
         offenders.push(`${file}: ${specifier}`)
@@ -423,7 +423,7 @@ describe('package DAG', () => {
     }
     expect(
       offenders,
-      'src/instance/ drives running instances: it imports only settings, utils, and its own modules',
+      'src/instance/ and src/process.ts drive running processes: they import only settings, utils, and their own modules',
     ).toEqual([])
   })
 
