@@ -10,8 +10,8 @@ part of the product build.
   hooks).
 - `src/styles/public.css` is the demo's single Tailwind compile; it composes the UI/Inkling partials exactly like the
   app's public surface (`packages/ui/src/styles/AGENTS.md`).
-- Internal imports use `@kobato/inkling-demo/...` (self-imports resolve through the package `exports` map to `src/`).
+- Internal imports use `@kobato/inkling-demo/...` (resolved through the package `exports` map to `src/`).
   `src/generate-content.ts` regenerates `src/content/content.json` — run `pnpm run demo:content` (the write path is
-  anchored on the demo directory, never cwd). Tests under `tests/` are real behavior tests only, in the root `demo-unit`
-  project; they consume Inkling through its public entries and the sanctioned `tests/utils/` fixture seam
-  (`pnpm test apps/inkling-demo`).
+  anchored on the demo directory, never cwd).
+- Tests under `tests/` are real behavior tests only, in the root `demo-unit` project; they consume Inkling through its
+  public entries and the sanctioned `tests/utils/` fixture seam (`pnpm test apps/inkling-demo`).

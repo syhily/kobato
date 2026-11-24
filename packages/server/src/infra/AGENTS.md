@@ -1,17 +1,15 @@
 # Infra conventions
 
 `packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from
-`domains/`, `http/`, or `render/`, and must not name a persistence table, a settings-section field, or a task-domain
-noun. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives, rollback, self-update gate) including its
-CLI-only probes (`doctor-report.ts`, `intl-probe.ts`).
+`domains/`, `http/`, or `render/` and must not name a persistence table, a settings-section field, or a task-domain
+noun. A module belongs here only while domain-agnostic — searchable post text, visibility gates, site-origin derivation,
+and Webmention headers live in `domains/`. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives,
+rollback, self-update gate) including its CLI-only probes (`doctor-report.ts`, `intl-probe.ts`).
 
 - `db/paths.ts` resolves validated config into BOTH engines' paths (`resolveDatabasePath` / `resolveAnalyticsPath`);
   `__setEnginePathsForTests` pins both for a test file. `data-paths.ts` is its non-database twin (fonts, MaxMind,
   dead-letter). The engines open in `@kobato/db` — infra owns no engine code.
-- Build-time Vite plugins are NOT infra: they live in `tools/pack/src/vite/` (`react-compiler-plugin.ts`,
-  `route-warmup.ts`). Never import a tool package from here.
-- A module belongs here only while domain-agnostic — searchable post text, visibility gates, site-origin derivation, and
-  Webmention headers live in `domains/`.
+- Build-time Vite plugins are NOT infra: they live in `tools/pack/src/vite/`. Never import a tool package from here.
 
 ## Config file
 
@@ -27,20 +25,20 @@ CLI-only probes (`doctor-report.ts`, `intl-probe.ts`).
 - Adding a config value: `CONFIG_TABLE` row → `kobato.config.example.json` → coverage in
   `packages/server/tests/unit/server/infra/config.test.ts`.
 - Observability has ONE configuration source, the `observability` admin settings section — nothing in
-  `kobato.config.json` configures it. `trace/config.ts` validates endpoint security (plain HTTP only for
-  loopback/private IP literals), org path grammar, credential completeness, and sampling ranges, then safely disables
-  the affected pipeline. The domain composes the auth header; infra sees only the finished value.
+  `kobato.config.json` configures it. `trace/config.ts` validates endpoint security (plain HTTP only for loopback or
+  private IP literals), org path grammar, credential completeness, and sampling ranges, then safely disables the
+  affected pipeline. The domain composes the auth header; infra sees only the finished value.
 
 ## SEA runtime rules
 
-- Build-side mechanics live in `tools/pack/AGENTS.md`. Native packages are imported through their owning packages —
-  `sharp` and `@napi-rs/canvas` directly, the DuckDB engine through `@kobato/db/duckdb/self-check` (the
-  `--smoke-natives` aggregate leg); server code never imports `@duckdb/node-api` itself. The font-slicing addon is the
-  one workspace native: `domains/fonts/vendor/napi-split.ts` loads it through `nativeRequire(FONT_SPLIT_ADDON_SPEC)` — a
-  specifier string, never a static import, so the tools boundary stays intact. A `requireExternal('sharp' | ...)` call
-  site hides the package from the bundler and crashes under SEA; `requireExternal` remains only as `nativeRequire`'s
-  resolver. The boundaries contract test bans such sites; the native-specifiers test enumerates every platform `require`
-  so a new specifier fails at upgrade time.
+- Build-side mechanics live in `tools/pack/AGENTS.md`. Import native packages through their owning packages — `sharp`
+  and `@napi-rs/canvas` directly, the DuckDB engine through `@kobato/db/duckdb/self-check` (the `--smoke-natives`
+  aggregate leg); server code never imports `@duckdb/node-api` itself. The font-slicing addon is the one workspace
+  native: `domains/fonts/vendor/napi-split.ts` loads it through `nativeRequire(FONT_SPLIT_ADDON_SPEC)` — a specifier
+  string, never a static import.
+- A `requireExternal('sharp' | ...)` call site hides the package from the bundler and crashes under SEA
+  (`requireExternal` remains only as `nativeRequire`'s resolver). The boundaries contract test bans such sites; the
+  native-specifiers test enumerates every platform `require`, so a new specifier fails at upgrade time.
 - SEA-safe file reads go through `seaAssetPath` (raw assets, main thread only) or `getEmbeddedAsset` (packed
   `natives/*`, worker-safe). Never `seaAssetPath` a `natives/*` key — it throws on zstd bytes. New resource types go
   into `tools/pack/src/sea/assets.ts` AND are read via the sea helpers with a non-SEA fallback.

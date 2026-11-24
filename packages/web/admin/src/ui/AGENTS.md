@@ -8,26 +8,27 @@ reads from sessions, route params, request objects, or env vars.
 ## Component tiers
 
 - **`@kobato/ui/components`** — external design-system primitives, flat so `npx shadcn@latest add/diff` works;
-  `components.json` points there.
+  `components.json` points there. `@kobato/ui/lib` owns `cn`, `code-languages`, `I18nProvider`, `ThemeProvider`, and
+  generic presentation hooks.
 - **`@kobato/web-public/ui/shared` + `ui/lib`** — the cross-surface tiers; new cross-surface modules go THERE, never
   into this package.
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
   modules stay at the root (`ConfirmDialog`, `sortable.tsx`, `mask.ts`, `SearchShortcutHint`, `use-file-upload.ts`).
   - `useFileUpload` owns file/field guards, typed-oRPC submission, error unwrap, and toast choreography — never
-    hand-roll a fetch upload. Backup's progress XHR is the sole transport exception and still uses the API package's
-    standard RPC serializer. Hooks running under the React tree read `useI18n()` themselves; hooks callable from
+    hand-roll a fetch upload (backup's progress XHR is the sole transport exception and still uses the API package's
+    standard RPC serializer). Hooks running under the React tree read `useI18n()` themselves; hooks callable from
     non-React entries take the caller's `t`.
   - `sortable.tsx` is the one dnd-list adapter (`useSortableRow` — destructure its result; member access trips the
-    react-compiler ref heuristic). New sortable lists use it.
+    react-compiler ref heuristic).
 - `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import), `pickers/`,
-  `lexical-body-diff.tsx`, plus the platform consumers — `page-editor-nodes` (mounted types must stay inside
+  `lexical-body-diff.tsx`, plus the platform consumers — `page-editor-nodes` (mounted types stay inside
   `FULL_EDITOR_NODE_TYPES`, contract-tested), `image-insert-override`, `image-library-pick`, `page-editor-upload`
   (uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (factories taking the
   translator; `resolveMathError` turns the server's error descriptor into the single string Inkling accepts — a raw
   catalog key never reaches the editor), `use-focus-mode`, and `music-card-picker.tsx` (registers the picker dialog at
-  module scope — the dialog is host data flow over RPC). Decorate chrome and `exportDOM` markup share the spec's
-  constants; parity pinned by `packages/web/admin/tests/unit/ui/editor/cards/`. Spec `menu[].label`/`desc` are English
-  fallbacks; the slash menu localizes through `labelKey`, card chrome reads `admin.editor.cards.*`.
+  module scope). Decorate chrome and `exportDOM` markup share the spec's constants (parity pinned by
+  `packages/web/admin/tests/unit/ui/editor/cards/`). Spec `menu[].label`/`desc` are English fallbacks; the slash menu
+  localizes through `labelKey`, card chrome reads `admin.editor.cards.*`.
 - `editor-shell/` — draft/publish orchestration: `useEditorShellState` orchestrates both shells (extend it, never add
   shared state); `useEditorShellPersist` owns save-flow status + baselines in sibling slices with pure planners in
   `editor-shell-persist-plan.ts`; `useAutosave` is the sole baseline owner behind `setBaseline`;
@@ -35,21 +36,7 @@ reads from sessions, route params, request objects, or env vars.
 - `editor-meta/` — the post/page meta form family (presentation/controllers only); `account/`, `music/` (+
   `music/player/`), `branding/` — product domains; `settings/` has its own AGENTS.md.
 
-## Cross-cutting
-
-- Admin's reuse of public modules stays on the audited set pinned by `ADMIN_PUBLIC_IMPORTS` in
-  `apps/kobato/tests/arch/web-direction.test.ts`.
-- `@kobato/ui/lib` owns `cn`, `code-languages`, `I18nProvider`, `ThemeProvider`, and generic presentation hooks.
-
-## Merge-engine tokens
-
-`cn.ts` extends every project token namespace so custom `--text-*` / `--color-*` / `--shadow-*` tokens land in the
-correct merge group.
-
-- A new `--<namespace>-<name>` token in `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list
-  (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
-- Never write `dark:bg-foo` on a tier-1 token — the `.dark` rebind handles the switch. Adjacent dark surface tiers stay
-  3–8 L apart; no `--line-*` token shares a value with a `--surface-*` token.
+Token rules (merge groups, dark tiers) live in `packages/ui/src/styles/AGENTS.md`.
 
 ## File naming
 

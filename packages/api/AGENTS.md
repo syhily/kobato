@@ -1,144 +1,88 @@
 # `@kobato/api`
 
-The API SDK — one package owning the wire surface end to end: the Zod vocabulary (`src/contracts/`), the oRPC procedure
-metadata (`src/rpc/`) that composes it, and the React-free client transport (`src/client/`) that calls it. An endpoint's
-wire schema and procedure metadata are declared here and only here — server implementations, callers, and their tests
-change with their own responsibilities. Controllers in `@kobato/server` implement the procedures through the
-`implement*` bases in `packages/server/src/http/orpc-base.ts`, and handlers own no schema or route metadata of their
-own.
+The API SDK: the Zod wire vocabulary (`src/contracts/`), the oRPC procedure metadata (`src/rpc/`) composed from it, and
+the React-free client transport (`src/client/`). An endpoint's wire schema and procedure metadata are declared here and
+only here; controllers in `@kobato/server` implement them through the `implement*` bases in
+`packages/server/src/http/orpc-base.ts` and own no schema or route metadata of their own.
 
 ## Layout
 
-- `src/contracts/` — the wire vocabulary: per-domain Zod schemas + derived DTOs, grouped into three layers mirroring the
-  rpc audiences, plus audience-free generic wire vocabulary in the root `primitives.ts`. `public/` (`content`, `github`,
-  `avatar` — owner of the `avatarFind*` schemas, split out of the comments vocabulary so one module has one owner,
-  `comments` — the comments wire owner: `commentBaseDto`/`commentItemDto`/`ownCommentMutationDto`, the public
-  reply/list/token inputs and outputs, `CommentEntityRef` parse/serialize, `LatestComment`, `Comments`,
-  `DetailPageComments`, `CommentReq`; PII-heavy admin rows keep their server-side model in
-  `@kobato/server/domains/comments/types.ts`, `webmentions` — owner of `WEBMENTION_TYPES` and the public mention DTO,
-  `music` — `publicMusicMetaDto` + `musicGet*`, `images` — the thumbhash probe) serves the anonymous surface; `account/`
-  (`auth` — the sign-in flow wire vocabulary: flow/status/identify unions and the camelCase action inputs, `setup` — the
-  install-flow wire vocabulary: status view, verified/429 verify union, and the permissive install input whose
-  field-error copy stays server-side, `self` — the viewer's own profile/session/login-method/password vocabulary
-  (`LOGIN_METHODS`/`loginMethodSchema`/`LoginMethod`, `newPasswordSchema`, `AccountProfile`, `AccountSessionDto`,
-  `MySessionItem`), `passkey` — the self and sign-in passkey vocabulary, `comments` — the viewer's own-comments
-  vocabulary (the rpc composition reuses the mutation output `ownCommentMutationDto` from `public/comments`), `friends`
-  — the friend-application input, `notifications`, `likes`, `newsletter`) serves the viewer; `admin/` holds the
-  back-office domains (`posts`, `pages`, `users` — reusing `loginMethodSchema` and `AccountSessionDto` from
-  `account/self`, `comments` — reusing `commentBaseDto` from `public/comments`, `music` — `METING_SOURCES` and the
-  library/search schemas, `images`, `friends`, `notifications`, `webmentions` — reusing `WEBMENTION_TYPES` from
-  `public/webmentions`, `analytics`, `settings` envelope, `observability`, `backup`, `content-admin-base`, …). The root
-  `primitives.ts` has no audience: shared Zod scalars and output envelopes, `ErrorMessageDescriptor` / `ErrorIssueWire`
-  / `ApiErrorData` plus `zodIssueParams` (the ONE issue-params extractor), and `mergePatchInput` / `clearable` /
-  `splitMergePatch` for multi-column field-update procedures; the users domain is their production consumer — adopt them
-  for new field-update procedures. Only generic wire vocabulary with no single domain owner belongs here. Dependency
-  direction is one-way: the root module imports no audience layer, `public/` imports only itself and the root,
-  `account/` may also reach `public/`, and `admin/` may reach `public/` and `account/` — vocabulary a second audience
-  needs lives in the lower layer, never duplicated and never shimmed: the old `shared/` layer and separate `api-error` /
-  `merge-patch` modules are gone and carry no re-export compatibility. Zod DTO single source: each wire DTO is declared
-  once as a Zod schema, its TS type derives in the same module (`z.infer`); no hand-written twins. Exception: SSR output
-  schemas use `z.custom<T>()` over loader-data types (`public/content.ts` and the per-domain admin families);
-  `MetaDescriptor` arrives as an erased react-router `import type`. A UI-only helper never lives here, even when pure.
-- `src/rpc/` — one module per RPC domain, grouped by audience: contract procedures declared with
-  `defineProcedure({ method, path })` from `src/rpc/define-procedure.ts` — the oRPC contract procedure plus a type-level
-  method/path brand on `~orpc.route` that the server's implementation-shape check consumes. `defineProcedure` is the
-  ONLY production declaration way: `define-procedure.ts` is the single `oc.route` call site in `src/rpc/`, and the
-  server fails closed on any unbranded contract leaf — a plain `oc.route` procedure satisfies neither `impl.router()`
-  nor the `apiRouter` shape, so it cannot compile into the product tree. Its type parameters are `const`, so a factory
-  building paths from a generic base must type that base as `` `/${TBase}` ``
-  (`revisionContract<const TBase extends string>(basePath: `/${TBase}`)`) — the leading slash stays a literal in the
-  derived path types, the call site still passes `'/admin/posts'`, and TS cannot widen the brand; a plain
-  `` basePath: `/${string}` `` parameter WOULD widen every derived path to `` `/${string}/…` ``. Procedures are composed
-  from `src/contracts/` by reference, never a copy. Anonymous-read eligibility is declared the same way, per procedure:
-  `defineProcedure({ method, path }, { publicRead: true })` writes `publicRead: true` onto `~orpc.meta` through oRPC's
-  own `$meta` chain (never the route compatibility record), preserved by every `.input()`/`.output()` link and pinned at
-  the type level (the shared `RpcProcedureMeta` vs `NoMeta`). The flag is the transport-visible declaration that a
-  procedure may answer with neither cookie nor CSRF header; the server derives its frozen CSRF exemption set from it,
-  while enforcement stays entirely server-side. Eligibility is an explicit opt-in — never inferred from the HTTP method
-  (the RPC transport POSTs reads too) — and `tests/unit/public-read-meta.test.ts` freezes the exact marked key set (the
-  seventeen public reads; token reads, comment mutations, and the whole account/admin surface stay unmarked). A separate
-  `csrfExempt` meta is frozen to the anonymous device beacon, backup download, and two author music media GETs; it never
-  implies anonymous access and never replaces the procedure's role guard. Long-running transport budgets use
-  `requestTimeoutMs`; the server derives its request-timeout overrides from that metadata instead of a parallel path
-  table. `requestBodyLimit` owns per-procedure multipart/JSON caps (including localized error copy), while
-  `installGateExempt` and `telemetryExcluded` drive the server's and browser's exact-path policy sets. All transport
-  metadata options compose on one procedure; canonical-path derivations share `rpc/metadata.ts`. Three groups mirror the
-  contract tree: `rpc/public/` (anonymous consumers: `content`, `comments` — the `commentsPublicContract` +
-  `commentsTokenContract` merge exported as `commentsContract`, `webmentions`, `avatar`, `github`, `images`, `music`,
-  `analytics` — the CSRF-exempt device beacon, and `observability` — the publicRead RUM status), `rpc/account/` (the
-  signed-in viewer: `self` exporting `accountSelfContract`, `auth` exporting `accountAuthContract` — the sign-in flow
-  (`status`/`identify`/`login`/
-  `logout`/`magicLink`/`otpVerify`/`otpResend`/`otpCancel`/`passwordResetRequest`/`passwordReset`) plus `authFinish` in
-  `passkey`, `setup` exporting `accountSetupContract` — the install flow (`status`/`verifyToken`/`install`), `comments`
-  — `commentsAuthedContract` only, `notifications`, `passkey`, `likes`, `friends`, `newsletter`; several of these are
-  anonymous writes with their own guards/rate limits — they live here because they belong to the viewer's surface, not
-  the headless public seam), and `rpc/admin/` (`<domain>.ts` — every admin surface sits on `/admin/<domain>/…`, plus
-  `analytics`, whose declared route paths stay the legacy `/analytics/*`; `rpc/admin/revision.ts` owns the shared
-  revision-contract factory). Composite domains such as `content` mirror the server's nested or merged controller
-  composition.
-- Two URL surfaces, never conflated: (1) the **route method/path metadata** declared in `src/rpc/` — the REST-style
-  compatibility record; its values are deployed historical URLs and must never drift, and no REST surface is mounted
-  from them (the transport speaks oRPC's RPC protocol). (2) the **`/rpc/*` transport URLs** — derived by oRPC's
-  `RPCHandler`/client from the ROUTER TREE KEYS (`apiContract.public.content.home` answers at
-  `/rpc/public/content/home`). Tree keys therefore ARE RPC transport URLs: regrouping the tree moves them. The canonical
-  grouped `/rpc/{public,account,admin}/*` paths are the ONLY transport — every in-repo caller and every headless client
-  uses them; the pre-grouping alias adapter was removed (ADR-0009 §5).
-- `src/public-contract.ts` / `src/account-contract.ts` / `src/admin-contract.ts` — the per-group composition roots
-  (`publicContract`, `accountContract`, `adminContract`). `accountContract` spreads `accountSelfContract` at its root
-  (so `account.profile` etc. keep their historical keys — `/rpc/account/profile` never moved) and mounts the eight
-  sub-trees. Like the top root, they compose domain contracts; they do not declare, forward, or re-export procedures.
-  The account group carries the authentication + install surface on the wire: `account.auth.*` (status/identify/login/
-  logout/magic-link/OTP/password reset), `account.passkey.authBegin`/`authFinish`, and `account.setup.*` (status/
-  verify-token/install/restore) are the single such surface — the React Router signin and setup routes drive them
-  in-process through `createSsrCaller`, and full-tree workspace clients may reach them over `/rpc/account/auth/*` and
-  `/rpc/account/setup/*`; `createKobatoPublicClient` exposes none of them, and ADR-0009 gives them no external stability
-  guarantee. `public.content.bootstrap` still carries the public `currentUser` state for the headless seam.
-- `src/contract.ts` — the composition root (path unchanged: `@kobato/api/contract`), mirroring the server's `apiRouter`
-  nesting exactly (`apiRouter.public.content.home` ⇔ `apiContract.public.content.home`). It composes exactly the three
-  group roots: `apiContract = { public, account, admin }`. Adding or removing a domain requires updating its group root,
-  this tree, and the full server parity test.
-- `src/client/` — the React-free client transport layer. `create-client.ts` exports
-  `createKobatoClient({ url, fetch?, getHeaders? })` returning `ContractRouterClient<typeof apiContract>`: `url` is the
-  FULL RPC URL (`https://host/rpc`), never the site origin — a function is forwarded to the RPC link's dynamic-URL
-  support; `fetch` defaults to delegating `globalThis.fetch(request, init)` (late-bound, receiver-safe); `getHeaders`
-  maps onto the RPC link's `headers` option (plain value, promise, or per-call function). It also exports
-  `createKobatoPublicClient(options)` — the headless public seam: the same options and transport
-  (`createKobatoClient(options).public`), narrowed to `ContractRouterClient<typeof publicContract>` so external
-  consumers call `client.content.*` / `client.comments.*` against the canonical `/rpc/public/*` URLs with no
-  `account`/`admin` surface (a type-level guarantee). The server exempts exactly the `publicRead`-marked procedures from
-  CSRF, so bare reads work with neither cookie nor header; comment writes and the token reads (`getRaw`/`myComments`)
-  still need the same-origin cookie + CSRF pair. The factory stays ambient-free: no singleton, no CSRF store, no
-  `location` or other browser assumption — ambient assembly is the consumer's job (`@kobato/web-client` owns the browser
-  singleton). `error.ts` decodes wire error/response payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey` read
-  the error payload (the latter from an `ORPCError` rejection's `data.descriptor`), while `isApiAccepted` is a
-  RESPONSE-payload guard (`{ accepted: true }`), not an error-object test — keep the two sides distinct when adding
-  helpers. `rpc-serialization.ts` owns standard RPC input/query/multipart encoding and response/error decoding for
-  `sendBeacon` and the backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.
+- `src/contracts/` — per-domain Zod schemas + derived DTOs in three audience layers plus the audience-free root
+  `primitives.ts`: `public/` (`content`, `github`, `avatar`, `comments`, `webmentions`, `music`, `images`) serves the
+  anonymous surface, `account/` (`auth`, `setup`, `self`, `passkey`, `comments`, `friends`, `notifications`, `likes`,
+  `newsletter`) the viewer, `admin/` the back-office domains (`posts`, `pages`, `users`, `comments`, `music`, `images`,
+  `friends`, `notifications`, `webmentions`, `analytics`, the `settings` envelope, `observability`, `backup`,
+  `content-admin-base`, …).
+  - Dependency direction is one-way: the root imports no audience layer, `public/` only itself and the root, `account/`
+    may also reach `public/`, and `admin/` may reach `public/` and `account/`. Vocabulary a second audience needs lives
+    in the lower layer — never duplicated, never shimmed through re-exports.
+  - Root `primitives.ts` holds only generic wire vocabulary with no single domain owner: shared Zod scalars, output
+    envelopes, `ErrorMessageDescriptor` / `ErrorIssueWire` / `ApiErrorData`, `zodIssueParams` (the ONE issue-params
+    extractor), and `mergePatchInput` / `clearable` / `splitMergePatch` for multi-column field-update procedures.
+  - Each wire DTO is declared once as a Zod schema with its TS type derived in the same module (`z.infer`) — no
+    hand-written twins. Exceptions: SSR output schemas use `z.custom<T>()` over loader-data types, and `MetaDescriptor`
+    arrives as an erased `import type`.
+  - PII-heavy admin rows keep their server-side model in `@kobato/server/domains/comments/types.ts`. A UI-only helper
+    never lives here, even when pure.
+- `src/rpc/` — one module per RPC domain, grouped by audience (`public/`, `account/`, `admin/`) and mirroring the
+  contract tree; `rpc/admin/revision.ts` owns the shared revision-contract factory.
+  - Procedures are declared only with `defineProcedure({ method, path })` — `define-procedure.ts` is the single
+    `oc.route` call site — and compose `src/contracts/` by reference, never a copy. `defineProcedure` brands
+    `~orpc.route` with the method/path literals the server's implementation-shape check consumes; a plain `oc.route`
+    procedure fails closed and cannot compile into the product tree.
+  - Its type parameters are `const`: a factory building paths from a generic base must type that base as
+    `` `/${TBase}` `` (`revisionContract<const TBase extends string>(basePath: `/${TBase}`)`); a plain
+    `` `/${string}` `` parameter widens every derived path to `` `/${string}/…` ``.
+  - `{ publicRead: true }` is the per-procedure anonymous-read declaration: it writes `publicRead: true` onto
+    `~orpc.meta` through oRPC's `$meta` chain (never the route record), survives every `.input()`/`.output()` link, and
+    is pinned at the type level (`RpcProcedureMeta` vs `NoMeta`). Eligibility is an explicit opt-in, never inferred from
+    the HTTP method; `tests/unit/public-read-meta.test.ts` freezes the exact marked key set (seventeen public reads;
+    token reads, comment mutations, and the account/admin surface stay unmarked). A separate `csrfExempt` meta is frozen
+    to the anonymous device beacon, the backup download, and the two author music media GETs; it never implies anonymous
+    access and never replaces the role guard.
+  - `requestTimeoutMs`, `requestBodyLimit`, `installGateExempt`, and `telemetryExcluded` compose on one procedure, and
+    canonical-path derivations share `rpc/metadata.ts`; the server derives its timeout overrides, body caps, and
+    install-gate/telemetry policy sets from this metadata instead of parallel path tables.
+- Two URL surfaces, never conflated: the **route method/path metadata** is a REST-style compatibility record of deployed
+  historical URLs — it must never drift and no REST surface is mounted from it. The **`/rpc/*` transport URLs** derive
+  from the ROUTER TREE KEYS (`apiContract.public.content.home` answers at `/rpc/public/content/home`), so tree keys ARE
+  RPC transport URLs and the canonical grouped `/rpc/{public,account,admin}/*` paths are the ONLY transport.
+- `src/{public,account,admin}-contract.ts` — the per-group composition roots; they compose domain contracts and never
+  declare, forward, or re-export procedures. `accountContract` spreads `accountSelfContract` at its root, so
+  `account.profile` etc. keep their historical keys. The account group carries the authentication + install surface on
+  the wire (`account.auth.*`, `account.passkey.authBegin`/`authFinish`, `account.setup.*`): the React Router signin and
+  setup routes drive it in-process through `createSsrCaller`; `createKobatoPublicClient` exposes none of it, and
+  ADR-0009 gives it no external stability guarantee. `public.content.bootstrap` carries the public `currentUser` state
+  for the headless seam.
+- `src/contract.ts` — the composition root (`@kobato/api/contract`): `apiContract = { public, account, admin }`,
+  mirroring the server's `apiRouter` nesting exactly. Adding or removing a domain means updating its group root, this
+  tree, and the full server parity test.
+- `src/client/` — the React-free transport. `createKobatoClient({ url, fetch?, getHeaders? })` returns
+  `ContractRouterClient<typeof apiContract>`: `url` is the FULL RPC URL (`https://host/rpc`), never the site origin (a
+  function is forwarded to the RPC link's dynamic-URL support); `fetch` defaults to delegating
+  `globalThis.fetch(request, init)`; `getHeaders` maps onto the RPC link's `headers` option. `createKobatoPublicClient`
+  is the headless public seam — the same transport narrowed to `ContractRouterClient<typeof publicContract>`, a
+  type-level guarantee that external consumers reach only `/rpc/public/*` (`publicRead` reads work with neither cookie
+  nor CSRF header; comment writes and the token reads still need both). The factory is ambient-free — no singleton, no
+  CSRF store, no `location`; ambient assembly is the consumer's job (`@kobato/web-client` owns the browser singleton).
+  `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey` read the ERROR payload, while
+  `isApiAccepted` is a RESPONSE-payload guard (`{ accepted: true }`) — keep the two sides distinct.
+  `rpc-serialization.ts` owns RPC input/query/multipart encoding and response/error decoding for `sendBeacon` and the
+  backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.
 
 ## Rules
 
-- Allowed deps: `@orpc/contract` (rpc + client layers), `@orpc/client` (client layer only), plus the eight shared leaves
-  `auth`, `catalog`, `settings`, `i18n`, `utils`, inkling `/headless`, `assets`, `cache`. `src/contracts/` imports no
-  `@orpc/*` package and never imports `src/rpc/` or `src/client/` — schema-only consumers stay free of the RPC runtime
-  (`apps/kobato/tests/arch/shared-react-free.test.ts`).
-- Runtime-isomorphic and React-free (same rules as the shared umbrella): safe in both bundles, no node/DOM-only APIs, no
-  logger — validation behavior belongs to whatever runtime executes the contract. The client layer uses only the
-  isomorphic web platform (`fetch`/`Request`/`Response`/`Headers`), never `location` or other browser-only globals and
-  never ambient mutable state (no singleton, no token store); `globalThis.fetch` appears only as the default fetch
-  adapter — resolved at call time and replaceable through the `fetch` option.
-- No barrel `index.ts`, no `export { X } from 'y'` re-exports — consumers import `@kobato/api/<module>.ts` straight from
-  the source file.
-- Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side — a contract carries only
-  transport-visible metadata, never behavior. `publicRead` declares anonymous-read eligibility; `csrfExempt` is the
-  separate, frozen escape hatch for legacy transports that cannot send CSRF headers. Both are enforced server-side.
-- Tests: `tests/unit/` (`api-unit`) — contract shape pins: key sets, route method/path values, schema-object identity
-  against `@kobato/api/contracts`, input/output parse behavior, split by group (`public-contracts`, `account-contracts`,
-  `admin`, `contract` composition); `define-procedure.test.ts` pins the `defineProcedure` factory (runtime route/schema
-  identity plus the method/path literal and schema types, positive and negative), and `public-read-meta.test.ts` freezes
-  the exact `publicRead`-marked key set with positive and negative type pins. `tests/unit/client/` pins the transport
-  factory wiring (URL/fetch/headers pass-through, default fetch delegation), the real-transport public seam
-  (`public-client.test.ts`: canonical `/rpc/public/*` proxy URL, custom fetch, getHeaders), and the wire error decoding
-  branches. `contract.test.ts` pins the three-group composition; the server-side full-tree parity test compares every
-  implemented procedure against this package, and `apps/kobato/tests/arch/public-api-contract.test.ts` pins the public
-  seam's exact surface. `tests/utils/catalog.ts` is the workspace-canonical content and DTO fixture; other packages'
-  test trees import it through the sanctioned cross-package helper seam.
+- Allowed deps: `@orpc/contract` (rpc + client), `@orpc/client` (client only), and the shared leaves `auth`, `catalog`,
+  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`, `cache`. `src/contracts/` imports no `@orpc/*` package and
+  never imports `src/rpc/` or `src/client/` (`apps/kobato/tests/arch/shared-react-free.test.ts`).
+- Runtime-isomorphic and React-free: no node/DOM-only APIs, no logger. The client layer uses only the isomorphic web
+  platform — never browser-only globals or ambient mutable state; `globalThis.fetch` is only the default fetch adapter.
+- No barrel `index.ts`, no `export { X } from 'y'` re-exports; consumers import `@kobato/api/<module>.ts`.
+- Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side: a contract carries only transport-visible
+  metadata, never behavior.
+- Tests: `tests/unit/` (`api-unit`) pins contract shapes (key sets, route method/path values, schema identity against
+  the contracts, parse behavior, per group), the `defineProcedure` factory (`define-procedure.test.ts`), and the frozen
+  `publicRead` key set; `tests/unit/client/` pins the transport factory, the real-transport public seam
+  (`public-client.test.ts`), and wire error decoding. The server-side full-tree parity test and
+  `apps/kobato/tests/arch/public-api-contract.test.ts` pin the surfaces. `tests/utils/catalog.ts` is the
+  workspace-canonical content and DTO fixture.

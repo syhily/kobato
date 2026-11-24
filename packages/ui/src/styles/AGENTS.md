@@ -1,7 +1,9 @@
 # UI style conventions
 
 `packages/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and `@source`
-graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-admin`.
+graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-admin`
+(`packages/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and additional
+product styles here).
 
 ## Generic styles
 
@@ -9,10 +11,10 @@ graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-
   The kobato app imports it once per document, eagerly from `apps/kobato/src/root.tsx` — route-level re-imports are
   forbidden; other consumers import it directly.
 - `dark-variant.css` — the single `dark` variant (`.dark` class, or `prefers-color-scheme` when unset); import it
-  unlayered before any utility compile. Single-owned — partials composed into app surfaces must not re-declare it
-  (pinned by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts`).
+  unlayered before any utility compile. Partials composed into app surfaces must not re-declare it
+  (`apps/kobato/tests/arch/tailwind-source-ownership.test.ts`).
 - `base-defaults.css` — the base-layer border default every Tailwind compile must emit after its own preflight; surface
-  entries import it non-reference; the compile-contract suite pins the ordering.
+  entries import it non-reference (the compile-contract suite pins the ordering).
 - `tailwind.css` — the shared token partial, not a standalone entry: tokens (`:root` / `.dark` / P3), the
   `@theme inline` bridge, the `sidebar` variant, Shiki colors, the theme-wipe transition. No `@import 'tailwindcss'`, no
   product `@source`.
@@ -21,8 +23,9 @@ graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-
 
 ## Design tokens
 
-- Every custom property behind a utility must be declared in `@theme inline` in `tailwind.css` AND registered in
-  `packages/ui/src/lib/cn.ts` (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
+- Every custom property behind a utility is declared in `@theme inline` in `tailwind.css` AND registered in
+  `packages/ui/src/lib/cn.ts`, which extends every project token namespace so custom `--text-*` / `--color-*` /
+  `--shadow-*` tokens land in the correct merge group (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
 - No arbitrary-value syntax for design-system or size tokens — declare a named token and its merge group instead.
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark` rebind handles the switch. Adjacent dark surface tiers stay
   3–8 L apart; no `--line-*` token shares a value with a `--surface-*` token.
@@ -41,6 +44,3 @@ graphs belong to the consuming app; Inkling host chrome belongs to `@kobato/web-
 
 `shadow-card` (public content cards), `shadow-raised` (admin cards/stat tiles), `shadow-popover` (menus), `shadow-modal`
 (dialogs/sheets). Do not mix card and raised silhouettes in one view.
-
-`packages/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and additional
-product styles in this directory.

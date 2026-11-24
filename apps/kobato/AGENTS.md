@@ -7,11 +7,11 @@ product code and owns nothing reusable: UI in `@kobato/web-*`/`@kobato/ui`, back
 - `src/root.tsx`, `src/routes.ts`, `src/entry.server.tsx`, `src/server.ts` — the framework entry set (`server.ts` is
   resolved by `@kobato/server/infra/hono/dev.ts`); `src/zod-config.ts` must be imported first, before any schema
   evaluates.
-- `src/routes/` — four surface trees (`public/`, `auth/`, `admin/`, `editor/`), documented in `src/routes/AGENTS.md`.
-  Route modules wire loader/action data to controllers and render; no business logic, no DB imports.
+- `src/routes/` — four surface trees (`public/`, `auth/`, `admin/`, `editor/`); see `src/routes/AGENTS.md`. Route
+  modules wire loader/action data to controllers and render; no business logic, no DB imports.
 - `src/seo/` — the typed route-meta factory over `@kobato/catalog/seo` builders (app-owned because it feeds the `meta`
   route export).
 - `src/styles/` — app-owned Tailwind entries; see `src/styles/AGENTS.md`.
 - `tests/` — `arch/`, `unit/`, `it/`, `snaps/`, `browser/`, `e2e/`; see `tests/AGENTS.md`.
-- Imports are absolute: `@/...` app source, `@tests/...` app test helpers, `@kobato/<package>/...` product code. No
-  relative specifiers outside the documented exceptions (root `AGENTS.md` → Import conventions).
+- Imports: `@/...` app source, `@tests/...` app test helpers, `@kobato/<package>/...` product code. No relative
+  specifiers outside the documented exceptions (root `AGENTS.md`).

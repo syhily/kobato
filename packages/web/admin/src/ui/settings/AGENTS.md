@@ -5,8 +5,9 @@
 Cross-section framework files stay at the root (`SettingsSection`, `SettingsHintTooltip`, `display`, `feature-flags`,
 `useSettingsMutation`, `use-locale-switch`, `gravatar-mirror-presets`). Every multi-card section owns a subdirectory
 (entry form, one file per card, kebab-case `model.ts`/`form-schema.ts`); a section stays at the root only while
-genuinely single-card. Do not flatten cards back into the root. `shell/SettingsWorkspace.tsx` owns the section
-registry + workspace shell; a route module only passes `bundle` / `timeZones` / `masks` / `onClose`.
+genuinely single-card — do not flatten cards back into the root. `shell/SettingsWorkspace.tsx` owns the section registry
+
+- workspace shell; a route module only passes `bundle` / `timeZones` / `masks` / `onClose`.
 
 ## Save triggers
 
@@ -24,12 +25,12 @@ submitted, never to the response.
 
 - A failing whole-card commit KEEPS the dirty input and its error on screen; failures are never silent (toast + RHF
   field errors).
-- A rejected field-scoped `save(field)` rolls THAT control back to its committed baseline. An edit made in flight wins.
+- A rejected field-scoped `save(field)` rolls THAT control back to its committed baseline; an edit made in flight wins.
 - `SettingsSelect` / `SettingsCombobox` await an upstream `onValueChange` guard before `save(name)`; a veto returns
   `SETTINGS_SKIP_COMMIT` (`{ commit: false }`, `shell/settings-change-verdict.ts`).
 - `commitWhole` diffs against `lastCommitted`: an empty diff POSTs nothing but still advances the baseline; on success
   the baseline advances to the CAPTURED submitted raw values, so input typed during the round trip stays dirty; a
-  rejected/validation-failed commit leaves form and baseline untouched.
+  rejected or validation-failed commit leaves form and baseline untouched.
 
 ## Locale switch
 
@@ -39,24 +40,24 @@ The General language selector is the sole transactional save, owned by `useLocal
 2. The locale field commits via `save('locale')` only; `broadcast(locale)` announces it to peer tabs.
 3. One `window.location.reload()` after the commit — never from an ordinary flush or `onSaved`.
 
-A failed commit rolls the select back; while a transaction runs the select is `disabled`/`aria-busy`, re-entry ignored,
-and `SettingsPanel` applies `inert` + `aria-busy` to the ENTIRE workspace (`SettingsFlushProvider.runTransaction`,
-`isTransactionPending`). The switch passes the `SelectTrigger` ref as focus anchor. Running a transaction without the
-provider executes but warns; card-level tests are the only sanctioned no-provider use.
+A failed commit rolls the select back. While a transaction runs the select is `disabled`/`aria-busy`, re-entry is
+ignored, and `SettingsPanel` applies `inert` + `aria-busy` to the ENTIRE workspace
+(`SettingsFlushProvider.runTransaction`, `isTransactionPending`). The switch passes the `SelectTrigger` ref as focus
+anchor. Without the provider a transaction executes but warns; card-level tests are the only sanctioned no-provider use.
 
 ## Cross-tab locale sync
 
 Settings-side half only — the root loop lives in the public leaf (`ui/lib/LocaleSyncProvider`, mounted by
-`apps/kobato/src/root.tsx`); the cards use `useLocaleSyncPublish()`. Pinned by `general-locale-sync.test.tsx` and
-`locale-sync-provider.test.tsx`.
+`apps/kobato/src/root.tsx`); cards use `useLocaleSyncPublish()` (pinned by `general-locale-sync.test.tsx`,
+`locale-sync-provider.test.tsx`).
 
 - Sender — publishes once after the server acknowledged the locale, immediately before this tab's single reload; the
-  bootstrap `revision` rides as the dedupe token.
+  bootstrap `revision` is the dedupe token.
 - Receiver — runs the SAME transaction shape as a local switch, then one automatic `reload()` only after the flush
-  succeeded. It NEVER commits the locale and never re-publishes.
+  succeeded; it never commits the locale and never re-publishes.
 - Failure/ignored — a validation failure or rejected commit skips the reload, keeps the dirty input, clears `inert`,
   offers Retry + explicit Reload. An announcement is ignored when the locale is already loaded, its `revision` was
-  consumed, a notice is open, a transaction or sync is running. Without `BroadcastChannel` publish/subscribe are no-ops;
+  consumed, a notice is open, or a transaction/sync is running. Without `BroadcastChannel` publish/subscribe are no-ops;
   the sender still reloads once.
 
 ## Adding a settings card
@@ -67,7 +68,7 @@ Settings-side half only — the root loop lives in the public leaf (`ui/lib/Loca
 3. Switch/select/combobox render through the `shell/` wrappers with `save={save}` — never hand-roll `onValueChange`.
 4. List buttons MUST NOT call `save()`.
 5. Each card POSTs a SPARSE Section patch (`sparseDiff(fromState(lastCommitted), fromState(submitted))`) — cards share
-   their section with siblings and other tabs. The server deep-merges via
+   their section with siblings and other tabs; the server deep-merges via
    `packages/server/src/domains/settings/services/merge-section-patch.ts`. `useSettingsCard` re-seeds the form only when
    clean and `toState(source)` differs.
 

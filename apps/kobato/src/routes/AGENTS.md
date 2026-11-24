@@ -23,14 +23,14 @@ Four nested trees, each with its own `routes/<tree>/layout.tsx`:
 
 ## File naming
 
-Neither `_index.tsx` nor `($slug).tsx` is used: `routes.ts` is the manifest, files are named by **role** —
+Neither `_index.tsx` nor `($slug).tsx` is used: `routes.ts` is the manifest and files are named by **role** —
 `<area>/layout.tsx` (chrome, error boundary, revalidation), `<entity>/detail.tsx`, `<entity>/list.tsx`,
 `<entity>/index.tsx` (bare-prefix admin page), `<entity>/new.tsx` (+ `edit.tsx`), `<area>/<role>.tsx`. Adding a route:
 pick the area directory, choose a role filename, add the manifest entry — never a new pattern.
 
 ## Patterns
 
-- `loader` for render-time data, `action` for form submissions; `redirect`, `data`, `Response`, thrown responses for
+- `loader` for render-time data, `action` for form submissions; `redirect`, `data`, `Response`, and thrown responses for
   control flow.
 - All SSR data goes through oRPC. Loaders stay one-liners: `unwrapListing` / `unwrapListingPayload` / `unwrapDetail` map
   the output union to the URL contract (`redirect` → thrown 301/302, `not-modified` → thrown 304,
@@ -42,19 +42,18 @@ pick the area directory, choose a role filename, add the manifest entry — neve
   navigation and every form action. Root middleware `[traceRouteMiddleware]` stays in the root module.
 - The root loader projects `activeFrontendRum()` as `rum`; withheld responses omit the key entirely (no null
   placeholder, endpoint, or token). `App` mounts `useRum(loaderData.rum ?? null)` once.
-- Admin/editor loaders compose `account.*` (self keys at the root plus the `account.comments` / `account.notifications`
-  / … sub-trees), `admin.analytics.*`, and `admin.*` via `createSsrCaller`; they keep `requireRole`, map `ORPCError`
-  codes (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts). Gate-only loaders collapse to
-  `guardOnlyLoader('<role>')`.
+- Admin/editor loaders compose `account.*` (self keys at the root plus sub-trees), `admin.analytics.*`, and `admin.*`
+  via `createSsrCaller`; they keep `requireRole` and map `ORPCError` codes (`NOT_FOUND` → `notFound()`,
+  `SERVICE_UNAVAILABLE` → the historical 503 texts). Gate-only loaders collapse to `guardOnlyLoader('<role>')`.
 - `auth/signin` and `auth/setup` are oRPC end to end. The signin loader (after `ensureInstalledOrRedirect`) calls
   `account.auth.status`; the setup loader (after `ensureNoAdminOrRedirect`, the 303 install gate) calls
   `account.setup.status`. Both actions keep `validateCsrfForAction` + their install gate, then dispatch the parsed form
   fields to `account.auth.*` / `account.passkey.authFinish` / `account.setup.*` through `createSsrCaller` — never the
-  auth domain services directly. Flow cookies come back on the caller's `responseHeaders` (merged into `redirect`/
-  `data` via the shared `auth/flow-response.ts` adapters), every `redirectTo` is re-sanitized inside the controller, and
-  setup's verify 429 rides the wire error variant. Setup keeps the historical visible-error priority: the session gate
-  answers before CSRF; the setup-token liveness check stays in the controller.
-- Boundaries whitelists — public+root: `ssr-caller`, `route-cache-headers`, `infra/http/*` (+ `render/warmup/*`,
+  auth domain services directly. Flow cookies return on the caller's `responseHeaders` (merged into `redirect`/`data` by
+  the shared `auth/flow-response.ts` adapters), every `redirectTo` is re-sanitized inside the controller, and setup's
+  verify 429 rides the wire error variant. Setup keeps the visible-error priority: the session gate answers before CSRF;
+  the setup-token liveness check stays in the controller.
+- Server-boundary whitelists — public+root: `ssr-caller`, `route-cache-headers`, `infra/http/*` (+ `render/warmup/*`,
   `infra/trace/react-router`, `infra/trace/config`); admin/editor: `ssr-caller`, `request-context`, `domains/auth/rbac`,
   `infra/http/*`; auth (direct): `domains/auth/csrf`, `domains/auth/services/shared` (message formatting only),
   `domains/settings/install-gate`, `http/request-context`, `http/ssr-caller`.
@@ -69,24 +68,24 @@ pick the area directory, choose a role filename, add the manifest entry — neve
 
 - `routes/public/page/detail.tsx` paints the admin-only badge via `PageDetailBody`'s `draftMarker`:
   `'draft' | 'unpublished-draft' | 'published-draft' | null`.
-- Catalog miss → anonymous 404, admin sees latest draft; catalog hit + `?draft=true` → anonymous ignores, admin sees the
-  newer-draft or published-draft marker. Access rule on the entity descriptor (`canPreviewDraft(viewer, meta)`): pages
-  admin-only, posts author+ AND `authorId`.
+- Catalog miss → anonymous 404, admin sees the latest draft; catalog hit + `?draft=true` → anonymous ignores, admin sees
+  the newer-draft or published-draft marker. Access rule on the entity descriptor (`canPreviewDraft(viewer, meta)`):
+  pages admin-only, posts author+ AND `authorId`.
 
 ## Manifest anchors
 
-- **A. Public layout** — pathless layout wrapping every public URL; owns `<BaseLayout>` and the layout-level
+- **Public layout** — pathless layout wrapping every public URL; owns `<BaseLayout>` and the layout-level
   `import '@/styles/public.css'` (styled first paint — never lazy-load it from a child route). Route modules never
   import `cards.css`, web partials, or `ui.css` directly. Admin/login/install routes import `@/styles/admin.css`.
-- **B. Splat catch-all** — `route('*', 'routes/public/not-found.tsx')` MUST stay last inside `public/layout.tsx`;
+- **Splat catch-all** — `route('*', 'routes/public/not-found.tsx')` MUST stay last inside `public/layout.tsx`;
   single-segment `.php` / `cgi-bin` probes hit `:slug` first and are intercepted in `page/detail.tsx` (wp-decoy helper).
-- **C. Resource and API routes** — resource routes sit outside `public/layout.tsx` and return a `Response`; internal API
+- **Resource and API routes** — resource routes sit outside `public/layout.tsx` and return a `Response`; internal API
   endpoints are Hono oRPC procedures, so the manifest holds page routes only.
-- **D. Feed URLs** — six URLs from `feedRouter`, mounted at the root, none in `routes.ts`: `/feed`, `/feed/atom`;
+- **Feed URLs** — six URLs from `feedRouter`, mounted at the root, none in `routes.ts`: `/feed`, `/feed/atom`;
   `/cats/:slug/feed(+/atom)`; `/tags/:slug/feed(+/atom)`. Handlers pin their taxonomy scope at compile time and cache
-  through the `feed` bucket keyed `cat:<slug>` / `tag:<slug>` / `all`. New scope → new `.get()` pair stating its scope
-  inline.
-- **F. Auth split-screen layout** — shared by login and install, independent of the admin SPA shell.
-- **G. admin SPA shell** — own chrome, opts out of `BaseLayout` via `handle.layout = 'admin'`.
-- **H. Settings sub-layout** — hydrates the full `BlogSettingsBundle` once, exposes `{ bundle, timeZones, masks }` via
+  through the `feed` bucket keyed `cat:<slug>` / `tag:<slug>` / `all`. A new scope is a new `.get()` pair stating its
+  scope inline.
+- **Auth split-screen layout** — shared by login and install, independent of the admin SPA shell.
+- **admin SPA shell** — own chrome, opts out of `BaseLayout` via `handle.layout = 'admin'`.
+- **Settings sub-layout** — hydrates the full `BlogSettingsBundle` once and exposes `{ bundle, timeZones, masks }` via
   `useOutletContext()`.
