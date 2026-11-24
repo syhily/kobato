@@ -71,7 +71,17 @@ struct Metrics {
     mean_jump_bytes: f64,
     mean_jump_chunks: f64,
     page_count: usize,
+    buckets: Vec<SizeBucket>,
 }
+
+struct SizeBucket {
+    from: usize,
+    pages: usize,
+    mean_bytes: f64,
+    mean_chunks: f64,
+}
+
+const SIZE_BUCKETS: [usize; 6] = [0, 300, 400, 500, 700, usize::MAX];
 
 static FIXTURE_RUN: OnceLock<SliceRun> = OnceLock::new();
 static SERIAL: Mutex<()> = Mutex::new(());
@@ -92,6 +102,10 @@ fn split(input: &[u8]) -> Vec<(String, Vec<u8>)> {
     files.into_inner()
 }
 
+fn slice(input: &[u8]) -> SliceRun {
+    to_run(split(input))
+}
+
 fn to_run(files: Vec<(String, Vec<u8>)>) -> SliceRun {
     let css = files
         .iter()
@@ -99,18 +113,25 @@ fn to_run(files: Vec<(String, Vec<u8>)>) -> SliceRun {
         .map(|(_, data)| String::from_utf8(data.clone()).expect("result.css is utf8"))
         .expect("result.css is emitted");
     let bytes_by_name: HashMap<&str, usize> = files.iter().map(|(name, data)| (name.as_str(), data.len())).collect();
+    run_from_css(&css, |name| bytes_by_name[name])
+}
 
+fn load_package(dir: &Path) -> SliceRun {
+    let css = std::fs::read_to_string(dir.join("result.css")).expect("read result.css");
+    run_from_css(&css, |name| {
+        usize::try_from(std::fs::metadata(dir.join(name)).unwrap_or_else(|_| panic!("{name} exists")).len())
+            .expect("chunk size")
+    })
+}
+
+fn run_from_css(css: &str, bytes_of: impl Fn(&str) -> usize) -> SliceRun {
     let mut chunks = vec![];
-    for (file_name, ranges) in parse_css(&css) {
-        let bytes = *bytes_by_name.get(file_name.as_str()).unwrap_or_else(|| panic!("{file_name} exists"));
+    for (file_name, ranges) in parse_css(css) {
+        let bytes = bytes_of(&file_name);
         chunks.push((ranges.into_iter().collect(), bytes));
     }
     let total_bytes = chunks.iter().map(|(_, bytes)| bytes).sum();
     SliceRun { total_bytes, css_bytes: css.len(), chunks }
-}
-
-fn slice(input: &[u8]) -> SliceRun {
-    to_run(split(input))
 }
 
 fn parse_css(css: &str) -> Vec<(String, Vec<u32>)> {
@@ -222,7 +243,25 @@ fn measure(run: &SliceRun, pages: &[BTreeSet<u32>]) -> Metrics {
         }
     }
 
+    let buckets = SIZE_BUCKETS
+        .windows(2)
+        .map(|w| {
+            let (bytes, chunks) = page_bytes
+                .iter()
+                .zip(&page_chunks)
+                .zip(pages)
+                .filter(|(_, page)| (w[0]..w[1]).contains(&page.len()))
+                .fold((Vec::new(), Vec::new()), |(mut acc_bytes, mut acc_chunks), ((bytes, chunks), _)| {
+                    acc_bytes.push(*bytes);
+                    acc_chunks.push(*chunks);
+                    (acc_bytes, acc_chunks)
+                });
+            SizeBucket { from: w[0], pages: bytes.len(), mean_bytes: mean(&bytes), mean_chunks: mean(&chunks) }
+        })
+        .collect();
+
     Metrics {
+        buckets,
         mean_bytes_per_page: mean(&page_bytes),
         p90_bytes_per_page: p90(&page_bytes),
         mean_chunks_per_page: mean(&page_chunks),
@@ -257,6 +296,23 @@ fn report(label: &str, run: &SliceRun, metrics: &Metrics) {
         metrics.mean_jump_chunks,
         metrics.page_count,
     );
+    let kb = |bytes: f64| bytes / 1024.0;
+    let buckets = metrics
+        .buckets
+        .iter()
+        .filter(|b| b.pages > 0)
+        .map(|b| {
+            let upper = SIZE_BUCKETS.iter().find(|&&from| from > b.from).copied().unwrap_or(usize::MAX);
+            let range = match (b.from, upper) {
+                (0, to) => format!("<{to}"),
+                (_, usize::MAX) => format!("{}+", b.from),
+                (_, to) => format!("{}-{}", b.from, to - 1),
+            };
+            format!("{range}: {:.0} KB / {:.1} req ({} pages)", kb(b.mean_bytes), b.mean_chunks, b.pages)
+        })
+        .collect::<Vec<_>>()
+        .join(" | ");
+    println!("page-cost by size [{label}]: {buckets}");
 }
 
 fn production_font_path() -> PathBuf {
@@ -318,12 +374,24 @@ fn page_cost_baseline_is_pinned() {
 fn page_cost_font_report() {
     let _serial = serial();
     let path = production_font_path();
-    let Ok(input) = std::fs::read(&path) else {
-        println!("page-cost font report skipped: {} not found (set FONT_SPLIT_BENCH_FONT)", path.display());
-        return;
+    let run = match std::env::var_os("FONT_SPLIT_BENCH_PACKAGE") {
+        Some(dir) => {
+            let run = load_package(Path::new(&dir));
+            if let Ok(input) = std::fs::read(&path) {
+                assert_covered_exactly_once(&input, &run);
+            }
+            run
+        }
+        None => {
+            let Ok(input) = std::fs::read(&path) else {
+                println!("page-cost font report skipped: {} not found (set FONT_SPLIT_BENCH_FONT)", path.display());
+                return;
+            };
+            let run = slice(&input);
+            assert_covered_exactly_once(&input, &run);
+            run
+        }
     };
-    let run = slice(&input);
-    assert_covered_exactly_once(&input, &run);
     for (label, fixture) in CORPORA {
         report(label, &run, &measure(&run, &load_pages(fixture)));
     }

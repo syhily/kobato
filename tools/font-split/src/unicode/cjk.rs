@@ -41,7 +41,7 @@ pub fn char_touch_probability(cp: u32) -> f64 {
     (df as f64 / cjk_tables::FREQ_CORPUS_DOCS as f64).min(1.0)
 }
 
-pub const ALGORITHM_SCHEMA: u32 = 1;
+pub const ALGORITHM_SCHEMA: u32 = 2;
 
 pub fn algorithm_fingerprint() -> &'static str {
     use std::fmt::Write as _;
@@ -49,12 +49,13 @@ pub fn algorithm_fingerprint() -> &'static str {
         let mut material = String::new();
         let _ = write!(
             material,
-            "schema={ALGORITHM_SCHEMA};docs={};lambda={};mu={};woff2q={};cap={};",
+            "schema={ALGORITHM_SCHEMA};docs={};lambda={};mu={};woff2q={};cap={};deps={};",
             cjk_tables::FREQ_CORPUS_DOCS,
             crate::pre_subset::auto_chunk::DP_LAMBDA_BYTES,
             crate::pre_subset::auto_chunk::DP_MU_BYTES,
             crate::run_subset::WOFF2_QUALITY,
             crate::pre_subset::DEFAULT_PREDICT_BYTES_PER_SUBSET,
+            env!("OUTPUT_DEP_VERSIONS"),
         );
         for (chars, dfs) in [
             (cjk_tables::ZH_TGH_L1, cjk_tables::ZH_TGH_L1_DF),

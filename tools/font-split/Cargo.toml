@@ -43,3 +43,5 @@ woff = "0.6.4"
 
 [profile.release]
 lto = true
+codegen-units = 1
+strip = "symbols"

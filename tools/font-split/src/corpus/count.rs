@@ -46,7 +46,7 @@ fn distinct_chars(text: &str) -> Vec<u32> {
 
 fn process_page(state: &mut WorkerState, page: RawPage) -> Outcome {
     let seen = PAGES_SEEN.fetch_add(1, Ordering::Relaxed) + 1;
-    if seen % 200_000 == 0 {
+    if seen.is_multiple_of(200_000) {
         eprintln!("  …{seen} pages streamed");
     }
     let mut outcome = Outcome::default();

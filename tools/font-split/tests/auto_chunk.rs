@@ -35,8 +35,8 @@ fn dp_split_never_exceeds_the_byte_cap() {
 fn dp_split_separates_hot_head_from_cold_tail() {
     let s = seq(150);
     let mut p = vec![1e-7; 150];
-    for i in 0..10 {
-        p[i] = 0.5;
+    for p in &mut p[..10] {
+        *p = 0.5;
     }
     let chunks = dp_split_by_prob(&s, &p, 500, 75_000);
     assert_eq!(lengths(&chunks), vec![10, 140]);

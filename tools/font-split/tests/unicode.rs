@@ -17,6 +17,15 @@ fn fingerprint_is_stable_and_short() {
 }
 
 #[test]
+fn fingerprint_material_names_the_output_dependencies() {
+    let deps = env!("OUTPUT_DEP_VERSIONS");
+    for name in ["harfbuzz_rs_now", "woff"] {
+        let version = deps.split(',').find_map(|dep| dep.strip_prefix(&format!("{name}="))).expect(name);
+        assert_ne!(version, "unknown");
+    }
+}
+
+#[test]
 fn table_sizes() {
     assert_eq!(ZH_SC_1.len(), 3500);
     assert_eq!(ZH_SC_2.len(), 3000);

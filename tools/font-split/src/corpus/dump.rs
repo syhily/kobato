@@ -70,12 +70,12 @@ impl Iterator for PageIter {
 
     fn next(&mut self) -> Option<RawPage> {
         loop {
-            if let Some(open) = find_subslice(&self.buf, b"<page>", 0) {
-                if let Some(close) = find_subslice(&self.buf, b"</page>", open) {
-                    let blob = self.buf[open..close + b"</page>".len()].to_vec();
-                    self.buf.drain(..close + b"</page>".len());
-                    return Some(parse_page(&blob));
-                }
+            if let Some(open) = find_subslice(&self.buf, b"<page>", 0)
+                && let Some(close) = find_subslice(&self.buf, b"</page>", open)
+            {
+                let blob = self.buf[open..close + b"</page>".len()].to_vec();
+                self.buf.drain(..close + b"</page>".len());
+                return Some(parse_page(&blob));
             }
             if self.eof {
                 return None;

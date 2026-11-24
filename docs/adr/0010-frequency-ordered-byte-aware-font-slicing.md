@@ -134,10 +134,10 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
    glyph must ship in the same face as its base character).
 5. **Algorithm-fingerprinted output identity** (from cjk-font-split-native) — implemented: `algorithm_fingerprint()` in
    `unicode/cjk.rs` = md5(schema version, corpus doc count, DP λ/μ, WOFF2 quality, default byte cap, all table
-   contents + DF arrays)[:12], exposed to the server as `fontSplitAlgorithmVersion()`. Sliced packages store at
-   `fonts/<hash>/<fingerprint>/`; upload re-slices when the stored row's `cssKey` predates the current fingerprint and
-   removes the stale package best-effort. Font source bytes are not stored, so an already-uploaded font keeps serving
-   its old slices until it is re-uploaded.
+   contents + DF arrays, the `Cargo.lock` versions of `harfbuzz_rs_now` and `woff`)[:12], exposed to the server as
+   `fontSplitAlgorithmVersion()`. Sliced packages store at `fonts/<hash>/<fingerprint>/`; upload re-slices when the
+   stored row's `cssKey` predates the current fingerprint and removes the stale package best-effort. Font source bytes
+   are not stored, so an already-uploaded font keeps serving its old slices until it is re-uploaded.
 6. **Storage hardening audit** (against cjk-font-split-native's `src/lib.rs`) — done: the local backend already writes
    temp-file + atomic rename, and slice files are already content-named by the addon; the one real gap was concurrent
    uploads of identical bytes, now coalesced process-locally by sha256 in `services/upload.ts` (single-instance
@@ -209,6 +209,10 @@ production font and the production blog — the fixture swap this ADR asked for 
   per cold page. It sits on a plateau (55–60 KB give nearly the same package), so small drift around it changes nothing.
   Going further was left open: 80–120 KB keep improving HTTP/1.1 fast (next page ×0.74 / ×0.68) while cold pages on slow
   or HTTP/2 links lose 8–15%; on a deployment known to serve fonts over HTTP/1.1, revisit with `pagecost:sweep`.
+- **Build and encoder evaluations** (measured against `xingwangzhe/cjk-font-split-native`, details in `BENCHMARK.md`):
+  the release profile becomes fat LTO + `codegen-units = 1` + `strip = "symbols"` (−4% slicing time, −21% addon size);
+  PGO, a native Brotli/woff2 stack and HarfBuzz subset preprocessing were rejected with data — the hot code is already
+  the C/C++ woff2 + Brotli that `woff` compiles, subsetting is 1% of slicing time, and PGO cannot see C/C++.
 - **Side findings.** Latin kerning only works inside one face: the deployed package scatters ASCII over 5 chunks, the
   frequency-ordered packages over 2, so kerning retention against the source font rises from 19.5% to 68.3% and mixed
   Chinese/English paragraphs are no longer pixel-identical. The render-blocking `result.css` is 278 KB (deployed: 238
