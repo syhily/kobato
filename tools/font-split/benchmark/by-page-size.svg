@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 600" width="880" height="600" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12">
+<g transform="translate(0 0)">
+<text x="58" y="18" fill="#8b949e">Cold page bytes by page size</text>
+<line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="260" text-anchor="end" fill="#8b949e">1000</text>
+<line x1="58" x2="856" y1="218.4" y2="218.4" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="222.4" text-anchor="end" fill="#8b949e">1500</text>
+<line x1="58" x2="856" y1="180.8" y2="180.8" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="184.8" text-anchor="end" fill="#8b949e">2000</text>
+<line x1="58" x2="856" y1="143.2" y2="143.2" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="147.2" text-anchor="end" fill="#8b949e">2500</text>
+<line x1="58" x2="856" y1="105.6" y2="105.6" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="109.6" text-anchor="end" fill="#8b949e">3000</text>
+<line x1="58" x2="856" y1="68" y2="68" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="72" text-anchor="end" fill="#8b949e">3500</text>
+<line x1="94.27272727272728" x2="94.27272727272728" y1="256" y2="260" stroke="#8b949e"/>
+<text x="94.27272727272728" y="272" text-anchor="middle" fill="#8b949e">&lt;300</text>
+<line x1="275.6363636363636" x2="275.6363636363636" y1="256" y2="260" stroke="#8b949e"/>
+<text x="275.6363636363636" y="272" text-anchor="middle" fill="#8b949e">300–399</text>
+<line x1="457" x2="457" y1="256" y2="260" stroke="#8b949e"/>
+<text x="457" y="272" text-anchor="middle" fill="#8b949e">400–499</text>
+<line x1="638.3636363636364" x2="638.3636363636364" y1="256" y2="260" stroke="#8b949e"/>
+<text x="638.3636363636364" y="272" text-anchor="middle" fill="#8b949e">500–699</text>
+<line x1="819.7272727272726" x2="819.7272727272726" y1="256" y2="260" stroke="#8b949e"/>
+<text x="819.7272727272726" y="272" text-anchor="middle" fill="#8b949e">700+</text>
+<line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e"/>
+<line x1="58" x2="58" y1="54" y2="256" stroke="#8b949e"/>
+<path d="M94.3 191.9 L275.6 140.0 L457.0 127.4 L638.4 109.1 L819.7 88.2" fill="none" stroke="#cf222e" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<circle cx="94.3" cy="191.9" r="3.5" fill="#cf222e"/>
+<circle cx="275.6" cy="140.0" r="3.5" fill="#cf222e"/>
+<circle cx="457.0" cy="127.4" r="3.5" fill="#cf222e"/>
+<circle cx="638.4" cy="109.1" r="3.5" fill="#cf222e"/>
+<circle cx="819.7" cy="88.2" r="3.5" fill="#cf222e"/>
+<path d="M94.3 252.6 L275.6 226.4 L457.0 217.3 L638.4 198.4 L819.7 171.9" fill="none" stroke="#8250df" stroke-width="2"  stroke-linejoin="round"/>
+<circle cx="94.3" cy="252.6" r="3.5" fill="#8250df"/>
+<circle cx="275.6" cy="226.4" r="3.5" fill="#8250df"/>
+<circle cx="457.0" cy="217.3" r="3.5" fill="#8250df"/>
+<circle cx="638.4" cy="198.4" r="3.5" fill="#8250df"/>
+<circle cx="819.7" cy="171.9" r="3.5" fill="#8250df"/>
+<path d="M94.3 240.7 L275.6 216.3 L457.0 208.4 L638.4 192.8 L819.7 169.9" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
+<circle cx="94.3" cy="240.7" r="3.5" fill="#316dca"/>
+<circle cx="275.6" cy="216.3" r="3.5" fill="#316dca"/>
+<circle cx="457.0" cy="208.4" r="3.5" fill="#316dca"/>
+<circle cx="638.4" cy="192.8" r="3.5" fill="#316dca"/>
+<circle cx="819.7" cy="169.9" r="3.5" fill="#316dca"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4"/>
+<text x="85" y="50" fill="#8b949e">cn-font-split</text>
+<line x1="194.10000000000002" x2="212.10000000000002" y1="46" y2="46" stroke="#8250df" stroke-width="2.5" />
+<text x="217.10000000000002" y="50" fill="#8b949e">λ=30 KB</text>
+<line x1="286" x2="304" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
+<text x="309" y="50" fill="#8b949e">λ=55 KB</text>
+<text x="457" y="294" text-anchor="middle" fill="#8b949e">Distinct codepoints per page (blog corpus)</text>
+</g>
+<g transform="translate(0 300)">
+<text x="58" y="18" fill="#8b949e">Cold page requests by page size</text>
+<line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="260" text-anchor="end" fill="#8b949e">0</text>
+<line x1="58" x2="856" y1="219.84615384615384" y2="219.84615384615384" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="223.84615384615384" text-anchor="end" fill="#8b949e">25</text>
+<line x1="58" x2="856" y1="183.69230769230768" y2="183.69230769230768" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="187.69230769230768" text-anchor="end" fill="#8b949e">50</text>
+<line x1="58" x2="856" y1="147.53846153846155" y2="147.53846153846155" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="151.53846153846155" text-anchor="end" fill="#8b949e">75</text>
+<line x1="58" x2="856" y1="111.38461538461539" y2="111.38461538461539" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="115.38461538461539" text-anchor="end" fill="#8b949e">100</text>
+<line x1="58" x2="856" y1="75.23076923076923" y2="75.23076923076923" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="79.23076923076923" text-anchor="end" fill="#8b949e">125</text>
+<line x1="94.27272727272728" x2="94.27272727272728" y1="256" y2="260" stroke="#8b949e"/>
+<text x="94.27272727272728" y="272" text-anchor="middle" fill="#8b949e">&lt;300</text>
+<line x1="275.6363636363636" x2="275.6363636363636" y1="256" y2="260" stroke="#8b949e"/>
+<text x="275.6363636363636" y="272" text-anchor="middle" fill="#8b949e">300–399</text>
+<line x1="457" x2="457" y1="256" y2="260" stroke="#8b949e"/>
+<text x="457" y="272" text-anchor="middle" fill="#8b949e">400–499</text>
+<line x1="638.3636363636364" x2="638.3636363636364" y1="256" y2="260" stroke="#8b949e"/>
+<text x="638.3636363636364" y="272" text-anchor="middle" fill="#8b949e">500–699</text>
+<line x1="819.7272727272726" x2="819.7272727272726" y1="256" y2="260" stroke="#8b949e"/>
+<text x="819.7272727272726" y="272" text-anchor="middle" fill="#8b949e">700+</text>
+<line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e"/>
+<line x1="58" x2="58" y1="54" y2="256" stroke="#8b949e"/>
+<path d="M94.3 176.2 L275.6 155.8 L457.0 150.9 L638.4 143.3 L819.7 136.3" fill="none" stroke="#cf222e" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
+<circle cx="94.3" cy="176.2" r="3.5" fill="#cf222e"/>
+<circle cx="275.6" cy="155.8" r="3.5" fill="#cf222e"/>
+<circle cx="457.0" cy="150.9" r="3.5" fill="#cf222e"/>
+<circle cx="638.4" cy="143.3" r="3.5" fill="#cf222e"/>
+<circle cx="819.7" cy="136.3" r="3.5" fill="#cf222e"/>
+<path d="M94.3 180.1 L275.6 135.7 L457.0 118.0 L638.4 87.1 L819.7 37.5" fill="none" stroke="#8250df" stroke-width="2"  stroke-linejoin="round"/>
+<circle cx="94.3" cy="180.1" r="3.5" fill="#8250df"/>
+<circle cx="275.6" cy="135.7" r="3.5" fill="#8250df"/>
+<circle cx="457.0" cy="118.0" r="3.5" fill="#8250df"/>
+<circle cx="638.4" cy="87.1" r="3.5" fill="#8250df"/>
+<circle cx="819.7" cy="37.5" r="3.5" fill="#8250df"/>
+<path d="M94.3 192.9 L275.6 161.1 L457.0 148.4 L638.4 128.9 L819.7 93.2" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
+<circle cx="94.3" cy="192.9" r="3.5" fill="#316dca"/>
+<circle cx="275.6" cy="161.1" r="3.5" fill="#316dca"/>
+<circle cx="457.0" cy="148.4" r="3.5" fill="#316dca"/>
+<circle cx="638.4" cy="128.9" r="3.5" fill="#316dca"/>
+<circle cx="819.7" cy="93.2" r="3.5" fill="#316dca"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4"/>
+<text x="85" y="50" fill="#8b949e">cn-font-split</text>
+<line x1="194.10000000000002" x2="212.10000000000002" y1="46" y2="46" stroke="#8250df" stroke-width="2.5" />
+<text x="217.10000000000002" y="50" fill="#8b949e">λ=30 KB</text>
+<line x1="286" x2="304" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
+<text x="309" y="50" fill="#8b949e">λ=55 KB</text>
+<text x="457" y="294" text-anchor="middle" fill="#8b949e">Distinct codepoints per page (blog corpus): 0–299 40 · 300–399 74 · 400–499 72 · 500–699 35 · 700+ 13 pages</text>
+</g>
+</svg>
