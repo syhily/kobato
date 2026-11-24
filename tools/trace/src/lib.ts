@@ -11,7 +11,6 @@ import { join, resolve } from 'node:path'
 import { z } from 'zod'
 
 export const O2_IMAGE = 'openobserve/openobserve:v1.1.2'
-export const O2_IMAGE_VERSION = 'v1.1.2'
 export const O2_HTTP_PORT = 5080
 export const DEFAULT_CONTAINER = 'kobato-openobserve-dev'
 export const DEFAULT_VOLUME = 'kobato-openobserve-dev-data'
@@ -645,15 +644,6 @@ export async function search(ctx: O2Context, options: SearchOptions): Promise<Se
     method: 'POST',
     body: JSON.stringify(body),
   })
-}
-
-export async function searchCount(ctx: O2Context, options: SearchOptions): Promise<number> {
-  const result = await search(ctx, options)
-  return result.total ?? result.hits?.length ?? 0
-}
-
-export function endpointFromState(state: TraceState): string {
-  return state.endpoint
 }
 
 export function resolveFromRepo(relative: string): string {
