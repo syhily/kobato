@@ -9,14 +9,14 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-# Data-generation pipeline (ADR-0010): the `datagen` bin (download/build/generate) is gated behind
+# Data-generation pipeline (ADR-0010): the `corpus` bin (download/build/generate) is gated behind
 # this feature so the production addon build and CI never compile these dependencies.
 [features]
 corpus = ["dep:memchr", "dep:opencc-fmmseg"]
 
 [[bin]]
-name = "datagen"
-path = "src/bin/datagen/main.rs"
+name = "corpus"
+path = "src/bin/corpus/main.rs"
 required-features = ["corpus"]
 
 [dependencies]

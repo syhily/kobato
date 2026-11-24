@@ -39,7 +39,7 @@ pub fn run() {
         "build" => count::build(),
         "generate" => generate::generate(),
         _ => {
-            eprintln!("usage: datagen <download|build|generate>");
+            eprintln!("usage: corpus <download|build|generate>");
             eprintln!("  download  fetch the zhwiki dump into .cache/ (resumable)");
             eprintln!("  build     one pass over the dump: char frequencies and held-out page fixtures");
             eprintln!("  generate  regenerate src/unicode/cjk_tables.rs from scripts/cjk-tables/");

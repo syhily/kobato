@@ -94,10 +94,10 @@ Findings:
 Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlfont's artifacts or ML stages.
 
 1. **Frequency-order the CJK tables.** Keep pack membership unchanged (official lists stay the coverage authority);
-   replace stroke order with corpus document-frequency order inside each pack, in the existing `cjk-tables:generate`
+   replace stroke order with corpus document-frequency order inside each pack, in the existing `corpus:generate`
    pipeline; the generator also emits the parallel `*_DF` arrays the DP consumes as touch probabilities. −38% to −41%
    per-page bytes, zero algorithm change. Corpus (settled): the pinned `zhwiki-20261101` Wikimedia dump, processed by
-   font-split's feature-gated `datagen` bin (`src/bin/datagen/`) in one streaming pass — wikitext cleaning,
+   font-split's feature-gated `corpus` bin (`src/bin/corpus/`) in one streaming pass — wikitext cleaning,
    `opencc-fmmseg` conversion into **two script dimensions** (`t2s` Simplified orders the TGH/JA packs, `s2t` orders the
    HK/TW packs, both over the same document set), per-document character frequencies. Fixture pages are excluded from
    the counts. (zhwiki is stub-heavy: the first fixture rule — `id % 5003`, ≥2500 cleaned chars — yielded only 17 of 304
@@ -109,7 +109,7 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
    harness (decision 3).
 3. **Evaluation harness as the gate — landed at `tools/font-split/tests/page_cost.rs`.** Runs the real `font_split`
    pipeline on a committed OFL fixture font (ASCII + `ZH_SYMBOL` + 通用规范汉字表 一级字表) against 64 held-out pages
-   **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `datagen build`), parses
+   **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`), parses
    `result.css`, and pins page-cost metrics as recorded constants (chunk count, total bytes, mean/p90 bytes and chunks
    per page, 5-page cold-session bytes, incremental bytes) under the same intersection rule as the measurements above.
    It is benchmark-class: `#[ignore]`d (coverage/disjointness invariants included), run explicitly via
@@ -161,9 +161,9 @@ Adopt the two measured wins inside our existing Rust pipeline; adopt none of mlf
 
 - Expected per-page CJK font transfer: −40% to −46% at λ=30/μ=0.5 with fewer files and smaller CSS, plus −15% to −17%
   total package bytes from WOFF2 quality 11; up to −56%/−63% per-page at aggressive λ with more files.
-- The `datagen` pipeline is the single producer of the frequency TSVs and the held-out page fixtures; both are committed
+- The `corpus` pipeline is the single producer of the frequency TSVs and the held-out page fixtures; both are committed
   inside `tools/font-split/` and regenerate together when the dump pin changes.
-- Tables remain editable official lists: frequency changes _order_, not coverage, so the `cjk-tables:generate` size
+- Tables remain editable official lists: frequency changes _order_, not coverage, so the `corpus:generate` size
   invariants (3500/3000/1605, …) keep guarding the generator.
 - Both script dimensions now come from the same document set via OpenCC conversion, so Traditional-heavy sites are
   covered by the HK/TW packs' hant ordering rather than a Simplified-trained leftover.

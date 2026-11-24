@@ -49,7 +49,6 @@ ctan
 cusdis
 cynosura
 daiji
-datagen
 datetime
 datong
 dbname

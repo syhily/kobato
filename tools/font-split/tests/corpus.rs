@@ -1,7 +1,7 @@
 #![cfg(feature = "corpus")]
 
-use kobato_font_split::datagen::clean::{Dim, clean_wikitext};
-use kobato_font_split::datagen::dump::{parse_page, xml_unescape};
+use kobato_font_split::corpus::clean::{Dim, clean_wikitext};
+use kobato_font_split::corpus::dump::{parse_page, xml_unescape};
 
 #[test]
 fn comments_templates_and_drop_tags_are_removed() {

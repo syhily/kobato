@@ -11,7 +11,7 @@ const CHAR_DF_CUT: u64 = 2;
 const SOURCE_NOTE: &str =
     "Wikimedia dump, article text CC BY-SA 4.0; frequency counts and codepoint sets are factual data";
 const PIPELINE_NOTE: &str = "ns0 non-redirect pages, wikitext-cleaned, OpenCC-converted; per-document distinct counts";
-const GENERATOR_NOTE: &str = "pnpm --filter @kobato/font-split run corpus:build (src/bin/datagen)";
+const GENERATOR_NOTE: &str = "pnpm --filter @kobato/font-split run corpus:build (src/bin/corpus)";
 
 fn dim_label(dim: Dim) -> &'static str {
     match dim {

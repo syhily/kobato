@@ -2,7 +2,7 @@ pub mod binding;
 pub mod config;
 #[cfg(feature = "corpus")]
 #[doc(hidden)]
-pub mod datagen;
+pub mod corpus;
 pub mod link_subset;
 pub mod output;
 pub mod pre_subset;
