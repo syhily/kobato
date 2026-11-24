@@ -53,14 +53,6 @@ describe('i18n/inkling-labels — used-key parity', () => {
       }
     }
   })
-
-  it('has a non-empty translation for every key in every locale', () => {
-    for (const [locale, table] of Object.entries(TABLES)) {
-      for (const key of EN_KEYS) {
-        expect(table[key].length, `${locale} ${key}`).toBeGreaterThan(0)
-      }
-    }
-  })
 })
 
 describe('i18n/inkling-labels — interpolation tokens', () => {

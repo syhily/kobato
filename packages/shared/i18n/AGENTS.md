@@ -14,6 +14,10 @@ chrome's flat tables, outside ICU because Inkling's `{max}`/`{cardType}` tokens 
   `inkling-labels` aggregator is a server-only value import and no client module may statically import a table
   (`apps/kobato/tests/arch/client-bundle.test.ts`).
 - Bans: no React, no display formatting (that is `@kobato/utils/format`).
-- Tests: `tests/unit/` (`shared-unit`). `tests/utils/i18n.ts` is the WORKSPACE-canonical translator fixture
-  (`makeTranslator`, `tZhCN`, `rootMatchesWithI18n`): other packages' test trees import it cross-package — never keep a
-  copy.
+- Tests: `tests/unit/` (`shared-unit`). Key parity and ICU shape parity are pinned by `tests/unit/catalog.test.ts` (ui +
+  server) and `tests/unit/inkling-labels.test.ts`; translation completeness — no blank value, no value identical to the
+  English baseline outside the reviewed `SHARED_WITH_ENGLISH` list, no Chinese in the baseline outside `HAN_IN_ENGLISH`
+  — by `tests/unit/catalog-completeness.test.ts` over all three namespaces. A new key that legitimately keeps the
+  English text (brand, protocol, identifier, placeholder) is listed there, never left implicit. `tests/utils/i18n.ts` is
+  the WORKSPACE-canonical translator fixture (`makeTranslator`, `tZhCN`, `rootMatchesWithI18n`): other packages' test
+  trees import it cross-package — never keep a copy.
