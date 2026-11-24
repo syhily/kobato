@@ -12,6 +12,53 @@ use super::PreSubsetContext;
 pub(crate) const DP_LAMBDA_BYTES: f64 = 30_000.0;
 pub(crate) const DP_MU_BYTES: f64 = 500.0;
 
+#[cfg(feature = "bench")]
+#[doc(hidden)]
+pub mod bench {
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static LAMBDA_BYTES: AtomicU64 = AtomicU64::new(0);
+    static MU_BYTES: AtomicU64 = AtomicU64::new(0);
+
+    pub fn set_dp_params(lambda_bytes: Option<f64>, mu_bytes: Option<f64>) {
+        let bits = |value: Option<f64>| value.map_or(0, f64::to_bits);
+        LAMBDA_BYTES.store(bits(lambda_bytes), Ordering::Relaxed);
+        MU_BYTES.store(bits(mu_bytes), Ordering::Relaxed);
+    }
+
+    fn overridden(slot: &AtomicU64) -> Option<f64> {
+        let bits = slot.load(Ordering::Relaxed);
+        (bits != 0).then(|| f64::from_bits(bits))
+    }
+
+    pub fn lambda_bytes() -> Option<f64> {
+        overridden(&LAMBDA_BYTES)
+    }
+
+    pub fn mu_bytes() -> Option<f64> {
+        overridden(&MU_BYTES)
+    }
+}
+
+#[cfg(not(feature = "bench"))]
+mod bench {
+    pub fn lambda_bytes() -> Option<f64> {
+        None
+    }
+
+    pub fn mu_bytes() -> Option<f64> {
+        None
+    }
+}
+
+fn dp_lambda_bytes() -> f64 {
+    bench::lambda_bytes().unwrap_or(DP_LAMBDA_BYTES)
+}
+
+fn dp_mu_bytes() -> f64 {
+    bench::mu_bytes().unwrap_or(DP_MU_BYTES)
+}
+
 pub fn auto_chunk(
     subsets: &mut Vec<IndexSet<u32>>,
     _remaining_chars_set: &mut BTreeSet<u32>,
@@ -92,7 +139,7 @@ pub fn dp_split_by_prob(seq: &[u32], probs: &[f64], bytes_per_char: usize, cap_b
             survival *= 1.0 - probs[i];
             let touched = 1.0 - survival;
             let bytes = ((j - i) * bpc) as f64;
-            let cost = best[i] + touched * (bytes + DP_LAMBDA_BYTES) + DP_MU_BYTES;
+            let cost = best[i] + touched * (bytes + dp_lambda_bytes()) + dp_mu_bytes();
             if cost < best[j] {
                 best[j] = cost;
                 back[j] = i;

@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 corpus = ["dep:memchr", "dep:opencc-fmmseg"]
+bench = []
 
 [[bin]]
 name = "corpus"

@@ -1,5 +1,6 @@
 use std::collections::{BTreeSet, HashMap};
-use std::sync::OnceLock;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard, OnceLock, PoisonError};
 
 use kobato_font_split::unicode::range::UnicodeRange;
 use kobato_font_split::{FontSplitConfig, OutputFile, font_split};
@@ -7,6 +8,7 @@ use kobato_font_split::{FontSplitConfig, OutputFile, font_split};
 const FONT_FIXTURE: &[u8] = include_bytes!("fixtures/fonts/NotoSansCJKsc-Regular-zh-l1.woff2");
 const PAGES_HANS: &str = include_str!("fixtures/pages/zh-hans-heldout-64.txt");
 const PAGES_HANT: &str = include_str!("fixtures/pages/zh-hant-heldout-64.txt");
+const PAGES_BLOG: &str = include_str!("fixtures/pages/blog-zh-hans-234.txt");
 
 struct Baseline {
     chunk_count: usize,
@@ -36,10 +38,21 @@ const HANT_BASELINE: Baseline = Baseline {
     mean_session_bytes: 1_204_333.0,
     mean_incremental_bytes: 160_284.0,
 };
+const BLOG_BASELINE: Baseline = Baseline {
+    chunk_count: 100,
+    total_bytes: 1_548_404,
+    mean_bytes_per_page: 964_672.0,
+    p90_bytes_per_page: 1_186_740.0,
+    mean_chunks_per_page: 48.6,
+    mean_session_bytes: 1_435_255.0,
+    mean_incremental_bytes: 214_985.0,
+};
 
 const COUNT_TOLERANCE: usize = 2;
 const BYTES_TOLERANCE: f64 = 0.02;
 const METRIC_TOLERANCE: f64 = 0.03;
+
+const CORPORA: [(&str, &str); 3] = [("hans", PAGES_HANS), ("hant", PAGES_HANT), ("blog", PAGES_BLOG)];
 
 struct SliceRun {
     total_bytes: usize,
@@ -47,32 +60,58 @@ struct SliceRun {
     chunks: Vec<(BTreeSet<u32>, usize)>,
 }
 
-static RUN: OnceLock<SliceRun> = OnceLock::new();
+struct Metrics {
+    mean_bytes_per_page: f64,
+    p90_bytes_per_page: f64,
+    mean_chunks_per_page: f64,
+    p90_chunks_per_page: f64,
+    max_chunks_per_page: usize,
+    mean_session_bytes: f64,
+    mean_session_chunks: f64,
+    mean_incremental_bytes: f64,
+    mean_jump_bytes: f64,
+    mean_jump_chunks: f64,
+    page_count: usize,
+}
 
-fn run() -> &'static SliceRun {
-    RUN.get_or_init(|| {
-        let files = std::cell::RefCell::new(Vec::new());
-        font_split(FontSplitConfig { input: FONT_FIXTURE.to_vec(), ..Default::default() }, |file: OutputFile| {
-            files.borrow_mut().push((file.name, file.data));
-        });
-        let files: Vec<(String, Vec<u8>)> = files.into_inner();
+static FIXTURE_RUN: OnceLock<SliceRun> = OnceLock::new();
+static SERIAL: Mutex<()> = Mutex::new(());
 
-        let css = files
-            .iter()
-            .find(|(name, _)| name == "result.css")
-            .map(|(_, data)| String::from_utf8(data.clone()).expect("result.css is utf8"))
-            .expect("result.css is emitted");
-        let bytes_by_name: HashMap<&str, usize> =
-            files.iter().map(|(name, data)| (name.as_str(), data.len())).collect();
+fn serial() -> MutexGuard<'static, ()> {
+    SERIAL.lock().unwrap_or_else(PoisonError::into_inner)
+}
 
-        let mut chunks = vec![];
-        for (file_name, ranges) in parse_css(&css) {
-            let bytes = *bytes_by_name.get(file_name.as_str()).unwrap_or_else(|| panic!("{file_name} exists"));
-            chunks.push((ranges.into_iter().collect(), bytes));
-        }
-        let total_bytes = chunks.iter().map(|(_, bytes)| bytes).sum();
-        SliceRun { total_bytes, css_bytes: css.len(), chunks }
-    })
+fn fixture_run() -> &'static SliceRun {
+    FIXTURE_RUN.get_or_init(|| slice(FONT_FIXTURE))
+}
+
+fn split(input: &[u8]) -> Vec<(String, Vec<u8>)> {
+    let files = std::cell::RefCell::new(Vec::new());
+    font_split(FontSplitConfig { input: input.to_vec(), ..Default::default() }, |file: OutputFile| {
+        files.borrow_mut().push((file.name, file.data));
+    });
+    files.into_inner()
+}
+
+fn to_run(files: Vec<(String, Vec<u8>)>) -> SliceRun {
+    let css = files
+        .iter()
+        .find(|(name, _)| name == "result.css")
+        .map(|(_, data)| String::from_utf8(data.clone()).expect("result.css is utf8"))
+        .expect("result.css is emitted");
+    let bytes_by_name: HashMap<&str, usize> = files.iter().map(|(name, data)| (name.as_str(), data.len())).collect();
+
+    let mut chunks = vec![];
+    for (file_name, ranges) in parse_css(&css) {
+        let bytes = *bytes_by_name.get(file_name.as_str()).unwrap_or_else(|| panic!("{file_name} exists"));
+        chunks.push((ranges.into_iter().collect(), bytes));
+    }
+    let total_bytes = chunks.iter().map(|(_, bytes)| bytes).sum();
+    SliceRun { total_bytes, css_bytes: css.len(), chunks }
+}
+
+fn slice(input: &[u8]) -> SliceRun {
+    to_run(split(input))
 }
 
 fn parse_css(css: &str) -> Vec<(String, Vec<u32>)> {
@@ -99,17 +138,17 @@ fn load_pages(fixture: &str) -> Vec<BTreeSet<u32>> {
         .collect()
 }
 
-fn font_codepoints() -> BTreeSet<u32> {
-    let data = woff::version2::decompress(FONT_FIXTURE).expect("fixture woff2 decompresses");
+fn font_codepoints(input: &[u8]) -> BTreeSet<u32> {
+    let data = match input.starts_with(b"wOF2") {
+        true => woff::version2::decompress(input).expect("woff2 decompresses"),
+        false => input.to_vec(),
+    };
     let face = harfbuzz_rs_now::Face::from_bytes(&data, 0);
     face.collect_unicodes().into_iter().collect()
 }
 
-#[test]
-#[ignore = "benchmark-class harness: run explicitly, never in CI"]
-fn chunks_cover_the_font_exactly_once() {
-    let run = run();
-    let font: BTreeSet<u32> = font_codepoints().into_iter().filter(|&c| c != 0).collect();
+fn assert_covered_exactly_once(input: &[u8], run: &SliceRun) {
+    let font: BTreeSet<u32> = font_codepoints(input).into_iter().filter(|&c| c != 0).collect();
 
     let mut seen: HashMap<u32, usize> = HashMap::new();
     for (codepoints, _) in &run.chunks {
@@ -128,32 +167,7 @@ fn chunks_cover_the_font_exactly_once() {
     assert!(duplicated.is_empty(), "{} codepoints appear in more than one chunk: {duplicated:X?}", duplicated.len());
 }
 
-struct Metrics {
-    mean_bytes_per_page: f64,
-    p90_bytes_per_page: f64,
-    mean_chunks_per_page: f64,
-    mean_session_bytes: f64,
-    mean_incremental_bytes: f64,
-    page_count: usize,
-}
-
-fn measure(pages: &[BTreeSet<u32>]) -> Metrics {
-    let run = run();
-
-    let mut page_bytes: Vec<f64> = Vec::with_capacity(pages.len());
-    let mut page_chunks: Vec<f64> = Vec::with_capacity(pages.len());
-    for page in pages {
-        let touched: Vec<&(BTreeSet<u32>, usize)> =
-            run.chunks.iter().filter(|(codepoints, _)| !codepoints.is_disjoint(page)).collect();
-        page_bytes.push(touched.iter().map(|(_, bytes)| *bytes as f64).sum());
-        page_chunks.push(touched.len() as f64);
-    }
-    let mean = |values: &[f64]| values.iter().sum::<f64>() / values.len() as f64;
-    let mean_bytes = mean(&page_bytes);
-    let mean_chunks = mean(&page_chunks);
-    page_bytes.sort_by(f64::total_cmp);
-    let p90_bytes = page_bytes[((page_bytes.len() as f64) * 0.9).ceil() as usize - 1];
-
+fn measure(run: &SliceRun, pages: &[BTreeSet<u32>]) -> Metrics {
     let page_touched: Vec<BTreeSet<usize>> = pages
         .iter()
         .map(|page| {
@@ -165,8 +179,20 @@ fn measure(pages: &[BTreeSet<u32>]) -> Metrics {
                 .collect()
         })
         .collect();
+    let bytes_of = |touched: &BTreeSet<usize>| touched.iter().map(|&i| run.chunks[i].1).sum::<usize>();
+    let mean = |values: &[f64]| values.iter().sum::<f64>() / values.len().max(1) as f64;
+    let p90 = |values: &[f64]| {
+        let mut sorted = values.to_vec();
+        sorted.sort_by(f64::total_cmp);
+        sorted[((sorted.len() as f64) * 0.9).ceil() as usize - 1]
+    };
+
+    let page_bytes: Vec<f64> = page_touched.iter().map(|t| bytes_of(t) as f64).collect();
+    let page_chunks: Vec<f64> = page_touched.iter().map(|t| t.len() as f64).collect();
+
     const SESSION_LEN: usize = 5;
     let mut session_bytes: Vec<f64> = vec![];
+    let mut session_chunks: Vec<f64> = vec![];
     let mut incremental_bytes: Vec<f64> = vec![];
     for (page_index, touched) in page_touched.iter().enumerate() {
         if page_index % SESSION_LEN == 0 {
@@ -175,7 +201,8 @@ fn measure(pages: &[BTreeSet<u32>]) -> Metrics {
                 .flatten()
                 .copied()
                 .collect();
-            session_bytes.push(union.iter().map(|&i| run.chunks[i].1 as f64).sum());
+            session_bytes.push(bytes_of(&union) as f64);
+            session_chunks.push(union.len() as f64);
         }
         if page_index > 0 {
             let new_bytes: usize = touched.difference(&page_touched[page_index - 1]).map(|&i| run.chunks[i].1).sum();
@@ -183,44 +210,88 @@ fn measure(pages: &[BTreeSet<u32>]) -> Metrics {
         }
     }
 
+    let mut jump_bytes: Vec<f64> = vec![];
+    let mut jump_chunks: Vec<f64> = vec![];
+    for (source_index, source) in page_touched.iter().enumerate() {
+        for (target_index, target) in page_touched.iter().enumerate() {
+            if source_index == target_index {
+                continue;
+            }
+            let new: Vec<usize> = target.difference(source).copied().collect();
+            jump_bytes.push(new.iter().map(|&i| run.chunks[i].1).sum::<usize>() as f64);
+            jump_chunks.push(new.len() as f64);
+        }
+    }
+
     Metrics {
-        mean_bytes_per_page: mean_bytes,
-        p90_bytes_per_page: p90_bytes,
-        mean_chunks_per_page: mean_chunks,
+        mean_bytes_per_page: mean(&page_bytes),
+        p90_bytes_per_page: p90(&page_bytes),
+        mean_chunks_per_page: mean(&page_chunks),
+        p90_chunks_per_page: p90(&page_chunks),
+        max_chunks_per_page: page_touched.iter().map(BTreeSet::len).max().unwrap_or(0),
         mean_session_bytes: mean(&session_bytes),
+        mean_session_chunks: mean(&session_chunks),
         mean_incremental_bytes: mean(&incremental_bytes),
+        mean_jump_bytes: mean(&jump_bytes),
+        mean_jump_chunks: mean(&jump_chunks),
         page_count: pages.len(),
     }
+}
+
+fn report(label: &str, run: &SliceRun, metrics: &Metrics) {
+    println!(
+        "page-cost report [{label}]: {} chunks, {} B total (+ {} B css); cold: mean {:.0} B/page, p90 {:.0} B/page, \
+         {:.1} chunks/page (p90 {:.1}, max {}); session(5): mean {:.0} B / {:.1} chunks; incremental: mean {:.0} \
+         B/page; jump: mean {:.0} B / {:.1} chunks — over {} pages",
+        run.chunks.len(),
+        run.total_bytes,
+        run.css_bytes,
+        metrics.mean_bytes_per_page,
+        metrics.p90_bytes_per_page,
+        metrics.mean_chunks_per_page,
+        metrics.p90_chunks_per_page,
+        metrics.max_chunks_per_page,
+        metrics.mean_session_bytes,
+        metrics.mean_session_chunks,
+        metrics.mean_incremental_bytes,
+        metrics.mean_jump_bytes,
+        metrics.mean_jump_chunks,
+        metrics.page_count,
+    );
+}
+
+fn production_font_path() -> PathBuf {
+    std::env::var_os("FONT_SPLIT_BENCH_FONT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/fonts/calendar.ttf"))
+}
+
+#[test]
+#[ignore = "benchmark-class harness: run explicitly, never in CI"]
+fn chunks_cover_the_font_exactly_once() {
+    let _serial = serial();
+    assert_covered_exactly_once(FONT_FIXTURE, fixture_run());
 }
 
 #[test]
 #[ignore = "benchmark-class harness: run explicitly, never in CI"]
 fn page_cost_baseline_is_pinned() {
-    let run = run();
+    let _serial = serial();
+    let run = fixture_run();
 
-    for (label, fixture, baseline) in [("hans", PAGES_HANS, &HANS_BASELINE), ("hant", PAGES_HANT, &HANT_BASELINE)] {
-        let pages = load_pages(fixture);
-        let metrics = measure(&pages);
+    for (label, fixture, baseline) in [
+        ("hans", PAGES_HANS, &HANS_BASELINE),
+        ("hant", PAGES_HANT, &HANT_BASELINE),
+        ("blog", PAGES_BLOG, &BLOG_BASELINE),
+    ] {
+        let metrics = measure(run, &load_pages(fixture));
+        report(label, run, &metrics);
 
-        println!(
-            "page-cost report [{label}]: {} chunks, {} B total (+ {} B css); cold: mean {:.0} B/page, p90 {:.0} \
-             B/page, {:.1} chunks/page; session(5): mean {:.0} B; incremental: mean {:.0} B/page — over {} pages",
-            run.chunks.len(),
-            run.total_bytes,
-            run.css_bytes,
-            metrics.mean_bytes_per_page,
-            metrics.p90_bytes_per_page,
-            metrics.mean_chunks_per_page,
-            metrics.mean_session_bytes,
-            metrics.mean_incremental_bytes,
-            metrics.page_count,
-        );
-
-        let near = |actual: f64, recorded: f64, tolerance: f64, label: &str| {
+        let near = |actual: f64, recorded: f64, tolerance: f64, what: &str| {
             assert!(
                 (actual - recorded).abs() <= recorded * tolerance,
-                "{label}: recorded {recorded}, measured {actual} — update the baseline constants when this is an \
-                 intentional algorithm change"
+                "{label} {what}: recorded {recorded}, measured {actual} — update the baseline constants when this is \
+                 an intentional algorithm change"
             );
         };
         assert!(
@@ -240,5 +311,74 @@ fn page_cost_baseline_is_pinned() {
             METRIC_TOLERANCE,
             "mean incremental bytes",
         );
+    }
+}
+
+#[test]
+#[ignore = "benchmark-class harness: run explicitly, never in CI"]
+fn page_cost_font_report() {
+    let _serial = serial();
+    let path = production_font_path();
+    let Ok(input) = std::fs::read(&path) else {
+        println!("page-cost font report skipped: {} not found (set FONT_SPLIT_BENCH_FONT)", path.display());
+        return;
+    };
+    let run = slice(&input);
+    assert_covered_exactly_once(&input, &run);
+    for (label, fixture) in CORPORA {
+        report(label, &run, &measure(&run, &load_pages(fixture)));
+    }
+}
+
+#[cfg(feature = "bench")]
+struct DpParams;
+
+#[cfg(feature = "bench")]
+impl Drop for DpParams {
+    fn drop(&mut self) {
+        kobato_font_split::set_dp_params(None, None);
+    }
+}
+
+#[cfg(feature = "bench")]
+fn env_list(name: &str, default: &[f64]) -> Vec<f64> {
+    std::env::var(name)
+        .map(|value| value.split(',').map(|item| item.trim().parse().expect("numeric list")).collect())
+        .unwrap_or_else(|_| default.to_vec())
+}
+
+#[test]
+#[ignore = "benchmark-class harness: run explicitly, never in CI"]
+#[cfg(feature = "bench")]
+fn page_cost_lambda_sweep() {
+    let _serial = serial();
+    let input = std::fs::read(production_font_path()).expect("FONT_SPLIT_BENCH_FONT or data/fonts/calendar.ttf");
+    let corpora: Vec<(&str, Vec<BTreeSet<u32>>)> =
+        CORPORA.iter().map(|(label, fixture)| (*label, load_pages(fixture))).collect();
+    let lambdas = env_list(
+        "FONT_SPLIT_SWEEP_LAMBDA_BYTES",
+        &[10_000.0, 20_000.0, 30_000.0, 45_000.0, 60_000.0, 90_000.0, 120_000.0, 240_000.0, 480_000.0],
+    );
+    let mus = env_list("FONT_SPLIT_SWEEP_MU_BYTES", &[500.0]);
+    let out_dir = std::env::var_os("FONT_SPLIT_BENCH_OUT_DIR").map(PathBuf::from);
+
+    for &mu in &mus {
+        for &lambda in &lambdas {
+            kobato_font_split::set_dp_params(Some(lambda), Some(mu));
+            let _reset = DpParams;
+            let files = split(&input);
+            if let Some(dir) = &out_dir {
+                let dir = dir.join(format!("l{lambda}-m{mu}"));
+                std::fs::create_dir_all(&dir).expect("sweep output dir");
+                for (name, data) in &files {
+                    std::fs::write(dir.join(name), data).expect("sweep output file");
+                }
+            }
+            let run = to_run(files);
+            assert_covered_exactly_once(&input, &run);
+            for (label, pages) in &corpora {
+                report(&format!("{label} lambda={lambda} mu={mu}"), &run, &measure(&run, pages));
+            }
+        }
     }
 }
