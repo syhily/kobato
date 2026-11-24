@@ -238,7 +238,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/email': INTERNAL_SCOPES,
   '@kobato/i18n-tools': INTERNAL_SCOPES,
-  '@kobato/font-split': [],
+  '@kobato/font-split': ['@kobato/font-split'],
 }
 
 const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []

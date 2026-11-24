@@ -63,6 +63,8 @@
       "@kobato/harness/*": ["../../tools/harness/src/*"],
       "@kobato/browser/*": ["../../tools/browser/src/*"],
       "@kobato/email/*": ["../../tools/email/src/*"],
+      "@kobato/font-split": ["../../tools/font-split/src/index.ts"],
+      "@kobato/font-split/*": ["../../tools/font-split/src/*"],
       "@kobato/i18n-tools/*": ["../../tools/i18n/src/*"],
       "@kobato/pack/*": ["../../tools/pack/src/*"],
       "@kobato/trace/*": ["../../tools/trace/src/*"],
