@@ -117,7 +117,7 @@ test('observability hint tooltip opens above the fixed settings panel', async ({
   if (clip === null) {
     throw new Error('popup bounding box disappeared before the pixel check')
   }
-  const openShot = await page.screenshot({ path: 'tmp/obs-tooltip-open.png', clip })
+  const openShot = await page.screenshot({ path: test.info().outputPath('obs-tooltip-open.png'), clip })
   await page.mouse.move(8, 8)
   await expect(popup).toBeHidden()
   const closedShot = await page.screenshot({ clip })

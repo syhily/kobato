@@ -29,5 +29,5 @@ test('settings section titles have balanced spacing with adjacent cards', async 
   })
 
   expect(spacing.below).toBeCloseTo(spacing.above, 5)
-  await page.screenshot({ path: 'tmp/settings-title-spacing.png' })
+  await page.screenshot({ path: test.info().outputPath('settings-title-spacing.png') })
 })
