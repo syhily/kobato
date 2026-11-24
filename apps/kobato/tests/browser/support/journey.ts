@@ -1,4 +1,4 @@
-import type { BrowserEnv } from '@kobato/browser/browser-env'
+import type { BrowserEnv } from '@kobato/pack/instance/client/browser-env'
 import type { BrowserContext, Locator, Page } from '@playwright/test'
 
 import { expect } from '@playwright/test'

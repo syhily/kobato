@@ -1,8 +1,0 @@
-{
-  "$schema": "https://json.schemastore.org/tsconfig.json",
-  "extends": "@kobato/tsconfig/tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node", "vite/client"]
-  },
-  "include": ["./src/**/*", "./tests/**/*", "./*.config.ts"]
-}

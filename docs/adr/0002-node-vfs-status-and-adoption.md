@@ -42,9 +42,9 @@ throws `ERR_UNKNOWN_BUILTIN_MODULE` inside a SEA.
   libraries. `scripts/sea/redirect-native-requires.ts` (Vite plugin) rewrites the platform packages' `require(...)`
   sites to `nativeRequire` (`src/server/infra/native-require.ts`) against that dir and the embedded `natives-meta/*`; it
   stays.
-- **Bundling stays single-file.** `vite.sea.config.ts` builds `server.mjs`, `process-worker.mjs`, and `smoke-worker.mjs`
-  with `ssr.noExternal: true` and `codeSplitting: false`; check-bundle still fails on leftover externals and uncovered
-  `__APP_*__`/`__SEA_*__` identifiers.
+- **Bundling stays single-file.** `tools/pack/vite.config.ts` builds `server.mjs`, `process-worker.mjs`, and
+  `smoke-worker.mjs` with `ssr.noExternal: true` and `codeSplitting: false`; check-bundle still fails on leftover
+  externals and uncovered `__APP_*__`/`__SEA_*__` identifiers.
 - **Runtime repair for async `readv`/`writev`** (`src/server/infra/sea-vfs-fs-patch.ts`). The mounted-VFS handler table
   implements `readvSync`/`writevSync` but not async `readv`/`writev`, while callback `fs.readv`/`fs.writev` call
   `h.readv`/`h.writev` unguarded whenever any VFS layer is mounted — so any buffered `fs.createWriteStream` flush

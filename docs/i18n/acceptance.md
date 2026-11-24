@@ -25,8 +25,8 @@ human review / real-browser verification**. It is both a template and a snapshot
   review or cross-device acceptance of en-US / zh-HK / zh-TW.
 - **HK/TW natural differences are not frozen wholesale.** At drafting time the UI catalog had 247 HK/TW differing
   values; the 2026-11-08 21:11 script re-check counted **249**. The number of differences changes as the catalog grows;
-  run `regional-diff` for the current value. Inkling editor labels have 0 HK/TW differences. Identical wording is
-  allowed, and the number of differences is not a quality metric.
+  compare the `zh-HK` and `zh-TW` catalog files for the current value. Inkling editor labels have 0 HK/TW differences.
+  Identical wording is allowed, and the number of differences is not a quality metric.
 
 ## 2. Status legend
 
@@ -49,7 +49,7 @@ human review / real-browser verification**. It is both a template and a snapshot
 | Settings switch (language) | Flush all dirty cards first, then submit the locale, and reload exactly once on success; if any card fails, veto the switch, keep the input, and do not reload; the whole settings panel is inert + `aria-busy` during the switch; focus is restored | `tests/unit/ui/admin/settings/general-locale-switch.test.tsx`; `tests/unit/ui/admin/settings/use-locale-switch.test.tsx`; `tests/unit/ui/admin/settings/general-locale-visibility.test.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | ✅ Passed this round (all three)                                                                                                | ✅ Real browser success/failure switch + focus (§7)                 |
 | Cross-tab                  | After A switches language it broadcasts; B saves its own dirty fields first and then reloads, never writing back A's locale; a failure keeps the edit; degrades safely without `BroadcastChannel`                                                    | `tests/unit/client/lib/locale-sync.test.ts`; `tests/unit/ui/admin/settings/general-locale-sync.test.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | ✅ Passed this round                                                                                                            | ✅ Real two-tab browser (§7)                                        |
 | Content language           | post/page accepts an optional BCP 47 `contentLanguage`; a valid value is emitted as `lang` on the body container; an empty value emits no `lang`; content is not translated, the UI locale is unchanged, Feed URLs are unchanged                     | `tests/it/server/domains/posts/integration.test.ts`, `tests/it/server/domains/pages/integration.test.ts` (create/update round-trip, omit preserves, null clears, invalid tag descriptor); `tests/unit/server/domains/content/content-language.test.ts` (normalize/validate/reject paths); `packages/db/tests/it/migrate.test.ts` (nullable column, no backfill); `tests/snaps/ui/public/post/detail-body-lang.test.tsx` (body `lang` / no `lang` for empty / chrome does not follow content language); `tests/snaps/ui/admin/editor-shared/content-language-field.test.tsx` (label/hint/error in four locales); `tests/it/server/domains/backup/services/backup-restore.test.ts` (backup/restore preserves the field) | ✅ Passed this round (migration/DTO/integration/SSR/editor/backup)                                                              | ✅ Real browser `ar` + `dir=auto` (§7)                              |
-| Real browser               | Completed in real Chromium: dirty-card success/failure switch, Portal focus, cross-tab sparse save/reload, hydration after reloading in all four locales, comment composer current labels, `contentLanguage` DOM                                     | `tests/browser/locale-sync.spec.ts` (5 journeys); `tests/browser/public-i18n.spec.ts` (2 journeys); `tools/browser/src/run.ts` + `tools/browser/src/sea.ts`; `tools/browser/playwright.config.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ✅ 7/7 this round (Chrome 156.0.8078.80 / macOS 15.8.1)                                                                         | ✅ See §7                                                           |
+| Real browser               | Completed in real Chromium: dirty-card success/failure switch, Portal focus, cross-tab sparse save/reload, hydration after reloading in all four locales, comment composer current labels, `contentLanguage` DOM                                     | `tests/browser/locale-sync.spec.ts` (5 journeys); `tests/browser/public-i18n.spec.ts` (2 journeys); `tools/pack/src/sea/browser.ts`; `tools/pack/playwright.config.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ✅ 7/7 this round (Chrome 156.0.8078.80 / macOS 15.8.1)                                                                         | ✅ See §7                                                           |
 
 ## 4. Automated check details
 
@@ -57,7 +57,7 @@ The commands below are the evidence this repository can currently produce; `✅`
 that the copy is good.
 
 ```bash
-# Catalog structure / ICU / representative terms (the term tests added by this document run in the first command)
+# Catalog structure / ICU / representative terms / translation completeness (all run in the first command)
 pnpm test packages/shared/i18n/tests/unit
 
 # Four-locale email key completeness and template rendering
@@ -76,14 +76,13 @@ pnpm run sea:e2e
 # Real Chromium browser journeys (needs the SEA binary; not part of pnpm test)
 pnpm run sea:browser
 pnpm run test:browser   # managed SEA boot, or KOBATO_BROWSER_BASE_URL pointing at an external instance
-
-# Read-only difference report (does not modify the catalog)
-pnpm run i18n:regional-diff --keys
 ```
 
-**What automation can prove:** the four catalogs have identical key sets, ICU parameters and branches are valid, the
-English baseline has no Chinese residue, the root loader uses the current locale, the locale is propagated through the
-email/feed/calendar/settings seams, and the representative terms have not drifted.
+**What automation can prove:** the four catalogs have identical key sets, ICU parameters and branches are valid, no
+value is blank or an untranslated copy of the English baseline outside the reviewed shared terms, the English baseline
+carries no Chinese outside reviewed examples (`tests/unit/catalog-completeness.test.ts`), the root loader uses the
+current locale, the locale is propagated through the email/feed/calendar/settings seams, and the representative terms
+have not drifted.
 
 **What automation cannot prove:** whether translations are natural, whether they fit HK/TW regional usage, whether there
 are untranslated sentences that are still grammatical, how email renders in real mail clients, whether browser hydration
@@ -125,7 +124,7 @@ The planned baseline is **2793 UI keys × 4 locales = 11,172 UI strings**; the 2
 **2800 × 4 = 11,200**, plus 99 server keys × 4 and 157 Inkling labels × 4. The current worktree is still appending keys
 in parallel (UI was 2796 at drafting time and later grew to 2800), so:
 
-- The counts change; `pnpm run i18n:regional-diff` prints the current values.
+- The counts change; the catalog files under `packages/shared/i18n/src/` are the source of truth for the current values.
 - Whether the count is 2793, 2800, or higher, **a passing catalog validation only proves structural completeness**; it
   says nothing about whether any single string has been human-reviewed.
 - This document refuses to substitute "all tests green" for review sign-off, and refuses to treat "HK/TW has 249
@@ -146,7 +145,7 @@ failure attachments this round, and the HTML report is at `tmp/browser-report/in
 CI gate (same suite as the local result):
 
 - The `build` job in `.github/workflows/ci.yml` runs, on **pull_request** events (targeting `main` / `develop`),
-  `sea:build` → `pnpm --filter @kobato/browser exec playwright install --with-deps chromium` →
+  `sea:build` → `pnpm --filter @kobato/pack exec playwright install --with-deps chromium` →
   `pnpm run sea:browser dist-sea/kobato`, with `KOBATO_BROWSER_CHANNEL=chromium` set; plain pushes in that workflow only
   run `pnpm run build`.
 - `build-develop` in `.github/workflows/sea.yml` runs the full chain on PRs and develop pushes (`sea:build` →

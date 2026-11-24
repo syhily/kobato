@@ -1,5 +1,5 @@
-import { SmtpCapture, type CapturedMail } from '@kobato/harness/smtp'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
+import { SmtpCapture, type CapturedMail } from '@kobato/server/tests/utils/smtp-capture'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { createServer } from 'node:net'

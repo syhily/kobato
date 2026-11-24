@@ -1,5 +1,5 @@
-import type { ExitOutcome, ExitState } from '@kobato/harness/process'
-import type { TempDirs } from '@kobato/harness/temp'
+import type { ExitOutcome, ExitState } from '@kobato/pack/instance/process'
+import type { SmokeDatabases, TempDirs } from '@kobato/pack/instance/temp'
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
@@ -11,8 +11,9 @@ import {
   scrubbedParentEnv,
   sleep,
   watchChildExit,
-} from '@kobato/harness/process'
+} from '@kobato/pack/instance/process'
 import { spawn } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -27,6 +28,18 @@ export interface SmokeServer {
   logStream: WriteStream
   logClosed: Promise<void>
   healthResponse: Response | null
+}
+
+export function seaInstanceEnv(dirs: TempDirs, databases: SmokeDatabases): Record<string, string> {
+  return {
+    storage__database: databases.database,
+    storage__analyticsDatabase: databases.analytics,
+    security__sessionSecret: randomBytes(32).toString('hex'),
+    security__encryptionKey: randomBytes(32).toString('hex'),
+    storage__data: dirs.data,
+    KOBATO_CACHE_DIR: dirs.cache,
+    NODE_ENV: 'production',
+  }
 }
 
 export async function ensureBinaryExists(binaryPath: string): Promise<void> {

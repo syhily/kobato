@@ -39,7 +39,7 @@ async function main() {
   console.log('==> vite bundle')
   await rm(seaIntermediatesDir(), { recursive: true, force: true })
   for (const seaBundle of ['server', 'worker', 'smoke']) {
-    run('pnpm', ['exec', 'vite', 'build', '--config', 'vite.sea.config.ts'], {
+    run('pnpm', ['exec', 'vite', 'build', '--config', join(import.meta.dirname, '..', '..', 'vite.config.ts')], {
       env: { ...process.env, SEA_BUNDLE: seaBundle },
     })
   }

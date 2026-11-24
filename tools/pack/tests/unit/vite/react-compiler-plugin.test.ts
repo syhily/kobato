@@ -1,4 +1,4 @@
-import { reactCompilerPlugin } from '@kobato/toolchain/src/vite/react-compiler-plugin'
+import { reactCompilerPlugin } from '@kobato/pack/vite/react-compiler-plugin'
 import { describe, expect, it, vi } from 'vitest'
 
 function makeContext(consumer: 'client' | 'server' | undefined) {

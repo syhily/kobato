@@ -15,8 +15,8 @@ keys**; it is neither a full copy of the four catalogs nor a list of every HK/TW
 - Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the current slice's
   changes.
 - The UI figure 2793 is the planned baseline from plan 002. That worktree is being extended with keys by parallel
-  slices, so the current count per locale is whatever `tools/i18n/src/regional-diff.ts` reports; the **values** in this
-  table are still copied verbatim from the current catalogs.
+  slices, so the current count per locale is whatever the catalog files above contain; the **values** in this table are
+  still copied verbatim from the current catalogs.
 - Values in the tables are copied verbatim from the files above, not paraphrased or "suggested" translations. When a
   catalog changes, update this table and `tests/unit/shared/i18n/glossary.test.ts` in the **same change**.
 - Only the representative items explicitly agreed in this document are pinned; the remaining 200+ natural HK/TW
@@ -265,7 +265,8 @@ and the test.
 
 ## 10. Review workflow
 
-1. Inspect current differences read-only: `pnpm run i18n:regional-diff` (add `--keys` to list the specific keys).
+1. Inspect current differences read-only: search the key across the four catalog files of its namespace
+   (`rg '<key>' packages/shared/i18n/src/messages/<namespace>/`) and compare the values side by side.
 2. Choose a representative term; decide whether it is a "regional difference" or a "shared Traditional Chinese word
    choice".
 3. Land it in all four catalog files at once (the English baseline defines the key; the others use `satisfies`).

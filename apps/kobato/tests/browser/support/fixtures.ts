@@ -2,7 +2,7 @@
 
 import type { BrowserContext, Page } from '@playwright/test'
 
-import { browserEnv } from '@kobato/browser/browser-env'
+import { browserEnv } from '@kobato/pack/instance/client/browser-env'
 import { test as base } from '@playwright/test'
 import { signInAdmin } from '@tests/browser/support/journey'
 import { SettingsApi } from '@tests/browser/support/settings-api'

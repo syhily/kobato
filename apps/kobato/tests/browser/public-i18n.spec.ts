@@ -1,4 +1,4 @@
-import { browserEnv } from '@kobato/browser/browser-env'
+import { browserEnv } from '@kobato/pack/instance/client/browser-env'
 import { expect, test } from '@tests/browser/support/fixtures'
 import { collectConsoleIssues, waitForHydration } from '@tests/browser/support/journey'
 

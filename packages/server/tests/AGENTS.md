@@ -19,7 +19,7 @@
   the product modules before a file's `vi.mock` registers and silently defeat the mock. `job-registry.test.ts` alone
   resets the job handle in its own `beforeEach`; the setup net must not (later tests rely on the import-time wiring).
 - Database lifecycle, DuckDB sidecar, and the rest of the harness: server-owned `tests/utils/` helpers
-  (`integration-db`, `analytics-db`, `mock-ctx`, etc.), also consumed by app route suites through the sanctioned
-  cross-package helper seam; generic infrastructure comes from `@kobato/test` (see `tools/test/AGENTS.md`). Pure
-  SQLite/Drizzle operations, migration tests, AND the DuckDB persistence/query modules' tests live in
+  (`integration-db`, `analytics-db`, `smtp-capture`, `mock-ctx`, etc.), also consumed by app route suites through the
+  sanctioned cross-package helper seam; generic infrastructure comes from `@kobato/test` (see `tools/test/AGENTS.md`).
+  Pure SQLite/Drizzle operations, migration tests, AND the DuckDB persistence/query modules' tests live in
   `packages/db/tests/`; server composition wiring, batchers, lifecycle, and SQLite-side maintenance stay here.

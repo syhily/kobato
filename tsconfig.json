@@ -8,7 +8,6 @@
     "scripts/**/*",
     "oxfmt.config.ts",
     "oxlint.config.ts",
-    "vite.sea.config.ts",
     "vitest.config.ts",
     "apps/kobato/.react-router/types/**/*",
     "**/.server/**/*",

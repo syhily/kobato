@@ -330,13 +330,7 @@ export default defineConfig({
       },
     },
     {
-      files: [
-        'tools/pack/**/*.ts',
-        'tools/trace/**/*.ts',
-        'tools/browser/**/*.ts',
-        'tools/email/**/*.ts',
-        'tools/i18n/**/*.ts',
-      ],
+      files: ['tools/pack/**/*.ts', 'tools/trace/**/*.ts'],
       rules: {
         'no-console': 'off',
         'typescript/no-unsafe-argument': 'off',

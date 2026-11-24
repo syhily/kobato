@@ -72,7 +72,7 @@ jobs:
           pnpm run test:production-rum
         env:
           KOBATO_REQUIRE_PRODUCTION_BUILD: '1'
-      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
         if: github.event_name == 'pull_request'
       - run: pnpm run sea:browser dist-sea/kobato
         if: github.event_name == 'pull_request'

@@ -87,7 +87,7 @@ jobs:
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
         if: matrix.deep-verify
-      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
         if: matrix.deep-verify
       - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
         if: matrix.deep-verify
@@ -123,7 +123,7 @@ jobs:
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
-      - run: pnpm --filter @kobato/browser exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
       - run: pnpm run sea:browser dist-sea/kobato
         env:
           KOBATO_BROWSER_CHANNEL: chromium

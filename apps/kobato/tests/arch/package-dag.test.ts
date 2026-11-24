@@ -77,15 +77,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/api': [...API_SHARED_DEPS, '@kobato/test'],
   '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
 
-  '@kobato/server': [
-    '@kobato/api',
-    '@kobato/db',
-    '@kobato/inkling',
-    '@kobato/test',
-    '@kobato/toolchain',
-    '@kobato/harness',
-    ...SHARED_SPLIT,
-  ],
+  '@kobato/server': ['@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
@@ -132,16 +124,10 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
   ],
   '@kobato/test': [],
-  '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
-
-  '@kobato/harness': ['@kobato/settings', '@kobato/utils'],
 
   kobato: INTERNAL_SCOPES,
-  '@kobato/email': INTERNAL_SCOPES,
-  '@kobato/i18n-tools': INTERNAL_SCOPES,
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
-  '@kobato/browser': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
   '@kobato/font-split': [],
 }
@@ -215,7 +201,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
   ],
   '@kobato/test': ['@kobato/test'],
-  '@kobato/toolchain': ['@kobato/distribution', '@kobato/utils'],
   kobato: [
     'kobato',
     '@kobato/api',
@@ -231,13 +216,9 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/web-client',
     '@kobato/web-public',
   ],
-  '@kobato/harness': ['@kobato/harness', '@kobato/settings', '@kobato/utils'],
 
   '@kobato/pack': INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
-  '@kobato/browser': INTERNAL_SCOPES,
-  '@kobato/email': INTERNAL_SCOPES,
-  '@kobato/i18n-tools': INTERNAL_SCOPES,
   '@kobato/font-split': ['@kobato/font-split'],
 }
 
@@ -423,6 +404,27 @@ describe('package DAG', () => {
     }
 
     expect(offenders).toEqual([])
+  })
+
+  it('the instance driver stays product-light and never reaches the build pipeline', () => {
+    const allowed = new Set(['@kobato/settings', '@kobato/utils'])
+    const offenders: string[] = []
+    for (const file of sourceFiles('tools/pack/src/instance')) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+        if (target === undefined || allowed.has(target)) {
+          continue
+        }
+        if (target === '@kobato/pack' && specifier.startsWith('@kobato/pack/instance/')) {
+          continue
+        }
+        offenders.push(`${file}: ${specifier}`)
+      }
+    }
+    expect(
+      offenders,
+      'src/instance/ drives running instances: it imports only settings, utils, and its own modules',
+    ).toEqual([])
   })
 
   it('the documented src-import exceptions are exactly the pinned list, each type-only', () => {
@@ -649,10 +651,6 @@ describe('package DAG', () => {
       '@kobato/test',
       '@kobato/pack',
       '@kobato/trace',
-      '@kobato/browser',
-      '@kobato/harness',
-      '@kobato/email',
-      '@kobato/i18n-tools',
     ])
     const offenders: string[] = []
     for (const pkg of REPO_PACKAGES.filter((entry) => rootAnchored.has(entry.name))) {

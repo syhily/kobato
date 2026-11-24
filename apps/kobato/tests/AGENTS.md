@@ -21,11 +21,12 @@ resolver.
   No in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (its `tests/e2e/vitest.config.ts` is registered
   nowhere); the `KOBATO_E2E_*` env contract is injected, plus `KOBATO_E2E_DATABASE` — the one sanctioned seam for state
   no HTTP surface can stage (use only when no admin RPC exists; always restore). Mail never leaves the machine
-  (in-process SMTP capture via `@kobato/harness/smtp.ts`).
+  (in-process SMTP capture via `@kobato/server/tests/utils/smtp-capture.ts`). The HTTP / oRPC helpers (`E2eClient`,
+  `callE2eRpc`) come from `@kobato/pack/instance/client`.
 - **`tests/browser/`** — real-Chromium Playwright journeys for behavior jsdom cannot prove. Spec/support files import
   through the `@tests/browser/...` alias resolved by the tree's own tsconfig. That tsconfig deliberately uses a
   file-relative `extends` to `tools/tsconfig/tsconfig.base.json`: Playwright does not apply `paths` through a
-  package-based `extends`. The Playwright config lives in `tools/browser/playwright.config.ts`. **Not part of
+  package-based `extends`. The Playwright config lives in `tools/pack/playwright.config.ts`. **Not part of
   `pnpm test`**: `pnpm run test:browser` boots a throwaway instance or targets `KOBATO_BROWSER_BASE_URL`;
   `pnpm run sea:browser [binary]` always boots the built binary (exits non-zero when missing). Runner env:
   `KOBATO_BROWSER_BASE_URL` + `KOBATO_BROWSER_{ADMIN_EMAIL,ADMIN_PASSWORD,POST_SLUG}`; `global-setup.ts` stages one

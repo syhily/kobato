@@ -1,4 +1,4 @@
-import { browserEnv } from '@kobato/browser/browser-env'
+import { browserEnv } from '@kobato/pack/instance/client/browser-env'
 import { SettingsApi } from '@tests/browser/support/settings-api'
 
 export default async function globalSetup() {

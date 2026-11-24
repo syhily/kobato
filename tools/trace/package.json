@@ -17,7 +17,6 @@
     "trace:up": "node src/up.ts"
   },
   "devDependencies": {
-    "@kobato/harness": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/settings": "workspace:*",

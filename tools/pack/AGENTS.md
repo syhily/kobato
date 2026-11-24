@@ -1,14 +1,33 @@
 # @kobato/pack
 
-Packaging tooling for the single-executable distribution. Nothing here ships inside the product binary.
+Build and release tooling for the single-executable distribution: the SEA pipeline, the build-time Vite plugins, the
+out-of-process instance driver, and the binary-suite entry scripts. Nothing here ships inside the product binary.
 
-- `src/sea/` — the SEA pipeline (asset discovery/embedding, injection, smoke/probe/e2e, self-update).
-- `src/vite/` — the shared `vite.config.ts` building blocks (app define tables, dev-server `optimizeDeps`, sanitize
-  engine alias); `check-bundle.ts` derives its defined-globals table from `seaAppDefines`.
+- `src/sea/` — the SEA pipeline (asset discovery/embedding, injection, smoke/probe) and the binary-suite entry scripts
+  (`e2e.ts`, `browser.ts`).
+- `src/vite/` — every build-time plugin and config helper behind `apps/kobato/vite.config.ts`: app define tables,
+  dev-server `optimizeDeps`, the sanitize engine alias, the React Compiler transform, and the route-warmup manifest
+  writer; `check-bundle.ts` derives its defined-globals table from `seaAppDefines`.
+- `src/instance/` — the out-of-process instance driver behind `sea:smoke` / `sea:e2e` / `sea:browser` and `trace:smoke`:
+  boot, seed, and stop a real kobato process. `src/instance/client/` is the suite-facing half and the ONLY part test
+  trees import; the lifecycle modules next to it are for CLI entry scripts (see "Instance driver").
+- `playwright.config.ts` — the real-browser journey runner config (the journeys live in `apps/kobato/tests/browser/`),
+  at this package root so its imports (`@playwright/test`, `@kobato/pack/instance/client/browser-env`) resolve from this
+  package's `node_modules`; `browser.ts` spawns `pnpm --filter @kobato/pack exec playwright test` and only boots
+  instances, drives the browser, and reports.
+- `vite.config.ts` — the SEA bundle config behind the `SEA_BUNDLE` loop in `src/sea/build.ts` (`server.mjs`,
+  `process-worker.mjs`, `smoke-worker.mjs`). `root` is pinned to the repository root through `repoRoot`, so the entry
+  paths and `outDir` stay workspace-relative wherever the file lives. `build.ts` passes it explicitly with `--config`
+  (an absolute path anchored on `import.meta.dirname`); a bare `vite` run from this package directory auto-discovers it
+  and fails fast unless `SEA_BUNDLE` names a bundle.
 - `src/release.ts` — version sync and release preparation (`release:bump` / `release:prepare-next` / `release:tag` /
   `version:sync`).
 - Build-time configs import the plugins through `@kobato/pack/sea/*` and `@kobato/pack/vite/*`; the one relative import
   left is the build-output entry (`src/sea/server-entry.ts`).
+- `src/vite/` plugins are BUILD code: only a `vite.config.ts` (or a test of the plugin) may import them — a product
+  `src/` module never does, and they never move back into `packages/server/src/infra/`. `route-warmup.ts` reads the
+  manifest contract from `@kobato/distribution/warmup-manifest` and the wire constants from
+  `@kobato/distribution/route-warmup`, and resolves the browser entry through `import.meta.url` (never `process.cwd()`).
 
 ## Runtime shape
 
@@ -41,10 +60,11 @@ No CJS prelude and no filesystem `import()` in the injected script. The entry sh
 
 ## Bundles
 
-Vite 8 builds three bundles (`SEA_BUNDLE` loop in `src/sea/build.ts`): `server.mjs` (injected main) +
-`process-worker.mjs` + `smoke-worker.mjs` (embedded text assets) — minified, single-file, `ssr.noExternal: true`.
-`check-bundle.ts` fails the build on leftover external specifiers or uncovered `__APP_*__`/`__SEA_*__` identifiers. The
-server bundle CARRIES the OpenTelemetry SDK and must never carry the browser RUM SDK.
+Vite 8 builds three bundles (`SEA_BUNDLE` loop in `src/sea/build.ts`, config `vite.config.ts`): `server.mjs` (injected
+main) + `process-worker.mjs` + `smoke-worker.mjs` (embedded text assets) — minified, single-file,
+`ssr.noExternal: true`. `check-bundle.ts` fails the build on leftover external specifiers or uncovered
+`__APP_*__`/`__SEA_*__` identifiers. The server bundle CARRIES the OpenTelemetry SDK and must never carry the browser
+RUM SDK.
 
 ## Natives
 
@@ -56,11 +76,37 @@ platform `require(...)` sites to `nativeRequire` against the flat dir. `font-spl
 build of `@kobato/font-split` (`pnpm --filter @kobato/font-split run build` must precede `sea:build`) — it carries no
 companion libraries and no rpath patch, and server code reaches it only through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`.
 
-## Instance harness
+## Instance driver (`src/instance/`)
 
-The out-of-process lifecycle behind `sea:smoke` / `sea:e2e` / `sea:browser` lives in `@kobato/harness` — this package
-keeps the build/inject/budget/bundle-check pipeline and entry scripts only; extend the harness instead (never the
-reverse).
+Everything that drives a kobato instance as a REAL separate process — two halves with no dependencies between them:
+
+- **Lifecycle** (CLI entry scripts only) — `process.ts` (`pickFreePort`, `fetchManual`, `scrubbedParentEnv`,
+  `watchChildExit` / `raceChildExit`), `temp.ts` (`makeTempDirs()` per-run data/cache/cwd roots, `smokeDatabases`),
+  `sea-instance.ts` (the built SEA binary as an HTTP instance: `ensureBinaryExists`, `seaInstanceEnv`, `bootServer`,
+  `waitForHttp`, `waitForExit`), `dev-instance.ts` (the repository DEV server: `writeDevConfig`, `bootDevServer`,
+  `stopDevServer`), `seed.ts` (plain-SQL state for STOPPED instances: `seedInstalledInstance`, `relaxRateLimits`,
+  `readConvergedConfig`), `suite-instance.ts` (`bootSuiteInstance` — boot, prove the 303 install gate, seed the admin +
+  relaxed rate limits, restart; `stopSuiteInstance`), `analytics.ts` (`scanAccessEvents`, the DuckDB sidecar AFTER
+  shutdown).
+- **`client/`** (what the live-instance suites speak) — `http.ts` (`E2eClient`, the `KOBATO_E2E_*` env contract, CSRF
+  extraction, real signin), `rpc.ts` (`callE2eRpc`; `path` is the camelCase structural router path — kebab-case
+  `.route()` strings are OpenAPI metadata, not the RPC wire path), `browser-env.ts` (the `KOBATO_BROWSER_*` env
+  contract).
+
+`src/sea/{smoke,e2e,browser}.ts` and `@kobato/trace` compose both halves; `apps/kobato` `tests/e2e` and `tests/browser`
+import `@kobato/pack/instance/client/*`.
+
+- The driver imports only `@kobato/settings`, `@kobato/utils`, and its own modules: it drives built artifacts and
+  running processes, never a source graph, and never reaches `src/sea` or `src/vite` — pinned by
+  `apps/kobato/tests/arch/package-dag.test.ts`.
+- The config file always lives inside the per-run temp root; config vars never come from the parent env (env > file
+  would silently override the converged file); seeding only touches a STOPPED database; every boot pairs with a stop
+  (`stopDevServer`, `stopSuiteInstance`) that SIGTERMs the child and removes the temp root — entry scripts call it from
+  `finally`.
+- Entry scripts run under plain `node` type-stripping, so every module they reach — the lifecycle half and
+  `client/browser-env.ts` — stays free of non-strip TS syntax (no parameter properties, enums, or namespaces);
+  `client/http.ts` and `client/rpc.ts` load under Vitest, Playwright, or `vite-node` only. Keep every module importable
+  with zero side effects.
 
 ## Tests
 
@@ -68,7 +114,8 @@ reverse).
 `@kobato/test/vitest.base.ts`); run with `pnpm test tools/pack` — the config anchors at the REPOSITORY ROOT, so filters
 resolve from there. The suites pin the SEA compression contract across the writer/reader seam
 (`sea/sea-compression.test.ts`), the `check-bundle` scanner, the inline-package-data rewrite shapes against the
-INSTALLED packages, and the installed native platform specifiers. Cross-package asset-key pins live in
+INSTALLED packages, the installed native platform specifiers, and the build-time plugins (`vite/`: React Compiler
+gating, route-warmup tiering + manifest writer, `optimizeDeps`, define tables). Cross-package asset-key pins live in
 `apps/kobato/tests/arch/`.
 
 ## Commands
@@ -88,7 +135,8 @@ INSTALLED packages, and the installed native platform specifiers. Cross-package 
   writes + re-verifies the `.tar.gz.sha256` and bare-binary `.sha256` sidecars; `--deb` (linux-x64) also runs
   `scripts/build-deb.sh` and writes the deb sidecar.
 - `pnpm run sea:e2e [binary]` / `sea:browser [binary]` — the two binary suites (coverage in
-  `apps/kobato/tests/AGENTS.md`).
+  `apps/kobato/tests/AGENTS.md`). `pnpm run test:browser` runs the same journeys against `KOBATO_BROWSER_BASE_URL` when
+  it is set, and otherwise boots the binary exactly like `sea:browser`.
 
 ## Delivery targets
 

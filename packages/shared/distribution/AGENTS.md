@@ -8,7 +8,7 @@ Build-time identity and distribution-artifact contracts shared by the applicatio
 - `route-warmup.ts` owns the client-manifest shape, sentinel, and warmup exclusion patterns shared by build, SSR, and
   browser idle loading.
 - `warmup-manifest.ts` owns the `warmup-manifest.json` file contract (parse/validate/chunk walk) consumed by BOTH the
-  build plugin in `tools/toolchain` and the SSR reader in `@kobato/server/render/warmup`.
+  build plugin in `tools/pack` and the SSR reader in `@kobato/server/render/warmup`.
 - No Node runtime, filesystem, packaging implementation, RPC DTOs, or React. This package has no internal dependencies.
 - Tests: `tests/unit/` (`shared-unit`, release chain + warmup manifest). The SEA writer/reader contract pins live in
   `tools/pack/tests/unit/sea/` (`pack-unit`); the SEA asset-key cross-package pins live in `apps/kobato/tests/arch/`.

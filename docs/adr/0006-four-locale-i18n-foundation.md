@@ -164,9 +164,10 @@ prove a stale `If-None-Match` never answers `304` in the old language, and resto
   backup/restore with the database file, rendered ONLY as the body container's `lang`; the four UI locales, the switch
   and every URL stay unchanged.
 - Terminology baseline and anchors: `docs/i18n/glossary.md`; acceptance matrix and review boundary:
-  `docs/i18n/acceptance.md`; read-only HK/TW difference report: `tools/i18n/src/regional-diff.ts`
-  (`pnpm i18n:regional-diff --keys`); representative terms pinned by `tests/unit/shared/i18n/glossary.test.ts`, which
-  does not freeze every natural difference and does not require `zh-HK` and `zh-TW` to differ.
+  `docs/i18n/acceptance.md`; translation completeness (no blank value, no untranslated copy of the English baseline
+  outside the reviewed shared terms) pinned by `tests/unit/shared/i18n/catalog-completeness.test.ts`; representative
+  terms pinned by `tests/unit/shared/i18n/glossary.test.ts`, which does not freeze every natural difference and does not
+  require `zh-HK` and `zh-TW` to differ.
 
 ## Alternatives considered
 

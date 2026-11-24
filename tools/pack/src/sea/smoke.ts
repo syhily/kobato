@@ -1,15 +1,20 @@
-import type { SmokeServer } from '@kobato/harness/sea-instance'
+import type { SmokeServer } from '@kobato/pack/instance/sea-instance'
 
-import { scanAccessEvents } from '@kobato/harness/analytics'
-import { fetchManual, scrubbedParentEnv, sleep } from '@kobato/harness/process'
-import { bootServer, ensureBinaryExists, waitForExit, waitForHttp } from '@kobato/harness/sea-instance'
-import { readConvergedConfig, seedInstalledInstance } from '@kobato/harness/seed'
-import { makeTempDirs, smokeDatabases } from '@kobato/harness/temp'
+import { scanAccessEvents } from '@kobato/pack/instance/analytics'
+import { fetchManual, scrubbedParentEnv, sleep } from '@kobato/pack/instance/process'
+import {
+  bootServer,
+  ensureBinaryExists,
+  seaInstanceEnv,
+  waitForExit,
+  waitForHttp,
+} from '@kobato/pack/instance/sea-instance'
+import { readConvergedConfig, seedInstalledInstance } from '@kobato/pack/instance/seed'
+import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
 import { fail } from '@kobato/pack/sea/exec'
 import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 
@@ -385,15 +390,7 @@ async function runManaged(binaryPath: string) {
   console.log(`    database: ${databases.database}`)
   console.log(`    temp dir: ${dirs.root}`)
 
-  const env = {
-    storage__database: databases.database,
-    storage__analyticsDatabase: databases.analytics,
-    security__sessionSecret: randomBytes(32).toString('hex'),
-    security__encryptionKey: randomBytes(32).toString('hex'),
-    storage__data: dirs.data,
-    KOBATO_CACHE_DIR: dirs.cache,
-    NODE_ENV: 'production',
-  }
+  const env = seaInstanceEnv(dirs, databases)
 
   let server = null as SmokeServer | null
   try {
@@ -521,15 +518,7 @@ async function runBinaryOnly(binaryPath: string) {
   await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
   await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
   await check('kobato --smoke-worker (sharp worker pool)', () =>
-    checkWorker(binaryPath, {
-      storage__database: databases.database,
-      storage__analyticsDatabase: databases.analytics,
-      security__sessionSecret: randomBytes(32).toString('hex'),
-      security__encryptionKey: randomBytes(32).toString('hex'),
-      storage__data: dirs.data,
-      KOBATO_CACHE_DIR: dirs.cache,
-      NODE_ENV: 'production',
-    }),
+    checkWorker(binaryPath, seaInstanceEnv(dirs, databases)),
   )
 
   return async () => {

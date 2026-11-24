@@ -12,10 +12,9 @@ pnpm monorepo with four top-level roots; nothing else is created at the root:
   `@kobato/ui` (design system), `@kobato/inkling` (Lexical editor: React runtime, React-free `/headless/` document
   model, `/host-cards/` assemblies), `packages/web/*` (`web-client`, `web-public`, `web-admin`), and nine isomorphic
   React-free leaves under `packages/shared/*`.
-- `tools/` — dev-support packages (`toolchain`, `tsconfig`, `test`, `harness`, `browser`, `email`, `i18n-tools`,
-  `trace`, `pack`, `font-split`); nothing ships in the product binary, and product `src/` never imports a tools package
-  — `font-split` is the sole carve-out: its compiled Node-API addon ships as a SEA native, loaded only through
-  `nativeRequire` specifier strings (never an import).
+- `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`); nothing ships in the product
+  binary, and product `src/` never imports a tools package — `font-split` is the sole carve-out: its compiled Node-API
+  addon ships as a SEA native, loaded only through `nativeRequire` specifier strings (never an import).
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
   `tools/`.
 

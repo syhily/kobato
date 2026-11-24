@@ -8,7 +8,7 @@ CLI-only probes (`doctor-report.ts`, `intl-probe.ts`).
 - `db/paths.ts` resolves validated config into BOTH engines' paths (`resolveDatabasePath` / `resolveAnalyticsPath`);
   `__setEnginePathsForTests` pins both for a test file. `data-paths.ts` is its non-database twin (fonts, MaxMind,
   dead-letter). The engines open in `@kobato/db` — infra owns no engine code.
-- Build-time Vite plugins are NOT infra: they live in `tools/toolchain/src/vite/` (`react-compiler-plugin.ts`,
+- Build-time Vite plugins are NOT infra: they live in `tools/pack/src/vite/` (`react-compiler-plugin.ts`,
   `route-warmup.ts`). Never import a tool package from here.
 - A module belongs here only while domain-agnostic — searchable post text, visibility gates, site-origin derivation, and
   Webmention headers live in `domains/`.

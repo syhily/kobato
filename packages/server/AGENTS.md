@@ -221,9 +221,9 @@ the root. Produces strings, `Buffer`s, or `Response`s; never persists.
   `sanitizeFeedHtml`.
 - Renderers receive the request context's PINNED `settings` bundle — never a second snapshot read. The sidebar's
   latest-comments digest and taxonomy lists read SQLite directly (indexed point reads, no bucket).
-- Route prewarming: `tools/toolchain/src/vite/route-warmup.ts` tiers ~500 client chunks; `render/warmup/manifest.ts`
-  emits critical preloads, idle tiers via inline script. Tier-2 buckets derive from route-ID prefixes; only
-  `TIER1_ROUTES` is editorial (`apps/kobato/tests/unit/infra/route-warmup.test.ts`).
+- Route prewarming: `tools/pack/src/vite/route-warmup.ts` tiers ~500 client chunks; `render/warmup/manifest.ts` emits
+  critical preloads, idle tiers via inline script. Tier-2 buckets derive from route-ID prefixes; only `TIER1_ROUTES` is
+  editorial (`apps/kobato/tests/unit/infra/route-warmup.test.ts`).
 
 ## Sessions & request context
 

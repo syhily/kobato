@@ -621,9 +621,6 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:tools/test
-      '@kobato/toolchain':
-        specifier: workspace:*
-        version: link:tools/toolchain
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:tools/tsconfig
@@ -765,9 +762,6 @@ importers:
       '@kobato/auth':
         specifier: workspace:*
         version: link:../../packages/shared/auth
-      '@kobato/browser':
-        specifier: workspace:*
-        version: link:../../tools/browser
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../../packages/shared/catalog
@@ -777,9 +771,6 @@ importers:
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../../packages/shared/distribution
-      '@kobato/harness':
-        specifier: workspace:*
-        version: link:../../tools/harness
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../packages/shared/i18n
@@ -798,9 +789,6 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
-      '@kobato/toolchain':
-        specifier: workspace:*
-        version: link:../../tools/toolchain
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig
@@ -1224,9 +1212,6 @@ importers:
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../shared/distribution
-      '@kobato/harness':
-        specifier: workspace:*
-        version: link:../../tools/harness
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n
@@ -1242,9 +1227,6 @@ importers:
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
-      '@kobato/toolchain':
-        specifier: workspace:*
-        version: link:../../tools/toolchain
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig
@@ -1933,89 +1915,11 @@ importers:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
-  tools/browser:
-    devDependencies:
-      '@kobato/harness':
-        specifier: workspace:*
-        version: link:../harness
-      '@kobato/pack':
-        specifier: workspace:*
-        version: link:../pack
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.65.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.6
-      bcryptjs:
-        specifier: 'catalog:'
-        version: 3.0.3
-
-  tools/email:
-    devDependencies:
-      '@kobato/i18n':
-        specifier: workspace:*
-        version: link:../../packages/shared/i18n
-      '@kobato/server':
-        specifier: workspace:*
-        version: link:../../packages/server
-      '@kobato/settings':
-        specifier: workspace:*
-        version: link:../../packages/shared/settings
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.6
-      vite-node:
-        specifier: 'catalog:'
-        version: 6.0.0(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
-
   tools/font-split:
     devDependencies:
       '@napi-rs/cli':
         specifier: 'catalog:'
         version: 3.11.1(@emnapi/core@2.0.0-beta.3)(@emnapi/runtime@2.0.0-beta.3)(@types/node@26.6.6)
-
-  tools/harness:
-    devDependencies:
-      '@duckdb/node-api':
-        specifier: 'catalog:'
-        version: 2.0.1-r.1
-      '@kobato/settings':
-        specifier: workspace:*
-        version: link:../../packages/shared/settings
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.6
-
-  tools/i18n:
-    devDependencies:
-      '@kobato/i18n':
-        specifier: workspace:*
-        version: link:../../packages/shared/i18n
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.6
-      vite-node:
-        specifier: 'catalog:'
-        version: 6.0.0(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
 
   tools/pack:
     devDependencies:
@@ -2025,24 +1929,33 @@ importers:
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../../packages/shared/distribution
-      '@kobato/harness':
-        specifier: workspace:*
-        version: link:../harness
       '@kobato/server':
         specifier: workspace:*
         version: link:../../packages/server
+      '@kobato/settings':
+        specifier: workspace:*
+        version: link:../../packages/shared/settings
       '@kobato/test':
         specifier: workspace:*
         version: link:../test
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@kobato/utils':
+        specifier: workspace:*
+        version: link:../../packages/shared/utils
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.65.1
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
       bcryptjs:
         specifier: 'catalog:'
         version: 3.0.3
+      oxc-transform-react:
+        specifier: 'catalog:'
+        version: 0.158.0
       sharp:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.6)
@@ -2101,30 +2014,8 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
 
-  tools/toolchain:
-    dependencies:
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../../packages/shared/distribution
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
-    devDependencies:
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      oxc-transform-react:
-        specifier: 'catalog:'
-        version: 0.158.0
-      vite:
-        specifier: 'catalog:'
-        version: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
-
   tools/trace:
     devDependencies:
-      '@kobato/harness':
-        specifier: workspace:*
-        version: link:../harness
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling

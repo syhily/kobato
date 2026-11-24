@@ -1,10 +1,8 @@
 import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data'
+import { repoRoot } from '@kobato/pack/sea/paths'
 import { redirectNativeRequiresPlugin } from '@kobato/pack/sea/redirect-native-requires'
 import { readAppPackage, seaAppDefines } from '@kobato/pack/vite/app-metadata'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-
-const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
 const BUNDLES = {
   server: { entry: 'tools/pack/src/sea/server-entry.ts', format: 'es', fileName: 'server.mjs' },
@@ -23,7 +21,7 @@ function selectBundle(): { entry: string; format: 'cjs' | 'es'; fileName: string
 const bundle = selectBundle()
 
 export default defineConfig({
-  root: projectRoot,
+  root: repoRoot,
   logLevel: 'info',
   define: seaAppDefines(readAppPackage()),
   plugins: [redirectNativeRequiresPlugin(), inlinePackageDataPlugin()],

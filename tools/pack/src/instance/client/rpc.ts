@@ -1,4 +1,4 @@
-import type { E2eClient } from '@kobato/harness/http'
+import type { E2eClient } from '@kobato/pack/instance/client/http'
 
 export interface E2eRpcResult<T> {
   status: number
