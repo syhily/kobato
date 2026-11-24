@@ -34,8 +34,11 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   data generation, incl. the opencc-rs/cmake chain, is gone).
 - `src/index.ts` — typed TS wrapper: `fontSplit(props): Promise<FontSplitOutputFile[]>`, lazy-loads `font-split.node`
   with an actionable error when missing.
-- `scripts/copy-addon.ts` — renames the cdylib to the stable `font-split.node` at the package root (the specifier both
-  `nativeRequire` and SEA staging rely on); run via Node 26 type stripping.
+- `font-split.node` (package root, gitignored) — the addon binary, built and placed by `@napi-rs/cli`
+  (`napi build --release --output-dir .`); the stable specifier both `nativeRequire` and SEA staging rely on. The file
+  name comes from `napi.binaryName` in `package.json`. The CLI always compiles with `--target <host triple>`, so cargo
+  intermediates land in `target/<triple>/release/` (the `corpus:*` scripts still use `target/release/`). The CLI-emitted
+  `.d.ts` is parked at `target/font-split.d.ts` — nothing consumes it; `src/index.ts` is the type surface.
 - `src/bin/corpus/` + `src/corpus/` — the data-generation pipeline behind Cargo feature `corpus` (never compiled into
   the addon or CI builds; `opencc-fmmseg`/`memchr` are optional deps). The lib module holds the logic (so
   `tests/corpus.rs` can reach it); the bin is a thin CLI shim. Subcommands: `download` (fetch the pinned zhwiki dump
@@ -82,9 +85,9 @@ the upstream demo fonts were dropped. Output = `result.css` + `*.woff2` only.
 
 ## Commands
 
-- `pnpm --filter @kobato/font-split run build` — `cargo build --release` + copy to `font-split.node`. Required once per
-  machine before `pnpm dev` / server tests touch font slicing, and in CI before `sea:build`. Requires a stable Rust
-  toolchain (`rust-toolchain.toml`) and a C++ compiler.
+- `pnpm --filter @kobato/font-split run build` — `napi build --release --output-dir .` (`@napi-rs/cli`): builds the
+  cdylib and places it at `font-split.node`. Required once per machine before `pnpm dev` / server tests touch font
+  slicing, and in CI before `sea:build`. Requires a stable Rust toolchain (`rust-toolchain.toml`) and a C++ compiler.
 - `pnpm --filter @kobato/font-split run test` — `cargo test`.
 - `pnpm --filter @kobato/font-split run corpus:download` / `corpus:build` — fetch the pinned zhwiki dump and run the
   one-pass frequency/fixture build (local only, never CI).

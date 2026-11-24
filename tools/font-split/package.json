@@ -15,12 +15,18 @@
     ]
   },
   "scripts": {
-    "build": "cargo build --release && node scripts/copy-addon.ts",
+    "build": "napi build --release --output-dir . --dts target/font-split.d.ts",
     "corpus:build": "cargo run --release --features corpus --bin corpus -- build",
     "corpus:download": "cargo run --release --features corpus --bin corpus -- download",
     "corpus:generate": "cargo run --release --features corpus --bin corpus -- generate",
     "corpus:test": "cargo test --features corpus --test corpus",
     "corpus:update": "pnpm run corpus:generate && cargo test --features corpus && pnpm run build",
     "test": "cargo test"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "catalog:"
+  },
+  "napi": {
+    "binaryName": "font-split"
   }
 }
