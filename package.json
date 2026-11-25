@@ -69,7 +69,7 @@
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ],
     "*.{md,json}": [
-      "oxfmt -c oxfmt.config.ts --write"
+      "oxfmt -c oxfmt.config.ts --write --no-error-on-unmatched-pattern"
     ]
   },
   "devEngines": {
