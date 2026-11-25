@@ -1,5 +1,5 @@
 import type { CacheBucketStats } from '@kobato/api/contracts/admin/cache'
-import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 
 import {
   AlertDialog,

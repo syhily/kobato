@@ -1,5 +1,5 @@
 import { isoDateTime } from '@kobato/api/contracts/primitives'
-import { CACHE_BUCKET_IDS } from '@kobato/cache/types'
+import { CACHE_BUCKET_IDS } from '@kobato/settings/cache-bucket'
 import { z } from 'zod'
 
 const cacheBucketId = z.enum(CACHE_BUCKET_IDS)

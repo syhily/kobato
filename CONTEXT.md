@@ -106,11 +106,11 @@ _Avoid_: saving the locale first, reloading on a commit failure, a per-field sav
 ## Cache
 
 **Cache declaration**: one named bucket (og, calendar, avatar, imageMeta, searchResult, feed, sitemap, categories, tags,
-comments, githubRelease, githubAvatar): metadata in `@kobato/cache/registry.ts` (label, description, default prefix +
-TTL, tunable flag), behavior in `@kobato/server/infra/cache/registry.ts` (key shape, codec, write policy). Consumers use
-its db-free verbs (`through`, `get`/`set`/`remove`/`clear`, `throughMany`, generation counters), never `file-store`.
-Storage is `<storage.data>/cache`; content invalidates through `invalidateContent(event)`. _Avoid_: hand-rolled
-cache-aside, ad-hoc keys outside the behavior plane
+comments, githubRelease, githubAvatar): metadata in `@kobato/settings/cache-registry.ts` (label, description, default
+prefix + TTL, tunable flag), behavior in `@kobato/server/infra/cache/registry.ts` (key shape, codec, write policy).
+Consumers use its db-free verbs (`through`, `get`/`set`/`remove`/`clear`, `throughMany`, generation counters), never
+`file-store`. Storage is `<storage.data>/cache`; content invalidates through `invalidateContent(event)`. _Avoid_:
+hand-rolled cache-aside, ad-hoc keys outside the behavior plane
 
 **Locale representation**: localized server output keys on the reader dimension AND the settings generation:
 `feed`/`calendar` on `locale:APP_VERSION:settingsRevision:<content key>` (calendar adds the theme), `og` on

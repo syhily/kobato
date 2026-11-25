@@ -1,11 +1,11 @@
 import type { Database } from '@kobato/db/sqlite/database'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
 import { purgeExpiredOneTimeTokens } from '@kobato/db/sqlite/operations/identity/otp'
 import { purgeExpiredSessions } from '@kobato/db/sqlite/operations/identity/session'
 import { sweepBucket } from '@kobato/server/infra/cache/file-store'
 import { jobDb, registerJob } from '@kobato/server/infra/job-registry'
 import { getLogger } from '@kobato/server/infra/logger'
+import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
 
 const log = getLogger('kv.maintenance')
 

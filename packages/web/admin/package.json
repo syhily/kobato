@@ -19,7 +19,6 @@
     "@kobato/api": "workspace:*",
     "@kobato/assets": "workspace:*",
     "@kobato/auth": "workspace:*",
-    "@kobato/cache": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",

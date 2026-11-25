@@ -909,9 +909,6 @@ importers:
       '@kobato/auth':
         specifier: workspace:*
         version: link:../shared/auth
-      '@kobato/cache':
-        specifier: workspace:*
-        version: link:../shared/cache
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../shared/catalog
@@ -1197,9 +1194,6 @@ importers:
       '@kobato/auth':
         specifier: workspace:*
         version: link:../shared/auth
-      '@kobato/cache':
-        specifier: workspace:*
-        version: link:../shared/cache
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../shared/catalog
@@ -1384,21 +1378,6 @@ importers:
         specifier: 'catalog:'
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.7)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.7)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
-  packages/shared/cache:
-    devDependencies:
-      '@kobato/i18n':
-        specifier: workspace:*
-        version: link:../i18n
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../utils
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.7)(@vitest/coverage-v8@5.1.1)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.0))(vite@8.3.8(@types/node@26.6.7)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-
   packages/shared/catalog:
     devDependencies:
       '@kobato/i18n':
@@ -1476,9 +1455,6 @@ importers:
       '@kobato/assets':
         specifier: workspace:*
         version: link:../assets
-      '@kobato/cache':
-        specifier: workspace:*
-        version: link:../cache
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -1620,9 +1596,6 @@ importers:
       '@kobato/auth':
         specifier: workspace:*
         version: link:../../shared/auth
-      '@kobato/cache':
-        specifier: workspace:*
-        version: link:../../shared/cache
       '@kobato/distribution':
         specifier: workspace:*
         version: link:../../shared/distribution

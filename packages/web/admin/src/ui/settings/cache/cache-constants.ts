@@ -1,4 +1,4 @@
-import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry'
+import { FIXED_CACHE_PREFIXES } from '@kobato/settings/cache-registry'
 
 export const SECONDS_PER_HOUR = 60 * 60
 export const MIN_TTL_HOURS = 1

@@ -1,4 +1,4 @@
-import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 
 export interface ClearStatus {
   state: 'idle' | 'pending' | 'success' | 'error'

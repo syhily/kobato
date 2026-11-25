@@ -44,8 +44,6 @@
       "@kobato/utils/tests/*": ["../../packages/shared/utils/tests/*"],
       "@kobato/i18n/*": ["../../packages/shared/i18n/src/*"],
       "@kobato/i18n/tests/*": ["../../packages/shared/i18n/tests/*"],
-      "@kobato/cache/*": ["../../packages/shared/cache/src/*"],
-      "@kobato/cache/tests/*": ["../../packages/shared/cache/tests/*"],
       "@kobato/auth/*": ["../../packages/shared/auth/src/*"],
       "@kobato/auth/tests/*": ["../../packages/shared/auth/tests/*"],
       "@kobato/catalog/*": ["../../packages/shared/catalog/src/*"],

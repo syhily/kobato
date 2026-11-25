@@ -1,6 +1,6 @@
 import type { AdminCacheStatsDto, ClearCacheResultDto } from '@kobato/api/contracts/admin/cache'
-import type { ClearCacheTarget } from '@kobato/cache/types'
 import type { Database } from '@kobato/db/sqlite/database'
+import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 
 import {
   clearAllBuckets,

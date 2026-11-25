@@ -86,8 +86,8 @@ describe('arch: the shared leaf packages and the api SDK are UI-runtime-free', (
   it('discovers the shared leaf src trees automatically', () => {
     expect(
       SHARED_SRC_ROOTS.length,
-      'expected at least the nine documented leaves — the umbrella collapsed or moved',
-    ).toBeGreaterThanOrEqual(9)
+      'expected at least the eight documented leaves — the umbrella collapsed or moved',
+    ).toBeGreaterThanOrEqual(8)
   })
 
   it('has no .tsx source files', () => {

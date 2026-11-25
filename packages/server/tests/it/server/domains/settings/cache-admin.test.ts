@@ -1,4 +1,4 @@
-import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { session } from '@kobato/db/sqlite/schema/session'

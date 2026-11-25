@@ -16,7 +16,7 @@ const db = { delete: vi.fn(() => ({ where })) }
 const { scheduleRegisteredJob, setJobHandleGetter } = await import('@kobato/server/infra/job-registry')
 const { sweepExpiredKvEntries } = await import('@kobato/server/infra/cache/kv-maintenance')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
-const { CACHE_DECLARATIONS } = await import('@kobato/cache/registry')
+const { CACHE_DECLARATIONS } = await import('@kobato/settings/cache-registry')
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 

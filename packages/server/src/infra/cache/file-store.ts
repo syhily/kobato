@@ -1,9 +1,9 @@
 import type { JsonValue } from '@kobato/server/infra/json'
 import type { Dirent } from 'node:fs'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
 import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { serverConfig } from '@kobato/server/infra/config'
+import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Buffer } from 'node:buffer'
 import { createHash, randomBytes } from 'node:crypto'

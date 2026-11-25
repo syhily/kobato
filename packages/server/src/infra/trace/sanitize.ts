@@ -1,6 +1,6 @@
 import type { SpanAttributeValue, SpanAttributes } from '@kobato/server/infra/trace/facade'
 
-import { CACHE_BUCKET_IDS } from '@kobato/cache/types'
+import { CACHE_BUCKET_IDS } from '@kobato/settings/cache-bucket'
 
 const SPAN_ATTRIBUTE_KEYS: ReadonlySet<string> = new Set([
   'http.request.method',

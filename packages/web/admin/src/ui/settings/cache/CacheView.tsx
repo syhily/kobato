@@ -1,5 +1,5 @@
 import type { ReservedCacheBucketStats } from '@kobato/api/contracts/admin/cache'
-import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/cache/types'
+import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/settings/cache-bucket'
 import type { CacheSettings } from '@kobato/settings/types'
 
 import { Button } from '@kobato/ui/components/button'

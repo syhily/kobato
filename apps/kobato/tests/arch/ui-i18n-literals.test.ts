@@ -18,7 +18,6 @@ const SCAN_ROOTS = [
   'packages/shared/distribution/src',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
-  'packages/shared/cache/src',
   'packages/shared/settings/src',
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
@@ -265,8 +264,8 @@ describe('production sources', () => {
     expect(scannedFiles).toEqual(
       expect.arrayContaining([
         'packages/web/admin/src/ui/settings/display.ts',
-        'packages/shared/cache/src/registry.ts',
-        'packages/shared/cache/src/types.ts',
+        'packages/shared/settings/src/cache-bucket.ts',
+        'packages/shared/settings/src/cache-registry.ts',
         'packages/shared/auth/src/roles.ts',
         'packages/shared/utils/src/site-date.ts',
         'packages/web/admin/src/ui/analytics/time-labels.ts',

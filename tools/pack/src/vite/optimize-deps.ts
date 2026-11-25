@@ -25,7 +25,6 @@ const WORKSPACE_PACKAGE_DIRS = [
   'packages/shared/catalog',
   'packages/shared/distribution',
   'packages/shared/i18n',
-  'packages/shared/cache',
   'packages/shared/settings',
   'packages/shared/assets',
   'packages/shared/sanitize',

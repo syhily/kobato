@@ -15,7 +15,6 @@ const SOURCE_DIRS = [
   'packages/shared/distribution/src',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
-  'packages/shared/cache/src',
   'packages/shared/settings/src',
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',

@@ -1,4 +1,4 @@
-import type { ClearCacheTarget } from '@kobato/cache/types'
+import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
 
 import { cn } from '@kobato/ui/lib/cn'

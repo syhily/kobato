@@ -1,4 +1,3 @@
-import type { CacheBucketId } from '@kobato/cache/types'
 import type { MetricAttributes } from '@kobato/server/infra/trace/facade'
 import type {
   DbEngine,
@@ -7,6 +6,7 @@ import type {
   ImageSizeBucket,
   RumRelayOutcome,
 } from '@kobato/server/infra/trace/sanitize'
+import type { CacheBucketId } from '@kobato/settings/cache-bucket'
 
 import { counter, histogram, upDownCounter } from '@kobato/server/infra/trace/facade'
 import { sanitizeAttributeValue } from '@kobato/server/infra/trace/sanitize'

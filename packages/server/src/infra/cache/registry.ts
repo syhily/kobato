@@ -1,10 +1,8 @@
-import type { CacheBucketId } from '@kobato/cache/types'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { JsonValue } from '@kobato/server/infra/json'
+import type { CacheBucketId } from '@kobato/settings/cache-bucket'
 import type { ZodType } from 'zod'
 
-import { CACHE_DECLARATIONS } from '@kobato/cache/registry'
-import { isTunableCacheBucket } from '@kobato/cache/types'
 import {
   bumpGeneration,
   getItemRawWithExpiry,
@@ -27,6 +25,8 @@ import {
 import { getLogger } from '@kobato/server/infra/logger'
 import { withSpanAsync } from '@kobato/server/infra/trace/facade'
 import { recordCacheLookup } from '@kobato/server/infra/trace/metrics'
+import { isTunableCacheBucket } from '@kobato/settings/cache-bucket'
+import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Buffer } from 'node:buffer'

@@ -22,7 +22,6 @@ const PACKAGE_SRC_ROOTS: Record<string, string> = {
   api: 'packages/api/src',
   utils: 'packages/shared/utils/src',
   i18n: 'packages/shared/i18n/src',
-  cache: 'packages/shared/cache/src',
   settings: 'packages/shared/settings/src',
   assets: 'packages/shared/assets/src',
   sanitize: 'packages/shared/sanitize/src',

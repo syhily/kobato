@@ -9,7 +9,7 @@ runtime state):
   `inkling-demo` (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/ui`, `@kobato/inkling`
   (Lexical editor with a React-free `/headless/` document model), `packages/web/*` (`web-client`, `web-public`,
-  `web-admin`), and nine isomorphic React-free leaves under `packages/shared/*`.
+  `web-admin`), and eight isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in

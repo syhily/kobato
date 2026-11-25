@@ -1,12 +1,12 @@
-import { CACHE_DECLARATIONS, FIXED_CACHE_PREFIXES } from '@kobato/cache/registry'
-import { RESERVED_CACHE_BUCKETS } from '@kobato/cache/types'
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'
+import { RESERVED_CACHE_BUCKETS } from '@kobato/settings/cache-bucket'
+import { CACHE_DECLARATIONS, FIXED_CACHE_PREFIXES } from '@kobato/settings/cache-registry'
 import { describe, expect, it } from 'vitest'
 
 const tZhCN = makeTranslator('zh-CN')
 const tEnUS = makeTranslator('en-US')
 
-describe('cache/registry — neutral metadata', () => {
+describe('settings/cache-registry — neutral metadata', () => {
   it('keeps every machine id, prefix and tunable flag', () => {
     expect(CACHE_DECLARATIONS.map((entry) => entry.id)).toContain('og')
     expect(CACHE_DECLARATIONS.find((entry) => entry.id === 'og')?.defaultPrefix).toBe('og:')

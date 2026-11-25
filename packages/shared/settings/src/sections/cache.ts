@@ -1,7 +1,11 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { FIXED_CACHE_PREFIXES } from '@kobato/cache/registry'
-import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@kobato/cache/types'
+import {
+  CACHE_BUCKET_FALLBACKS,
+  type TunableCacheBucketId,
+  TUNABLE_CACHE_BUCKET_IDS,
+} from '@kobato/settings/cache-bucket'
+import { FIXED_CACHE_PREFIXES } from '@kobato/settings/cache-registry'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 

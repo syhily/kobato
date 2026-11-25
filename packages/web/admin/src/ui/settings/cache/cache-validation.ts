@@ -1,4 +1,4 @@
-import type { CacheBucketId } from '@kobato/cache/types'
+import type { CacheBucketId } from '@kobato/settings/cache-bucket'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
 import {

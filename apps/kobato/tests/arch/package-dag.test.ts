@@ -27,7 +27,6 @@ const IGNORE_DIRS = new Set([
 const SHARED_SPLIT = [
   '@kobato/utils',
   '@kobato/i18n',
-  '@kobato/cache',
   '@kobato/auth',
   '@kobato/catalog',
   '@kobato/distribution',
@@ -44,7 +43,6 @@ const API_SHARED_DEPS = [
   '@kobato/utils',
   '@kobato/inkling',
   '@kobato/assets',
-  '@kobato/cache',
 ] as const
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
@@ -65,8 +63,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/catalog': ['@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
   '@kobato/distribution': ['@kobato/test'],
   '@kobato/i18n': ['@kobato/test'],
-  '@kobato/cache': ['@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  '@kobato/settings': ['@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils', '@kobato/test'],
+  '@kobato/settings': ['@kobato/i18n', '@kobato/assets', '@kobato/utils', '@kobato/test'],
   '@kobato/assets': ['@kobato/test'],
 
   '@kobato/sanitize': ['@kobato/test'],
@@ -87,7 +84,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/test',
     '@kobato/utils',
     '@kobato/i18n',
-    '@kobato/cache',
     '@kobato/auth',
     '@kobato/catalog',
     '@kobato/distribution',
@@ -137,8 +133,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
   '@kobato/distribution': ['@kobato/distribution'],
   '@kobato/i18n': ['@kobato/i18n'],
-  '@kobato/cache': ['@kobato/cache', '@kobato/i18n', '@kobato/utils'],
-  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/cache', '@kobato/assets', '@kobato/utils'],
+  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/assets', '@kobato/utils'],
   '@kobato/assets': ['@kobato/assets'],
   '@kobato/sanitize': ['@kobato/sanitize'],
 
@@ -156,7 +151,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
-    '@kobato/cache',
     '@kobato/auth',
     '@kobato/catalog',
     '@kobato/distribution',

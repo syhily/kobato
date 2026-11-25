@@ -1,6 +1,6 @@
 # Shared umbrella conventions
 
-`packages/shared/` is an umbrella of nine workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`), not a
+`packages/shared/` is an umbrella of eight workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`), not a
 package: no umbrella package.json, test directory, barrel, or way to import "shared" as one unit. Its test projects
 (`shared-unit`, `shared-snaps`) are defined in `tools/test/src/projects/`.
 
@@ -16,20 +16,18 @@ package: no umbrella package.json, test directory, barrel, or way to import "sha
   `index.ts`.
 - **Error handling.** No logger here: throw, and let the boundary catch and log.
 
-## The nine leaves
+## The eight leaves
 
 `utils` (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, network
 SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`,
-`inkling-labels`), `cache` (bucket declaration registry — never a storage plane), `catalog` (public content read model +
-projections, `seo/`), `settings` (Section schema/default/secret registry, admin projections, `snapshot` slot,
-representation scopes, RUM client identity, `telemetry/`), `assets` (asset-URL grammar, image kinds, avatar rule,
-Gravatar mirror), `sanitize` (isomorphic DOMPurify stack, `escape-html`), `distribution` (`__APP_*__` identity, SEA
-asset keys, route-warmup manifest contract). Wire vocabulary (per-domain Zod schemas + DTOs) lives in
-`@kobato/api/contracts`.
+`inkling-labels`), `catalog` (public content read model + projections, `seo/`), `settings` (Section
+schema/default/secret registry, admin projections, `snapshot` slot, representation scopes, cache bucket declarations,
+RUM client identity, `telemetry/`), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror), `sanitize`
+(isomorphic DOMPurify stack, `escape-html`), `distribution` (`__APP_*__` identity, SEA asset keys, route-warmup manifest
+contract). Wire vocabulary (per-domain Zod schemas + DTOs) lives in `@kobato/api/contracts`.
 
 Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings + i18n + utils + inkling headless (type-only);
-`cache` → i18n + utils; `settings` → i18n + cache + assets + utils (never `@kobato/api`). Pinned by
-`apps/kobato/tests/arch/package-dag.test.ts`.
+`settings` → i18n + assets + utils (never `@kobato/api`). Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage
 

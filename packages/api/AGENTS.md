@@ -64,8 +64,8 @@ only here; controllers in `@kobato/server` implement them through the `implement
 ## Rules
 
 - Allowed deps: `@orpc/contract` (rpc + client), `@orpc/client` (client only), and the shared leaves `auth`, `catalog`,
-  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`, `cache`. `src/contracts/` imports no `@orpc/*` package and
-  never imports `src/rpc/` or `src/client/` (`apps/kobato/tests/arch/shared-react-free.test.ts`).
+  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`. `src/contracts/` imports no `@orpc/*` package and never
+  imports `src/rpc/` or `src/client/` (`apps/kobato/tests/arch/shared-react-free.test.ts`).
 - Runtime-isomorphic and React-free: no node/DOM-only APIs, no logger. The client layer uses only the isomorphic web
   platform — never browser-only globals or ambient mutable state; `globalThis.fetch` is only the default fetch adapter.
 - No barrel `index.ts`, no `export { X } from 'y'` re-exports; consumers import `@kobato/api/<module>.ts`.
