@@ -1,4 +1,4 @@
-import { HIGHLIGHT_LANGUAGES } from '@kobato/assets/highlight-languages'
+import { HIGHLIGHT_LANGUAGES } from '@kobato/server/infra/lexical/highlight-languages'
 import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki'
 import { bundledLanguages } from 'shiki'
 import { describe, expect, it } from 'vitest'

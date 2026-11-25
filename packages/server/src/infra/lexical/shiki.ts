@@ -1,4 +1,4 @@
-import { HIGHLIGHT_LANGUAGES } from '@kobato/assets/highlight-languages'
+import { HIGHLIGHT_LANGUAGES } from '@kobato/server/infra/lexical/highlight-languages'
 import {
   transformerNotationDiff,
   transformerNotationErrorLevel,
