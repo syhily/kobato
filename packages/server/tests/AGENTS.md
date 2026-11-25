@@ -7,17 +7,15 @@
   `tests/it/` named `*.duckdb.test.ts` and run only in `server-duckdb`.
 - Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach
   into `tools/test` by upward path.
-- Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket.
-- Run with `pnpm test packages/server`.
+- Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket. Run
+  with `pnpm test packages/server`.
 - Tests exercising the real (unmocked) rate limiter call `__resetRateLimitsForTests()` from
   `@kobato/server/infra/rate-limit.ts` in `beforeEach` — the limiter is a process-level Map, so budgets otherwise leak
   across tests within a file.
 - The unit/it setup wrappers clean scheduler state in `afterAll` through a dynamic `import()` of `scheduler-utils` and
   must never statically import it (or anything reaching `lifecycle`/`job-run-recorder`): a static import would
   instantiate the product modules before a file's `vi.mock` registers and silently defeat the mock.
-  `job-registry.test.ts` alone resets the job handle in its own `beforeEach`; the setup net must not.
-- Server-owned `tests/utils/` helpers (`integration-db`, `analytics-db`, `smtp-capture`, `mock-ctx`, …) own the database
-  lifecycle and DuckDB sidecar and are also consumed by app route suites through the sanctioned cross-package helper
-  seam; generic infrastructure comes from `@kobato/test`. Pure SQLite/Drizzle operations, migration tests, and the
-  DuckDB persistence/query modules' tests live in `packages/db/tests/`; server composition wiring, batchers, lifecycle,
-  and SQLite-side maintenance stay here.
+- Server-owned `tests/utils/` helpers own the database lifecycle and DuckDB sidecar and are also consumed by app route
+  suites through the sanctioned cross-package helper seam; generic infrastructure comes from `@kobato/test`. Pure
+  SQLite/Drizzle operations, migration tests, and the DuckDB persistence/query modules' tests live in
+  `packages/db/tests/`; server composition wiring, batchers, lifecycle, and SQLite-side maintenance stay here.

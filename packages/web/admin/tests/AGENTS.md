@@ -1,6 +1,7 @@
 # Web-admin test conventions
 
-`packages/web/admin/tests/` mirrors `src/ui/`: `src/ui/posts/PostRow.tsx` → `tests/unit/ui/posts/post-row.test.tsx`.
+`packages/web/admin/tests/` mirrors `src/ui/`: `src/ui/posts/filter-fields.ts` →
+`tests/unit/ui/posts/filter-fields.test.ts`.
 
 - `tests/{unit,snaps}/` run inside the `web-unit` / `web-snaps` projects (no vitest config here). The shared web setup
   wrappers live in `tests/utils/setup/` because they own the admin-wide settings-mutation mock.

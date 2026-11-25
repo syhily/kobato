@@ -22,14 +22,14 @@ never `@kobato/catalog/seo` (route title/meta resolution lives in the app layer)
 - `post/` — bodies render the saved `bodyHtml` projection: `DetailBodyChrome` sanitizes with
   `sanitizeHtml(html, 'body')`; the five hydration hooks (`useMediumZoom`, `useThumbhashHydration`,
   `useCodeCopyButtons`, `useMusicPlayers`, `useFootnotePreviews`) all take `bodyHtml` as their re-scan key — the content
-  div is reused across client navigations.
-- `music-player/` — `MusicPlayerCard` hydrates onto `.aplayer[data-*]` mount points via `useMusicPlayers`; SSR fallback
-  parity is pinned by `tests/unit/ui/music-player/music-player.test.tsx`.
+  div is reused across client navigations. `MusicPlayerCard` (in `@kobato/ui/components/music-player/`) hydrates onto
+  `.aplayer[data-*]` mount points via `useMusicPlayers`; SSR fallback parity is pinned by
+  `tests/unit/ui/music-player/music-player.test.tsx`.
 - `widgets/`, `friends/`, `webmentions/`, `Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx` — public-only leaf modules.
-- `shared/` — used by BOTH the public chrome and the admin shell: `notifications/`, `auth/use-logout.ts`,
-  `music/lrc.ts`. Modules here NEVER import admin modules.
-- `lib/` — `LocaleSyncProvider` (the ROOT cross-tab loop mounted by `src/root.tsx`; contract in the admin settings doc)
-  and `toast-api-error.ts`.
+- `shared/` — used by BOTH the public chrome and the admin shell: `notifications/`, `auth/use-logout.ts`. Modules here
+  NEVER import admin modules.
+- `lib/` — `LocaleSyncProvider` (the ROOT cross-tab loop mounted by the app's `apps/kobato/src/root.tsx`; contract in
+  the admin settings doc) and `toast-api-error.ts`.
 
 ## Styles
 

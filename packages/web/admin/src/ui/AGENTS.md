@@ -13,26 +13,17 @@ reads from sessions, route params, request objects, or env vars.
 - **`@kobato/web-public/ui/shared` + `ui/lib`** — the cross-surface tiers; new cross-surface modules go THERE, never
   into this package.
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
-  modules stay at the root (`ConfirmDialog`, `sortable.tsx`, `mask.ts`, `SearchShortcutHint`, `use-file-upload.ts`).
-  - `useFileUpload` owns file/field guards, typed-oRPC submission, error unwrap, and toast choreography — never
-    hand-roll a fetch upload (backup's progress XHR is the sole transport exception and still uses the API package's
-    standard RPC serializer). Hooks running under the React tree read `useI18n()` themselves; hooks callable from
-    non-React entries take the caller's `t`.
-  - `sortable.tsx` is the one dnd-list adapter (`useSortableRow` — destructure its result; member access trips the
-    react-compiler ref heuristic).
+  modules stay at the root. `useFileUpload` owns file/field guards, typed-oRPC submission, error unwrap, and toast
+  choreography — never hand-roll a fetch upload. `sortable.tsx` is the one dnd-list adapter (`useSortableRow` —
+  destructure its result; member access trips the react-compiler ref heuristic).
 - `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import), `pickers/`,
-  `lexical-body-diff.tsx`, plus the platform consumers — `page-editor-nodes` (mounted types stay inside
-  `FULL_EDITOR_NODE_TYPES`, contract-tested), `image-insert-override`, `image-library-pick`, `page-editor-upload`
-  (uploads through `orpc.admin.images.upload`), `page-editor-card-config` + `render-math` (factories taking the
-  translator; `resolveMathError` turns the server's error descriptor into the single string Inkling accepts — a raw
-  catalog key never reaches the editor), `use-focus-mode`, and `music-card-picker.tsx` (registers the picker dialog at
-  module scope). Decorate chrome and `exportDOM` markup share the spec's constants (parity pinned by
-  `packages/web/admin/tests/unit/ui/editor/cards/`). Spec `menu[].label`/`desc` are English fallbacks; the slash menu
+  and the platform consumers (page-editor nodes/upload/picker/card-config, `music-card-picker.tsx` registering the
+  picker dialog at module scope). Decorate chrome and `exportDOM` markup share the spec's constants (parity pinned by
+  `packages/web/admin/tests/unit/ui/editor/cards/`); spec `menu[].label`/`desc` are English fallbacks, the slash menu
   localizes through `labelKey`, card chrome reads `admin.editor.cards.*`.
 - `editor-shell/` — draft/publish orchestration: `useEditorShellState` orchestrates both shells (extend it, never add
-  shared state); `useEditorShellPersist` owns save-flow status + baselines in sibling slices with pure planners in
-  `editor-shell-persist-plan.ts`; `useAutosave` is the sole baseline owner behind `setBaseline`;
-  `Post/PageEditorShell.tsx` are config-only; `Post/PageEditorRoute.tsx` delegate to `EditorRouteLoader`.
+  shared state); `useAutosave` is the sole baseline owner behind `setBaseline`; `Post/PageEditorShell.tsx` are
+  config-only; `Post/PageEditorRoute.tsx` delegate to `EditorRouteLoader`.
 - `editor-meta/` — the post/page meta form family (presentation/controllers only); `account/`, `music/` (+
   `music/player/`), `branding/` — product domains; `settings/` has its own AGENTS.md.
 

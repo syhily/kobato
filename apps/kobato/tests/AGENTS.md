@@ -18,18 +18,14 @@ resolver.
 - **`tests/e2e/`** — true HTTP e2e over a real kobato instance (the SEA binary booted by `sea:e2e`) via plain `fetch`.
   No in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`**; the `KOBATO_E2E_*` env contract is injected, plus
   `KOBATO_E2E_DATABASE` — the one sanctioned seam for state no HTTP surface can stage (use only when no admin RPC
-  exists; always restore). Mail never leaves the machine (in-process SMTP capture via
-  `@kobato/server/tests/utils/smtp-capture.ts`). The HTTP / oRPC helpers (`E2eClient`, `callE2eRpc`) come from
+  exists; always restore). Mail never leaves the machine. The HTTP / oRPC helpers (`E2eClient`, `callE2eRpc`) come from
   `@kobato/pack/instance/client`.
 - **`tests/browser/`** — real-Chromium Playwright journeys for behavior jsdom cannot prove. Spec/support files import
-  through the `@tests/browser/...` alias resolved by the tree's own tsconfig, which deliberately uses a file-relative
-  `extends` to `tools/tsconfig/tsconfig.base.json` (Playwright does not apply `paths` through a package-based
-  `extends`). The Playwright config lives in `tools/pack/playwright.config.ts`. **Not part of `pnpm test`**:
-  `pnpm run test:browser` boots a throwaway instance or targets `KOBATO_BROWSER_BASE_URL`;
-  `pnpm run sea:browser [binary]` always boots the built binary (exits non-zero when missing). Runner env:
-  `KOBATO_BROWSER_BASE_URL` + `KOBATO_BROWSER_{ADMIN_EMAIL,ADMIN_PASSWORD,POST_SLUG}`; `global-setup.ts` stages one
-  published post and resets the settings baseline — never point an external target at production. One worker, files
-  serial; local runs default to system Chrome, `KOBATO_BROWSER_CHANNEL` overrides, CI installs `chromium`.
+  through the `@tests/browser/...` alias resolved by the tree's own tsconfig (file-relative `extends` — Playwright does
+  not apply `paths` through a package-based `extends`); the Playwright config lives in
+  `tools/pack/playwright.config.ts`. **Not part of `pnpm test`**: `pnpm run test:browser` boots a throwaway instance or
+  targets `KOBATO_BROWSER_BASE_URL`; `pnpm run sea:browser [binary]` always boots the built binary (exits non-zero when
+  missing). One worker, files serial; never point an external target at production.
 
 Cross-cutting integration tests live inside the owning package's `tests/it/` under the primary domain — there is no
 `features/` bucket. Artifacts and the HTML report land under the ignored `tmp/`.
@@ -39,5 +35,4 @@ pnpm run test:duckdb
 pnpm test apps/kobato/tests/unit apps/kobato/tests/arch
 pnpm run test:browser
 pnpm run sea:browser dist-sea/kobato
-KOBATO_BROWSER_HEADLESS=0 pnpm run test:browser
 ```

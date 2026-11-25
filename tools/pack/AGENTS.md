@@ -76,13 +76,10 @@ companion libraries and no rpath patch, and server code reaches it only through 
 
 Everything that drives a kobato instance as a REAL separate process — two halves with no dependencies between them:
 
-- **Lifecycle** (CLI entry scripts only) — `temp.ts` (`makeTempDirs()` per-run data/cache/cwd roots, `smokeDatabases`),
-  `sea-instance.ts` (the built SEA binary as an HTTP instance: `ensureBinaryExists`, `seaInstanceEnv`, `bootServer`,
-  `waitForHttp`, `waitForExit`), `dev-instance.ts` (the repository DEV server: `writeDevConfig`, `bootDevServer`,
-  `stopDevServer`), `seed.ts` (plain-SQL state for STOPPED instances: `seedInstalledInstance`, `relaxRateLimits`,
-  `readConvergedConfig`), `suite-instance.ts` (`bootSuiteInstance` — boot, prove the 303 install gate, seed the admin +
-  relaxed rate limits, restart; `stopSuiteInstance`), `analytics.ts` (`scanAccessEvents`, the DuckDB sidecar AFTER
-  shutdown).
+- **Lifecycle** (CLI entry scripts only) — `temp.ts` (per-run temp roots and smoke databases), `sea-instance.ts` (the
+  built SEA binary as an HTTP instance), `dev-instance.ts` (the repository DEV server), `seed.ts` (plain-SQL state for
+  STOPPED instances), `suite-instance.ts` (boot → prove the 303 install gate → seed the admin + relaxed rate limits →
+  restart), `analytics.ts` (the DuckDB sidecar AFTER shutdown).
 - **`client/`** (what the live-instance suites speak) — `http.ts` (`E2eClient`, the `KOBATO_E2E_*` env contract, CSRF
   extraction, real signin), `rpc.ts` (`callE2eRpc`; `path` is the camelCase structural router path — kebab-case
   `.route()` strings are OpenAPI metadata, not the RPC wire path), `browser-env.ts` (the `KOBATO_BROWSER_*` env
@@ -133,12 +130,11 @@ live in `apps/kobato/tests/arch/`.
 
 ## Delivery targets
 
-linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 / win32-arm64 via `.github/workflows/sea.yml` (one `build` matrix
-job; platform detail lives in `sea:package`): every leg runs the full managed smoke, the Linux legs also e2e + browser,
-linux-x64 also packages `kobato_<version>_amd64.deb`. develop pushes and PRs run only `build-verification`; `ci.yml`
-additionally gates PRs with `sea:build` + `sea:browser`. `release-upload` deletes the run's Actions artifacts once the
-release is published — the release assets are the durable copy. On Windows the binary is `kobato.exe`, the natives cache
-defaults to `%LOCALAPPDATA%\kobato`, and there is no SIGTERM (service deployments wrap with WinSW/NSSM).
+linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 / win32-arm64 via `.github/workflows/sea.yml`: every leg runs the
+full managed smoke, the Linux legs also e2e + browser, linux-x64 also packages `kobato_<version>_amd64.deb` (platform
+detail lives in `sea:package`). develop pushes and PRs run only `build-verification`; `ci.yml` additionally gates PRs
+with `sea:build` + `sea:browser`. On Windows the binary is `kobato.exe`, the natives cache defaults to
+`%LOCALAPPDATA%\kobato`, and there is no SIGTERM (service deployments wrap with WinSW/NSSM).
 
 ## Self-update & rollback
 

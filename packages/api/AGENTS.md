@@ -8,17 +8,13 @@ only here; controllers in `@kobato/server` implement them through the `implement
 ## Layout
 
 - `src/contracts/` — per-domain Zod schemas + derived DTOs in three audience layers plus the audience-free root
-  `primitives.ts`: `public/` (`content`, `github`, `avatar`, `comments`, `webmentions`, `music`, `images`) serves the
-  anonymous surface, `account/` (`auth`, `setup`, `self`, `passkey`, `comments`, `friends`, `notifications`, `likes`,
-  `newsletter`) the viewer, `admin/` the back-office domains (`posts`, `pages`, `users`, `comments`, `music`, `images`,
-  `friends`, `notifications`, `webmentions`, `analytics`, the `settings` envelope, `observability`, `backup`,
-  `content-admin-base`, …).
+  `primitives.ts`: `public/` serves the anonymous surface, `account/` the viewer, `admin/` the back-office domains.
   - Dependency direction is one-way: the root imports no audience layer, `public/` only itself and the root, `account/`
     may also reach `public/`, and `admin/` may reach `public/` and `account/`. Vocabulary a second audience needs lives
     in the lower layer — never duplicated, never shimmed through re-exports.
   - Root `primitives.ts` holds only generic wire vocabulary with no single domain owner: shared Zod scalars, output
-    envelopes, `ErrorMessageDescriptor` / `ErrorIssueWire` / `ApiErrorData`, `zodIssueParams` (the ONE issue-params
-    extractor), and `mergePatchInput` / `clearable` / `splitMergePatch` for multi-column field-update procedures.
+    envelopes, error descriptors, `zodIssueParams` (the ONE issue-params extractor), and `mergePatchInput` / `clearable`
+    / `splitMergePatch` for multi-column field-update procedures.
   - Each wire DTO is declared once as a Zod schema with its TS type derived in the same module (`z.infer`) — no
     hand-written twins. Exceptions: SSR output schemas use `z.custom<T>()` over loader-data types, and `MetaDescriptor`
     arrives as an erased `import type`.
@@ -48,25 +44,20 @@ only here; controllers in `@kobato/server` implement them through the `implement
   from the ROUTER TREE KEYS (`apiContract.public.content.home` answers at `/rpc/public/content/home`), so tree keys ARE
   RPC transport URLs and the canonical grouped `/rpc/{public,account,admin}/*` paths are the ONLY transport.
 - `src/{public,account,admin}-contract.ts` — the per-group composition roots; they compose domain contracts and never
-  declare, forward, or re-export procedures. `accountContract` spreads `accountSelfContract` at its root, so
-  `account.profile` etc. keep their historical keys. The account group carries the authentication + install surface on
-  the wire (`account.auth.*`, `account.passkey.authBegin`/`authFinish`, `account.setup.*`): the React Router signin and
-  setup routes drive it in-process through `createSsrCaller`; `createKobatoPublicClient` exposes none of it, and
-  ADR-0009 gives it no external stability guarantee. `public.content.bootstrap` carries the public `currentUser` state
-  for the headless seam.
+  declare, forward, or re-export procedures. The account group carries the authentication + install surface on the wire
+  (`account.auth.*`, `account.setup.*`): the app's signin and setup routes drive it in-process through
+  `createSsrCaller`; `createKobatoPublicClient` exposes none of it. `public.content.bootstrap` carries the public
+  `currentUser` state for the headless seam.
 - `src/contract.ts` — the composition root (`@kobato/api/contract`): `apiContract = { public, account, admin }`,
   mirroring the server's `apiRouter` nesting exactly. Adding or removing a domain means updating its group root, this
   tree, and the full server parity test.
 - `src/client/` — the React-free transport. `createKobatoClient({ url, fetch?, getHeaders? })` returns
-  `ContractRouterClient<typeof apiContract>`: `url` is the FULL RPC URL (`https://host/rpc`), never the site origin (a
-  function is forwarded to the RPC link's dynamic-URL support); `fetch` defaults to delegating
-  `globalThis.fetch(request, init)`; `getHeaders` maps onto the RPC link's `headers` option. `createKobatoPublicClient`
-  is the headless public seam — the same transport narrowed to `ContractRouterClient<typeof publicContract>`, a
-  type-level guarantee that external consumers reach only `/rpc/public/*` (`publicRead` reads work with neither cookie
-  nor CSRF header; comment writes and the token reads still need both). The factory is ambient-free — no singleton, no
-  CSRF store, no `location`; ambient assembly is the consumer's job (`@kobato/web-client` owns the browser singleton).
-  `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey` read the ERROR payload, while
-  `isApiAccepted` is a RESPONSE-payload guard (`{ accepted: true }`) — keep the two sides distinct.
+  `ContractRouterClient<typeof apiContract>`: `url` is the FULL RPC URL (`https://host/rpc`), never the site origin. The
+  factory is ambient-free — no singleton, no CSRF store, no `location`; ambient assembly is the consumer's job
+  (`@kobato/web-client` owns the browser singleton). `createKobatoPublicClient` is the headless public seam — the same
+  transport narrowed to `ContractRouterClient<typeof publicContract>`, a type-level guarantee that external consumers
+  reach only `/rpc/public/*`. `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey`
+  read the ERROR payload, while `isApiAccepted` is a RESPONSE-payload guard — keep the two sides distinct.
   `rpc-serialization.ts` owns RPC input/query/multipart encoding and response/error decoding for `sendBeacon` and the
   backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.
 

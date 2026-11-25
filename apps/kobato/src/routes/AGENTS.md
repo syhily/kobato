@@ -66,11 +66,10 @@ pick the area directory, choose a role filename, add the manifest entry — neve
 
 ## Page draft preview
 
-- `routes/public/page/detail.tsx` paints the admin-only badge via `PageDetailBody`'s `draftMarker`:
-  `'draft' | 'unpublished-draft' | 'published-draft' | null`.
-- Catalog miss → anonymous 404, admin sees the latest draft; catalog hit + `?draft=true` → anonymous ignores, admin sees
-  the newer-draft or published-draft marker. Access rule on the entity descriptor (`canPreviewDraft(viewer, meta)`):
-  pages admin-only, posts author+ AND `authorId`.
+`routes/public/page/detail.tsx` paints the admin-only badge via `PageDetailBody`'s `draftMarker`
+(`'draft' | 'unpublished-draft' | 'published-draft' | null`). Access rule on the entity descriptor
+(`canPreviewDraft(viewer, meta)`): pages admin-only, posts author+ AND `authorId`; a catalog miss is an anonymous 404
+while admin sees the latest draft.
 
 ## Manifest anchors
 

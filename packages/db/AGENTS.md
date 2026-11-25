@@ -22,3 +22,6 @@ operations, migrations, and error classification. It depends on `@kobato/setting
 - `@kobato/server` never imports `@duckdb/node-api`, `@duckdbfan/drizzle-duckdb`, or `drizzle-orm` and never constructs
   SQL or touches native clients: it holds only opaque analytics handles/capabilities. `DuckDbEngine` and `engineOf`
   remain db-plane, including in server signatures.
+- Upgrades move `drizzle-orm` / `drizzle-kit` together and re-run the migration contract tests. Raw integer `sql` fields
+  in mapped selects need an explicit `.mapWith(Number)` — rc.6 decodes them as `bigint` on `node:sqlite`.
+  `@duckdbfan/drizzle-duckdb`'s DuckDB 2.0 peer exception requires the real DuckDB suites on upgrades.

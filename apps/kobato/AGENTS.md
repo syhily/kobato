@@ -15,3 +15,4 @@ product code and owns nothing reusable: UI in `@kobato/web-*`/`@kobato/ui`, back
 - `tests/` — `arch/`, `unit/`, `it/`, `snaps/`, `browser/`, `e2e/`; see `tests/AGENTS.md`.
 - Imports: `@/...` app source, `@tests/...` app test helpers, `@kobato/<package>/...` product code. No relative
   specifiers outside the documented exceptions (root `AGENTS.md`).
+- `drizzle-orm` is a tests-only devDependency (seed/assertion code); production source never imports it.

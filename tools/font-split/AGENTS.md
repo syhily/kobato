@@ -17,16 +17,12 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   `range.rs` = UnicodeRange, `mod.rs` = script areas, `cjk.rs` = tables + touch probabilities + algorithm fingerprint).
   Protobuf fully removed: `src/config.rs` (`FontSplitConfig`/`CssProperties`) replaces `InputTemplate`, `src/output.rs`
   (`OutputFile`) replaces `EventMessage`; `font_split(config, callback)` is the only entry.
-- `src/unicode/cjk_tables.rs` — @generated CJK priority tables (Kobato-owned, replaces the upstream OpenCC-derived
-  data). Regenerate with `pnpm run corpus:generate` from the vendored official character lists in `scripts/cjk-tables/`
-  PLUS the corpus frequency TSVs `scripts/cjk-tables/freq-zhwiki-20261101-{hans,hant}.tsv` (produced by `corpus build`,
-  committed): 中国大陆《通用规范汉字表》一/二/三级 (3500/3000/1605), then 香港《常用字字形表》,
-  臺灣《常用國字標準字體表》+《次常用國字標準字體表》 (the ※-marked 待考正字/unit symbols excluded), and
-  日本《常用漢字表》(2010, covers the common 和制汉字/kokuji) supplements, each deduplicated against all earlier packs;
-  the 韩语高频音节表 (2026, corpus-frequency order) packs as-is. Pack MEMBERSHIP is exactly the official lists; the
-  ORDER inside each pack is corpus document-frequency (ADR-0010), and the parallel `*_DF` arrays carry the per-character
-  document count the DP chunker consumes as touch probabilities. The subsets carry tags `ZH_SC_1/2/3`, `ZH_HK`, `ZH_TW`,
-  `ZH_JA` (was `ZH_SC` + an OpenCC-derived `ZH_TC` upstream).
+- `src/unicode/cjk_tables.rs` — @generated CJK priority tables (Kobato-owned, replacing the upstream OpenCC-derived
+  data; each vendored list's provenance lives in `scripts/cjk-tables/`). Regenerate with `pnpm run corpus:generate` from
+  the official character lists plus the committed corpus frequency TSVs `freq-zhwiki-20261101-{hans,hant}.tsv` (produced
+  by `corpus build`). Pack MEMBERSHIP is exactly the official lists; the ORDER inside each pack is corpus
+  document-frequency, carried per character by the `*_DF` arrays the DP chunker consumes as touch probabilities. The
+  subsets carry tags `ZH_SC_1/2/3`, `ZH_HK`, `ZH_TW`, `ZH_JA`.
 - `src/binding.rs` — the napi-rs binding (upstream `ffi-js` reimplemented). `fontSplit(input, options?)` returns a
   Promise (napi `Task`/`AsyncTask` on the libuv pool; core rayon parallelism unchanged). Core panics are caught and
   rethrown as JS errors. napi-rs 3 with the `napi10` feature (Node-API v10, the Node 26 baseline); options arrive as a
@@ -60,35 +56,21 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   codepoint sets only; fails on any entity or tag shape it does not model). Like `curl` and `bzip2`, it shells out to
   system tools (`sqlite3 -readonly`, `date`) instead of taking a dependency. Never runs in CI: `download`/`build` need
   the 3.4 GB local dump. Its tests run via `pnpm run corpus:test`.
-- `tests/` — ALL Rust tests live here (`src/` carries no `#[cfg(test)]`): one file per covered module (`auto_chunk.rs`,
-  `features.rs`, `link_subset.rs`, `unicode.rs`, `range.rs`, `utils.rs`, …) running in CI via `cargo test`, plus the
-  end-to-end gate `chunk_integrity.rs` (slices the fixture font and checks every chunk against its CSS contract:
-  decodes, cmap == `unicode-range`, per-glyph advance/extents equal to the source font, whole-font coverage exactly
-  once) and the two baseline/benchmark suites that never run in CI:
-  - `tests/page_cost.rs` — the page-cost harness: runs the real pipeline, parses `result.css`, and measures what a page
-    downloads under CSS `unicode-range` (cold bytes + chunk count, session(5), incremental, jump). Three `#[ignore]`d
-    tests, serialized on one mutex because the sweep mutates process-global DP parameters:
-    - `page_cost_baseline_is_pinned` — the committed OFL fixture font against all three page corpora (hans, hant, blog)
-      plus coverage/disjointness invariants: `cargo test --release -- --ignored --nocapture page_cost`; verify the new
-      metrics are the intended change and update the constants in the same commit as the algorithm change.
-    - `page_cost_font_report` — the same metrics, unpinned, for one real font (`FONT_SPLIT_BENCH_FONT`, default
-      `data/fonts/calendar.ttf`), or for a package already on disk (`FONT_SPLIT_BENCH_PACKAGE=<dir>`, e.g. one dumped by
-      the sweep or produced by an older slicer): `pnpm run pagecost:report`.
-    - `page_cost_lambda_sweep` — Cargo feature `bench` (never compiled into the addon or CI builds): overrides the DP
-      λ/μ per point through the `#[doc(hidden)]` `set_dp_params` seam, one slice per point.
-      `FONT_SPLIT_SWEEP_LAMBDA_BYTES` / `FONT_SPLIT_SWEEP_MU_BYTES` are comma lists, `FONT_SPLIT_BENCH_OUT_DIR` dumps
-      each package: `pnpm run pagecost:sweep`.
+- `tests/` — ALL Rust tests live here (`src/` carries no `#[cfg(test)]`): one file per covered module running in CI via
+  `cargo test`, plus the end-to-end gate `chunk_integrity.rs` (slices the fixture font and checks every chunk against
+  its CSS contract) and two local-only baseline/benchmark suites:
+  - `tests/page_cost.rs` — the page-cost harness: three `#[ignore]`d tests serialized on one mutex (the sweep mutates
+    process-global DP parameters), run with `cargo test --release -- --ignored --nocapture page_cost`. The pinned
+    baseline moves in the SAME commit as an algorithm change; the per-font report (`FONT_SPLIT_BENCH_FONT` /
+    `FONT_SPLIT_BENCH_PACKAGE`, `pnpm run pagecost:report`) and the λ/μ sweep (feature `bench`,
+    `pnpm run pagecost:sweep`) are unpinned diagnostics.
   - `tests/corpus.rs` — the corpus pipeline tests, `#![cfg(feature = "corpus")]`-gated (`pnpm run corpus:test`). Not
-    CI-run: the pipeline itself is local-only. Tests reach internals through `#[doc(hidden)] pub` seams (`loader`,
-    `link_subset::css`, `pre_subset::auto_chunk`, `unicode::cjk_tables`, …) — the addon's real public surface stays
-    `font_split` + config/output types.
-- `tests/fixtures/` — `fonts/NotoSansCJKsc-Regular-zh-l1.woff2` (OFL-licensed subset of Noto Sans CJK SC covering ASCII,
-  the `ZH_SYMBOL` set, and the full 通用规范汉字表 一级字表; provenance and regeneration details in its `LICENSE.md`)
-  and `pages/zh-{hans,hant}-heldout-64.txt` (64 held-out pages per script dimension as sorted codepoint sets; produced
-  by `corpus build` from the pinned zhwiki dump and EXCLUDED from the frequency counts; provenance in the file headers)
-  and `pages/blog-zh-hans-234.txt` (234 published posts and pages of a production blog in publish order, as sorted
-  codepoint sets — real prose, independent of the zhwiki training corpus; produced by `corpus blog-pages`, snapshot
-  2026-11-25, provenance in the file header).
+    CI-run: the pipeline itself is local-only. Tests reach internals through `#[doc(hidden)] pub` seams — the addon's
+    real public surface stays `font_split` + config/output types.
+- `tests/fixtures/` — `fonts/NotoSansCJKsc-Regular-zh-l1.woff2` (OFL-licensed Noto Sans CJK SC subset; provenance and
+  regeneration in its `LICENSE.md`) and `pages/*` page corpora as sorted codepoint sets — the held-out zhwiki pages
+  (excluded from the frequency counts) and a production-blog snapshot (independent of the training corpus); provenance
+  in the file headers.
 
 ## Toolchain pins
 
@@ -121,7 +103,7 @@ the upstream demo fonts were dropped. Output = `result.css` + `*.woff2` only.
 - `pnpm --filter @kobato/font-split run pagecost:report` — the page-cost report of every page corpus for one real font
   (local only: needs `data/fonts/calendar.ttf` or `FONT_SPLIT_BENCH_FONT`).
 - `pnpm --filter @kobato/font-split run pagecost:sweep` — the DP λ/μ sweep on that font (`--features bench`; local
-  only); the retuning evidence of ADR-0010 comes from this run.
+  only); the retuning evidence comes from this run.
 - `pnpm --filter @kobato/font-split run fixture:blog <kobato.db> <out>` — regenerate the production-blog page fixture
   through the `corpus` bin from a Kobato content database (local only; opened read-only via the system `sqlite3`, so
   hand it a copy together with its `-wal`; a new snapshot needs re-pinning the `blog` baseline).

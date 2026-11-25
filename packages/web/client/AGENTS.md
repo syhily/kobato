@@ -14,7 +14,7 @@ must NOT import `@kobato/server` or use Node-only APIs.
   `use-detach-public-css`, `use-focus-hash`. Product-level hooks live in the product leaves.
 - `use-rum` — mounted once by the root `App`, renders no DOM, runs only in an effect, and returns before the dynamic
   import when the bootstrap is absent, DNT/GPC deny, or the schema check fails. `clientIdentity: 'forward'` adds the
-  consent gate (`lib/rum-consent`, localStorage `kobato.rum.consent`); `declined` fully stops a running SDK; `App`
+  consent gate (`lib/rum/rum-consent`, localStorage `kobato.rum.consent`); `declined` fully stops a running SDK; `App`
   renders `RumConsentBanner` only post-mount, only while undecided. The bootstrap is emitted in EVERY build once the
   server-side pipeline gate passes; `import.meta.env.SSR` early return keeps the dynamic-import edge out of the server
   graph. It carries a `{ id, template }` route identity and nothing else.
@@ -22,23 +22,19 @@ must NOT import `@kobato/server` or use Node-only APIs.
   family in `lib/rum/`.
 - `lib/rum/openobserve-rum.ts` — the ONE client SDK entry: dynamically imports `@openobserve/browser-rum-slim` after the
   gate and points the SDK's `proxy` at the same-origin `/api/rum/intake` relay (the OpenObserve endpoint/organization
-  and real token never reach the browser). Init: interactions off, Replay/telemetry/profiling rates 0,
-  `defaultPrivacyLevel: 'mask'`, no anonymous user, same-origin `allowedTracingUrls` only. `startRum` is idempotent and
-  never throws.
+  and real token never reach the browser). `startRum` is idempotent and never throws.
 - `rum-sanitizer.ts` — the pure, synchronous `beforeSend` allowlist: builds a NEW event; unknown shapes, unrecognized
-  URLs, and any thrown error drop it. It overwrites the view's free fields with the trusted route BEFORE any risky work;
-  `error.stack` is always overwritten. The OpenObserve ingest pipeline is the authoritative fail-closed boundary — run
+  URLs, and any thrown error drop it. The OpenObserve ingest pipeline is the authoritative fail-closed boundary — run
   `trace:init` before enabling frontend RUM.
-- Status polling: typed `orpc.public.observability.rumStatus` every 10s; false/error/malformed responses call
-  `setTrackingConsent('not-granted')`, recovery restores `granted` and calls `startView(current route id)`. A null
-  bootstrap calls `suspendRum()`; DNT/GPC, invalid bootstrap, and real unmount call `stopRum()`. The external intake
-  path and SDK proxy URL builder live in `@kobato/api`; `rum-url-policy.ts` derives self-telemetry exclusions from
-  procedure metadata; `rum-budget.ts` owns the 500 resources / 100 errors session cap.
+- Status polling: typed `orpc.public.observability.rumStatus` gates consent — a false/error/malformed response calls
+  `setTrackingConsent('not-granted')`, recovery restores it; a null bootstrap suspends the SDK. The external intake path
+  and SDK proxy URL builder live in `@kobato/api`; `rum-url-policy.ts` derives self-telemetry exclusions from procedure
+  metadata; `rum-budget.ts` owns the session caps.
 - `device-env` reads every browser API defensively — absent/non-finite values are omitted, never sent as null.
 - `locale-sync` — the cross-tab locale transport: a `BroadcastChannel` announcement, not state; peers reload from the
-  server after flushing their own dirty cards and never re-publish. The ROOT-level `LocaleSyncProvider` (mounted in
-  `src/root.tsx`) owns the subscription; only a registered settings workspace auto-reloads, every other document shows a
-  localized notice with an explicit Reload. A missing/blocked API degrades to a no-op.
+  server after flushing their own dirty cards and never re-publish. The ROOT-level `LocaleSyncProvider` (mounted in the
+  app's `apps/kobato/src/root.tsx`) owns the subscription; only a registered settings workspace auto-reloads, every
+  other document shows a localized notice with an explicit Reload. A missing/blocked API degrades to a no-op.
 - `settings/blog-settings-context.tsx` — one context per section (never one bundle context); adding a section = create
   the context and register it in `SECTION_CONTEXTS_ANY`.
 - `route-warmup/` — `RouteWarmupScript` renders the inline idle-preload script; the manifest contract lives in
@@ -55,11 +51,11 @@ must NOT import `@kobato/server` or use Node-only APIs.
 - `api/` — all RPC calls go through `orpc.<group>.<domain>.<endpoint>(flatInput)` from `@kobato/web-client/api/client`
   (groups mirror `apiContract`); errors arrive as `ORPCError` rejections with `{ descriptor, issues }` in `data` (the
   client never inspects `data` for copy and installs no rejection interceptor). `api/client` is the browser singleton
-  ASSEMBLY only — the CSRF token store + `setCsrfToken`, the same-origin `${location?.origin ?? 'http://localhost'}/rpc`
-  URL default — delegating to the React-free `createKobatoClient` from `@kobato/api/client/create-client`; web-client
-  declares no `@orpc/client`/`@orpc/contract` of its own. Wire error decoding (`extractApiErrorMessage` /
-  `isApiAccepted` / `apiErrorDescriptorKey`) lives in `@kobato/api/client/error`. TanStack Query wrappers live in
-  `api/orpc-query` — React Query stays at this seam permanently. No route talks to domain services directly.
+  ASSEMBLY only — the CSRF token store + `setCsrfToken`, the same-origin `/rpc` URL default — delegating to the
+  React-free `createKobatoClient` from `@kobato/api/client/create-client`; web-client declares no
+  `@orpc/client`/`@orpc/contract` of its own. Wire error decoding lives in `@kobato/api/client/error`. TanStack Query
+  wrappers live in `api/orpc-query` — React Query stays at this seam permanently. No route talks to domain services
+  directly.
 
 ## Patterns
 
