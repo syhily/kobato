@@ -1,7 +1,7 @@
-import { isSafeUrl, sanitizeUrl } from '@kobato/sanitize/sanitize-url'
+import { isSafeUrl, sanitizeUrl } from '@kobato/inkling-internal/headless/sanitize-url'
 import { describe, expect, it } from 'vitest'
 
-describe('shared: sanitize-url', () => {
+describe('lexical/sanitize-url', () => {
   describe('isSafeUrl', () => {
     it('allows http(s), mailto, and tel URLs', () => {
       expect(isSafeUrl('https://example.com')).toBe(true)

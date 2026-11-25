@@ -4,7 +4,7 @@
 
 - `packages/inkling/src/` is kobato's rich-text editor (Lexical 0.53, React 19). It owns the stored document model
   (`src/headless/`, React-free) and the kobato host cards (`src/host-cards/`). It imports only `@kobato/ui`,
-  `@kobato/sanitize`, `@kobato/assets`, `@kobato/utils` — never contracts, server, db, or web.
+  `@kobato/i18n`, `@kobato/distribution`, `@kobato/assets`, `@kobato/utils` — never contracts, server, db, or web.
 - Three public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
   `src/index.ts`), `@kobato/inkling/headless` + per-file imports (`src/headless/`, React-free — the only editor surface
   `server`/`db`/`contracts`/`catalog` may use), and `@kobato/inkling/host-cards` (side-effect registration + image
@@ -90,11 +90,11 @@ headless React-free.
 ### Document model (`src/headless/`)
 
 React-free by construction: Zod storage schemas (`schema.ts` full ARTICLE, `comment-schema.ts` COMMENT + blank/submit
-gates), `node-whitelist.ts`, `dialect.ts` (compact↔full parity), the save-pipeline readers (`walk`, `collect`, `toc`,
-`artifacts`, `equivalence`), and `cards/` (host-card specs + render helpers, incl. `musicPlayerFallbackHtml`). The
-server's save/projection pipeline CONSUMES this model; the feed downgrade + defensive host-card substitution live
-server-side (`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the
-reverse.
+gates), `node-whitelist.ts`, `dialect.ts` (compact↔full parity), `sanitize-url.ts` (the stored-model link/media URL
+scheme policy), the save-pipeline readers (`walk`, `collect`, `toc`, `artifacts`, `equivalence`), and `cards/`
+(host-card specs + render helpers, incl. `musicPlayerFallbackHtml`). The server's save/projection pipeline CONSUMES this
+model; the feed downgrade + defensive host-card substitution live server-side
+(`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the reverse.
 
 ### Host cards (`src/host-cards/`)
 

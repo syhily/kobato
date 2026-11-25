@@ -54,7 +54,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/inkling': [
     '@kobato/i18n',
     '@kobato/distribution',
-    '@kobato/sanitize',
     '@kobato/assets',
     '@kobato/utils',
     '@kobato/ui',
@@ -131,14 +130,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  '@kobato/inkling': [
-    '@kobato/inkling',
-    '@kobato/ui',
-    '@kobato/distribution',
-    '@kobato/sanitize',
-    '@kobato/assets',
-    '@kobato/utils',
-  ],
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/distribution', '@kobato/assets', '@kobato/utils'],
   '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-public'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],

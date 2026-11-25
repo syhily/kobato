@@ -81,7 +81,7 @@ section pins the direction graph only — package composition rules live in each
 - Web direction is one-way: `web-admin` → `web-public` / `web-client`, `web-public` → `web-client`. Web leaves never
   import `@kobato/server` (admin allows it tests-only). The browser oRPC client is typed exclusively through
   `@kobato/api`.
-- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `sanitize`, `assets`, `utils`.
+- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
 - Refactor from architectural correctness, not minimal diff size.
 
