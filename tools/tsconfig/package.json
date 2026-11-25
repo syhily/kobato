@@ -1,6 +1,6 @@
 {
   "name": "@kobato/tsconfig",
-  "version": "8.2.1-dev",
+  "version": "8.2.1",
   "private": true,
   "exports": {
     "./tsconfig.base.json": "./tsconfig.base.json"

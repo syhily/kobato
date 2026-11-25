@@ -1,6 +1,6 @@
 {
   "name": "@kobato/trace",
-  "version": "8.2.1-dev",
+  "version": "8.2.1",
   "private": true,
   "type": "module",
   "exports": {
