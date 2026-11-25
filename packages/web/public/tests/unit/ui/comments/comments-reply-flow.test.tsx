@@ -75,7 +75,7 @@ describe('Comments — clicking 回复 activates the inline composer', () => {
     expect(target.parentElement!.contains(respond)).toBe(true)
     expect(document.querySelectorAll('#respond')).toHaveLength(1)
 
-    expect(document.activeElement).toBe(composer)
+    await waitFor(() => expect(document.activeElement).toBe(composer))
     expect(loader.load).toHaveBeenCalledWith('zh-CN')
   })
 

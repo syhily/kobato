@@ -151,7 +151,7 @@ describe('LazyCommentBodyEditor — focusOnMount hands focus to the mounted comp
     )
 
     const composer = await screen.findByTestId('composer')
-    expect(document.activeElement).toBe(composer)
+    await waitFor(() => expect(document.activeElement).toBe(composer))
   })
 
   it('leaves the composer unfocused without focusOnMount', async () => {
