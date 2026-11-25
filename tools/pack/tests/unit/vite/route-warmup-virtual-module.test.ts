@@ -2,7 +2,7 @@ import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup'
 import { routeWarmupPlugin } from '@kobato/pack/vite/route-warmup'
 import { describe, expect, it } from 'vitest'
 
-const VIRTUAL = '@/route-warmup/compiled-script'
+const VIRTUAL = 'virtual:kobato-route-warmup'
 const RESOLVED = `\0${VIRTUAL}`
 
 describe('routeWarmupPlugin — virtual module hooks', () => {

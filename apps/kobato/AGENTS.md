@@ -53,5 +53,8 @@ alone — nothing outside `apps/kobato` imports it.
   hook per-form and do NOT rewrite the viewport `<meta>` anywhere else.
 - Chunk-error recovery: `use-chunk-error-recovery` and `useReloadOnChunkError` call `triggerChunkReload` from
   `@kobato/web-public/ui/chrome/chunk-reload`, the reload store `ChunkReloadOverlay` subscribes to.
-- `compiled-script` under `src/route-warmup/` is replaced at build time by the `routeWarmupPlugin` virtual module
-  (`tools/pack/src/vite/route-warmup.ts`); that idle loader is the one non-React script in the app.
+- `RouteWarmupScript` imports the virtual module `virtual:kobato-route-warmup`, declared in
+  `src/route-warmup/compiled-script.d.ts` and resolved by `routeWarmupPlugin` (`tools/pack/src/vite/route-warmup.ts`):
+  empty in dev, the bundled idle loader in a production build. The id must stay unresolvable to a real file — a file
+  behind that import resolves first and silently disables the inline script. That idle loader is the one non-React
+  script in the app.

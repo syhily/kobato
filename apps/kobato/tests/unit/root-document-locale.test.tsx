@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/route-warmup/compiled-script', () => ({ default: '' }))
+vi.mock('virtual:kobato-route-warmup', () => ({ default: '' }))
 vi.mock('@/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
 vi.mock('react-router', async (importOriginal) => {

@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
 
-vi.mock('@/route-warmup/compiled-script', () => ({ default: '' }))
+vi.mock('virtual:kobato-route-warmup', () => ({ default: '' }))
 vi.mock('@/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
 vi.mock('react-router', async (importOriginal) => {
