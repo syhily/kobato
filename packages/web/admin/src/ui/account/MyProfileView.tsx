@@ -1,5 +1,6 @@
 import type { AccountUpdateProfileInput, LoginMethod } from '@kobato/api/contracts/account/self'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
@@ -17,8 +18,7 @@ import { PasskeyManagementCard } from '@kobato/web-admin/ui/account/PasskeyManag
 import { PasswordChangeForm } from '@kobato/web-admin/ui/account/PasswordChangeForm'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { maskIp, maskUa } from '@kobato/web-admin/ui/shared/mask'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'

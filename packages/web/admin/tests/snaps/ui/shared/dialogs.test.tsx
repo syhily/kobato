@@ -6,7 +6,7 @@ import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/Upload
 import { AdminSearchDialog } from '@kobato/web-admin/ui/shell/AdminSearchDialog'
 import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell'
 import { NavMenuItem } from '@kobato/web-admin/ui/shell/NavMenuItem'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

@@ -6,7 +6,7 @@ import { makeAdminPost } from '@kobato/api/tests/utils/catalog'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { PostsView } from '@kobato/web-admin/ui/posts/PostsView'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()

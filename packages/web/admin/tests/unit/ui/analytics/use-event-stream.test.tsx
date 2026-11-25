@@ -7,7 +7,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({ events: vi.fn() }))
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () => ({ admin: { analytics: { events: api.events } } }) as never,
 )

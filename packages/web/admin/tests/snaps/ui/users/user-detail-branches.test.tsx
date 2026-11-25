@@ -3,10 +3,10 @@ import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
-import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
+const { orpcQuery } = await import('@kobato/api/browser/orpc-query')
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`

@@ -3,7 +3,7 @@ import type { AdminRevisionDto } from '@kobato/api/contracts/admin/revision'
 import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { RevisionHistoryDrawer } from '@kobato/web-admin/ui/editor-shell/RevisionsDrawer'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

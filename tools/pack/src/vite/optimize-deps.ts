@@ -15,7 +15,6 @@ const workspacePackageSchema = z.object({
 const WORKSPACE_PACKAGE_DIRS = [
   'packages/api',
   'packages/db',
-  'packages/web/client',
   'packages/web/public',
   'packages/web/admin',
   'packages/ui',

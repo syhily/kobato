@@ -1,6 +1,6 @@
 import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'
 import { MyEditCommentDialog } from '@kobato/web-admin/ui/account/MyEditCommentDialog'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor', () => ({

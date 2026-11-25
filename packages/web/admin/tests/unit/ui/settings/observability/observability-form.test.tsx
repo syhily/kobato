@@ -19,7 +19,7 @@ const api = vi.hoisted(() => ({
 const commit = vi.hoisted(() => vi.fn())
 const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn(), warning: vi.fn() }))
 
-vi.mock('@kobato/web-client/api/orpc-query', () => {
+vi.mock('@kobato/api/browser/orpc-query', () => {
   const statusKey = ['test', 'observability', 'status'] as const
   return {
     orpcQuery: {

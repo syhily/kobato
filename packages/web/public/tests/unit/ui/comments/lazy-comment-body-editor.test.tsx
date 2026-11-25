@@ -11,12 +11,12 @@ const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 const zoomLock = vi.hoisted(() => ({ acquire: vi.fn(), release: vi.fn() }))
 
-vi.mock('@kobato/web-client/editor/inkling-labels', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels')>()
+vi.mock('@kobato/web-public/ui/shared/editor/inkling-labels', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-public/ui/shared/editor/inkling-labels')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 
-vi.mock('@kobato/web-client/lib/viewport-zoom-lock', () => ({
+vi.mock('@kobato/web-public/ui/comments/viewport-zoom-lock', () => ({
   acquireViewportZoomLock: zoomLock.acquire,
   releaseViewportZoomLock: zoomLock.release,
 }))

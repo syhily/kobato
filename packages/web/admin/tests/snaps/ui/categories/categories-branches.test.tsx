@@ -1,9 +1,9 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 import type { ReactNode } from 'react'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

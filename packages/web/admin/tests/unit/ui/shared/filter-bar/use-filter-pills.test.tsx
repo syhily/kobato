@@ -14,7 +14,7 @@ const api = vi.hoisted(() => ({
   searchAuthors: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({

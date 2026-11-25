@@ -4,7 +4,7 @@ import { makeAdminFriend } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditFriendDialog } from '@kobato/web-admin/ui/friends/EditFriendDialog'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

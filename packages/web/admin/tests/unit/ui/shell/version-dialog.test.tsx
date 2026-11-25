@@ -19,7 +19,7 @@ vi.mock('@kobato/distribution/app', () => ({
   APP_REPOSITORY: 'https://github.com/syhily/kobato',
 }))
 
-const { orpcQuery } = await import('@kobato/web-client/api/orpc-query')
+const { orpcQuery } = await import('@kobato/api/browser/orpc-query')
 
 const { VersionDialog } = await import('@kobato/web-admin/ui/shell/VersionDialog')
 

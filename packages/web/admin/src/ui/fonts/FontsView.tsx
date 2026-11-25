@@ -12,6 +12,8 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -37,8 +39,6 @@ import {
   useSortableRow,
   useSortableSensors,
 } from '@kobato/web-admin/ui/shared/sortable'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'

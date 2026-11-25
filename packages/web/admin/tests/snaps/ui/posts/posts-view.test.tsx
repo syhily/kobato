@@ -3,7 +3,7 @@ import { ImageField } from '@kobato/web-admin/ui/editor-meta/ImageField'
 import { PublishStatusRow } from '@kobato/web-admin/ui/editor-meta/PublishStatusRow'
 import { PostsSkeleton } from '@kobato/web-admin/ui/posts/PostsSkeleton'
 import { PostsView } from '@kobato/web-admin/ui/posts/PostsView'
-import { renderToHtml, stableHtml, renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml, stableHtml, renderInRouter } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

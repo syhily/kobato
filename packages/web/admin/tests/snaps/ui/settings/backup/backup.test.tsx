@@ -7,7 +7,7 @@ import { BackupScheduleForm } from '@kobato/web-admin/ui/settings/backup/BackupS
 import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView'
 import { BucketCard } from '@kobato/web-admin/ui/settings/cache/BucketCard'
 import { idleClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

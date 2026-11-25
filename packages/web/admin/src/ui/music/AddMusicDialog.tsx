@@ -1,5 +1,6 @@
 import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@kobato/api/contracts/admin/music'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
@@ -20,7 +21,6 @@ import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web-admi
 import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
 import { useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'

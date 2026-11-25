@@ -23,7 +23,7 @@ const api = vi.hoisted(() => ({
   uploadRestoreDecrypt: vi.fn(),
 }))
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({

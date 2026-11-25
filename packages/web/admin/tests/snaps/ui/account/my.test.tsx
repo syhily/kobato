@@ -6,7 +6,7 @@ import { MyProfileView } from '@kobato/web-admin/ui/account/MyProfileView'
 import { MySessionsView } from '@kobato/web-admin/ui/account/MySessionsView'
 import { PasskeyManagementCard } from '@kobato/web-admin/ui/account/PasskeyManagementCard'
 import { PasswordChangeForm } from '@kobato/web-admin/ui/account/PasswordChangeForm'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/web-admin/ui/auth/AdminCredentialsForm', () => ({

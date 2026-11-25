@@ -1,5 +1,6 @@
 import type { MetricRow } from '@kobato/api/contracts/admin/analytics'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
@@ -9,7 +10,6 @@ import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analy
 import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
 import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 

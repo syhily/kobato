@@ -3,10 +3,11 @@ import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
 import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell'
-import { useDetachPublicCss } from '@kobato/web-client/hooks/use-detach-public-css'
 import { data, Outlet, redirect } from 'react-router'
 
 import type { RouteHandle } from '@/root'
+
+import { useDetachPublicCss } from '@/document/use-detach-public-css'
 
 import type { Route } from './+types/layout'
 

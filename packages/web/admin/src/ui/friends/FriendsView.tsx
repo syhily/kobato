@@ -1,5 +1,7 @@
 import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
@@ -13,8 +15,6 @@ import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/Co
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'

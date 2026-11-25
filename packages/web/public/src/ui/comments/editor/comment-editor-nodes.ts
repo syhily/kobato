@@ -1,5 +1,5 @@
 import { CodeBlockNode, EDITOR_BASE_NODES } from '@kobato/inkling'
-import { excludeBaseNodes } from '@kobato/web-client/editor/base-node-filter'
+import { excludeBaseNodes } from '@kobato/web-public/ui/shared/editor/base-node-filter'
 
 const COMMENT_EXCLUDED_BASE_TYPES = new Set(['heading', 'extended-heading', 'aside', 'table', 'tablerow', 'tablecell'])
 

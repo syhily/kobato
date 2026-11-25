@@ -21,7 +21,7 @@ const RETIRED_JSON_ROUTES = [
   '/api/rum/status',
   '/api/setup/restore',
 ] as const
-const TELEMETRY_POLICY = 'packages/web/client/src/lib/rum/rum-url-policy.ts'
+const TELEMETRY_POLICY = 'apps/kobato/src/rum/rum-url-policy.ts'
 const OUTBOUND_API_PREFIXES = [
   'packages/server/src/domains/music/providers/',
   'packages/server/src/domains/observability/',
@@ -54,6 +54,7 @@ function productionFiles(): string[] {
   const files: string[] = []
   walk(join(REPO_ROOT, 'packages/server/src'), files)
   walk(join(REPO_ROOT, 'packages/web'), files)
+  walk(join(REPO_ROOT, 'apps/kobato/src/rum'), files)
   return files.filter((file) => {
     const relativeFile = relative(REPO_ROOT, file)
     return !file.includes('/tests/') && !OUTBOUND_API_PREFIXES.some((prefix) => relativeFile.startsWith(prefix))

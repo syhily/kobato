@@ -2,6 +2,8 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
 import { idStr } from '@kobato/utils/id'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
@@ -19,8 +21,6 @@ import {
   singleDateFilterLabel,
 } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'

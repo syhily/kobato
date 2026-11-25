@@ -1,7 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-const SCANNED_ROOTS = ['packages/web/admin/src/ui/', 'packages/web/client/src/', 'apps/kobato/src/routes/']
+const SCANNED_ROOTS = [
+  'packages/web/admin/src/ui/',
+  'apps/kobato/src/routes/',
+  'packages/web/public/src/ui/shared/editor/',
+  'packages/web/public/src/ui/comments/',
+]
 const SOURCE_FILE = /\.[tj]sx?$/
 const WATCH_CALL = /\.\s*watch\s*\(/
 

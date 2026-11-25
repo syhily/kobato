@@ -1,6 +1,6 @@
 import { makePost } from '@kobato/api/tests/utils/catalog'
 import { asRoute } from '@kobato/test/route-test-utils'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import CategoryListRoute from '@/routes/public/category/list'

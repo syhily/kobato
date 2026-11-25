@@ -8,7 +8,7 @@ import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
 import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { Controller } from 'react-hook-form'
 
 export function PasskeyToggleCard({ security }: { security: SecuritySettings }) {

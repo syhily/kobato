@@ -15,7 +15,7 @@ import { Label } from '@kobato/ui/components/label'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes, formatDateTime } from '@kobato/utils/format'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 interface ImageDetailDialogProps {

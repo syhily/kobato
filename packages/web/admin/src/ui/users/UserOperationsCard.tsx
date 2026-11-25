@@ -1,5 +1,7 @@
 import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card'
@@ -8,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { invalidateUsersCache } from '@kobato/web-admin/ui/users/users-cache'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError, toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {

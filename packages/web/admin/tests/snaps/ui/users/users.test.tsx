@@ -4,7 +4,7 @@ import { InviteAuthorDialog } from '@kobato/web-admin/ui/users/InviteAuthorDialo
 import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
 import { UsersToolbar } from '@kobato/web-admin/ui/users/UsersToolbar'
 import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: UsersView', () => {

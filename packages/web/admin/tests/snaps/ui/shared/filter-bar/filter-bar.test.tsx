@@ -13,7 +13,7 @@ import { TextFilterEditor } from '@kobato/web-admin/ui/shared/filter-bar/editors
 import { FilterPillBar } from '@kobato/web-admin/ui/shared/filter-bar/FilterPillBar'
 import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list'
 import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 const COMMENT_FILTER_FIELDS = buildCommentFilterFields(tZhCN)

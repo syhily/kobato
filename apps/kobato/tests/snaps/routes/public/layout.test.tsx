@@ -5,7 +5,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-set
 import { asRoute } from '@kobato/test/route-test-utils'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'

@@ -2,6 +2,7 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { makeAdminComment, makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { renderHook } from '@kobato/ui/tests/utils/hook'
@@ -25,7 +26,6 @@ import {
 } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import { type SingleDateFilterValue } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filter-pills'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 

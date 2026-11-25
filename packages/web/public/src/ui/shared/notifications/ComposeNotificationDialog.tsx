@@ -1,5 +1,6 @@
 import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
@@ -17,7 +18,6 @@ import { Textarea } from '@kobato/ui/components/textarea'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useInvalidateNotifications } from '@kobato/web-public/ui/shared/notifications/use-notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'

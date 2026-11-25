@@ -1,9 +1,9 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { type LoginMethod, loginMethodSchema } from '@kobato/api/contracts/account/self'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { RadioGroup } from '@kobato/ui/components/radio-group'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { LabelledRadio } from '@kobato/web-admin/ui/shared/form/LabelledRadio'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRevalidator } from 'react-router'
 

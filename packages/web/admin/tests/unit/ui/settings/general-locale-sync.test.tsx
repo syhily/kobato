@@ -8,7 +8,7 @@ import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { GeneralForm } from '@kobato/web-admin/ui/settings/general/GeneralForm'
 import { SettingsFlushProvider } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
 import { SettingsPanel } from '@kobato/web-admin/ui/settings/shell/SettingsPanel'
-import { publishLocaleChange } from '@kobato/web-client/lib/locale-sync'
+import { publishLocaleChange } from '@kobato/web-public/ui/lib/locale-sync'
 import { LocaleSyncProvider } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'

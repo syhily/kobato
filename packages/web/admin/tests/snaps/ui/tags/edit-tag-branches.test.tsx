@@ -3,7 +3,7 @@ import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 import { makeAdminTag } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

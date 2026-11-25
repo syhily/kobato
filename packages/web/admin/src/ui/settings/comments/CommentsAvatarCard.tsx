@@ -3,6 +3,7 @@ import type { CommentsLoaderShape } from '@kobato/settings/projection'
 
 import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { type AvatarCardState, type CommentsFormProps } from '@kobato/web-admin/ui/settings/comments/model'
@@ -19,7 +20,6 @@ import {
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { resolveSortableMove, useSortableSensors, VERTICAL_AXIS_ONLY } from '@kobato/web-admin/ui/shared/sortable'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { Controller } from 'react-hook-form'
 

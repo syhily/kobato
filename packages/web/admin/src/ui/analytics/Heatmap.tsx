@@ -1,5 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -13,7 +14,6 @@ import {
   type AnalyticsScope,
   type HeatmapMetric,
 } from '@kobato/web-admin/ui/analytics/use-analytics-state'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { type KeyboardEvent, useMemo, useRef, useState } from 'react'
 const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [

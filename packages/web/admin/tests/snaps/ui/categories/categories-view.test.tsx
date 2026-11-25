@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

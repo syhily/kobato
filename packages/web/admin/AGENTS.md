@@ -10,10 +10,10 @@ every other cross-feature edge is an audited allowlist row.
 
 - Production sources are browser-safe: no `node:*` value imports and no `@kobato/server` imports (value or type; server
   is a tests-only fixture dependency). The oRPC client is typed by `ContractRouterClient<typeof apiContract>` from
-  `@kobato/api` (reached through `@kobato/web-client/api/client`); wire DTO shapes come from `@kobato/api/contracts`.
+  `@kobato/api` (reached through `@kobato/api/browser/client`); wire DTO shapes come from `@kobato/api/contracts`.
 - Imports use `@kobato/web-admin/...` inside this package and the sanctioned external specifiers
-  (`@kobato/web-public/...`, `@kobato/web-client/...`, `@kobato/ui/...`, the shared leaves) — never
-  `@kobato/catalog/seo` (route title/meta resolution lives in the app layer), never `@kobato/inkling` across packages.
+  (`@kobato/web-public/...`, `@kobato/ui/...`, the shared leaves) — never `@kobato/catalog/seo` (route title/meta
+  resolution lives in the app layer), never `@kobato/inkling` across packages.
 - Legacy-regression bans: no `apps/kobato/src/blog.config.ts`, no `DEFAULT_SETTINGS` / `BlogConstants` / per-section
   "reset to defaults" actions / monolithic `BlogConfigContext` (settings UI uses per-section hooks), no
   `data-admin-shell` selector, no `packages/web/admin/src/lib/`, no `@kobato/web-admin/ui/shadcn/components/ui/`

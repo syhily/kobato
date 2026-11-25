@@ -493,7 +493,7 @@ async function loginAsAdmin(page: Page, fx: SmokeFixtures): Promise<void> {
 
 async function uploadLargeImage(page: Page, jpeg: Buffer): Promise<number> {
   const base64 = jpeg.toString('base64')
-  const clientModulePath = resolveFromRepo('packages/web/client/src/api/client.ts')
+  const clientModulePath = resolveFromRepo('packages/api/src/browser/client.ts')
   await page.goto('/admin', { waitUntil: 'networkidle' })
   const started = Date.now()
   await page.evaluate((encoded: string) => {

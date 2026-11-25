@@ -12,7 +12,7 @@ import { formatDateTime } from '@kobato/utils/format'
 import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker'
 import { dateToLocalInputValue } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import { LabelledRadioCard } from '@kobato/web-admin/ui/shared/form/LabelledRadio'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 

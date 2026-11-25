@@ -1,11 +1,11 @@
 import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/account/notifications'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@kobato/ui/components/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { ComposeNotificationDialog } from '@kobato/web-public/ui/shared/notifications/ComposeNotificationDialog'
 import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge'

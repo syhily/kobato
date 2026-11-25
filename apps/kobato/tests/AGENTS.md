@@ -7,9 +7,10 @@ import app source through `@/...` and helpers through `@tests/...`, plus the can
 runner-level exception: its config/support imports stay relative because Playwright loads them before any tsconfig-path
 resolver.
 
-- **`tests/{unit,it,snaps}/`** — route-module tests mirroring `apps/kobato/src/routes/`. Each tree is one project
-  (`app-unit` also runs `tests/arch/`), defined in `@kobato/test/projects/kobato-app-projects.ts`; every project runs
-  `isolate: true`. Unit/it setup wrappers live under `tests/utils/setup/`.
+- **`tests/{unit,it,snaps}/`** — tests mirroring `apps/kobato/src/` (`routes/`, `seo/`, `document/`, `rum/`,
+  `route-warmup/`). Each tree is one project (`app-unit` also runs `tests/arch/`), defined in
+  `@kobato/test/projects/kobato-app-projects.ts`; every project runs `isolate: true`. Unit/it setup wrappers live under
+  `tests/utils/setup/`.
 - **`tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message
   literals, the Vitest project registry itself); runs inside `app-unit`.
 - **DuckDB** — every file that spins up the real DuckDB engine lives in `tests/it/` named `*.duckdb.test.ts`; the suffix

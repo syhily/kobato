@@ -22,7 +22,11 @@
     "@kobato/utils": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
+    "@orpc/react-query": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "react": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

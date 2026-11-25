@@ -6,11 +6,11 @@ import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema
 import { InklingSurface, ListPlugin } from '@kobato/inkling'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import { cn } from '@kobato/ui/lib/cn'
-import { blockQuoteAsideCycle } from '@kobato/web-client/editor/block-quote-aside-cycle'
-import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-client/editor/editor-surface'
 import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@kobato/web-public/ui/comments/editor/comment-legacy-math'
 import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web-public/ui/comments/editor/comment-markdown-transformers'
+import { blockQuoteAsideCycle } from '@kobato/web-public/ui/shared/editor/block-quote-aside-cycle'
+import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-public/ui/shared/editor/editor-surface'
 import { useCallback } from 'react'
 
 export interface CommentBodyEditorProps {

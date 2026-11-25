@@ -1,5 +1,6 @@
 import type { AssetsLoaderShape } from '@kobato/settings/projection'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { FieldLabel } from '@kobato/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
@@ -18,7 +19,6 @@ import { SettingsSwitch } from '@kobato/web-admin/ui/settings/shell/SettingsSwit
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { StorageMigrationCard } from '@kobato/web-admin/ui/settings/storage/StorageMigrationCard'
 import { StorageMigrationDialog } from '@kobato/web-admin/ui/settings/storage/StorageMigrationDialog'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRightLeftIcon } from 'lucide-react'
 import { useState } from 'react'

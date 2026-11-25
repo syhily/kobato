@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./tests/*": "./tests/*",
     "./*.css": "./src/*.css",
     "./*": [
       "./src/*.ts",
@@ -23,7 +24,6 @@
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-client": "workspace:*",
     "@number-flow/react": "catalog:",
     "@orpc/client": "catalog:",
     "@tanstack/react-query": "catalog:",

@@ -1,8 +1,8 @@
 import type { NavigateFunction } from 'react-router'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { EditorRouteLoader } from '@kobato/web-admin/ui/editor-shell/EditorRouteLoader'
 import { PostEditorShell } from '@kobato/web-admin/ui/posts/PostEditorShell'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 
 export interface PostEditorRouteProps {
   postId: string

@@ -70,9 +70,9 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
 }
 
 const WARMUP_ENTRY = fileURLToPath(
-  new URL('../../../../packages/web/client/src/route-warmup/idle-script.entry.ts', import.meta.url),
+  new URL('../../../../apps/kobato/src/route-warmup/idle-script.entry.ts', import.meta.url),
 )
-const VIRTUAL_ID = '@kobato/web-client/route-warmup/compiled-script'
+const VIRTUAL_ID = '@/route-warmup/compiled-script'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
 let compiledWarmupPromise: Promise<string> | null = null
@@ -83,6 +83,7 @@ function bundleWarmupScript(): Promise<string> {
       const result = await build({
         configFile: false,
         logLevel: 'warn',
+        resolve: { tsconfigPaths: true },
         build: {
           write: false,
           minify: true,

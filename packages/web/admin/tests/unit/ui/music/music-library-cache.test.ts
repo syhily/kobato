@@ -1,4 +1,4 @@
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 

@@ -1,5 +1,6 @@
 import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -14,8 +15,7 @@ import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useAssetsSettingsOptional } from '@kobato/web-client/settings/blog-settings-context'
+import { useAssetsSettingsOptional } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'

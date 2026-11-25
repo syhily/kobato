@@ -137,8 +137,8 @@ would hold the perimeter's dual-spelling complexity (CSRF exemption, tracing, gu
 
 ### 6. One contract, three callers; SSR in-process is a transport optimization, not a policy exception
 
-- The browser calls `/rpc/*` same-origin through `@kobato/web-client`'s full-tree `ContractRouterClient` (the grouped
-  `apiContract`, including the workspace surfaces the built-in SPA needs).
+- The browser calls `/rpc/*` same-origin through the `orpc` singleton of `@kobato/api/browser/client` (the full-tree
+  `ContractRouterClient` over the grouped `apiContract`, including the workspace surfaces the built-in SPA needs).
 - The built-in frontend's SSR calls the same `apiRouter` in process through `createSsrCaller` — a performance seam, not
   a privilege. It builds the same `HandlerContext` from the canonical `RequestContext` (ADR-0001) and invokes the same
   router with the same interceptors (input validation; tracing under the `in_process` label), skipping only the HTTP

@@ -3,7 +3,7 @@ import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@kobato/api/
 import { EMPTY_STATE_LINE_IDS, pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
 import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel'
 import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard'
-import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml, testQueryClient } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const approvalItem: AdminPendingItemDto = {

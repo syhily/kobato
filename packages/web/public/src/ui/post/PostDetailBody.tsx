@@ -2,7 +2,7 @@ import type { DetailPageComments } from '@kobato/api/contracts/public/comments'
 import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker } from '@kobato/catalog/model'
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { LikeShare } from '@kobato/web-public/ui/LikeActions'
 import { DetailBodyChrome } from '@kobato/web-public/ui/post/DetailBodyChrome'
 import { postMetaTagsClass } from '@kobato/web-public/ui/post/postChrome'

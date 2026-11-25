@@ -1,13 +1,13 @@
 import type { UpdateCheckResult, UpdateJobState } from '@kobato/api/contracts/admin/update'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/distribution/app'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog'
 import { GithubIcon } from '@kobato/ui/icons/brand'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { Image } from '@kobato/web-public/ui/widgets/Image'
 import { useQuery } from '@tanstack/react-query'
 import {

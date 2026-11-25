@@ -5,11 +5,11 @@ import { getImageUrl } from '@kobato/assets/images'
 import { LazyMotionButton, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { transitions } from '@kobato/ui/lib/motion'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys'
 import { useDevicePixelRatio } from '@kobato/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@kobato/ui/lib/use-element-width'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
-import { transitions } from '@kobato/web-client/lib/motion'
 import { Fragment, useMemo } from 'react'
 
 export interface JustifiedImageGridProps {

@@ -13,7 +13,9 @@ and pin the exact commit your backend runs. Every package carries the same versi
 (`apps/kobato/package.json` is the source of truth; `pnpm version:sync <version>` repairs drift), so "packages at
 version X talk to backend at version X" is the whole compatibility story. Minimum set for a rendering consumer:
 `@kobato/api` (contract + client), plus the shared leaves your renderer reads (`@kobato/catalog` for the listing/read
-models, `@kobato/inkling/headless` for the document model) — all React-free.
+models, `@kobato/inkling/headless` for the document model) — the `contracts/`, `rpc/`, and `client/` subtrees of
+`@kobato/api` are React-free and carry no ambient state. `@kobato/api/browser` is the built-in frontend's own assembly
+and is not part of this seam.
 
 ## The client
 
@@ -123,7 +125,7 @@ this table is the reference):
 Comments are the interactive surface, and they are **same-origin by construction**: anonymous comment authorship rides
 the `__comment_tokens` cookie (HttpOnly, `SameSite=Lax`, 7-day), and the comment mutations plus the token reads stay
 behind the CSRF double-submit pair (`__csrf` cookie + matching `x-csrf-token` header — the built-in browser assembly in
-`@kobato/web-client` carries it). For a browser-driven frontend, the browser must call the same origin that set those
+`@kobato/api/browser` carries it). For a browser-driven frontend, the browser must call the same origin that set those
 cookies — forward `/rpc/*` rather than pointing the browser at a different backend origin. `createKobatoPublicClient`
 does none of this for you (no ambient state).
 

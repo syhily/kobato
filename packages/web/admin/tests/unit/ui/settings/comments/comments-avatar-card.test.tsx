@@ -16,7 +16,7 @@ import { projectCommentsForAdmin } from '@kobato/settings/projection'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CommentsForm } from '@kobato/web-admin/ui/settings/comments/CommentsForm'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

@@ -1,6 +1,7 @@
 import type { JobSummaryDto, QueueTaskStatsDto } from '@kobato/api/contracts/admin/jobs'
 import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/admin/storage'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
@@ -16,7 +17,6 @@ import {
   type TaskStatus,
 } from '@kobato/web-admin/ui/jobs/meta'
 import { RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon } from 'lucide-react'

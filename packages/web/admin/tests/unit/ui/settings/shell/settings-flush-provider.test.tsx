@@ -2,7 +2,7 @@ import {
   SettingsFlushProvider,
   useSettingsFlushContext,
 } from '@kobato/web-admin/ui/settings/shell/SettingsFlushProvider'
-import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useSettingsFlushContext>) => void }) {

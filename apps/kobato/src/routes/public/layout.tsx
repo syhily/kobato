@@ -1,12 +1,13 @@
 import { documentHeaders } from '@kobato/server/infra/http/headers'
 import { isRecord } from '@kobato/utils/type-guards'
-import { useReloadOnChunkError } from '@kobato/web-client/hooks/use-chunk-error-recovery'
-import { useDeviceEnvBeacon } from '@kobato/web-client/hooks/use-device-env-beacon'
 import { BaseLayout } from '@kobato/web-public/ui/chrome/BaseLayout'
 import { ErrorView } from '@kobato/web-public/ui/chrome/ErrorView'
 import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-router'
 
 import type { RouteHandle } from '@/root'
+
+import { useReloadOnChunkError } from '@/document/use-chunk-error-recovery'
+import { useDeviceEnvBeacon } from '@/document/use-device-env-beacon'
 
 import type { Route } from './+types/layout'
 

@@ -12,7 +12,6 @@ const CONSUMING_TREES = [
   'packages/ui/src',
   'packages/inkling/src',
   'packages/web/admin/src',
-  'packages/web/client/src',
   'packages/web/public/src',
   'tools/test/src',
   'tools/trace/src',

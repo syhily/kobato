@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 const mathMock = vi.hoisted(() => vi.fn())
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(() => ({ admin: { renders: { math: mathMock } } }) as never)
 
 afterAll(() => {

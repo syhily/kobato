@@ -75,7 +75,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
-    '@kobato/web-client',
     '@kobato/web-public',
     '@kobato/ui',
     '@kobato/inkling',
@@ -92,18 +91,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
   ],
 
-  '@kobato/web-client': [
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/settings',
-    '@kobato/distribution',
-    '@kobato/test',
-  ],
   '@kobato/web-public': [
-    '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -144,7 +132,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
 
   '@kobato/web-admin': [
     '@kobato/web-admin',
-    '@kobato/web-client',
     '@kobato/web-public',
     '@kobato/ui',
     '@kobato/inkling',
@@ -159,20 +146,8 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
   ],
 
-  '@kobato/web-client': [
-    '@kobato/web-client',
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/settings',
-    '@kobato/distribution',
-  ],
-
   '@kobato/web-public': [
     '@kobato/web-public',
-    '@kobato/web-client',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -190,6 +165,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/api',
     '@kobato/auth',
     '@kobato/catalog',
+    '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
     '@kobato/server',
@@ -197,7 +173,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/ui',
     '@kobato/utils',
     '@kobato/web-admin',
-    '@kobato/web-client',
     '@kobato/web-public',
   ],
 
@@ -609,7 +584,7 @@ describe('package DAG', () => {
       'packages/api',
       'packages/server',
       'packages/ui',
-      'packages/web/client',
+      'packages/web/public',
       'packages/web/admin',
       'packages/inkling',
     ]) {
@@ -629,7 +604,6 @@ describe('package DAG', () => {
       '@kobato/server',
       '@kobato/ui',
       '@kobato/web-admin',
-      '@kobato/web-client',
       '@kobato/web-public',
       '@kobato/inkling',
       '@kobato/test',

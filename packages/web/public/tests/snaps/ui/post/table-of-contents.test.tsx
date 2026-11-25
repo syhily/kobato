@@ -1,6 +1,6 @@
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
-import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml } from '@kobato/web-public/tests/utils/render'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
 import { TocItems } from '@kobato/web-public/ui/post/TocItems'
 import { describe, expect, it } from 'vitest'

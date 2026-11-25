@@ -1,10 +1,10 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context'
 import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor'
 import { useMutation } from '@tanstack/react-query'

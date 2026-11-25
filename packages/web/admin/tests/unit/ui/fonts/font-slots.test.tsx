@@ -23,7 +23,7 @@ vi.mock('react-router', async () => {
 
 const setSlotMock = vi.hoisted(() => vi.fn())
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () => ({ admin: { fonts: { setSlot: setSlotMock } } }) as never,
 )
@@ -32,7 +32,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-vi.mock('@kobato/web-client/api/orpc-query', () => ({
+vi.mock('@kobato/api/browser/orpc-query', () => ({
   orpcQuery: { admin: { fonts: { list: { key: () => ['admin', 'fonts', 'list'] } } } },
 }))
 

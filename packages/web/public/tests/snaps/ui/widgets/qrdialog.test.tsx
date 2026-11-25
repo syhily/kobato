@@ -1,5 +1,5 @@
 import { WechatIcon } from '@kobato/ui/icons/brand'
-import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml } from '@kobato/web-public/tests/utils/render'
 import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog'
 import { describe, expect, it } from 'vitest'
 

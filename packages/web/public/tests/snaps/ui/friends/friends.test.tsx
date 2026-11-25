@@ -1,6 +1,6 @@
 import type { Friend } from '@kobato/catalog/model'
 
-import { renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml } from '@kobato/web-public/tests/utils/render'
 import { Friends } from '@kobato/web-public/ui/friends/Friends'
 import { describe, expect, it } from 'vitest'
 

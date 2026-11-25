@@ -4,7 +4,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatDate } from '@kobato/utils/format'
 import { localDateParts } from '@kobato/utils/site-date'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { postTitleClass } from '@kobato/web-public/ui/post/postChrome'
 import { PostSquare } from '@kobato/web-public/ui/post/PostListViews'
 

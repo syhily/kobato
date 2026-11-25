@@ -2,14 +2,14 @@ import type { MailLoaderShape } from '@kobato/settings/projection'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({

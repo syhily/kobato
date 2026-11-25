@@ -27,7 +27,7 @@ import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityFor
 import { SeoForm } from '@kobato/web-admin/ui/settings/SeoForm'
 import { SidebarForm } from '@kobato/web-admin/ui/settings/sidebar/SidebarForm'
 import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor'
-import { renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

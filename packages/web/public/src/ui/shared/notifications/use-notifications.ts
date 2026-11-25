@@ -1,10 +1,10 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
   type NotificationDto,
   type NotificationTab,
   NOTIFICATION_TABS,
 } from '@kobato/api/contracts/account/notifications'
 import { isRecord } from '@kobato/utils/type-guards'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import {
   type InfiniteData,
   type QueryClient,

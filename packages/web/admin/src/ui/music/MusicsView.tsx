@@ -1,5 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,6 @@ import { AlbumCard } from '@kobato/web-admin/ui/music/AlbumCard'
 import { MusicLibraryHero } from '@kobato/web-admin/ui/music/MusicLibraryHero'
 import { useMusicPlayerActions } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import {
   ArrowDownAZ,
   ArrowUpAZ,

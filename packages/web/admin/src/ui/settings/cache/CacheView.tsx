@@ -2,6 +2,8 @@ import type { ReservedCacheBucketStats } from '@kobato/api/contracts/admin/cache
 import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@kobato/settings/cache-bucket'
 import type { CacheSettings } from '@kobato/settings/types'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { BucketCard } from '@kobato/web-admin/ui/settings/cache/BucketCard'
@@ -9,8 +11,6 @@ import { type ClearStatus, idleClearStatus } from '@kobato/web-admin/ui/settings
 import { CacheStatusLine } from '@kobato/web-admin/ui/settings/cache/CacheStatusLine'
 import { ConfirmClearDialog } from '@kobato/web-admin/ui/settings/cache/ConfirmClearDialog'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'

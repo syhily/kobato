@@ -3,7 +3,7 @@ import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

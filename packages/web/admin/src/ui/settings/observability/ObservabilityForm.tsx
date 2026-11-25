@@ -1,9 +1,9 @@
 import type { ObservabilitySettings } from '@kobato/settings/types'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { ObservabilityAssetsCard } from '@kobato/web-admin/ui/settings/observability/ObservabilityAssetsCard'
 import { ObservabilityConnectionCard } from '@kobato/web-admin/ui/settings/observability/ObservabilityConnectionCard'
 import { ObservabilityReportingCard } from '@kobato/web-admin/ui/settings/observability/ObservabilityReportingCard'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 

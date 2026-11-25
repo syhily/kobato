@@ -1,12 +1,12 @@
 import type { AdminMusicDto, ListMusicOutput } from '@kobato/api/contracts/admin/music'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog'
 import { Input } from '@kobato/ui/components/input'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search'
 import { AddMusicDialog } from '@kobato/web-admin/ui/music/AddMusicDialog'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { type ReactNode, isValidElement, useState } from 'react'

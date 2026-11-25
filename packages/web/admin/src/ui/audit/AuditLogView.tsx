@@ -1,3 +1,4 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +22,6 @@ import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filte
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { DownloadIcon, SearchIcon } from 'lucide-react'

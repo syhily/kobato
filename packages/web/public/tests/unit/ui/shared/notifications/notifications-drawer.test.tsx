@@ -6,7 +6,7 @@ import type { ComponentProps, ReactElement, ReactNode } from 'react'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

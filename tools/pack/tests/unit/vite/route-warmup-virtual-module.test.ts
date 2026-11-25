@@ -1,7 +1,8 @@
+import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup'
 import { routeWarmupPlugin } from '@kobato/pack/vite/route-warmup'
 import { describe, expect, it } from 'vitest'
 
-const VIRTUAL = '@kobato/web-client/route-warmup/compiled-script'
+const VIRTUAL = '@/route-warmup/compiled-script'
 const RESOLVED = `\0${VIRTUAL}`
 
 describe('routeWarmupPlugin — virtual module hooks', () => {
@@ -29,4 +30,12 @@ describe('routeWarmupPlugin — virtual module hooks', () => {
     const plugin = makePlugin()
     await expect(plugin.load?.('/some/real/id.js')).resolves.toBeUndefined()
   })
+
+  it('bundles the app idle entry on the build path and keeps the chunk sentinel', async () => {
+    const plugin = makePlugin()
+    plugin.config?.({}, { command: 'build', mode: 'production' })
+    const code = await plugin.load?.(RESOLVED)
+    expect(code).toContain(CHUNKS_SENTINEL)
+    expect(code).toMatch(/^export default "/)
+  }, 60_000)
 })

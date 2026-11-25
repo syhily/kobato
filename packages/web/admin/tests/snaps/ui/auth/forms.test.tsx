@@ -1,5 +1,5 @@
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@simplewebauthn/browser', () => ({

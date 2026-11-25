@@ -1,4 +1,4 @@
-import { renderInRouter, renderToHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml } from '@kobato/web-public/tests/utils/render'
 import { Pagination } from '@kobato/web-public/ui/post/Pagination'
 import { describe, expect, it } from 'vitest'
 

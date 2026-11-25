@@ -6,7 +6,7 @@ import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter
 import { makeAdminComment } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

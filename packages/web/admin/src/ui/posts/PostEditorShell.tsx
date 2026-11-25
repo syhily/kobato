@@ -6,15 +6,15 @@ import type {
 } from '@kobato/api/contracts/admin/posts'
 import type { NavigateFunction } from 'react-router'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { EditorScreen } from '@kobato/web-admin/ui/editor-shell/EditorScreen'
 import { type EditorAdapterConfig, makeEditorAdapter } from '@kobato/web-admin/ui/editor-shell/make-editor-adapter'
 import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-upsert-payload'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useContentSettings } from '@kobato/web-client/settings/blog-settings-context'
+import { useContentSettings } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { useQueryClient } from '@tanstack/react-query'
 
 export interface PostEditorShellProps {

@@ -4,9 +4,9 @@ import type { ReactNode } from 'react'
 import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { transitions } from '@kobato/ui/lib/motion'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
 import { useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
-import { transitions } from '@kobato/web-client/lib/motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 interface MusicLibraryHeroProps {

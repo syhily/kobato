@@ -1,10 +1,14 @@
 import type { AppLocale } from '@kobato/i18n/locales'
-import type { LocaleChangeAnnouncement } from '@kobato/web-client/lib/locale-sync'
+import type { LocaleChangeAnnouncement } from '@kobato/web-public/ui/lib/locale-sync'
 import type { ReactNode } from 'react'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { getLogger } from '@kobato/ui/lib/logger'
-import { createLocaleSyncOrigin, publishLocaleChange, subscribeLocaleChange } from '@kobato/web-client/lib/locale-sync'
+import {
+  createLocaleSyncOrigin,
+  publishLocaleChange,
+  subscribeLocaleChange,
+} from '@kobato/web-public/ui/lib/locale-sync'
 import { XIcon } from 'lucide-react'
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 

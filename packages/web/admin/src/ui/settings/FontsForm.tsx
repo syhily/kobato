@@ -1,5 +1,6 @@
 import type { FontsSettings } from '@kobato/settings/types'
 
+import { orpc } from '@kobato/api/browser/client'
 import { CANVAS_FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -9,7 +10,6 @@ import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/Setting
 import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
-import { orpc } from '@kobato/web-client/api/client'
 import { UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Link } from 'react-router'

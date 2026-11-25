@@ -21,7 +21,6 @@ const SOURCE_ROOTS = [
   'apps/inkling-demo/src',
   'packages/ui/src',
   'packages/web/admin/src',
-  'packages/web/client/src',
   'packages/web/public/src',
   'packages/inkling/src',
 ] as const

@@ -3,13 +3,13 @@ import type {
   ObservabilityStatusOutput,
 } from '@kobato/api/contracts/admin/observability'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ObservabilityProvisionSummaryLines } from '@kobato/web-admin/ui/settings/observability/ObservabilityProvisionSummaryLines'
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { RefreshCwIcon } from 'lucide-react'

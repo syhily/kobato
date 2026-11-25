@@ -1,5 +1,6 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,12 +15,11 @@ import {
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags'
 import { commentFooterButtonClass } from '@kobato/web-public/ui/comments/comment-item/presentation'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context'
 import { warmCommentEditorChunks } from '@kobato/web-public/ui/comments/LazyCommentBodyEditor'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { useMutation } from '@tanstack/react-query'
 
 interface CommentActionsProps {

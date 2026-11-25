@@ -11,8 +11,8 @@ import { makePageEditorCardConfig } from '@kobato/web-admin/ui/editor/page-edito
 import { PAGE_EDITOR_NODES } from '@kobato/web-admin/ui/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@kobato/web-admin/ui/editor/page-editor-upload'
 import { useFocusModePreference } from '@kobato/web-admin/ui/editor/use-focus-mode'
-import { blockQuoteAsideCycle } from '@kobato/web-client/editor/block-quote-aside-cycle'
-import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-client/editor/editor-surface'
+import { blockQuoteAsideCycle } from '@kobato/web-public/ui/shared/editor/block-quote-aside-cycle'
+import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-public/ui/shared/editor/editor-surface'
 import { FocusIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo } from 'react'
 export interface PageBodyEditorProps {

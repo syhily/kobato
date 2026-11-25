@@ -7,9 +7,9 @@ import type {
 } from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser } from '@kobato/catalog/model'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { CommentItem } from '@kobato/web-public/ui/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
 import {

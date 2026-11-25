@@ -1,3 +1,5 @@
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { FONT_MAX_BYTES } from '@kobato/api/contracts/admin/fonts'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -11,8 +13,6 @@ import {
 import { Input } from '@kobato/ui/components/input'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
 import { type ChangeEvent, type RefObject, useEffect, useRef, useState } from 'react'

@@ -4,6 +4,7 @@ import type {
 } from '@kobato/api/contracts/admin/observability'
 import type { ObservabilitySettings } from '@kobato/settings/types'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -18,7 +19,6 @@ import {
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { PlugZapIcon } from 'lucide-react'

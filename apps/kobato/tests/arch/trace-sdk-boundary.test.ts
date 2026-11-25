@@ -20,14 +20,13 @@ const SOURCE_DIRS = [
   'packages/shared/sanitize/src',
   'packages/ui/src',
   'packages/web/admin/src',
-  'packages/web/client/src',
   'packages/web/public/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
 export const APPROVED_SDK_ENTRIES = [
   'packages/server/src/infra/trace/runtime.ts',
   'packages/server/src/infra/trace/logs-runtime.ts',
-  'packages/web/client/src/lib/rum/openobserve-rum.ts',
+  'apps/kobato/src/rum/openobserve-rum.ts',
 ] as const
 
 const TELEMETRY_PACKAGE_PATTERN = /^@(?:opentelemetry|openobserve)\//
@@ -188,7 +187,7 @@ describe('trace SDK source boundary', () => {
   })
 
   it('depends on the slim RUM package only — never the full RUM, browser-logs, or Replay recorder', () => {
-    const packageJson = JSON.parse(readFileSync(join(PROJECT_ROOT, 'packages/web/client/package.json'), 'utf-8')) as {
+    const packageJson = JSON.parse(readFileSync(join(PROJECT_ROOT, 'apps/kobato/package.json'), 'utf-8')) as {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
     }
@@ -218,16 +217,13 @@ describe('trace SDK source boundary', () => {
   })
 
   it('reaches the slim browser SDK only through the guarded dynamic import', () => {
-    const runtimeSource = readFileSync(
-      join(PROJECT_ROOT, 'packages/web/client/src/lib/rum/openobserve-rum.ts'),
-      'utf-8',
-    )
+    const runtimeSource = readFileSync(join(PROJECT_ROOT, 'apps/kobato/src/rum/openobserve-rum.ts'), 'utf-8')
     expect(getValueSpecifiers(runtimeSource).filter((specifier) => specifier.startsWith('@openobserve/'))).toEqual([
       '@openobserve/browser-rum-slim',
     ])
     expect(runtimeSource).toMatch(/await import\('@openobserve\/browser-rum-slim'\)/)
 
-    const hookSource = readFileSync(join(PROJECT_ROOT, 'packages/web/client/src/hooks/use-rum.ts'), 'utf-8')
+    const hookSource = readFileSync(join(PROJECT_ROOT, 'apps/kobato/src/rum/use-rum.ts'), 'utf-8')
 
     expect(hookSource).not.toMatch(/from ['"][^'"]*openobserve-rum(\.ts)?['"]/)
     const loadCall = hookSource.indexOf('void loadRumModule()')
@@ -280,7 +276,7 @@ describe('trace SDK source boundary', () => {
     expect([...APPROVED_SDK_ENTRIES]).toEqual([
       'packages/server/src/infra/trace/runtime.ts',
       'packages/server/src/infra/trace/logs-runtime.ts',
-      'packages/web/client/src/lib/rum/openobserve-rum.ts',
+      'apps/kobato/src/rum/openobserve-rum.ts',
     ])
   })
 })

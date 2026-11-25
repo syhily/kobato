@@ -46,8 +46,8 @@ Token rules (merge groups, dark tiers) live in `packages/ui/src/styles/AGENTS.md
 - Icons: named imports from `lucide-react` only. Interface copy is a UI message id resolved through `useI18n()` (tests
   rendering `@kobato/ui/components` primitives directly must mount `I18nProvider`,
   `@kobato/ui/tests/utils/i18n-render.tsx`).
-- Animation is Motion Only: the `@kobato/ui/components/lazy-motion` facade with constants from
-  `@kobato/web-client/lib/motion` (root `AGENTS.md` holds the full rule).
+- Animation is Motion Only: the `@kobato/ui/components/lazy-motion` facade with constants from `@kobato/ui/lib/motion`
+  (root `AGENTS.md` holds the full rule).
 - Use `<Image />` from `@kobato/web-public/ui/widgets/Image` for transformed remote images.
 - **Shiki is SSR-only** — never import `shiki`/`@shikijs/*` here (Oniguruma `.wasm` violates the strict CSP);
   highlighted code arrives pre-rendered.
@@ -58,9 +58,10 @@ Token rules (merge groups, dark tiers) live in `packages/ui/src/styles/AGENTS.md
 - Storage: Lexical states (`@kobato/inkling/headless/schema` posts/pages, `comment-schema` comments). The friends grid
   is the `page.show_friends` toggle, not a body block.
 - `PageBodyEditor` wraps the inkling composer through the skeleton shared with comments
-  (`@kobato/web-client/editor/editor-surface`); kobato glue (host cards, `KobatoImageNode`, upload/picker wiring) lives
-  in `ui/editor/`. Host hooks sit under `.kobato-page-editor` in `packages/web/admin/src/styles/inkling-editor.css`. The
-  locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), imported by no UI module.
+  (`@kobato/web-public/ui/shared/editor/editor-surface`); kobato glue (host cards, `KobatoImageNode`, upload/picker
+  wiring) lives in `ui/editor/`. Host hooks sit under `.kobato-page-editor` in
+  `packages/web/admin/src/styles/inkling-editor.css`. The locale's Inkling label table arrives as root-loader data
+  (`i18n.inklingLabels`), imported by no UI module.
 - Editor copy lives in `admin.editor.*`. The entity noun never crosses a shared boundary as text: configs carry
   `entityLabelId` (`UiMessageId`) resolved via ICU `select`. The comment composer lives in the public leaf; admin
   dialogs mount it through `LazyCommentBodyEditor` with `eager` + `focusOnMount`.

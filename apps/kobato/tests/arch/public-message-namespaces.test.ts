@@ -11,7 +11,6 @@ const APP_SRC = join(REPO_ROOT, 'apps/kobato/src')
 
 const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web-admin': 'packages/web/admin/src',
-  '@kobato/web-client': 'packages/web/client/src',
   '@kobato/web-public': 'packages/web/public/src',
   '@kobato/ui': 'packages/ui/src',
   '@kobato/api': 'packages/api/src',

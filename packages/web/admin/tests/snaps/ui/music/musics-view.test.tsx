@@ -12,7 +12,7 @@ import { MusicsView } from '@kobato/web-admin/ui/music/MusicsView'
 import { AdminMusicPlayerFloat } from '@kobato/web-admin/ui/music/player/AdminMusicPlayerFloat'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { ProgressSlider } from '@kobato/web-admin/ui/music/player/ProgressSlider'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

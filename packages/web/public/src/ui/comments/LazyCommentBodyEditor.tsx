@@ -4,8 +4,8 @@ import type { CommentBodyEditorProps } from '@kobato/web-public/ui/comments/Comm
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels'
-import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web-client/lib/viewport-zoom-lock'
+import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web-public/ui/comments/viewport-zoom-lock'
+import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web-public/ui/shared/editor/inkling-labels'
 import { type PointerEvent, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 const CommentBodyEditor = lazy(() =>
   import('@kobato/web-public/ui/comments/CommentBodyEditor').then((module) => ({

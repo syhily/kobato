@@ -1,7 +1,7 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Dialog, DialogContent, DialogTitle } from '@kobato/ui/components/dialog'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { FileTextIcon, Loader2Icon, NotebookPenIcon, SearchIcon } from 'lucide-react'
 import { type ComponentType, type ReactNode, memo, useEffect, useRef, useState, useTransition } from 'react'

@@ -1,5 +1,6 @@
 import type { NotificationDto } from '@kobato/api/contracts/account/notifications'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +15,7 @@ import { Button, buttonVariants } from '@kobato/ui/components/button'
 import { Textarea } from '@kobato/ui/components/textarea'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { formatNotificationTime, notificationMeta } from '@kobato/web-public/ui/shared/notifications/notification-meta'
 import {

@@ -1,5 +1,6 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { isSafeImageSegment } from '@kobato/assets/images'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -15,7 +16,6 @@ import { Label } from '@kobato/ui/components/label'
 import { Textarea } from '@kobato/ui/components/textarea'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { CoverInputRow } from '@kobato/web-admin/ui/shared/image-edit/CoverInputRow'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'

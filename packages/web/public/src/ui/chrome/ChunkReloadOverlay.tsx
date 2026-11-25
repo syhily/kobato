@@ -1,7 +1,7 @@
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { subscribeChunkReload } from '@kobato/web-client/hooks/use-chunk-error-recovery'
 import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
+import { subscribeChunkReload } from '@kobato/web-public/ui/chrome/chunk-reload'
 import { useEffect, useState } from 'react'
 
 export function ChunkReloadOverlay() {

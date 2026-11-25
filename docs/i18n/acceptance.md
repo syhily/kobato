@@ -64,7 +64,7 @@ pnpm test packages/shared/i18n/tests/unit
 pnpm test packages/server/tests/unit/server/infra/email
 
 # Language switch / cross-tab
-pnpm test packages/web/admin/tests/unit/ui/settings packages/web/client/tests/unit/lib/locale-sync.test.ts
+pnpm test packages/web/admin/tests/unit/ui/settings packages/web/public/tests/unit/ui/lib/locale-sync.test.ts
 
 # Feed / calendar / settings snapshots
 pnpm test packages/server/tests/it/server/http packages/server/tests/it/server/domains/settings

@@ -1,9 +1,9 @@
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { SettingsSectionPatch } from '@kobato/settings/types'
 
+import { orpc } from '@kobato/api/browser/client'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { orpc } from '@kobato/web-client/api/client'
 import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'

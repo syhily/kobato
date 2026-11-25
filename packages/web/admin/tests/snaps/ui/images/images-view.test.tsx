@@ -10,7 +10,7 @@ import {
   JustifiedImageGrid,
   JustifiedImageGridSkeleton,
 } from '@kobato/web-admin/ui/images/JustifiedImageGrid'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

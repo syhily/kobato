@@ -3,10 +3,10 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 import type { FilterFieldSpec } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { resolveSingleDateFilterBounds } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { parseTextFilterValue, textFilterValueLabel } from '@kobato/web-admin/ui/shared/filter-bar/text-filter'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { CalendarIcon, FileTextIcon, ListChecksIcon, SearchIcon, UserIcon } from 'lucide-react'
 
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'

@@ -9,7 +9,7 @@ import { SettingsSearchInput } from '@kobato/web-admin/ui/settings/shell/Setting
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { ScrollSpyProvider } from '@kobato/web-admin/ui/settings/shell/use-settings-scroll-spy'
 import { SettingsSearchProvider } from '@kobato/web-admin/ui/settings/shell/use-settings-search'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: SettingGroup', () => {

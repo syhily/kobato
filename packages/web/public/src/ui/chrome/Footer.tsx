@@ -1,7 +1,7 @@
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { useChromeClock } from '@kobato/web-public/ui/chrome/use-chrome-clock'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()

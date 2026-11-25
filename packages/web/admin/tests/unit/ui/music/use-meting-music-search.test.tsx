@@ -11,7 +11,7 @@ const searchMock = vi.hoisted(() =>
   vi.fn<(input: { source?: string; keyword: string; limit?: number; offset?: number }) => Promise<SearchMusicOutput>>(),
 )
 
-const apiClientMod = await import('@kobato/web-client/api/client')
+const apiClientMod = await import('@kobato/api/browser/client')
 vi.spyOn(apiClientMod, 'orpc', 'get').mockImplementation(
   () =>
     ({

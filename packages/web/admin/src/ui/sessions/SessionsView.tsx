@@ -1,6 +1,7 @@
 import type { AdminSessionItem } from '@kobato/api/contracts/admin/users'
 import type { ReactNode } from 'react'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Badge } from '@kobato/ui/components/badge'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -10,8 +11,7 @@ import { DEFAULT_ADMIN_SORT, SESSION_SORT_OPTIONS } from '@kobato/web-admin/ui/s
 import { useSessionSort } from '@kobato/web-admin/ui/sessions/use-session-sort'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout'
 import { useMutation } from '@tanstack/react-query'

@@ -2,6 +2,7 @@ import type { MyCommentItem, MyCommentsStatus } from '@kobato/api/contracts/acco
 import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 import type { ReactNode } from 'react'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schema'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
@@ -29,9 +30,8 @@ import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filte
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'

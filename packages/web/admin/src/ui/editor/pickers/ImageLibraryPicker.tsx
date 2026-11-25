@@ -1,12 +1,12 @@
 import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@kobato/ui/components/dialog'
 import { Input } from '@kobato/ui/components/input'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { type ReactNode, isValidElement, useState } from 'react'

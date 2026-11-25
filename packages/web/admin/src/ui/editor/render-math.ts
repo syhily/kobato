@@ -1,7 +1,7 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { CardConfig } from '@kobato/inkling'
 
-import { orpc } from '@kobato/web-client/api/client'
+import { orpc } from '@kobato/api/browser/client'
 
 const MATH_RENDER_DEBOUNCE_MS = 200
 

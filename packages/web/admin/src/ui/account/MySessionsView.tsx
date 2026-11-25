@@ -1,5 +1,6 @@
 import type { MySessionItem } from '@kobato/api/contracts/account/self'
 
+import { orpc } from '@kobato/api/browser/client'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { MySessionRow } from '@kobato/web-admin/ui/sessions/MySessionRow'
@@ -8,8 +9,7 @@ import { DEFAULT_MY_SORT, MY_SESSION_SORT_OPTIONS } from '@kobato/web-admin/ui/s
 import { useSessionSort } from '@kobato/web-admin/ui/sessions/use-session-sort'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
-import { orpc } from '@kobato/web-client/api/client'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout'
 import { useMutation } from '@tanstack/react-query'

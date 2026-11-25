@@ -9,14 +9,14 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { safeRel } from '@kobato/ui/lib/link'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
+import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
+import { LazyUserMenu } from '@kobato/web-public/ui/chrome/LazyUserMenu'
+import { ThemeToggle } from '@kobato/web-public/ui/chrome/ThemeToggle'
 import {
   useAssetsSettingsOptional,
   useSiteIdentity,
   useSocialsSettings,
-} from '@kobato/web-client/settings/blog-settings-context'
-import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
-import { LazyUserMenu } from '@kobato/web-public/ui/chrome/LazyUserMenu'
-import { ThemeToggle } from '@kobato/web-public/ui/chrome/ThemeToggle'
+} from '@kobato/web-public/ui/lib/blog-settings-context'
 import { SearchIconButton } from '@kobato/web-public/ui/Search'
 import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog'
 import { MenuIcon } from 'lucide-react'

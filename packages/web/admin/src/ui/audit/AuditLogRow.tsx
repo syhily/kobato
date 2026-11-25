@@ -7,7 +7,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@kobato/web-admin/ui/audit/filter-fields'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { ChevronRightIcon } from 'lucide-react'
 import { type KeyboardEvent, useCallback, useState } from 'react'
 interface AuditLogRowProps {

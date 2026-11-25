@@ -1,3 +1,4 @@
+import { orpc } from '@kobato/api/browser/client'
 import { Button } from '@kobato/ui/components/button'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -6,7 +7,6 @@ import {
   type AnalyticsScope,
   type AnalyticsState,
 } from '@kobato/web-admin/ui/analytics/use-analytics-state'
-import { orpc } from '@kobato/web-client/api/client'
 import { DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'

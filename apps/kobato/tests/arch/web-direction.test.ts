@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
-const CLIENT_ROOT = 'packages/web/client/src'
 const PUBLIC_ROOT = 'packages/web/public/src'
 const ADMIN_ROOTS = ['packages/web/admin/src/ui', 'packages/web/admin/src/styles']
 const ADMIN_PUBLIC_IMPORTS = [
@@ -48,22 +47,16 @@ describe('web direction', () => {
     return ADMIN_SPECIFIERS.some((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
   }
 
-  it('keeps the platform below the product leaves: no client module imports anything from @kobato/web-admin', () => {
-    const files: string[] = []
-    walk(`${REPO_ROOT}/${CLIENT_ROOT}`, files)
+  it('keeps packages/web at exactly the two product leaves — no shared web package between them', () => {
+    const leaves = readdirSync(`${REPO_ROOT}/packages/web`, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()
 
-    expect(files.length).toBeGreaterThan(0)
-
-    const offenders: string[] = []
-    for (const file of files.sort()) {
-      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (isAdminSpecifier(specifier)) {
-          offenders.push(`${file}: ${specifier}`)
-        }
-      }
-    }
-
-    expect(offenders).toEqual([])
+    expect(
+      leaves,
+      'cross-leaf modules live in @kobato/web-public/ui/{shared,lib}; app-only runtime lives in apps/kobato',
+    ).toEqual(['admin', 'public'])
   })
 
   it('keeps the public leaf below admin: no public module imports @kobato/web-admin or @kobato/server', () => {

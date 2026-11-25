@@ -1,5 +1,7 @@
 import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 
+import { orpc } from '@kobato/api/browser/client'
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { Card } from '@kobato/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
@@ -13,9 +15,7 @@ import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/Co
 import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpc } from '@kobato/web-client/api/client'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useAssetsSettings, useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useAssetsSettings, useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ImageOffIcon, PlusIcon } from 'lucide-react'

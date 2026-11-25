@@ -5,7 +5,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { CategoriesSkeleton, CategoryRow } from '@kobato/web-admin/ui/categories/CategoryRow'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { type ReactNode, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

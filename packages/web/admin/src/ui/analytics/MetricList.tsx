@@ -1,5 +1,6 @@
 import type { MetricRow, MetricType } from '@kobato/api/contracts/admin/analytics'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -10,7 +11,6 @@ import { MetricDetailsDialog } from '@kobato/web-admin/ui/analytics/MetricDetail
 import { MetricRows } from '@kobato/web-admin/ui/analytics/MetricRows'
 import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 
 export interface MetricListProps {

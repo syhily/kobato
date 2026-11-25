@@ -1,3 +1,4 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button, buttonVariants } from '@kobato/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
@@ -17,7 +18,6 @@ import { useFilterPills } from '@kobato/web-admin/ui/shared/filter-bar/use-filte
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useState } from 'react'

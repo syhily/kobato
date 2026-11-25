@@ -1,6 +1,6 @@
 import type { RealtimeEvent } from '@kobato/api/contracts/admin/analytics'
 
-import { orpc } from '@kobato/web-client/api/client'
+import { orpc } from '@kobato/api/browser/client'
 import { useEffect, useRef, useState } from 'react'
 
 const RECONNECT_DELAY_MS = 1_000

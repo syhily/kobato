@@ -4,7 +4,7 @@ import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-stat
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatTimestamp } from '@kobato/web-admin/ui/settings/cache/cache-formatters'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 
 interface CacheStatusLineProps {
   status: ClearStatus

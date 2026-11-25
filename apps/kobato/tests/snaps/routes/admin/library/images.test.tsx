@@ -1,4 +1,4 @@
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import ImagesRoute from '@/routes/admin/library/images'

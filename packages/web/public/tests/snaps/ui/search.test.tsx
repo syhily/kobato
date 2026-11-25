@@ -1,4 +1,4 @@
-import { renderInRouter } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter } from '@kobato/web-public/tests/utils/render'
 import { SearchBar } from '@kobato/web-public/ui/Search'
 import { describe, expect, it } from 'vitest'
 

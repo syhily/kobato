@@ -1,5 +1,6 @@
 import type { TimeUnit } from '@kobato/utils/date-range'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -9,7 +10,6 @@ import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analy
 import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
 import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'
 import { buildAnalyticsInput, type AnalyticsScope } from '@kobato/web-admin/ui/analytics/use-analytics-state'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 

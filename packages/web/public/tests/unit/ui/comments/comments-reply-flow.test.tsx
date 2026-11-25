@@ -4,8 +4,8 @@ import { makeComment } from '@kobato/api/tests/utils/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { BlogSettingsProvider } from '@kobato/web-client/settings/blog-settings-context'
 import { Comments } from '@kobato/web-public/ui/comments/Comments'
+import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -15,8 +15,8 @@ mockTanstackQuery()
 
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 
-vi.mock('@kobato/web-client/editor/inkling-labels', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-client/editor/inkling-labels')>()
+vi.mock('@kobato/web-public/ui/shared/editor/inkling-labels', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/web-public/ui/shared/editor/inkling-labels')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 

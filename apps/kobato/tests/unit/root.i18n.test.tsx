@@ -9,7 +9,7 @@ import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { prerenderToHtml } from '@kobato/web-client/tests/utils/render'
+import { prerenderToHtml } from '@kobato/web-public/tests/utils/render'
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
@@ -18,8 +18,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
 
-vi.mock('@kobato/web-client/route-warmup/compiled-script', () => ({ default: '' }))
-vi.mock('@kobato/web-client/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
+vi.mock('@/route-warmup/compiled-script', () => ({ default: '' }))
+vi.mock('@/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()

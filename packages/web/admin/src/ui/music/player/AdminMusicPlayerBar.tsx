@@ -1,6 +1,7 @@
 import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { transitions } from '@kobato/ui/lib/motion'
 import { formatTime } from '@kobato/web-admin/ui/music/player/format-time'
 import {
   useMusicPlayerActions,
@@ -8,7 +9,6 @@ import {
   useMusicPlayerTime,
 } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { ProgressSlider } from '@kobato/web-admin/ui/music/player/ProgressSlider'
-import { transitions } from '@kobato/web-client/lib/motion'
 import { Image } from '@kobato/web-public/ui/widgets/Image'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'

@@ -3,7 +3,7 @@ import type { MyCommentItem } from '@kobato/api/contracts/account/comments'
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'
-import { renderInRouter, stableHtml } from '@kobato/web-client/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

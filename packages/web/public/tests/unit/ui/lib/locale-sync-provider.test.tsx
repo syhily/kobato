@@ -1,7 +1,7 @@
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { publishLocaleChange, subscribeLocaleChange } from '@kobato/web-client/lib/locale-sync'
+import { publishLocaleChange, subscribeLocaleChange } from '@kobato/web-public/ui/lib/locale-sync'
 import {
   LocaleSyncProvider,
   useLocaleSyncHostRegistration,

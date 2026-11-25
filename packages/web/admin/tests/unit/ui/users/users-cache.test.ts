@@ -1,5 +1,5 @@
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { invalidateUsersCache } from '@kobato/web-admin/ui/users/users-cache'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 

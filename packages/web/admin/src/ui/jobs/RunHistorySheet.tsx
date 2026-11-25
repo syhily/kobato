@@ -1,6 +1,7 @@
 import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/api/contracts/admin/jobs'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
 import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty'
@@ -17,7 +18,6 @@ import { formatDuration } from '@kobato/utils/format'
 import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/jobs/meta'
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { Fragment, useState } from 'react'
 
 const PAGE_SIZE = 20

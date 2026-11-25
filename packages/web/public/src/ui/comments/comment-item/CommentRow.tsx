@@ -2,12 +2,12 @@ import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/p
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags'
 import {
   getCommentFlashServerSnapshot,
   getCommentFlashSnapshot,
   subscribeCommentFlash,
-} from '@kobato/web-client/lib/comment-flash'
-import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags'
+} from '@kobato/web-public/ui/comments/comment-item/comment-flash'
 import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions'
 import { CommentAuthorLine, CommentAvatar } from '@kobato/web-public/ui/comments/comment-item/CommentAuthorLine'
 import { InlineEditForm } from '@kobato/web-public/ui/comments/comment-item/InlineEditForm'

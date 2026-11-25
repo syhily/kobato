@@ -4,6 +4,7 @@ import type {
   LikeValidateOutput as ValidateLikeTokenOutput,
 } from '@kobato/api/contracts/account/likes'
 
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { Button } from '@kobato/ui/components/button'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@kobato/ui/icons/brand'
@@ -11,8 +12,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useHydrated } from '@kobato/ui/lib/use-hydrated'
 import { joinUrl } from '@kobato/utils/urls'
-import { orpcQuery } from '@kobato/web-client/api/orpc-query'
-import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { QRDialog } from '@kobato/web-public/ui/widgets/QRDialog'
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
