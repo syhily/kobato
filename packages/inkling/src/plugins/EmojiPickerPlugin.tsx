@@ -12,8 +12,7 @@ import {
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import React from 'react'
-
+import { type MouseEvent, type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react'
 class EmojiOption extends MenuOption {
   emoji: EmojiSearchResult
 
@@ -26,14 +25,14 @@ class EmojiOption extends MenuOption {
 interface EmojiMenuItemProps {
   index: number
   isSelected: boolean
-  onClick: (event: React.MouseEvent) => void
+  onClick: (event: MouseEvent) => void
   onMouseEnter: () => void
   option: EmojiOption
 }
 
 const EmojiMenuItem = function ({ index, isSelected, onClick, onMouseEnter, option }: EmojiMenuItemProps) {
   const { emoji, names } = option.emoji
-  const attachRef = React.useCallback(
+  const attachRef = useCallback(
     (element: HTMLLIElement | null) => {
       option.setRefElement(element)
     },
@@ -71,7 +70,7 @@ function getPositionStyles() {
 }
 
 function renderEmojiMenu(
-  anchorElementRef: React.RefObject<HTMLElement | null>,
+  anchorElementRef: RefObject<HTMLElement | null>,
   searchResults: EmojiOption[] | null,
   selectedIndex: number | null,
   selectOptionAndCleanUp: (option: EmojiOption) => void,
@@ -111,18 +110,18 @@ function renderEmojiMenu(
 
 export function EmojiPickerPlugin() {
   const [editor] = useLexicalComposerContext()
-  const { emojiLocale } = React.useContext(InklingUiPrefsContext)
-  const [queryString, setQueryString] = React.useState<string | null>(null)
-  const [fetchedResults, setSearchResults] = React.useState<EmojiOption[] | null>(null)
+  const { emojiLocale } = useContext(InklingUiPrefsContext)
+  const [queryString, setQueryString] = useState<string | null>(null)
+  const [fetchedResults, setSearchResults] = useState<EmojiOption[] | null>(null)
   const searchResults = queryString ? fetchedResults : null
   const checkForTriggerMatch = useTypeaheadTriggerMatch(':', { minLength: 1 })
 
-  const queryRef = React.useRef<string | null>(null)
-  React.useEffect(() => {
+  const queryRef = useRef<string | null>(null)
+  useEffect(() => {
     queryRef.current = queryString
   }, [queryString])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerEmojiExactMatchCompletion(editor, {
       getQuery: () => queryRef.current,
       onCommit: () => trackEvent('Emoji Inserted', { method: 'completed' }),
@@ -130,8 +129,8 @@ export function EmojiPickerPlugin() {
     })
   }, [editor, emojiLocale])
 
-  const latestQueryRef = React.useRef<string | null>(null)
-  React.useEffect(() => {
+  const latestQueryRef = useRef<string | null>(null)
+  useEffect(() => {
     if (!queryString) {
       return
     }
@@ -152,7 +151,7 @@ export function EmojiPickerPlugin() {
       })
   }, [queryString, emojiLocale])
 
-  const onEmojiSelect = React.useCallback(
+  const onEmojiSelect = useCallback(
     (selectedOption: EmojiOption, nodeToRemove: TextNode | null, closeMenu: () => void) => {
       editor.update(() => {
         const committed = $insertSelectedEmoji(selectedOption.emoji, nodeToRemove)

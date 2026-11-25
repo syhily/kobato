@@ -24,7 +24,7 @@ import {
   useCommentsTree,
 } from '@kobato/web-public/ui/comments/comments-context'
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
 export interface CommentsProps {
@@ -213,7 +213,7 @@ interface CommentsRootProps {
   rootsCount: number
   totalCount: number
   user?: CommentFormUser
-  children: React.ReactNode
+  children: ReactNode
 }
 
 function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, children }: CommentsRootProps) {

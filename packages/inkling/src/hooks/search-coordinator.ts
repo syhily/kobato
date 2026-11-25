@@ -1,9 +1,9 @@
+import type { ComponentType, SVGProps } from 'react'
+
 import EarthIcon from '@kobato/inkling-internal/assets/icons/inkling-earth.svg?react'
 import { createRequestTrack, type RequestScheduler } from '@kobato/inkling-internal/services/request-track'
 import { runTrackedRequest } from '@kobato/inkling-internal/services/service-machine'
 import { createSnapshotStore } from '@kobato/inkling-internal/services/snapshot-store'
-import React from 'react'
-
 export const SEARCH_DEBOUNCE_MS = 100
 const URL_QUERY_REGEX = /^http|^#|^\/|^mailto:|^tel:/
 
@@ -13,11 +13,11 @@ const DEFAULT_URL_OPTION_HINT = 'Enter URL to create link'
 export interface ListOptionItem {
   label: string
   value: string | null
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon: ComponentType<SVGProps<SVGSVGElement>>
   highlight: boolean
   type: string
   metaText?: string
-  MetaIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  MetaIcon?: ComponentType<SVGProps<SVGSVGElement>>
   metaIconTitle?: string
 }
 
@@ -31,9 +31,9 @@ export interface SearchResult {
   items: Array<{
     title: string
     url: string
-    Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+    Icon?: ComponentType<SVGProps<SVGSVGElement>>
     metaText?: string
-    MetaIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+    MetaIcon?: ComponentType<SVGProps<SVGSVGElement>>
     metaIconTitle?: string
   }>
 }

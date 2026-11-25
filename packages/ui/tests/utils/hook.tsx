@@ -1,12 +1,12 @@
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import * as React from 'react'
+import { type ComponentType, type ReactNode, type ReactElement, useRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 
 export interface RenderHookOptions<THookResult> {
   initialPath?: string
   actions?: Array<(result: THookResult) => void>
-  wrapper?: React.ComponentType<{ children: React.ReactNode }>
+  wrapper?: ComponentType<{ children: ReactNode }>
 }
 
 export function renderHook<THookResult>(
@@ -19,7 +19,7 @@ export function renderHook<THookResult>(
   function Harness() {
     const result = hookFn()
     resultRef.current = result
-    const applied = React.useRef(0)
+    const applied = useRef(0)
     while (applied.current < actions.length) {
       actions[applied.current](result)
       applied.current++
@@ -27,7 +27,7 @@ export function renderHook<THookResult>(
     return null
   }
 
-  let element: React.ReactElement = wrapWithI18n(<Harness />)
+  let element: ReactElement = wrapWithI18n(<Harness />)
   if (Wrapper) {
     element = <Wrapper>{element}</Wrapper>
   }

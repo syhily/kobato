@@ -4,8 +4,7 @@ import {
   type SearchLinksFn,
 } from '@kobato/inkling-internal/hooks/search-coordinator'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 export type {
   ListOptionItem,
   ListOptionSection,
@@ -28,7 +27,7 @@ export const useSearchLinks = (
   { noResultOptions }: UseSearchLinksOptions = {},
 ): UseSearchLinksResult => {
   const labels = useInklingLabels()
-  const coordinator = React.useMemo(
+  const coordinator = useMemo(
     () =>
       createSearchCoordinator({
         searchLinks,
@@ -39,18 +38,18 @@ export const useSearchLinks = (
     [searchLinks, noResultOptions, labels],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     coordinator.start()
     return () => {
       coordinator.dispose()
     }
   }, [coordinator])
 
-  React.useEffect(() => {
+  useEffect(() => {
     coordinator.setQuery(query)
   }, [coordinator, query])
 
-  const snapshot = React.useSyncExternalStore(coordinator.subscribe, coordinator.getSnapshot)
+  const snapshot = useSyncExternalStore(coordinator.subscribe, coordinator.getSnapshot)
 
   return {
     isSearching: snapshot.isSearching,

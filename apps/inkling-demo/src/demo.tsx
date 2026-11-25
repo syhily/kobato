@@ -6,11 +6,11 @@ import Navigator from '@kobato/inkling-demo/components/Navigator'
 import DemoApp from '@kobato/inkling-demo/DemoApp'
 import HtmlOutputDemo from '@kobato/inkling-demo/HtmlOutputDemo'
 import RestrictedContentDemo from '@kobato/inkling-demo/RestrictedContentDemo'
-import React from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Route, HashRouter as Router, Routes } from 'react-router'
 
-const MusicPlayerDemo = React.lazy(() => import('@kobato/inkling-demo/MusicPlayerDemo'))
+const MusicPlayerDemo = lazy(() => import('@kobato/inkling-demo/MusicPlayerDemo'))
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
@@ -18,7 +18,7 @@ if (!rootElement) {
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
+  <StrictMode>
     <Router>
       <Navigator />
       <Routes>
@@ -27,9 +27,9 @@ ReactDOM.createRoot(rootElement).render(
         <Route element={<HtmlOutputDemo />} path="/html-output" />
         <Route
           element={
-            <React.Suspense fallback={null}>
+            <Suspense fallback={null}>
               <MusicPlayerDemo />
-            </React.Suspense>
+            </Suspense>
           }
           path="/music-player"
         />
@@ -39,5 +39,5 @@ ReactDOM.createRoot(rootElement).render(
         <Route element={<DemoApp isMultiplayer={true} />} path="/multiplayer" />
       </Routes>
     </Router>
-  </React.StrictMode>,
+  </StrictMode>,
 )

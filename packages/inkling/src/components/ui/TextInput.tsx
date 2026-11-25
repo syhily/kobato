@@ -1,11 +1,10 @@
-import React from 'react'
-
+import type { InputHTMLAttributes, ChangeEvent } from 'react'
 export interface TextInputProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
+  InputHTMLAttributes<HTMLInputElement>,
   'value' | 'onChange' | 'placeholder' | 'readOnly' | 'disabled' | 'maxLength' | 'name' | 'className'
 > {
   value?: string
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void
   placeholder?: string
   readOnly?: boolean
   disabled?: boolean

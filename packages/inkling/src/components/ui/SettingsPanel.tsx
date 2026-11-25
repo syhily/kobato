@@ -14,29 +14,37 @@ import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/Inkl
 import useFloatingPanel from '@kobato/inkling-internal/hooks/useFloatingPanel'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { cx } from '@kobato/inkling-internal/utils/cx'
-import React from 'react'
-
+import {
+  type ReactNode,
+  type ChangeEvent,
+  type FocusEvent,
+  type MouseEvent,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 export type SettingsPanelProps = {
   darkMode?: boolean
   cardWidth?: 'regular' | 'wide' | 'full' | 'split'
   className?: string
 } & (
-  | { tabs?: false; defaultTab?: never; children: React.ReactNode }
-  | { tabs: true; defaultTab?: string; children: Record<string, React.ReactNode> }
+  | { tabs?: false; defaultTab?: never; children: ReactNode }
+  | { tabs: true; defaultTab?: string; children: Record<string, ReactNode> }
 )
 
 export function SettingsPanel({ children, darkMode, cardWidth, tabs, defaultTab, className = '' }: SettingsPanelProps) {
-  const { nodeKey } = React.useContext(CardContext)
+  const { nodeKey } = useContext(CardContext)
   const { ref } = useFloatingPanel({ cardWidth: cardWidth ?? 'regular', cardKey: nodeKey })
 
-  const tabContent = React.useMemo<Record<string, React.ReactNode>>(() => {
+  const tabContent = useMemo<Record<string, ReactNode>>(() => {
     if (!tabs) {
       return { default: children }
     }
     return children
   }, [tabs, children])
 
-  const tabItems = React.useMemo(() => {
+  const tabItems = useMemo(() => {
     if (!tabs) {
       return []
     }
@@ -73,7 +81,7 @@ function SettingRow({
   stacked?: boolean
   className?: string
   dataTestId?: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <div
@@ -111,11 +119,11 @@ interface InputSettingProps {
   label?: string
   hideLabel?: boolean
   description?: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void
   value: string
   placeholder?: string
   dataTestId?: string
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void
 }
 
 export function InputSetting({
@@ -152,9 +160,9 @@ interface InputUrlSettingProps {
 export function InputUrlSetting({ dataTestId, label, value, onChange }: InputUrlSettingProps) {
   const { fetchAutocompleteLinks } = useInklingLinkingSettings()
   const labels = useInklingLabels()
-  const [listOptions, setListOptions] = React.useState<ListOption[]>([])
+  const [listOptions, setListOptions] = useState<ListOption[]>([])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (fetchAutocompleteLinks) {
       let cancelled = false
       fetchAutocompleteLinks()
@@ -317,7 +325,7 @@ interface ColorPickerSettingProps {
   eyedropper?: boolean
   hasTransparentOption?: boolean
   dataTestId?: string
-  children?: React.ReactNode
+  children?: ReactNode
   showChildren?: boolean
 }
 
@@ -335,7 +343,7 @@ export function ColorPickerSetting({
   children,
   showChildren,
 }: ColorPickerSettingProps) {
-  const markClickedInside = (event: React.MouseEvent) => {
+  const markClickedInside = (event: MouseEvent) => {
     event.stopPropagation()
   }
 

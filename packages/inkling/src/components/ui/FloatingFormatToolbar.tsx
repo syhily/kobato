@@ -1,4 +1,5 @@
 import type { LexicalEditor } from 'lexical'
+import type { RefObject } from 'react'
 
 import FloatingToolbar from '@kobato/inkling-internal/components/ui/FloatingToolbar'
 import { default as FormatToolbar } from '@kobato/inkling-internal/components/ui/FormatToolbar'
@@ -8,8 +9,6 @@ import { SnippetActionToolbar } from '@kobato/inkling-internal/components/ui/Sni
 import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { type HiddenFormat } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
 import { $applyLinkToSelection } from '@kobato/inkling-internal/plugins/behaviour/link-editing'
-import React from 'react'
-
 export const toolbarItemTypes = {
   snippet: 'snippet',
   link: 'link',
@@ -34,7 +33,7 @@ export function FloatingFormatToolbar({
   href?: string
   isSnippetsEnabled?: boolean
   toolbarItemType?: string | null
-  toolbarRef: React.RefObject<HTMLDivElement | null>
+  toolbarRef: RefObject<HTMLDivElement | null>
   onClose: () => void
   onOpenLink: () => void
   onOpenSnippet: () => void

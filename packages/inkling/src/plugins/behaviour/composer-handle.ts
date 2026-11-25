@@ -1,6 +1,5 @@
 import { createSnapshotStore, type SnapshotListener } from '@kobato/inkling-internal/services/snapshot-store'
-import React from 'react'
-
+import { type Context, createContext, useContext, useSyncExternalStore } from 'react'
 export type ComposerHandleListener<T> = SnapshotListener<T>
 
 export interface ComposerHandle<T> {
@@ -55,7 +54,7 @@ export function createComposerHandle<T extends object>(
 }
 
 export interface ComposerHandleBinding<T, H extends ComposerHandle<T> = ComposerHandle<T>> {
-  Context: React.Context<H>
+  Context: Context<H>
   useHandle: () => H
   useHandleState: <S>(selector: (state: T) => S) => S
 }
@@ -63,16 +62,16 @@ export interface ComposerHandleBinding<T, H extends ComposerHandle<T> = Composer
 export function createComposerHandleBinding<T extends object, H extends ComposerHandle<T> = ComposerHandle<T>>(
   createHandle: () => H,
 ): ComposerHandleBinding<T, H> {
-  const Context = React.createContext<H>(createHandle())
+  const Context = createContext<H>(createHandle())
 
   function useHandle(): H {
-    return React.useContext(Context)
+    return useContext(Context)
   }
 
   function useHandleState<S>(selector: (state: T) => S): S {
-    const handle = React.useContext(Context)
+    const handle = useContext(Context)
     const getSnapshot = () => selector(handle.getState())
-    return React.useSyncExternalStore(handle.subscribe, getSnapshot, getSnapshot)
+    return useSyncExternalStore(handle.subscribe, getSnapshot, getSnapshot)
   }
 
   return { Context, useHandle, useHandleState }

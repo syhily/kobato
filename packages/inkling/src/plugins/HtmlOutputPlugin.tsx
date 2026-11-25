@@ -4,8 +4,7 @@ import { debounce } from '@kobato/inkling-internal/utils/timing'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { $getRoot, $isParagraphNode } from 'lexical'
-import React from 'react'
-
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 export const HtmlOutputPlugin = ({
   html = '',
   setHtml,
@@ -16,9 +15,9 @@ export const HtmlOutputPlugin = ({
   debounceMs?: number
 }) => {
   const [editor] = useLexicalComposerContext()
-  const isFirstRender = React.useRef(true)
+  const isFirstRender = useRef(true)
 
-  const exportHtml = React.useCallback(() => {
+  const exportHtml = useCallback(() => {
     editor.read(() => {
       const htmlString = $convertToHtmlString(editor)
       const children = $getRoot().getChildren()
@@ -29,15 +28,15 @@ export const HtmlOutputPlugin = ({
     })
   }, [editor, setHtml])
 
-  const debouncedExportHtml = React.useMemo(() => debounce(exportHtml, debounceMs), [exportHtml, debounceMs])
+  const debouncedExportHtml = useMemo(() => debounce(exportHtml, debounceMs), [exportHtml, debounceMs])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       debouncedExportHtml.cancel()
     }
   }, [debouncedExportHtml])
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!isFirstRender.current) {
       return
     }
@@ -59,10 +58,9 @@ export const HtmlOutputPlugin = ({
     )
 
     exportHtml()
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [editor, exportHtml, html])
 
-  const onChange = React.useCallback(() => {
+  const onChange = useCallback(() => {
     if (debounceMs > 0) {
       debouncedExportHtml()
       return

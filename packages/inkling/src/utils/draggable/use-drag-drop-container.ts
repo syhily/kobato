@@ -2,8 +2,7 @@ import type { ContainerDragHandlers } from '@kobato/inkling-internal/utils/dragg
 import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 
 import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
-import React from 'react'
-
+import { useEffect, useRef, useState } from 'react'
 export interface UseDragDropContainerOptions extends ContainerDragHandlers {
   element: HTMLElement | null
   enabled?: boolean
@@ -20,20 +19,20 @@ export function useDragDropContainer({
 }: UseDragDropContainerOptions): DraggableContainerHandle {
   const handler = useDragDropHandleState((state) => state.handler)
 
-  const callbacksRef = React.useRef({ draggable, droppable, lifecycle })
-  React.useEffect(() => {
+  const callbacksRef = useRef({ draggable, droppable, lifecycle })
+  useEffect(() => {
     callbacksRef.current = { draggable, droppable, lifecycle }
   })
 
-  const containerRef = React.useRef<DraggableContainerHandle | null>(null)
-  const [container] = React.useState<DraggableContainerHandle>(() => ({
+  const containerRef = useRef<DraggableContainerHandle | null>(null)
+  const [container] = useState<DraggableContainerHandle>(() => ({
     enableDrag: () => containerRef.current?.enableDrag(),
     disableDrag: () => containerRef.current?.disableDrag(),
     refresh: () => containerRef.current?.refresh(),
     destroy: () => containerRef.current?.destroy(),
   }))
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (enabled) {
       container.enableDrag()
     } else {
@@ -41,7 +40,7 @@ export function useDragDropContainer({
     }
   }, [enabled, container])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!element || !handler) {
       return
     }

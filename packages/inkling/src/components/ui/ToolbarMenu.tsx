@@ -1,3 +1,5 @@
+import type { ComponentType, SVGProps, HTMLAttributes, ReactNode, MouseEvent } from 'react'
+
 import AddIcon from '@kobato/inkling-internal/assets/icons/inkling-add.svg?react'
 import AlignCenterIcon from '@kobato/inkling-internal/assets/icons/inkling-align-center.svg?react'
 import AlignLeftIcon from '@kobato/inkling-internal/assets/icons/inkling-align-left.svg?react'
@@ -39,12 +41,12 @@ export const TOOLBAR_ICONS = {
   snippet: SnippetIcon,
   replace: ReplaceIcon,
   trash: TrashIcon,
-} satisfies Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>
+} satisfies Record<string, ComponentType<SVGProps<SVGSVGElement>>>
 
 export type ToolbarIconName = keyof typeof TOOLBAR_ICONS
 
-export interface ToolbarMenuProps extends React.HTMLAttributes<HTMLUListElement> {
-  children?: React.ReactNode
+export interface ToolbarMenuProps extends HTMLAttributes<HTMLUListElement> {
+  children?: ReactNode
   hide?: boolean
 }
 
@@ -63,10 +65,10 @@ export function ToolbarMenu({ children, hide, ...props }: ToolbarMenuProps) {
   )
 }
 
-export interface ToolbarMenuItemProps extends React.HTMLAttributes<HTMLLIElement> {
+export interface ToolbarMenuItemProps extends HTMLAttributes<HTMLLIElement> {
   label: string
   isActive: boolean
-  onClick?: (event: React.MouseEvent) => void
+  onClick?: (event: MouseEvent) => void
   icon: ToolbarIconName
   shortcutKeys?: string | string[]
   secondary?: boolean

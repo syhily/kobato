@@ -1,9 +1,8 @@
-import React from 'react'
-
+import { useSyncExternalStore } from 'react'
 const emptySubscribe = () => () => undefined
 
 export function useHydrated(): boolean {
-  return React.useSyncExternalStore(
+  return useSyncExternalStore(
     emptySubscribe,
     () => true,
     () => false,

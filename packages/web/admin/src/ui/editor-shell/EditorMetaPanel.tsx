@@ -5,7 +5,7 @@ import type {
   SidebarRevisionSummary,
   SidebarSaveStatus,
 } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
-import type { ReactNode } from 'react'
+import type { ReactNode, Dispatch, SetStateAction } from 'react'
 import type { NavigateFunction } from 'react-router'
 
 import { Button } from '@kobato/ui/components/button'
@@ -40,7 +40,7 @@ export interface EditorMetaPanelProps<TMeta> {
   entityLabelId: UiMessageId
   entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined
   metaOpen: boolean
-  setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setMetaOpen: Dispatch<SetStateAction<boolean>>
   isLg: boolean
   sidebar: EditorSidebarState<TMeta>
   renderSidebar: (props: MetaSidebarSlotProps<TMeta>) => ReactNode

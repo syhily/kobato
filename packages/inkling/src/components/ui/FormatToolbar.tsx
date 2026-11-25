@@ -20,8 +20,7 @@ import {
 } from '@kobato/inkling-internal/plugins/behaviour/format-toolbar'
 import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '@kobato/inkling-internal/utils/shortcut-symbols'
 import { FORMAT_TEXT_COMMAND, type LexicalEditor } from 'lexical'
-import React from 'react'
-
+import { useEffect, useState } from 'react'
 function quoteIcon(blockType = ''): ToolbarIconName {
   if (blockType.endsWith('quote')) {
     return 'quoteOne'
@@ -50,7 +49,7 @@ export default function FormatToolbar({
   hiddenFormats = [],
   isAlignmentEnabled = false,
 }: FormatToolbarProps) {
-  const [state, setState] = React.useState<FormatToolbarState>({
+  const [state, setState] = useState<FormatToolbarState>({
     isBold: false,
     isItalic: false,
     blockType: 'paragraph',
@@ -66,7 +65,7 @@ export default function FormatToolbar({
     isAlignmentEnabled,
   })
 
-  React.useEffect(() => registerFormatToolbarState(editor, setState), [editor])
+  useEffect(() => registerFormatToolbarState(editor, setState), [editor])
 
   const { isBold, isItalic, blockType, elementFormat } = state
 

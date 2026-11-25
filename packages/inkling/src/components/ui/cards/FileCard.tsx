@@ -3,6 +3,7 @@ import type {
   FileInputRef,
   FileUploaderLike,
 } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+import type { ChangeEvent } from 'react'
 
 import FileUploadIcon from '@kobato/inkling-internal/assets/icons/inkling-file-upload.svg?react'
 import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
@@ -18,8 +19,8 @@ interface PopulatedFileCardProps {
   descPlaceholder?: string
   name?: string
   size?: string
-  handleFileTitle: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleFileDesc: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handleFileTitle: (e: ChangeEvent<HTMLInputElement>) => void
+  handleFileDesc: (e: ChangeEvent<HTMLInputElement>) => void
 }
 
 export interface FileCardProps {
@@ -34,8 +35,8 @@ export interface FileCardProps {
   isEditing?: boolean
   fileInputRef?: FileInputRef
   onFileChange: (files: File[]) => void
-  handleFileTitle: (e: React.ChangeEvent<HTMLInputElement>) => void
-  handleFileDesc: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handleFileTitle: (e: ChangeEvent<HTMLInputElement>) => void
+  handleFileDesc: (e: ChangeEvent<HTMLInputElement>) => void
   fileUploader?: FileUploaderLike
 }
 

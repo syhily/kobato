@@ -13,8 +13,7 @@ import { UploadingOverlay, UploadPlaceholder } from '@kobato/inkling-internal/co
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
 import { isGif } from '@kobato/inkling-internal/utils/is-gif'
-import React from 'react'
-
+import { useCallback } from 'react'
 interface PopulatedImageCardProps {
   src: string
   alt?: string
@@ -71,7 +70,7 @@ function PopulatedImageCard({
 
   const setFileDragRef = imageFileDragHandler?.setRef
   const setCardDragRef = imageCardDragHandler?.setRef
-  const setRef = React.useCallback(
+  const setRef = useCallback(
     (element: HTMLElement | null) => {
       setFileDragRef?.(element)
       setCardDragRef?.(element)

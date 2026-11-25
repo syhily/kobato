@@ -1,7 +1,6 @@
-import React from 'react'
-
+import type { CSSProperties } from 'react'
 export interface ProgressBarProps {
-  style?: React.CSSProperties
+  style?: CSSProperties
   bgStyle?: 'transparent' | 'default'
 }
 

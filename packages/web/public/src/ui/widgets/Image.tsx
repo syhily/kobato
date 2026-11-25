@@ -1,4 +1,4 @@
-import type { ImgHTMLAttributes, Ref } from 'react'
+import type { ImgHTMLAttributes, Ref, CSSProperties } from 'react'
 
 import { getImageSrcset, getImageUrl } from '@kobato/assets/images'
 import { cn } from '@kobato/ui/lib/cn'
@@ -48,7 +48,7 @@ export function RawImage({
     sizes !== undefined && sizes !== ''
       ? getImageSrcset({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate, siteOrigin })
       : undefined
-  const mergedStyle: React.CSSProperties | undefined =
+  const mergedStyle: CSSProperties | undefined =
     thumbhashStyle === undefined ? style : style === undefined ? thumbhashStyle : { ...thumbhashStyle, ...style }
 
   return (

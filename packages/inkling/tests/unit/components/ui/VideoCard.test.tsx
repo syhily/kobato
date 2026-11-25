@@ -2,7 +2,7 @@ import { VideoCard } from '@kobato/inkling-internal/components/ui/cards/VideoCar
 import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
-import React from 'react'
+import { type ComponentProps, createRef } from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ink_components_ui_CardCaptionEditor = await import('@kobato/inkling-internal/components/ui/CardCaptionEditor')
@@ -19,9 +19,9 @@ function createCaptionEditor() {
 }
 
 describe('VideoCard', () => {
-  const fileInputRef = React.createRef<HTMLInputElement>()
+  const fileInputRef = createRef<HTMLInputElement>()
 
-  const defaultProps: React.ComponentProps<typeof VideoCard> = {
+  const defaultProps: ComponentProps<typeof VideoCard> = {
     captionEditor: createCaptionEditor(),
     captionEditorInitialState: undefined,
     fileInputRef,

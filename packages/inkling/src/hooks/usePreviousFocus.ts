@@ -1,8 +1,7 @@
-import { useRef } from 'react'
-
+import { type MouseEvent, useRef } from 'react'
 interface UsePreviousFocusResult {
   handleMousedown: () => void
-  handleClick: (e: React.MouseEvent) => void
+  handleClick: (e: MouseEvent) => void
 }
 
 export const usePreviousFocus = (onClick: (name?: string) => void, name?: string): UsePreviousFocusResult => {
@@ -13,7 +12,7 @@ export const usePreviousFocus = (onClick: (name?: string) => void, name?: string
     previousRangeRef.current = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null
   }
 
-  const handleClick = (e: React.MouseEvent): void => {
+  const handleClick = (e: MouseEvent): void => {
     e.preventDefault()
     onClick(name)
 

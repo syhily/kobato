@@ -1,4 +1,4 @@
-import type React from 'react'
+import type { MouseEvent, ComponentType } from 'react'
 
 import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
 import { cx } from '@kobato/inkling-internal/utils/cx'
@@ -11,10 +11,10 @@ export function IconButton({
   Icon,
 }: {
   className?: string
-  onClick?: (e: React.MouseEvent) => void
+  onClick?: (e: MouseEvent) => void
   label?: string
   dataTestId?: string
-  Icon: React.ComponentType<{ className?: string }>
+  Icon: ComponentType<{ className?: string }>
 }) {
   return (
     <button

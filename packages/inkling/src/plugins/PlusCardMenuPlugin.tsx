@@ -4,18 +4,17 @@ import {
 } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import { CardMenuPopup, type CardMenuPopupHandle } from '@kobato/inkling-internal/plugins/CardMenuPopup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
-export default function PlusCardMenuPlugin(): React.ReactElement | null {
+import { type ReactElement, useEffect, useRef } from 'react'
+export default function PlusCardMenuPlugin(): ReactElement | null {
   const [editor] = useLexicalComposerContext()
-  const popupRef = React.useRef<CardMenuPopupHandle | null>(null)
-  React.useEffect(() => {
+  const popupRef = useRef<CardMenuPopupHandle | null>(null)
+  useEffect(() => {
     return registerPlusCardMenuTrigger(editor, {
       onVerdict: (verdict) => popupRef.current?.applyButtonVerdict(verdict),
     })
   }, [editor])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateButtonOnMousemove = (event: MouseEvent) => {
       const verdict = resolvePlusHoverButtonVerdict(editor, event.pageX, event.pageY)
       if (verdict) {
@@ -29,7 +28,7 @@ export default function PlusCardMenuPlugin(): React.ReactElement | null {
     }
   }, [editor])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const hideOnOutsideSelection = () => popupRef.current?.hideButtonOnOutsideSelection()
     document.addEventListener('selectionchange', hideOnOutsideSelection)
     return () => {

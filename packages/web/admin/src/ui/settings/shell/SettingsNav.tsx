@@ -1,5 +1,6 @@
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { SettingsNavGroup } from '@kobato/web-admin/ui/settings/display'
+import type { ComponentType } from 'react'
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -30,7 +31,7 @@ import {
   Type,
 } from 'lucide-react'
 
-export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+export const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   Settings,
   HardDrive,
   Type,

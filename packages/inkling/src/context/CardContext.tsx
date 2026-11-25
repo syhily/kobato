@@ -1,7 +1,6 @@
 import type { NodeKey } from 'lexical'
 
-import React from 'react'
-
+import { createContext } from 'react'
 export interface CardContextValue {
   captionHasFocus: boolean
   cardType?: string | null | undefined
@@ -9,7 +8,7 @@ export interface CardContextValue {
   setCaptionHasFocus: (focused: boolean) => void
 }
 
-const CardContext = React.createContext<CardContextValue>({
+const CardContext = createContext<CardContextValue>({
   captionHasFocus: false,
   cardType: undefined,
   nodeKey: undefined,

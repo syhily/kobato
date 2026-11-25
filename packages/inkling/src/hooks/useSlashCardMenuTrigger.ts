@@ -2,8 +2,7 @@ import type { CardMenuSession } from '@kobato/inkling-internal/hooks/useCardMenu
 import type { LexicalEditor } from 'lexical'
 
 import { registerSlashCardMenuTrigger } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
-import React from 'react'
-
+import { useEffect, useState } from 'react'
 export interface SlashCardMenuTriggerState {
   query: string
   commandParams: string[]
@@ -14,10 +13,10 @@ export function useSlashCardMenuTrigger(
   enabled: boolean,
 ): SlashCardMenuTriggerState {
   const { isOpen, closeMenu, saveCursor } = session
-  const [query, setQuery] = React.useState('')
-  const [commandParams, setCommandParams] = React.useState<string[]>([])
+  const [query, setQuery] = useState('')
+  const [commandParams, setCommandParams] = useState<string[]>([])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!enabled) {
       return
     }
@@ -36,7 +35,7 @@ export function useSlashCardMenuTrigger(
     })
   }, [editor, enabled, closeMenu, saveCursor])
 
-  const [wasOpen, setWasOpen] = React.useState(isOpen)
+  const [wasOpen, setWasOpen] = useState(isOpen)
   if (wasOpen !== isOpen) {
     setWasOpen(isOpen)
     if (!isOpen) {

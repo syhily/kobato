@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
 // @vitest-environment happy-dom
@@ -6,7 +8,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToPipeableStream } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-function renderToPipeableStreamString(node: React.ReactNode): Promise<string> {
+function renderToPipeableStreamString(node: ReactNode): Promise<string> {
   return new Promise((resolve, reject) => {
     let out = ''
     const stream = new Writable({

@@ -1,8 +1,7 @@
 import type { ExternalControlAPI } from '@kobato/inkling'
 import type { ChangeEvent, KeyboardEvent, Ref } from 'react'
 
-import React from 'react'
-
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 interface TitleTextBoxProps {
   title: string
   setTitle: (title: string) => void
@@ -13,17 +12,17 @@ export interface TitleTextBoxRef {
   focus: () => void
 }
 
-export const TitleTextBox = React.forwardRef<TitleTextBoxRef, TitleTextBoxProps>(
+export const TitleTextBox = forwardRef<TitleTextBoxRef, TitleTextBoxProps>(
   ({ title, setTitle, editorAPI }, ref: Ref<TitleTextBoxRef>) => {
-    const titleEl = React.useRef<HTMLTextAreaElement>(null)
+    const titleEl = useRef<HTMLTextAreaElement>(null)
 
-    React.useImperativeHandle(ref, () => ({
+    useImperativeHandle(ref, () => ({
       focus: () => {
         titleEl.current?.focus()
       },
     }))
 
-    React.useEffect(() => {
+    useEffect(() => {
       const el = titleEl.current
       if (!el || el.value !== title) {
         return

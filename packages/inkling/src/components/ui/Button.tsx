@@ -1,7 +1,6 @@
-import React from 'react'
-
+import type { ReactNode, CSSProperties, MouseEvent } from 'react'
 export interface ButtonProps {
-  children?: React.ReactNode
+  children?: ReactNode
   className?: string
   color?: 'white' | 'grey' | 'black' | 'accent'
   dataTestId?: string
@@ -12,12 +11,12 @@ export interface ButtonProps {
   rounded?: boolean
   shrink?: boolean
   size?: 'small' | 'medium' | 'large'
-  style?: React.CSSProperties
+  style?: CSSProperties
   target?: string
   type?: 'button' | 'submit' | 'reset'
   value?: string
   width?: 'auto' | 'full'
-  onClick?: (event: React.MouseEvent) => void
+  onClick?: (event: MouseEvent) => void
 }
 
 export function Button({

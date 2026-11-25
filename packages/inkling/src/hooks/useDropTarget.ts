@@ -7,8 +7,7 @@ import type {
 import type { DraggableContainerHandle } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 
 import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/use-drag-drop-container'
-import React from 'react'
-
+import { type Dispatch, type SetStateAction, useState } from 'react'
 export interface UseDropTargetOptions {
   enabled?: boolean
 
@@ -31,7 +30,7 @@ export interface UseDropTargetOptions {
 }
 
 export interface UseDropTargetResult {
-  setRef: React.Dispatch<React.SetStateAction<HTMLElement | null>>
+  setRef: Dispatch<SetStateAction<HTMLElement | null>>
   containerElement: HTMLElement | null
   isDraggedOver: boolean
 
@@ -51,8 +50,8 @@ export default function useDropTarget({
   canDrop,
   adjustEnableOnDragStart,
 }: UseDropTargetOptions): UseDropTargetResult {
-  const [containerRef, setContainerRef] = React.useState<HTMLElement | null>(null)
-  const [isDraggedOver, setIsDraggedOver] = React.useState<boolean>(false)
+  const [containerRef, setContainerRef] = useState<HTMLElement | null>(null)
+  const [isDraggedOver, setIsDraggedOver] = useState<boolean>(false)
 
   const enableOnDragStart = adjustEnableOnDragStart ?? ((info: DraggableInfo) => canDrop(info))
 

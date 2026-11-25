@@ -2,20 +2,17 @@ import { CodeBlockCard } from '@kobato/inkling-internal/components/ui/cards/Code
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
 import { fireEvent, render, screen } from '@testing-library/react'
-import React from 'react'
+import { type ComponentProps, type ReactNode, useMemo } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-type UiPrefs = React.ComponentProps<typeof InklingUiPrefsContext.Provider>['value']
+type UiPrefs = ComponentProps<typeof InklingUiPrefsContext.Provider>['value']
 
-function UiPrefsWrapper({ prefs, children }: { prefs: Partial<UiPrefs>; children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, ...prefs }), [prefs])
+function UiPrefsWrapper({ prefs, children }: { prefs: Partial<UiPrefs>; children: ReactNode }) {
+  const value = useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, ...prefs }), [prefs])
   return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
 }
 
-function renderEditingCard(
-  prefs: Partial<UiPrefs> = {},
-  props: Partial<React.ComponentProps<typeof CodeBlockCard>> = {},
-) {
+function renderEditingCard(prefs: Partial<UiPrefs> = {}, props: Partial<ComponentProps<typeof CodeBlockCard>> = {}) {
   return render(
     <UiPrefsWrapper prefs={prefs}>
       <CodeBlockCard isEditing={true} code="const a = 1" language="javascript" {...props} />

@@ -13,8 +13,7 @@ import {
 import { debounce } from '@kobato/inkling-internal/utils'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW, DELETE_CHARACTER_COMMAND, type LexicalEditor } from 'lexical'
-import React from 'react'
-
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 export default function FloatingToolbarPlugin({
   anchorElem = document.body,
   isSnippetsEnabled,
@@ -37,13 +36,13 @@ function useFloatingFormatToolbar(
   hiddenFormats: HiddenFormat[] = [],
   isAlignmentEnabled: boolean = false,
 ) {
-  const [session] = React.useState<ToolbarSession>(() => createToolbarSession())
-  const { type, href, hoveredLink } = React.useSyncExternalStore(session.handle.subscribe, session.handle.getState)
+  const [session] = useState<ToolbarSession>(() => createToolbarSession())
+  const { type, href, hoveredLink } = useSyncExternalStore(session.handle.subscribe, session.handle.getState)
 
-  const linkToolbarRef = React.useRef<HTMLDivElement | null>(null)
-  const formatToolbarRef = React.useRef<HTMLDivElement | null>(null)
+  const linkToolbarRef = useRef<HTMLDivElement | null>(null)
+  const formatToolbarRef = useRef<HTMLDivElement | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const reveal = () => {
       if (session.handle.getState().type !== 'hidden' && formatToolbarRef.current?.style.opacity === '0') {
         formatToolbarRef.current.style.opacity = '1'
@@ -67,7 +66,7 @@ function useFloatingFormatToolbar(
       document.removeEventListener('mousemove', onMouseMove)
     }
   }, [editor, session])
-  React.useEffect(() => {
+  useEffect(() => {
     const hoverFeed = createLinkHoverFeed(editor, session, { getToolbarElement: () => linkToolbarRef.current })
     const onMouseMove = debounce((event: MouseEvent) => hoverFeed.hover(event.target), LINK_HOVER_DEBOUNCE_MS)
     document.addEventListener('mousemove', onMouseMove)
@@ -77,11 +76,11 @@ function useFloatingFormatToolbar(
     }
   }, [editor, session])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerToolbarSelectionSync(editor, session)
   }, [editor, session])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
       () => {
@@ -92,11 +91,11 @@ function useFloatingFormatToolbar(
     )
   }, [editor, session])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerToolbarCommands(editor, session)
   }, [editor, session])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleMousedown = (event: MouseEvent) => {
       if (!(event.target instanceof Node) || !anchorElem.contains(event.target)) {
         session.close()

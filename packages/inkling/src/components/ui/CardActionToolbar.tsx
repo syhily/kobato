@@ -14,8 +14,7 @@ import { getCardToolbarLabel } from '@kobato/inkling-internal/nodes/cards/card-f
 import { EDIT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { type MouseEvent, type ReactNode, useContext, useState } from 'react'
 export type CardToolbarItem =
   | { kind: 'edit'; dataTestId?: string }
   | { kind: 'snippet' }
@@ -24,7 +23,7 @@ export type CardToolbarItem =
       kind: 'custom'
       icon: ToolbarIconName
       label: string
-      onClick: (event: React.MouseEvent) => void
+      onClick: (event: MouseEvent) => void
       isActive?: boolean
       hide?: boolean
       dataTestId?: string
@@ -41,9 +40,9 @@ export interface CardActionToolbarProps {
 const DEFAULT_ITEMS: CardToolbarItem[] = [{ kind: 'edit' }, { kind: 'separator' }, { kind: 'snippet' }]
 
 export function useCardToolbarLabel(nodeKey: NodeKey): string | undefined {
-  const { cardType } = React.useContext(CardContext)
+  const { cardType } = useContext(CardContext)
   const [editor] = useLexicalComposerContext()
-  const [fallbackType] = React.useState(() =>
+  const [fallbackType] = useState(() =>
     cardType !== undefined && cardType !== null
       ? null
       : editor.getEditorState().read(() => $getNodeByKey(nodeKey)?.getType() ?? null),
@@ -68,10 +67,10 @@ export function CardActionToolbar({
   const labels = useInklingLabels()
   const isSelected = useCardIsSelected(nodeKey)
   const isEditing = useCardIsEditing(nodeKey)
-  const [showSnippetToolbar, setShowSnippetToolbar] = React.useState<boolean>(false)
+  const [showSnippetToolbar, setShowSnippetToolbar] = useState<boolean>(false)
   const toolbarLabel = useCardToolbarLabel(nodeKey)
 
-  const handleEdit = (event: React.MouseEvent): void => {
+  const handleEdit = (event: MouseEvent): void => {
     event.preventDefault()
     event.stopPropagation()
     editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey })
@@ -85,7 +84,7 @@ export function CardActionToolbar({
       separatorKeys.set(item, separatorCount)
     }
   }
-  const renderItem = (item: CardToolbarItem): React.ReactNode => {
+  const renderItem = (item: CardToolbarItem): ReactNode => {
     switch (item.kind) {
       case 'edit':
         return (

@@ -4,8 +4,7 @@ import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCa
 import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
 import { UrlInput } from '@kobato/inkling-internal/components/ui/UrlInput'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
+import { useState } from 'react'
 interface BookmarkCardProps {
   author?: string
   handleClose: () => void
@@ -50,7 +49,7 @@ export function BookmarkCard({
   urlError,
 }: BookmarkCardProps) {
   const labels = useInklingLabels()
-  const [thumbnailVisible, setThumbnailVisible] = React.useState(true)
+  const [thumbnailVisible, setThumbnailVisible] = useState(true)
 
   const handleThumbnailError = () => {
     setThumbnailVisible(false)

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 export function RawEmailHtml({
   html,
   tag = 'div',
@@ -6,7 +7,7 @@ export function RawEmailHtml({
 }: {
   html: string
   tag?: 'div' | 'span'
-  style?: React.CSSProperties
+  style?: CSSProperties
   className?: string
 }) {
   const Tag = tag

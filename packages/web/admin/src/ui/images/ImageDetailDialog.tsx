@@ -17,8 +17,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes, formatDateTime } from '@kobato/utils/format'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 interface ImageDetailDialogProps {
   image: AdminImageDto | null
   open: boolean
@@ -234,7 +233,7 @@ export function ImageDetailDialog({
   )
 }
 
-function MetaField({ label, children }: { label: string; children: React.ReactNode }) {
+function MetaField({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-xs text-muted-foreground">{label}</dt>

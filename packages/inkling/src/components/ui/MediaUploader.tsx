@@ -1,5 +1,5 @@
 import type { DragHandlerLike } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
-import type { RefObject } from 'react'
+import type { RefObject, ReactNode, MouseEvent } from 'react'
 
 import DeleteIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
 import WandIcon from '@kobato/inkling-internal/assets/icons/inkling-wand.svg?react'
@@ -17,7 +17,6 @@ import {
 } from '@kobato/inkling-internal/components/ui/UploadChrome'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { cx } from '@kobato/inkling-internal/utils/cx'
-import React from 'react'
 
 export interface MediaUploaderProps {
   className?: string
@@ -40,7 +39,7 @@ export interface MediaUploaderProps {
   progress?: number
   errors?: Error[] | { message?: string }[]
   onRemoveMedia?: () => void
-  additionalActions?: React.ReactNode
+  additionalActions?: ReactNode
   setFileInputRef?: (ref: RefObject<HTMLInputElement | null>) => void
 }
 
@@ -71,7 +70,7 @@ export function MediaUploader({
   const { fileInputRef, onFileInputRef } = useFileInputRefTunnel(setFileInputRef)
   const labels = useInklingLabels()
 
-  const onRemove = (e: React.MouseEvent) => {
+  const onRemove = (e: MouseEvent) => {
     e.stopPropagation()
     onRemoveMedia()
   }

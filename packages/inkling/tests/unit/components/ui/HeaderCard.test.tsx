@@ -1,20 +1,21 @@
+import type { ReactNode, ChangeEvent, ComponentProps } from 'react'
+
 import { HeaderCard } from '@kobato/inkling-internal/components/ui/cards/HeaderCard/HeaderCard'
 import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
-import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/inkling-internal/components/ui/MediaUploader', () => ({
   MediaUploader: ({ additionalActions, ...props }: Record<string, unknown>) => (
     <div data-testid="media-uploader" {...props}>
-      {additionalActions as React.ReactNode}
+      {additionalActions as ReactNode}
     </div>
   ),
 }))
 
 vi.mock('@kobato/inkling-internal/components/ui/SettingsPanel', () => ({
-  SettingsPanel: ({ children }: { children?: React.ReactNode }) => <div data-testid="settings-panel">{children}</div>,
+  SettingsPanel: ({ children }: { children?: ReactNode }) => <div data-testid="settings-panel">{children}</div>,
   ButtonGroupSetting: ({
     buttons,
     onClick,
@@ -37,10 +38,10 @@ vi.mock('@kobato/inkling-internal/components/ui/SettingsPanel', () => ({
     onTogglePicker,
     swatches,
   }: {
-    children?: React.ReactNode
+    children?: ReactNode
     dataTestId?: string
     onTogglePicker?: (expanded: boolean) => void
-    swatches?: Array<{ id?: string; customContent?: React.ReactNode }>
+    swatches?: Array<{ id?: string; customContent?: ReactNode }>
   }) => (
     <div data-testid={dataTestId}>
       <button data-testid={`${dataTestId}-toggle`} type="button" onClick={() => onTogglePicker?.(true)}>
@@ -59,7 +60,7 @@ vi.mock('@kobato/inkling-internal/components/ui/SettingsPanel', () => ({
   }: {
     dataTestId?: string
     value?: string
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+    onChange?: (e: ChangeEvent<HTMLInputElement>) => void
   }) => <input data-testid={dataTestId} value={value ?? ''} onChange={onChange} />,
   InputUrlSetting: ({
     dataTestId,
@@ -100,10 +101,10 @@ function createEditorInstance() {
   return createEditor({ namespace: 'test', onError: () => {} })
 }
 
-type FlatHeaderCardProps = React.ComponentProps<typeof HeaderCard>['view'] &
-  React.ComponentProps<typeof HeaderCard>['handlers'] &
-  React.ComponentProps<typeof HeaderCard>['upload'] &
-  React.ComponentProps<typeof HeaderCard>['editors']
+type FlatHeaderCardProps = ComponentProps<typeof HeaderCard>['view'] &
+  ComponentProps<typeof HeaderCard>['handlers'] &
+  ComponentProps<typeof HeaderCard>['upload'] &
+  ComponentProps<typeof HeaderCard>['editors']
 
 const VIEW_KEYS = [
   'alignment',
@@ -153,7 +154,7 @@ const EDITOR_KEYS = [
   'subheaderTextEditorInitialState',
 ] as const
 
-function groupProps(flat: FlatHeaderCardProps): React.ComponentProps<typeof HeaderCard> {
+function groupProps(flat: FlatHeaderCardProps): ComponentProps<typeof HeaderCard> {
   const pick = (keys: readonly (keyof FlatHeaderCardProps)[]) =>
     Object.fromEntries(keys.filter((key) => key in flat).map((key) => [key, flat[key]]))
   return {
@@ -161,7 +162,7 @@ function groupProps(flat: FlatHeaderCardProps): React.ComponentProps<typeof Head
     handlers: pick(HANDLER_KEYS),
     upload: pick(UPLOAD_KEYS),
     editors: pick(EDITOR_KEYS),
-  } as unknown as React.ComponentProps<typeof HeaderCard>
+  } as unknown as ComponentProps<typeof HeaderCard>
 }
 
 describe('HeaderCard', () => {

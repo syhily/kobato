@@ -13,14 +13,16 @@ import { cx } from '@kobato/inkling-internal/utils/cx'
 import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
+  type FragmentInstance,
+  type ReactNode,
+  type MouseEvent,
+  type TouchEvent,
   Fragment,
   useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
-  type FragmentInstance,
-  type ReactNode,
 } from 'react'
 import { HexColorInput, HexColorPicker } from 'react-colorful'
 
@@ -65,7 +67,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
   const labels = useInklingLabels()
   const hexInputRef = useRef<FragmentInstance>(null)
 
-  const stopPropagation = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const stopPropagation = useCallback((e: MouseEvent | TouchEvent) => {
     e.stopPropagation()
 
     const isInputField = e.target instanceof HTMLInputElement
@@ -99,7 +101,7 @@ export function ColorPicker({ value, eyedropper, hasTransparentOption, onChange,
   }, [stopUsingColorPicker])
 
   const openColorPicker = useCallback(
-    async (e: React.MouseEvent) => {
+    async (e: MouseEvent) => {
       e.preventDefault()
 
       document.body.style.setProperty('pointer-events', 'none')
@@ -188,7 +190,7 @@ function ColorSwatch({ hex, accent, transparent, title, isSelected, onSelect }: 
 
   const ref = useRef<HTMLButtonElement | null>(null)
 
-  const onSelectHandler = (e: React.MouseEvent): void => {
+  const onSelectHandler = (e: MouseEvent): void => {
     e.preventDefault()
 
     const swatchValue = resolveSwatchValue({ hex, accent, transparent })
@@ -257,7 +259,7 @@ export function ColorIndicator({
 
   useClickOutside(isOpen, popoverRef, () => setIsOpen(false))
 
-  const stopPropagation = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const stopPropagation = useCallback((e: MouseEvent | TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
   }, [])

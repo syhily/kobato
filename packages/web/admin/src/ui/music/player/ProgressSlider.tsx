@@ -1,6 +1,5 @@
 import { cn } from '@kobato/ui/lib/cn'
-import { useCallback, useRef, useState } from 'react'
-
+import { type PointerEvent as ReactPointerEvent, useCallback, useRef, useState } from 'react'
 export interface ProgressSliderProps {
   value: number
   max: number
@@ -47,14 +46,14 @@ export function ProgressSlider({
   )
 
   const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
+    (e: ReactPointerEvent) => {
       e.preventDefault()
       setDragging(true)
       const newValue = computeValueFromEvent(e.clientX, e.clientY)
       onChange(newValue)
 
       const controller = new AbortController()
-      const handlePointerMove = (moveEvent: PointerEvent) => {
+      const handlePointerMove = (moveEvent: globalThis.PointerEvent) => {
         const v = computeValueFromEvent(moveEvent.clientX, moveEvent.clientY)
         onChange(v)
       }

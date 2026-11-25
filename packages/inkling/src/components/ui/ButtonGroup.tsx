@@ -1,11 +1,11 @@
+import type { ComponentType, SVGProps } from 'react'
+
 import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
 import { usePreviousFocus } from '@kobato/inkling-internal/hooks/usePreviousFocus'
-import React from 'react'
-
 export interface ButtonGroupButton {
   label?: string
   name: string
-  Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   dataTestId?: string
   ariaLabel?: string
 }
@@ -47,7 +47,7 @@ interface ButtonGroupIconButtonProps {
   name: string
   selectedName?: string
   onClick?: (name: string) => void
-  Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   hasTooltip?: boolean
   dataTestId?: string
   ariaLabel?: string

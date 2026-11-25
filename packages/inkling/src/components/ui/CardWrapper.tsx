@@ -2,8 +2,7 @@ import type { CardWidth } from '@kobato/inkling-internal/nodes/base/utils/card-w
 
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { interpolateLabel } from '@kobato/inkling-internal/labels/inkling-labels'
-import React from 'react'
-
+import { type ComponentType, type SVGProps, type ReactNode, forwardRef } from 'react'
 const CARD_WIDTH_CLASSES: Partial<Record<CardWidth, string>> = {
   wide: [
     'w-[calc(75vw-var(--inkling-breakout-adjustment-with-fallback)+0.2rem)] mx-[calc(50%-(50vw-var(--inkling-breakout-adjustment-with-fallback))-.8rem)] min-w-[calc(100%+3.6rem)] translate-x-[calc(50vw-50%+.8rem-var(--inkling-breakout-adjustment-with-fallback))]',
@@ -16,15 +15,15 @@ const CARD_WIDTH_CLASSES: Partial<Record<CardWidth, string>> = {
 interface CardWrapperProps {
   cardType?: string
   cardWidth?: CardWidth
-  IndicatorIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
   isDragging?: boolean
   isEditing?: boolean
   isSelected?: boolean
   wrapperStyle?: string
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
-export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
+export const CardWrapper = forwardRef<HTMLDivElement, CardWrapperProps>(
   (
     { cardType, cardWidth = 'regular', IndicatorIcon, isDragging, isEditing, isSelected, wrapperStyle, children },
     ref,
@@ -51,7 +50,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
       wrapperClass(),
     ].join(' ')
 
-    let indicatorIcon: React.ReactNode = null
+    let indicatorIcon: ReactNode = null
     if (IndicatorIcon) {
       indicatorIcon = (
         <div className="sticky top-0 lg:top-8">

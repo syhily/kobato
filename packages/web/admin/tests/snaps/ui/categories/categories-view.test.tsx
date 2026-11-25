@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
@@ -25,7 +27,7 @@ queryMocks.queryClient = {
 }
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => children,
+  DndContext: ({ children }: { children: ReactNode }) => children,
   PointerSensor: class PointerSensor {},
   KeyboardSensor: class KeyboardSensor {},
   useSensor: () => ({}),
@@ -33,7 +35,7 @@ vi.mock('@dnd-kit/core', () => ({
   closestCenter: () => ({}),
 }))
 vi.mock('@dnd-kit/sortable', () => ({
-  SortableContext: ({ children }: { children: React.ReactNode }) => children,
+  SortableContext: ({ children }: { children: ReactNode }) => children,
   sortableKeyboardCoordinates: {},
   verticalListSortingStrategy: {},
 }))

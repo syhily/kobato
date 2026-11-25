@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react'
+
 import { ImageCard } from '@kobato/inkling-internal/components/ui/cards/ImageCard'
 import { createDragHandler, createUploader } from '@kobato/inkling/tests/utils/mock-file-factories'
 import { fireEvent, render, screen } from '@testing-library/react'
-import React from 'react'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const ink_components_ui_CardCaptionEditor = await import('@kobato/inkling-internal/components/ui/CardCaptionEditor')
@@ -100,7 +101,7 @@ describe('ImageCard', function () {
     const onFileChange = vi.fn()
     const editedBlob = new Blob(['edited'], { type: 'image/png' })
     const openImageEditor = vi.fn(
-      ({ handleSave }: Parameters<NonNullable<React.ComponentProps<typeof ImageCard>['openImageEditor']>>[0]) => {
+      ({ handleSave }: Parameters<NonNullable<ComponentProps<typeof ImageCard>['openImageEditor']>>[0]) => {
         handleSave(editedBlob)
       },
     )

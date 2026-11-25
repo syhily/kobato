@@ -1,8 +1,7 @@
 import type { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 
-import React from 'react'
-
-export type LexicalProviderFactory = React.ComponentProps<typeof CollaborationPlugin>['providerFactory']
+import { type ComponentProps, createContext } from 'react'
+export type LexicalProviderFactory = ComponentProps<typeof CollaborationPlugin>['providerFactory']
 
 export interface InklingCollaborationContextValue {
   createWebsocketProvider: LexicalProviderFactory
@@ -23,7 +22,7 @@ export const noopWebsocketProviderFactory: LexicalProviderFactory = () => ({
   on: () => undefined,
 })
 
-const InklingCollaborationContext = React.createContext<InklingCollaborationContextValue>({
+const InklingCollaborationContext = createContext<InklingCollaborationContextValue>({
   createWebsocketProvider: noopWebsocketProviderFactory,
 })
 

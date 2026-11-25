@@ -1,12 +1,11 @@
 import type { ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 
 import { useKeyboardListSelection } from '@kobato/inkling-internal/hooks/useKeyboardListSelection'
-import React from 'react'
-
+import { type ReactElement, Fragment } from 'react'
 export interface KeyboardSelectionWithGroupsProps<T extends { value: string | null } = ListOptionItem> {
   groups: Array<{ label: string; items: T[] }>
-  getItem: (item: T, selected: boolean, onMouseOver: () => void, scrollIntoView: boolean) => React.ReactElement
-  getGroup: (group: { label: string; items: T[] }, options?: { showSpinner?: boolean }) => React.ReactElement
+  getItem: (item: T, selected: boolean, onMouseOver: () => void, scrollIntoView: boolean) => ReactElement
+  getGroup: (group: { label: string; items: T[] }, options?: { showSpinner?: boolean }) => ReactElement
   onSelect: (item: T) => void
   onEnterWithoutSelection?: () => void
   defaultSelected?: T
@@ -33,7 +32,7 @@ export function KeyboardSelectionWithGroups<T extends { value: string | null } =
   return (
     <>
       {groups.map((group, groupIndex) => (
-        <React.Fragment key={group.label}>
+        <Fragment key={group.label}>
           {getGroup(group, { showSpinner: groupIndex === 0 && isLoading })}
           {group.items.map((item, index) => {
             const itemsBefore = groups.slice(0, groupIndex).reduce((sum, prevGroup) => sum + prevGroup.items.length, 0)
@@ -48,7 +47,7 @@ export function KeyboardSelectionWithGroups<T extends { value: string | null } =
             }
             return getItem(item, isSelected, onMouseOver, scrollSelectedIntoView)
           })}
-        </React.Fragment>
+        </Fragment>
       ))}
     </>
   )

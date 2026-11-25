@@ -9,8 +9,16 @@ import { useInklingLinkingSettings } from '@kobato/inkling-internal/context/Inkl
 import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { useSearchLinks, type ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
-import React, { useEffect, useRef } from 'react'
-
+import {
+  type KeyboardEvent,
+  type ChangeEvent,
+  type InputEvent,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 interface LinkInputProps {
   href?: string
   update: (href: string, type?: string) => void
@@ -20,7 +28,7 @@ interface LinkInputProps {
 export function LinkInput({ href, update, cancel }: LinkInputProps) {
   const { searchLinks } = useInklingLinkingSettings()
   const labels = useInklingLabels()
-  const [_href, setHref] = React.useState<string | undefined>(href)
+  const [_href, setHref] = useState<string | undefined>(href)
   const searchEnabled = typeof searchLinks === 'function'
   const { isSearching, listOptions } = useSearchLinks(_href || '', searchEnabled ? searchLinks : undefined)
 
@@ -31,7 +39,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
 
   useLinkDropdownOpenedTracking('text', searchEnabled)
 
-  const [prevHref, setPrevHref] = React.useState(href)
+  const [prevHref, setPrevHref] = useState(href)
   if (prevHref !== href) {
     setPrevHref(href)
     setHref(href)
@@ -50,8 +58,8 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
 
   const showSuggestions = searchEnabled && (isSearching || (listOptions && !!listOptions.length))
 
-  const handleContainerKeyDownCapture = React.useCallback(
-    (event: React.KeyboardEvent) => {
+  const handleContainerKeyDownCapture = useCallback(
+    (event: KeyboardEvent) => {
       if (event.key !== 'Enter') {
         return
       }
@@ -77,10 +85,10 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       placeholder={labels['link.search.placeholder']}
       value={_href}
       data-inkling-link-input
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange={(e: ChangeEvent<HTMLInputElement>) => {
         setHref(e.target.value)
       }}
-      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
           e.preventDefault()
           update(e.currentTarget.value || '')
@@ -96,10 +104,10 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
       placeholder={labels['link.input.placeholder']}
       value={_href}
       data-inkling-link-input
-      onInput={(e: React.InputEvent<HTMLInputElement>) => {
+      onInput={(e: InputEvent<HTMLInputElement>) => {
         setHref(e.currentTarget.value)
       }}
-      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
           e.preventDefault()
           update(e.currentTarget.value || '')
@@ -125,7 +133,7 @@ export function LinkInput({ href, update, cancel }: LinkInputProps) {
           aria-label={labels['aria.close']}
           className="absolute right-3 cursor-pointer"
           type="button"
-          onClick={(e: React.MouseEvent) => {
+          onClick={(e: MouseEvent) => {
             e.stopPropagation()
             setHref('')
             inputRef.current?.focus()

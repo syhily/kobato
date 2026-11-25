@@ -1,4 +1,5 @@
 import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import type { FocusEvent } from 'react'
 
 import { headerFieldWriter, type HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/header-field-writer'
 import { describe, expect, it } from 'vitest'
@@ -13,8 +14,8 @@ function createWriteCapture() {
   return { applied, write }
 }
 
-function blurEvent(value: string): React.FocusEvent<HTMLInputElement> {
-  return { target: { value } } as React.FocusEvent<HTMLInputElement>
+function blurEvent(value: string): FocusEvent<HTMLInputElement> {
+  return { target: { value } } as FocusEvent<HTMLInputElement>
 }
 
 describe('headerFieldWriter', () => {

@@ -1,5 +1,5 @@
 import type { ListOptionItem, ListOptionSection } from '@kobato/inkling-internal/hooks/useSearchLinks'
-import type React from 'react'
+import type { ReactNode, ReactElement } from 'react'
 
 import {
   InklingHostIntegrationProvider,
@@ -59,7 +59,7 @@ const searchLinksContextValue = {
 }
 
 const contextWrapper = (value: typeof atLinkContextValue) =>
-  function Wrapper({ children }: { children: React.ReactNode }) {
+  function Wrapper({ children }: { children: ReactNode }) {
     return <InklingHostIntegrationProvider value={value}>{children}</InklingHostIntegrationProvider>
   }
 
@@ -72,8 +72,8 @@ interface PopupProps {
 }
 
 function popupProps(result: { current: unknown }): PopupProps | null {
-  const portal = result.current as React.ReactElement | null
-  const popup = (portal?.props as { children?: React.ReactElement } | undefined)?.children
+  const portal = result.current as ReactElement | null
+  const popup = (portal?.props as { children?: ReactElement } | undefined)?.children
   return (popup?.props as PopupProps | undefined) ?? null
 }
 

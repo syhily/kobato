@@ -10,8 +10,7 @@ import { ImageLibraryPicker } from '@kobato/web-admin/ui/editor/pickers/ImageLib
 import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog'
 import { useErroredSrc } from '@kobato/web-admin/ui/shared/image-edit/use-errored-src'
 import { ImageOffIcon, ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
-
+import { type ReactNode, type DragEvent, useState } from 'react'
 export interface ImageFieldProps {
   id: string
   label: string
@@ -44,23 +43,23 @@ export function ImageField({
   const hasValue = value !== ''
   const [previewBroken, markPreviewErrored] = useErroredSrc(hasValue ? value : null)
 
-  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
+  const handleDragOver = (e: DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
   }
-  const handleDragEnter = (e: React.DragEvent<HTMLButtonElement>) => {
+  const handleDragEnter = (e: DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
     if (!disabled) {
       setDragActive(true)
     }
   }
-  const handleDragLeave = (e: React.DragEvent<HTMLButtonElement>) => {
+  const handleDragLeave = (e: DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
   }
-  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
+  const handleDrop = (e: DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)

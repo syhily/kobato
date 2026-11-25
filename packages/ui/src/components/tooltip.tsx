@@ -1,7 +1,14 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import { cn } from '@kobato/ui/lib/cn'
-import { type ComponentProps, type ReactNode, createContext, use } from 'react'
-
+import {
+  type ComponentProps,
+  type ReactNode,
+  type ButtonHTMLAttributes,
+  type JSX,
+  type ElementType,
+  createContext,
+  use,
+} from 'react'
 export type TooltipPlacement = 'top' | 'left'
 
 const PUBLIC_BASE_CLASS =
@@ -43,14 +50,14 @@ function TooltipRoot({ children, placement = 'top' }: TooltipRootProps) {
   )
 }
 
-export interface TooltipTriggerProps extends React.ButtonHTMLAttributes<HTMLElement> {
-  as?: keyof React.JSX.IntrinsicElements
+export interface TooltipTriggerProps extends ButtonHTMLAttributes<HTMLElement> {
+  as?: keyof JSX.IntrinsicElements
   children: ReactNode
   closeOnClick?: boolean
 }
 
 function TooltipTrigger({ as = 'button', type = 'button', children, closeOnClick, ...rest }: TooltipTriggerProps) {
-  const Comp = as as React.ElementType
+  const Comp = as as ElementType
   return (
     <BaseTooltip.Trigger
       closeOnClick={closeOnClick}

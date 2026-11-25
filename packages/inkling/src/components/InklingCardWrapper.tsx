@@ -11,23 +11,31 @@ import { registerCardInteraction } from '@kobato/inkling-internal/plugins/behavi
 import { purgeDeadEditorHistoryEntries } from '@kobato/inkling-internal/plugins/behaviour/history-purge'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
-import React from 'react'
-
+import {
+  type ComponentType,
+  type SVGProps,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 interface InklingCardWrapperProps {
   nodeKey: NodeKey
   width?: CardWidth
   wrapperStyle?: string
-  IndicatorIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  children?: React.ReactNode
+  IndicatorIcon?: ComponentType<SVGProps<SVGSVGElement>>
+  children?: ReactNode
 }
 
 const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, children }: InklingCardWrapperProps) => {
   const [editor] = useLexicalComposerContext()
   const { historyState } = useSharedEditorStateContext()
-  const [cardType, setCardType] = React.useState<string | null>(null)
-  const [captionHasFocus, setCaptionHasFocus] = React.useState(false)
+  const [cardType, setCardType] = useState<string | null>(null)
+  const [captionHasFocus, setCaptionHasFocus] = useState(false)
   const normalizedWidth = width ?? 'regular'
-  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const cardSelectionStore = useCardSelectionStore()
   const isDragging = useDragDropHandleState((state) => state.isDragging)
@@ -37,29 +45,27 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
   const isSelected = selectedCardKey === nodeKey
   const isEditing = isSelected && isEditingCard
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     editor.getEditorState().read(() => {
       const cardNode = $getNodeByKey(nodeKey)
       setCardType(cardNode ? cardNode.getType() : null)
     })
+  }, [editor, nodeKey])
 
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  React.useEffect(() => {
+  useEffect(() => {
     return registerCardInteraction(editor, nodeKey, {
       store: cardSelectionStore,
       getContainer: () => containerRef.current,
     })
   }, [editor, nodeKey, cardSelectionStore])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       purgeDeadEditorHistoryEntries(historyState, editor)
     }
   }, [editor, historyState])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (containerRef.current?.parentElement) {
       if (normalizedWidth === 'regular') {
         delete containerRef.current.parentElement.dataset.inklingCardWidth
@@ -69,7 +75,7 @@ const InklingCardWrapper = ({ nodeKey, width, wrapperStyle, IndicatorIcon, child
     }
   }, [normalizedWidth])
 
-  const cardContextValue = React.useMemo(
+  const cardContextValue = useMemo(
     () => ({
       captionHasFocus,
       cardType,

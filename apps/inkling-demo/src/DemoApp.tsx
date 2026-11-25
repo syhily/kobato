@@ -35,7 +35,7 @@ import { klipyConfig, tenorConfig } from '@kobato/inkling-demo/utils/gifConfig'
 import { getDemoImageLibrary } from '@kobato/inkling-demo/utils/imageLibrary'
 import { ZH_LABELS } from '@kobato/inkling-demo/utils/labels'
 import EarthIcon from '@kobato/inkling/assets/icons/inkling-earth.svg?react'
-import React, { useState } from 'react'
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router'
 
 const url = new URL(window.location.href)
@@ -244,11 +244,11 @@ function DemoComposer({
   const contentParam = searchParams.get('content')
   const labels = searchParams.get('labels') === 'zh' ? ZH_LABELS : undefined
 
-  const defaultContent = React.useMemo(() => {
+  const defaultContent = useMemo(() => {
     return JSON.stringify(getDefaultContent({ editorType }))
   }, [editorType])
 
-  const initialContent = React.useMemo(() => {
+  const initialContent = useMemo(() => {
     if (isMultiplayer) {
       return null
     }
@@ -262,10 +262,10 @@ function DemoComposer({
 
   const [title, setTitle] = useState(initialContent ? 'Meet the Inkling editor.' : '')
   const [editorAPI, setEditorAPI] = useState<ExternalControlAPI | null>(null)
-  const titleRef = React.useRef<{ focus: () => void } | null>(null)
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const titleRef = useRef<{ focus: () => void } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const handleRegisterAPI = React.useCallback((api: ExternalControlAPI | null) => {
+  const handleRegisterAPI = useCallback((api: ExternalControlAPI | null) => {
     setEditorAPI(api)
   }, [])
 
@@ -292,7 +292,7 @@ function DemoComposer({
     setSearchParams(searchParams)
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleFileDrag = (event: DragEvent) => {
       event.preventDefault()
     }
@@ -335,7 +335,7 @@ function DemoComposer({
 
   const demoChrome = <DemoChrome editorType={editorType || 'full'} saveContent={saveContent} sidebar={sidebar} />
 
-  const demoLayout = (children: React.ReactNode) => (
+  const demoLayout = (children: ReactNode) => (
     <div
       className={`inkling-demo relative h-full grow ${darkMode ? 'dark' : ''}`}
       style={sidebar.isSidebarOpen ? { '--inkling-breakout-adjustment': '440px' } : {}}
@@ -392,7 +392,7 @@ function DemoComposer({
   )
 }
 
-const MemoizedDemoComposer = React.memo(DemoComposer)
+const MemoizedDemoComposer = memo(DemoComposer)
 
 interface DemoAppProps {
   editorType?: string

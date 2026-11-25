@@ -1,3 +1,5 @@
+import type { CSSProperties, ChangeEvent } from 'react'
+
 import { Button } from '@kobato/inkling-internal/components/ui/Button'
 import { cx } from '@kobato/inkling-internal/utils/cx'
 
@@ -18,13 +20,13 @@ export function SubscribeForm({
   value?: string
   buttonSize?: 'small' | 'medium' | 'large'
   buttonText?: string
-  buttonStyle?: React.CSSProperties
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  buttonStyle?: CSSProperties
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onFocus?: () => void
   onBlur?: () => void
   disabled?: boolean
 }) {
-  const onChangeWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeWrapper = (e: ChangeEvent<HTMLInputElement>) => {
     if (onChange) {
       onChange(e)
     }

@@ -7,8 +7,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { DRAG_DROP_PASTE } from '@lexical/rich-text'
 import { $canShowPlaceholder } from '@lexical/text'
 import { type LexicalEditor } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 export interface ExternalControlAPI {
   editorInstance: LexicalEditor
   serialize: () => string
@@ -23,7 +22,7 @@ export interface ExternalControlAPI {
 
 export const ExternalControlPlugin = ({ registerAPI }: { registerAPI: (api: ExternalControlAPI | null) => void }) => {
   const [editor] = useLexicalComposerContext()
-  React.useEffect(() => {
+  useEffect(() => {
     if (!registerAPI) {
       return
     }

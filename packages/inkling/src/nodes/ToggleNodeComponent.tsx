@@ -4,8 +4,7 @@ import type { EditorState, LexicalEditor } from 'lexical'
 import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
 import { ToggleCard } from '@kobato/inkling-internal/components/ui/cards/ToggleCard'
 import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelectionStoreContext'
-import React from 'react'
-
+import { useEffect } from 'react'
 export function ToggleNodeComponent({
   nodeKey,
   headingEditor,
@@ -21,7 +20,7 @@ export function ToggleNodeComponent({
 }) {
   const isEditing = useCardIsEditing(nodeKey)
 
-  React.useEffect(() => {
+  useEffect(() => {
     headingEditor.setEditable(isEditing)
     contentEditor.setEditable(isEditing)
   }, [isEditing, headingEditor, contentEditor])

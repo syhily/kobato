@@ -12,7 +12,7 @@ import {
   UNDO_COMMAND,
   createEditor,
 } from 'lexical'
-import React, { useMemo } from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function createTestEditor() {
@@ -43,8 +43,8 @@ async function undo(editor: ReturnType<typeof createTestEditor>): Promise<void> 
   })
 }
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: ReturnType<typeof createTestEditor> }) {
-  const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: ReturnType<typeof createTestEditor> }) {
+  const contextValue = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )

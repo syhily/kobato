@@ -1,8 +1,7 @@
 import { cn } from '@kobato/ui/lib/cn'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
 import { MoveDiagonal2Icon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
+import { type PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 const MAX_PREVIEW_DIMENSION = 1600
 
 export interface CropRect {
@@ -256,7 +255,7 @@ export function ImageEditorCanvas({
   }, [encode, onReady])
 
   const beginDrag = useCallback(
-    (event: React.PointerEvent, mode: 'move' | 'resize') => {
+    (event: PointerEvent, mode: 'move' | 'resize') => {
       if (crop === null || displayLayout === null) {
         return
       }
@@ -277,7 +276,7 @@ export function ImageEditorCanvas({
   )
 
   const onPointerMove = useCallback(
-    (event: React.PointerEvent) => {
+    (event: PointerEvent) => {
       if (dragState === null || displayLayout === null || crop === null) {
         return
       }
@@ -307,7 +306,7 @@ export function ImageEditorCanvas({
   )
 
   const endDrag = useCallback(
-    (event: React.PointerEvent) => {
+    (event: PointerEvent) => {
       if (dragState !== null && dragState.pointerId === event.pointerId) {
         event.currentTarget.releasePointerCapture?.(event.pointerId)
         setDragState(null)

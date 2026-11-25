@@ -4,8 +4,7 @@ import EyeClosedIcon from '@kobato/inkling-demo/assets/icons/eye-closed.svg?reac
 import EyeOpenIcon from '@kobato/inkling-demo/assets/icons/eye-open.svg?react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $createParagraphNode, $getRoot } from 'lexical'
-import React from 'react'
-
+import { useState } from 'react'
 interface InitialContentToggleProps {
   defaultContent: string
   setTitle: (title: string) => void
@@ -20,7 +19,7 @@ const InitialContentToggle = ({
   setSearchParams,
 }: InitialContentToggleProps) => {
   const [editor] = useLexicalComposerContext()
-  const [isOn, setIsOn] = React.useState(searchParams.get('content') !== 'false')
+  const [isOn, setIsOn] = useState(searchParams.get('content') !== 'false')
 
   const toggle = () => {
     if (!isOn) {

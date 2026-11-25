@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react'
+
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
@@ -19,8 +21,8 @@ vi.mock('@unovis/react', () => ({
   VisGroupedBar: () => null,
   VisLine: () => null,
   VisTooltip: () => null,
-  VisXYContainer: ({ children }: { children: React.ReactNode }) => children,
-  VisSingleContainer: ({ children, data }: { children: React.ReactNode; data: { areas: unknown } }) => {
+  VisXYContainer: ({ children }: { children: ReactNode }) => children,
+  VisSingleContainer: ({ children, data }: { children: ReactNode; data: { areas: unknown } }) => {
     captured.mapAreas = data.areas
     return children
   },

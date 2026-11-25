@@ -5,7 +5,7 @@ import {
   useSettingsSearchContext,
   useSettingsSearchFilter,
 } from '@kobato/web-admin/ui/settings/shell/use-settings-search'
-import * as React from 'react'
+import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
 
 describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state surfaces)', () => {
@@ -30,7 +30,7 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
 
   it('highlightKeywords returns a non-string, non-array ReactNode untouched', () => {
     const { highlightKeywords } = renderHook(useSettingsSearch, { wrapper: SettingsSearchProvider })
-    const element = React.createElement('div', null, 'x')
+    const element = createElement('div', null, 'x')
     expect(highlightKeywords(element)).toBe(element)
   })
 
@@ -106,7 +106,7 @@ describe('ui/admin/settings/shell/useSettingsSearch — default (no provider) co
     expect(api.checkVisible(['anything'])).toBe(true)
     expect(api.checkVisible([])).toBe(true)
     expect(api.highlightKeywords('passthrough')).toBe('passthrough')
-    const el = React.createElement('span')
+    const el = createElement('span')
     expect(api.highlightKeywords(el)).toBe(el)
     expect(api.noResult).toBe(false)
     expect(api.getVisibleComponents()).toBeInstanceOf(Set)

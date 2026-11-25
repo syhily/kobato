@@ -12,8 +12,7 @@ import { headerFieldWriter } from '@kobato/inkling-internal/nodes/header/header-
 import { $isHeaderNode } from '@kobato/inkling-internal/nodes/HeaderNode'
 import { headerBackgroundUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import { useEffect } from 'react'
-
+import { type ChangeEvent, useEffect } from 'react'
 interface HeaderNodeComponentProps {
   alignment: string
   backgroundColor: string
@@ -85,7 +84,7 @@ function HeaderNodeComponent({
   const handleButtonUrl = field.set('buttonUrl')
   const writeButtonText = field.set('buttonText')
 
-  const handleButtonText = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleButtonText = (event: ChangeEvent<HTMLInputElement>): void => {
     writeButtonText(event.target.value)
   }
 

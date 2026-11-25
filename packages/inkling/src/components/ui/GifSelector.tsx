@@ -10,8 +10,16 @@ import { Error } from '@kobato/inkling-internal/components/ui/file-selectors/Gif
 import { Gif } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Gif'
 import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Loader'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-
+import {
+  type KeyboardEvent,
+  type ChangeEvent,
+  type UIEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 const TWO_COLUMN_WIDTH = 540
 const THREE_COLUMN_WIDTH = 940
 
@@ -34,7 +42,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
   const clearFocusRequest = useCallback(() => setFocusRequestId(null), [])
   const subscribeToBrowser = useCallback((listener: () => void) => browser.subscribe(listener), [browser])
   const getBrowserSnapshot = useCallback(() => browser.getSnapshot(), [browser])
-  const snapshot = React.useSyncExternalStore(subscribeToBrowser, getBrowserSnapshot)
+  const snapshot = useSyncExternalStore(subscribeToBrowser, getBrowserSnapshot)
   const { columns, isLoading, isLazyLoading, error, highlightedId } = snapshot
 
   useEffect(() => {
@@ -108,7 +116,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     },
   }
 
-  function runEffects(effects: GifBrowserEffect[], event?: React.KeyboardEvent<HTMLDivElement>) {
+  function runEffects(effects: GifBrowserEffect[], event?: KeyboardEvent<HTMLDivElement>) {
     for (const effect of effects) {
       if (effect.type === 'prevent-default') {
         event?.preventDefault()
@@ -120,7 +128,7 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     }
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.defaultPrevented) {
       return
     }
@@ -145,10 +153,10 @@ const GifSelector = ({ browser, onGifInsert, onClickOutside, provider }: GifSele
     }
     runEffects(effects, event)
   }
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     browser.dispatch({ type: 'search', term: e.target.value })
   }
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget
     if (container.scrollTop + container.clientHeight >= container.scrollHeight - 1000) {
       browser.dispatch({ type: 'load-more' })

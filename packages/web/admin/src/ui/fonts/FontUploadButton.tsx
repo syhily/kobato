@@ -15,7 +15,7 @@ import { orpc } from '@kobato/web-client/api/client'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleAlertIcon, CircleCheckIcon, Loader2Icon, UploadIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
 type UploadPhase =
@@ -78,7 +78,7 @@ export function FontUploadButton() {
     await upload(file)
   }
 
-  const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (f) {
       setPhase({
@@ -135,7 +135,7 @@ function UploadInputPhase({
 }: {
   familyName: string
   fileName: string
-  familyInputRef: React.RefObject<HTMLInputElement | null>
+  familyInputRef: RefObject<HTMLInputElement | null>
   onFamilyNameChange: (name: string) => void
   onCancel: () => void
   onUpload: () => void

@@ -4,8 +4,7 @@ import InklingCaptionEditor from '@kobato/inkling-internal/components/InklingCap
 import { TextInput } from '@kobato/inkling-internal/components/ui/TextInput'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { isEditorEmpty } from '@kobato/inkling-internal/utils/is-editor-empty'
-import React from 'react'
-
+import { type ChangeEvent, type MouseEvent, useState } from 'react'
 interface CaptionInputProps {
   captionEditor: LexicalEditor
   captionEditorInitialState?: EditorState
@@ -35,7 +34,7 @@ interface AltTextInputProps {
 }
 
 function AltTextInput({ value, placeholder, onChange, readOnly, dataTestId, autoFocus = true }: AltTextInputProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChange?.(e.target.value)
   }
 
@@ -55,7 +54,7 @@ function AltTextInput({ value, placeholder, onChange, readOnly, dataTestId, auto
 
 interface AltToggleButtonProps {
   isEditingAlt?: boolean
-  onClick: (event: React.MouseEvent) => void
+  onClick: (event: MouseEvent) => void
 }
 
 function AltToggleButton({ isEditingAlt, onClick }: AltToggleButtonProps) {
@@ -96,14 +95,14 @@ export function CardCaptionEditor({
   readOnly,
   dataTestId,
 }: CardCaptionEditorProps) {
-  const [isEditingAlt, setIsEditingAlt] = React.useState(false)
+  const [isEditingAlt, setIsEditingAlt] = useState(false)
 
-  const toggleIsEditingAlt = (e: React.MouseEvent) => {
+  const toggleIsEditingAlt = (e: MouseEvent) => {
     e.stopPropagation()
     setIsEditingAlt(!isEditingAlt)
   }
 
-  const [prevIsSelected, setPrevIsSelected] = React.useState(isSelected)
+  const [prevIsSelected, setPrevIsSelected] = useState(isSelected)
   if (prevIsSelected !== isSelected) {
     setPrevIsSelected(isSelected)
     if (!isSelected) {

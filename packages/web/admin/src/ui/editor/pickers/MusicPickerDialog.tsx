@@ -9,10 +9,9 @@ import { AddMusicDialog } from '@kobato/web-admin/ui/music/AddMusicDialog'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
-import { isValidElement, useState } from 'react'
-
+import { type ReactNode, isValidElement, useState } from 'react'
 export interface MusicPickerDialogProps {
-  trigger?: React.ReactNode
+  trigger?: ReactNode
   onPick: (music: AdminMusicDto) => void
   open?: boolean
   onOpenChange?: (open: boolean) => void

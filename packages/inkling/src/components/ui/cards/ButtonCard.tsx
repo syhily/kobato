@@ -1,3 +1,5 @@
+import type { ChangeEvent } from 'react'
+
 import CenterAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-center.svg?react'
 import LeftAlignIcon from '@kobato/inkling-internal/assets/icons/inkling-align-left.svg?react'
 import { Button } from '@kobato/inkling-internal/components/ui/Button'
@@ -25,7 +27,7 @@ export function ButtonCard({
   buttonPlaceholder?: string
   buttonUrl?: string
   handleAlignmentChange?: (name: string) => void
-  handleButtonTextChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  handleButtonTextChange?: (e: ChangeEvent<HTMLInputElement>) => void
   handleButtonUrlChange?: (value: string) => void
   isEditing?: boolean
 }) {

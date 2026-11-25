@@ -4,7 +4,7 @@ import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { serverMessagesEnUS } from '@kobato/i18n/messages/server/en-US'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
-import { createElement, Fragment } from 'react'
+import { type ReactNode, Fragment, createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
@@ -26,7 +26,7 @@ function formatCase(entry: Case, locale: AppLocale): string {
       null,
       t.formatRich(entry.key, {
         ...entry.params,
-        siteLink: (chunks: React.ReactNode[]) => chunks.join(''),
+        siteLink: (chunks: ReactNode[]) => chunks.join(''),
       }),
     ),
   )

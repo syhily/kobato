@@ -1,4 +1,5 @@
 import type { LexicalEditor } from 'lexical'
+import type { ReactNode } from 'react'
 
 import { InklingBlurPlugin } from '@kobato/inkling-internal/plugins/InklingBlurPlugin'
 import { InklingFocusPlugin } from '@kobato/inkling-internal/plugins/InklingFocusPlugin'
@@ -8,7 +9,7 @@ import { render } from '@testing-library/react'
 import { BLUR_COMMAND, FOCUS_COMMAND } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
 
-function Harness({ children }: { children: React.ReactNode }) {
+function Harness({ children }: { children: ReactNode }) {
   return (
     <LexicalComposer
       initialConfig={{

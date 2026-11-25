@@ -18,8 +18,7 @@ import { getEditorCardNodes } from '@kobato/inkling-internal/nodes/cards/editor-
 import { TABLE_MENU_SOURCE } from '@kobato/inkling-internal/nodes/table/table-menu'
 import { $swapTriggerParagraph } from '@kobato/inkling-internal/plugins/behaviour/card-menu-trigger'
 import { TableNode } from '@lexical/table'
-import React from 'react'
-
+import { useCallback, useContext, useMemo } from 'react'
 export type CardMenuInsert = (insertCommand: AnyLexicalCommand, params?: CardMenuInsertParams) => void
 
 export interface UseCardMenuOptions {
@@ -36,9 +35,9 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
   const gifSettings = useInklingGifSettings()
   const snippetSettings = useInklingSnippetSettings()
   const librarySettings = useInklingLibrarySettings()
-  const { labels } = React.useContext(InklingUiPrefsContext)
+  const { labels } = useContext(InklingUiPrefsContext)
 
-  const menuConfig = React.useMemo<MenuBuildConfig>(
+  const menuConfig = useMemo<MenuBuildConfig>(
     () => ({
       tenor: gifSettings.tenor,
       klipy: gifSettings.klipy,
@@ -55,7 +54,7 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
     ],
   )
 
-  const cardMenu = React.useMemo<BuildCardMenuResult>(() => {
+  const cardMenu = useMemo<BuildCardMenuResult>(() => {
     const cardNodes = getEditorCardNodes(editor)
 
     const nodes: Iterable<[string, CardMenuSource]> = editor.hasNode(TableNode)
@@ -64,7 +63,7 @@ export function useCardMenu(editor: LexicalEditor, query?: string, options: UseC
     const resolveLabel = (key: string, fallback: string) => lookupLabel(labels, key, fallback)
     return buildCardMenu(nodes, { query, config: menuConfig, resolveLabel })
   }, [editor, query, menuConfig, labels])
-  const insert = React.useCallback<CardMenuInsert>(
+  const insert = useCallback<CardMenuInsert>(
     (insertCommand, { insertParams = {}, queryParams = [] } = {}) => {
       const dataset = { ...insertParams }
 

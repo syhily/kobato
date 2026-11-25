@@ -1,7 +1,6 @@
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
+import { type KeyboardEvent, useCallback, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 export function codeBlockPreClass(darkMode?: boolean): string {
   return darkMode
     ? `rounded-md border border-grey-950 bg-grey-950 px-2 py-[0.6rem] font-mono text-[1.6rem] leading-9 text-grey-400 whitespace-pre-wrap`
@@ -16,15 +15,15 @@ interface CodeBlockPlainEditorProps {
 }
 
 export function CodeBlockPlainEditor({ code, language, updateCode, onEscape }: CodeBlockPlainEditorProps) {
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const { darkMode } = useContext(InklingUiPrefsContext)
   const labels = useInklingLabels()
-  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     textareaRef.current?.focus()
   }, [])
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const textarea = textareaRef.current
     if (textarea) {
       textarea.style.height = 'auto'
@@ -32,8 +31,8 @@ export function CodeBlockPlainEditor({ code, language, updateCode, onEscape }: C
     }
   })
 
-  const handleKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === 'Escape') {
         onEscape?.()
         return

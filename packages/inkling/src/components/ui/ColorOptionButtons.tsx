@@ -3,8 +3,7 @@ import { ConicRing } from '@kobato/inkling-internal/components/ui/ColorPicker'
 import { Tooltip } from '@kobato/inkling-internal/components/ui/Tooltip'
 import { useClickOutside } from '@kobato/inkling-internal/hooks/useClickOutside'
 import { usePreviousFocus } from '@kobato/inkling-internal/hooks/usePreviousFocus'
-import React, { useState } from 'react'
-
+import { useRef, useState } from 'react'
 interface ColorOptionButton {
   name: string
   label?: string
@@ -19,7 +18,7 @@ interface ColorOptionButtonsProps {
 
 export function ColorOptionButtons({ buttons = [], selectedName, onClick }: ColorOptionButtonsProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const componentRef = React.useRef<HTMLDivElement | null>(null)
+  const componentRef = useRef<HTMLDivElement | null>(null)
 
   const selectedButton = buttons.find((button) => button.name === selectedName)
 

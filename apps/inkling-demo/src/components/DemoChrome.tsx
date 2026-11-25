@@ -1,13 +1,12 @@
 import FloatingButton from '@kobato/inkling-demo/components/FloatingButton'
 import Sidebar from '@kobato/inkling-demo/components/Sidebar'
 import Watermark from '@kobato/inkling-demo/components/Watermark'
-import React from 'react'
-
+import { useCallback, useState } from 'react'
 export function useDemoSidebar() {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
-  const [sidebarView, setSidebarView] = React.useState<'json' | 'tree'>('json')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [sidebarView, setSidebarView] = useState<'json' | 'tree'>('json')
 
-  const openSidebar = React.useCallback(
+  const openSidebar = useCallback(
     (view: 'json' | 'tree' = 'json') => {
       if (isSidebarOpen && sidebarView === view) {
         setIsSidebarOpen(false)

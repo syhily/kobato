@@ -30,13 +30,12 @@ import QuoteIcon from '@kobato/inkling/assets/icons/inkling-quote.svg?react'
 import ReplaceIcon from '@kobato/inkling/assets/icons/inkling-replace.svg?react'
 import SnippetIcon from '@kobato/inkling/assets/icons/inkling-snippet.svg?react'
 import PlusIcon from '@kobato/inkling/assets/icons/plus.svg?react'
-import React, { useState } from 'react'
-
+import { type ComponentType, type SVGProps, type MouseEvent, useState } from 'react'
 function ComponentTitle({ label }: { label: string }) {
   return <h3 className="mt-20 mb-4 text-xl font-bold first-of-type:mt-8">{label}</h3>
 }
 
-function ToolbarItem({ label, Icon }: { label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
+function ToolbarItem({ label, Icon }: { label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }) {
   return (
     <li aria-label={label} className="m-0 flex p-0 first:m-0">
       <div className="flex size-9 items-center justify-center">
@@ -127,7 +126,7 @@ function CardMenuItem({
 }: {
   label: string
   desc: string
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon: ComponentType<SVGProps<SVGSVGElement>>
 }) {
   return (
     <div className="text-grey-800 hover:bg-grey-100 flex cursor-pointer flex-row items-center border border-transparent px-4 py-2">
@@ -146,7 +145,7 @@ function CardMenuItem({
   )
 }
 
-function CardSnippetItem({ label, Icon }: { label: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
+function CardSnippetItem({ label, Icon }: { label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }) {
   return (
     <div className="text-grey-800 hover:bg-grey-100 flex cursor-pointer flex-row items-center border border-transparent px-4 py-2">
       <div className="flex items-center">
@@ -206,7 +205,7 @@ function CodeBlock() {
   )
 }
 
-function MediaPlaceholder({ desc, Icon }: { desc: string; Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
+function MediaPlaceholder({ desc, Icon }: { desc: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }) {
   return (
     <div className="relative">
       <figure className="cursor-pointer border border-transparent">
@@ -241,7 +240,7 @@ function ImageCard() {
     setActive(!isActive)
   }
 
-  const toggleAltText = (e: React.MouseEvent) => {
+  const toggleAltText = (e: MouseEvent) => {
     e.stopPropagation()
     setAltText(!altText)
   }

@@ -3,7 +3,7 @@
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { Popup } from '@kobato/web-public/ui/widgets/Popup'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('motion/react', () => {
@@ -19,14 +19,14 @@ vi.mock('motion/react', () => {
     'whileDrag',
     'whileInView',
   ])
-  const MotionStub = ({ children, ...rest }: { children?: React.ReactNode } & Record<string, unknown>) => {
+  const MotionStub = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) => {
     for (const key of MOTION_ONLY_PROPS) {
       delete rest[key]
     }
     return <div {...rest}>{children}</div>
   }
   return {
-    AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
     motion: new Proxy({}, { get: () => MotionStub }),
   }
 })

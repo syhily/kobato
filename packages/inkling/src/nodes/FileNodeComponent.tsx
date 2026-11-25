@@ -9,8 +9,7 @@ import { useMediaCardUpload } from '@kobato/inkling-internal/hooks/useMediaCardU
 import { $isFileNode } from '@kobato/inkling-internal/nodes/base'
 import { fileUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { type NodeKey } from 'lexical'
-import React from 'react'
-
+import { type ChangeEvent, useState } from 'react'
 export interface FileNodeComponentProps {
   fileDesc: string
   fileDescPlaceholder?: string
@@ -38,7 +37,7 @@ function FileNodeComponent({
 }: FileNodeComponentProps) {
   const { editor, write } = useCardChrome(nodeKey, $isFileNode)
   const labels = useInklingLabels()
-  const [isPopulated, setIsPopulated] = React.useState<boolean>(() => !!(fileSrc && fileSize && fileName))
+  const [isPopulated, setIsPopulated] = useState<boolean>(() => !!(fileSrc && fileSize && fileName))
   const isEditing = useCardIsEditing(nodeKey)
 
   const {
@@ -69,7 +68,7 @@ function FileNodeComponent({
   })
 
   const isComplete = !!(fileSrc && fileSize && fileName)
-  const [prevComplete, setPrevComplete] = React.useState(isComplete)
+  const [prevComplete, setPrevComplete] = useState(isComplete)
   if (prevComplete !== isComplete) {
     setPrevComplete(isComplete)
     if (isComplete) {
@@ -77,7 +76,7 @@ function FileNodeComponent({
     }
   }
 
-  const handleFileTitle = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleFileTitle = (e: ChangeEvent<HTMLInputElement>): void => {
     const title = e.target.value
 
     write((node) => {
@@ -85,7 +84,7 @@ function FileNodeComponent({
     })
   }
 
-  const handleFileDesc = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleFileDesc = (e: ChangeEvent<HTMLInputElement>): void => {
     const desc = e.target.value
 
     write((node) => {

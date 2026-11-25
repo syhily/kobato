@@ -10,15 +10,14 @@ import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour
 import { createFootnoteHandle } from '@kobato/inkling-internal/plugins/behaviour/footnote-handle'
 import { createTKHandle } from '@kobato/inkling-internal/plugins/behaviour/tk-handle'
 import { createWordCountHandle } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
-import React from 'react'
-
-export function ComposerHandlesProvider({ children }: { children: React.ReactNode }) {
-  const [dragDropHandle] = React.useState(createDragDropHandle)
-  const [wordCountHandle] = React.useState(createWordCountHandle)
-  const [cardSelectionStore] = React.useState(createCardSelectionStore)
-  const [cardPickerStore] = React.useState(createCardPickerStore)
-  const [tkHandle] = React.useState(createTKHandle)
-  const [footnoteHandle] = React.useState(createFootnoteHandle)
+import { type ReactNode, useState } from 'react'
+export function ComposerHandlesProvider({ children }: { children: ReactNode }) {
+  const [dragDropHandle] = useState(createDragDropHandle)
+  const [wordCountHandle] = useState(createWordCountHandle)
+  const [cardSelectionStore] = useState(createCardSelectionStore)
+  const [cardPickerStore] = useState(createCardPickerStore)
+  const [tkHandle] = useState(createTKHandle)
+  const [footnoteHandle] = useState(createFootnoteHandle)
 
   return (
     <DragDropHandleContext.Provider value={dragDropHandle}>

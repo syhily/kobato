@@ -5,8 +5,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { LazyPopup as Popup } from '@kobato/web-public/ui/widgets/LazyPopup'
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
-
+import { type SyntheticEvent, useCallback, useRef, useState } from 'react'
 export function FriendApplyForm() {
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
@@ -27,7 +26,7 @@ export function FriendApplyForm() {
   })
   const isPending = apply.isPending
 
-  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
     const website = readFormString(data, 'website') ?? ''

@@ -6,8 +6,7 @@ import { useFootnoteHandle, useFootnoteHandleState } from '@kobato/inkling-inter
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { $removeFootnote } from '@kobato/inkling-internal/plugins/behaviour/footnotes'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { type MouseEvent, useCallback, useEffect } from 'react'
 export interface FootnoteDefinitionNodeComponentProps {
   nodeKey: NodeKey
   targetKey: string
@@ -26,15 +25,15 @@ export function FootnoteDefinitionNodeComponent({
   const index = useFootnoteHandleState((state) => state.indices[targetKey] ?? 0)
   const focusRequest = useFootnoteHandleState((state) => state.focusRequest)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusRequest?.targetKey !== targetKey) {
       return
     }
     contentEditor.focus(() => undefined, { defaultSelection: 'rootEnd' })
     footnoteHandle.setState({ focusRequest: null })
   }, [focusRequest, targetKey, contentEditor, footnoteHandle])
-  const handleDelete = React.useCallback(
-    (event: React.MouseEvent) => {
+  const handleDelete = useCallback(
+    (event: MouseEvent) => {
       event.preventDefault()
       editor.update(() => {
         $removeFootnote(targetKey)

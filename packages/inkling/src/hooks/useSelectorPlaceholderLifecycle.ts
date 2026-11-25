@@ -1,11 +1,10 @@
 import { DELETE_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { useCallback, useEffect } from 'react'
 export function useSelectorPlaceholderLifecycle(nodeKey: NodeKey) {
   const [editor] = useLexicalComposerContext()
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         editor.dispatchCommand(DELETE_CARD_COMMAND, { cardKey: nodeKey })
@@ -19,11 +18,11 @@ export function useSelectorPlaceholderLifecycle(nodeKey: NodeKey) {
     }
   }, [editor, nodeKey])
 
-  const closeSelector = React.useCallback(() => {
+  const closeSelector = useCallback(() => {
     editor.dispatchCommand(DELETE_CARD_COMMAND, { cardKey: nodeKey })
   }, [editor, nodeKey])
 
-  const placeholderExists = React.useCallback(() => {
+  const placeholderExists = useCallback(() => {
     return editor.getEditorState().read(() => $getNodeByKey(nodeKey) !== null)
   }, [editor, nodeKey])
 

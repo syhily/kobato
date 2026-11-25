@@ -1,4 +1,5 @@
 import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
+import type { ReactNode } from 'react'
 
 import { hasAtLeast } from '@kobato/auth/roles'
 import { cn } from '@kobato/ui/lib/cn'
@@ -11,7 +12,7 @@ import { Link } from 'react-router'
 interface MobileNavButtonProps {
   to: string
   activeMatch?: 'exact' | 'subpath'
-  children: React.ReactNode
+  children: ReactNode
   label: string
 }
 

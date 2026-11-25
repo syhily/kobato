@@ -1,7 +1,6 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 
-import { createContext, use } from 'react'
-
+import { type ReactNode, type Dispatch, createContext, use } from 'react'
 export interface MyCommentOwnership {
   expiresAt?: number
 }
@@ -39,7 +38,7 @@ export interface CommentsIdentityContextValue {
 
 export interface CommentsReplySlotContextValue {
   activeReplyToId: number
-  replyForm: React.ReactNode
+  replyForm: ReactNode
 }
 
 export interface CommentsActionsContextValue {
@@ -49,7 +48,7 @@ export interface CommentsActionsContextValue {
   onApproved: (id: number | string) => void
   onDeleted: (id: number | string) => void
   onDismissMyComment: (id: number | string) => void
-  dispatch: React.Dispatch<CommentTreeAction>
+  dispatch: Dispatch<CommentTreeAction>
 }
 
 export const CommentsTreeContext = createContext<CommentsTreeContextValue | null>(null)

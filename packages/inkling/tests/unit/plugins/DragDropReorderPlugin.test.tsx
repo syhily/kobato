@@ -18,7 +18,7 @@ import {
   type LexicalEditor,
   type NodeKey,
 } from 'lexical'
-import React, { useMemo } from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface CapturedContainerOptions {
@@ -52,8 +52,8 @@ const reorderRulesMod = await import('@kobato/inkling-internal/utils/draggable/r
 vi.spyOn(reorderRulesMod, 'resolveDrop').mockImplementation(((...args: unknown[]) =>
   captured.resolveDrop(...args)) as never)
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: LexicalEditor }) {
-  const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: LexicalEditor }) {
+  const contextValue = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )

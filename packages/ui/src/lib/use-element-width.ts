@@ -1,7 +1,6 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-
+import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 interface UseElementWidthResult<T extends HTMLElement> {
-  ref: React.RefObject<T | null>
+  ref: RefObject<T | null>
   width: number
 }
 

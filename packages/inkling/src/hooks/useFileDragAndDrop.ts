@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react'
-
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 interface UseFileDragAndDropOptions {
   handleDrop: (files: File[]) => void
   disabled?: boolean
 }
 
 export interface UseFileDragAndDropResult {
-  setRef: React.Dispatch<React.SetStateAction<HTMLElement | null>>
+  setRef: Dispatch<SetStateAction<HTMLElement | null>>
   isDraggedOver: boolean
 }
 

@@ -7,8 +7,7 @@ import {
   type GifFetchPage,
   type GifScheduler,
 } from '@kobato/inkling-internal/services/gif-browser'
-import React from 'react'
-
+import { useMemo } from 'react'
 interface UseGifBrowserOptions {
   config: GifProviderConfig
   fetchPage?: GifFetchPage
@@ -18,7 +17,7 @@ interface UseGifBrowserOptions {
 
 export function useGifBrowser({ config, fetchPage, scheduler, debounceMs }: UseGifBrowserOptions): GifBrowser {
   const { provider, apiUrl, apiKey, contentFilter } = config
-  const memoConfig = React.useMemo(
+  const memoConfig = useMemo(
     () => ({ provider, apiUrl, apiKey, contentFilter }),
     [provider, apiUrl, apiKey, contentFilter],
   )

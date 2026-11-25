@@ -25,7 +25,7 @@ import {
 import { useDragDropContainer } from '@kobato/inkling-internal/utils/draggable/use-drag-drop-container'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNearestNodeFromDOMNode, type LexicalEditor } from 'lexical'
-import React from 'react'
+import { useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
@@ -186,7 +186,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
 
   const dragScrollContainerSelector = useInklingDragScrollContainerSelector()
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!containerElement || !editor.getRootElement()) {
       return
     }
@@ -205,7 +205,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
       dndHandler.destroy()
     }
   }, [editor, containerElement, dragDropHandle, dragScrollContainerSelector])
-  React.useEffect(() => {
+  useEffect(() => {
     return editor.registerUpdateListener(({ dirtyElements, editorState }) => {
       if (resolveDragMarkerRefresh(dirtyElements, editorState)) {
         cardContainer.refresh()
@@ -213,7 +213,7 @@ function useDragDropReorder(editor: LexicalEditor): void {
     })
   }, [editor, cardContainer])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return editor.registerRootListener((rootElement, prevRootElement) => {
       rootElement?.addEventListener('dragstart', preventDefault)
       prevRootElement?.removeEventListener('dragstart', preventDefault)

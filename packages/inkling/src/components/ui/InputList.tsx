@@ -4,8 +4,15 @@ import { Input } from '@kobato/inkling-internal/components/ui/Input'
 import { KeyboardSelectionWithGroups } from '@kobato/inkling-internal/components/ui/KeyboardSelectionWithGroups'
 import { Spinner } from '@kobato/inkling-internal/components/ui/Spinner'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
+import {
+  type ReactNode,
+  type MouseEvent,
+  type ReactElement,
+  type ChangeEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 export interface InputListItemData {
   value: string | null
   label: string
@@ -56,17 +63,17 @@ export function InputListItem<T extends InputListItemData = InputListItemData>({
   scrollIntoView: boolean
   className: string
   selectedClassName?: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
-  const itemRef = React.useRef<HTMLLIElement>(null)
+  const itemRef = useRef<HTMLLIElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (selected && scrollIntoView) {
       itemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
     }
   }, [selected, scrollIntoView])
 
-  const handleMouseDown = (event: React.MouseEvent) => {
+  const handleMouseDown = (event: MouseEvent) => {
     event.preventDefault()
     onClick(item)
   }
@@ -145,9 +152,9 @@ export function InputList<T extends InputListItemData = InputListItemData>({
   placeholder?: string
   onChange: (value: string) => void
   onSelect?: (value: string, type?: string) => void
-  getItem: (item: T, selected: boolean, onMouseOver: () => void, scrollIntoView: boolean) => React.ReactElement
+  getItem: (item: T, selected: boolean, onMouseOver: () => void, scrollIntoView: boolean) => ReactElement
 }) {
-  const [inputFocused, setInputFocused] = React.useState(false)
+  const [inputFocused, setInputFocused] = useState(false)
 
   const onFocus = () => {
     setInputFocused(true)
@@ -161,7 +168,7 @@ export function InputList<T extends InputListItemData = InputListItemData>({
     return <InputListGroup key={group.label} dataTestId={dataTestId} group={group} showSpinner={showSpinner} />
   }
 
-  const onChangeEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeEvent = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value)
   }
 

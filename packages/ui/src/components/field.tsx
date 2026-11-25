@@ -2,8 +2,7 @@ import { Label } from '@kobato/ui/components/label'
 import { Separator } from '@kobato/ui/components/separator'
 import { cn } from '@kobato/ui/lib/cn'
 import { cva, type VariantProps } from '@kobato/ui/lib/cva'
-import { type ComponentProps, useMemo } from 'react'
-
+import { type ComponentProps, type ReactNode, useMemo } from 'react'
 function FieldSet({ className, ...props }: ComponentProps<'fieldset'>) {
   return (
     <fieldset
@@ -127,7 +126,7 @@ function FieldDescription({ className, ...props }: ComponentProps<'p'>) {
 }
 
 interface FieldSeparatorProps extends ComponentProps<'div'> {
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 function FieldSeparator({ children, className, ...props }: FieldSeparatorProps) {

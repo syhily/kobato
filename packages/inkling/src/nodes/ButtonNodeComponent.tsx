@@ -1,4 +1,5 @@
 import type { ButtonNode } from '@kobato/inkling-internal/nodes/ButtonNode'
+import type { ChangeEvent } from 'react'
 
 import { CardActionToolbar } from '@kobato/inkling-internal/components/ui/CardActionToolbar'
 import { ButtonCard } from '@kobato/inkling-internal/components/ui/cards/ButtonCard'
@@ -7,8 +8,6 @@ import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { $isButtonNode } from '@kobato/inkling-internal/nodes/base'
 import { type NodeKey } from 'lexical'
-import React from 'react'
-
 export interface ButtonNodeComponentProps {
   alignment?: string
   buttonText?: string
@@ -29,7 +28,7 @@ export function ButtonNodeComponent({
   const { write, setField } = useCardChrome(nodeKey, $isButtonNode)
   const isEditing = useCardIsEditing(nodeKey)
 
-  const handleButtonTextChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleButtonTextChange = (event: ChangeEvent<HTMLInputElement>): void => {
     write((node) => {
       node.buttonText = event.target.value
     })

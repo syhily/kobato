@@ -7,8 +7,7 @@ import type {
 } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
 import { useMutation } from '@tanstack/react-query'
-import { useCallback } from 'react'
-
+import { type Dispatch, type SetStateAction, type RefObject, useCallback } from 'react'
 export interface UseEditorShellPersistMutationsArgs<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
@@ -21,15 +20,15 @@ export interface UseEditorShellPersistMutationsArgs<
   metaDraftFromEntity: (entity: TEntity) => TMeta
   applyServerMeta: (meta: TMeta) => void
   markMetaPublished: () => void
-  setStatus: React.Dispatch<React.SetStateAction<EditorShellStatus>>
-  setDisplaySaveAtMs: React.Dispatch<React.SetStateAction<number | null>>
-  setServerPublishedAtIso: React.Dispatch<React.SetStateAction<string | null>>
+  setStatus: Dispatch<SetStateAction<EditorShellStatus>>
+  setDisplaySaveAtMs: Dispatch<SetStateAction<number | null>>
+  setServerPublishedAtIso: Dispatch<SetStateAction<string | null>>
   noteActionLegSucceeded: (slug: string) => void
   cancelActionBanner: () => void
   dismissPreviewBanner: () => void
-  manualSaveBodyRef: React.RefObject<LexicalEditorState | null>
-  publishedAtBeforePublishRef: React.RefObject<string | null>
-  handleBodySavedRef: React.RefObject<(payload: SaveBodyOutput) => void>
+  manualSaveBodyRef: RefObject<LexicalEditorState | null>
+  publishedAtBeforePublishRef: RefObject<string | null>
+  handleBodySavedRef: RefObject<(payload: SaveBodyOutput) => void>
 }
 
 export function useEditorShellPersistMutations<

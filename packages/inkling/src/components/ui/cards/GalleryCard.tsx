@@ -5,6 +5,7 @@ import type {
 } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
 import type { GalleryImage } from '@kobato/inkling-internal/types/gallery'
 import type { EditorState, LexicalEditor } from 'lexical'
+import type { CSSProperties, RefObject } from 'react'
 
 import DeleteIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
 import { CardCaptionEditor } from '@kobato/inkling-internal/components/ui/CardCaptionEditor'
@@ -55,7 +56,7 @@ interface GalleryImageProps {
 function GalleryImage({ image, deleteImage, position, isDragging }: GalleryImageProps) {
   const labels = useInklingLabels()
   const aspectRatio = (image.width || 1) / (image.height || 1)
-  const style: React.CSSProperties = {
+  const style: CSSProperties = {
     flex: `${aspectRatio} 1 0%`,
   }
 
@@ -178,7 +179,7 @@ export interface GalleryCardProps {
   deleteImage: (image: GalleryImage) => void
   filesDropper: DragHandlerLike
   errorMessage?: string
-  fileInputRef: React.RefObject<HTMLInputElement | null>
+  fileInputRef: RefObject<HTMLInputElement | null>
   imageMimeTypes?: string[]
   images?: GalleryImage[]
   isSelected?: boolean

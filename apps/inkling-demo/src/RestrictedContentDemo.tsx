@@ -1,7 +1,7 @@
 import { MINIMAL_NODES, RestrictContentPlugin } from '@kobato/inkling'
 import { DemoEditorShell } from '@kobato/inkling-demo/components/DemoEditorShell'
 import { ListItemNode, ListNode } from '@lexical/list'
-import React from 'react'
+import { useMemo } from 'react'
 import { useLocation } from 'react-router'
 
 const RESTRICTED_DEMO_NODES = [...MINIMAL_NODES, ListNode, ListItemNode]
@@ -9,7 +9,7 @@ const RESTRICTED_DEMO_NODES = [...MINIMAL_NODES, ListNode, ListItemNode]
 function useQuery() {
   const { search } = useLocation()
 
-  return React.useMemo(() => new URLSearchParams(search), [search])
+  return useMemo(() => new URLSearchParams(search), [search])
 }
 
 interface RestrictedContentDemoProps {

@@ -3,6 +3,7 @@ import type {
   FileInputRef,
   FileUploaderLike,
 } from '@kobato/inkling-internal/components/ui/cards/card-ui-types'
+import type { ChangeEvent } from 'react'
 
 import AudioFileIcon from '@kobato/inkling-internal/assets/icons/inkling-audio-file.svg?react'
 import FilePlaceholderIcon from '@kobato/inkling-internal/assets/icons/inkling-file-placeholder.svg?react'
@@ -20,8 +21,6 @@ import {
 } from '@kobato/inkling-internal/components/ui/UploadChrome'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { formatVideoDuration } from '@kobato/inkling-internal/nodes/base/nodes/video/format-video-duration'
-import React from 'react'
-
 interface AudioThumbnailProps {
   mimeTypes?: string[]
   src?: string
@@ -171,7 +170,7 @@ function PopulatedAudioCard({
 }: PopulatedAudioCardProps) {
   const { isLoading: isUploading, progress, errors } = thumbnailUploader
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     updateTitle(event.target.value)
   }
 

@@ -2,15 +2,14 @@ import { useCardPickerState, useCardPickerStore } from '@kobato/inkling-internal
 import { resolveCardPicker } from '@kobato/inkling-internal/nodes/cards/host-card-registry'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey } from 'lexical'
-import React from 'react'
-
+import { Fragment, useEffect } from 'react'
 export function CardPickerHostPlugin() {
   const [editor] = useLexicalComposerContext()
   const store = useCardPickerStore()
   const request = useCardPickerState((state) => state.request)
 
   const picker = request === null ? undefined : resolveCardPicker(request.nodeType)
-  React.useEffect(() => {
+  useEffect(() => {
     if (request === null) {
       return
     }
@@ -27,13 +26,13 @@ export function CardPickerHostPlugin() {
     })
   }, [editor, request, store])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       store.setState({ request: null })
     }
   }, [store])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (request !== null && picker === undefined) {
       store.setState({ request: null })
     }
@@ -44,14 +43,14 @@ export function CardPickerHostPlugin() {
   }
 
   return (
-    <React.Fragment key={request.nodeKey}>
+    <Fragment key={request.nodeKey}>
       {picker.render({
         editor,
         nodeKey: request.nodeKey,
         close: () => store.setState({ request: null }),
         fromInsert: request.fromInsert === true,
       })}
-    </React.Fragment>
+    </Fragment>
   )
 }
 

@@ -1,8 +1,7 @@
 import type { EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-datasets'
 
 import { DEFAULT_LABELS, type InklingLabels } from '@kobato/inkling-internal/labels/inkling-labels'
-import React from 'react'
-
+import { createContext } from 'react'
 export interface InklingUiPrefsContextValue {
   darkMode: boolean
   isTKEnabled?: boolean
@@ -15,7 +14,7 @@ export interface InklingUiPrefsContextValue {
   labels: InklingLabels
 }
 
-const InklingUiPrefsContext = React.createContext<InklingUiPrefsContextValue>({
+const InklingUiPrefsContext = createContext<InklingUiPrefsContextValue>({
   darkMode: false,
   labels: DEFAULT_LABELS,
 })

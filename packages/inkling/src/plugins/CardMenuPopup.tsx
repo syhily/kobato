@@ -20,8 +20,18 @@ import {
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { resolveAnchoredPopupPlacement } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { $setSelection } from 'lexical'
-import React from 'react'
-
+import {
+  type Ref,
+  type ReactElement,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 export interface CardMenuPopupHandle {
   openMenu: () => void
   applyButtonVerdict: (verdict: PlusButtonVerdict) => void
@@ -34,7 +44,7 @@ export interface CardMenuPopupProps {
   anchor: 'selection' | 'button'
 
   replaceTriggerParagraph?: boolean
-  ref?: React.Ref<CardMenuPopupHandle>
+  ref?: Ref<CardMenuPopupHandle>
 }
 
 function getTopPosition(elem: Element, positioningParent: HTMLElement): number {
@@ -73,21 +83,21 @@ export function CardMenuPopup({
   anchor: anchorPolicy,
   replaceTriggerParagraph = false,
   ref,
-}: CardMenuPopupProps): React.ReactElement | null {
+}: CardMenuPopupProps): ReactElement | null {
   const isSlash = trigger === 'slash'
   const { containerRef, isOpen, openMenu, closeMenu, insert: sessionInsert, saveCursor } = useCardMenuSession()
 
   const { query, commandParams } = useSlashCardMenuTrigger(editor, { isOpen, closeMenu, saveCursor }, isSlash)
 
-  const [menuNavigator] = React.useState<MenuNavigator>(() => createMenuNavigator())
-  const { selectedItemIndex, scrollToSelectedItem } = React.useSyncExternalStore(
+  const [menuNavigator] = useState<MenuNavigator>(() => createMenuNavigator())
+  const { selectedItemIndex, scrollToSelectedItem } = useSyncExternalStore(
     menuNavigator.subscribe,
     menuNavigator.getSnapshot,
   )
 
-  const [buttonAnchor, setButtonAnchor] = React.useState<{ top: number; range: Range } | null>(null)
+  const [buttonAnchor, setButtonAnchor] = useState<{ top: number; range: Range } | null>(null)
 
-  const getSelectionElement = React.useCallback((): HTMLElement | null => {
+  const getSelectionElement = useCallback((): HTMLElement | null => {
     const anchorNode = window.getSelection()?.anchorNode
 
     if (!anchorNode) {
@@ -101,7 +111,7 @@ export function CardMenuPopup({
     return anchorNode instanceof HTMLElement ? anchorNode : null
   }, [])
 
-  const getPositioningParent = React.useCallback(
+  const getPositioningParent = useCallback(
     (anchorFallback?: Element | null): HTMLElement | null => {
       const mountedParent = containerRef.current?.offsetParent
       if (mountedParent instanceof HTMLElement) {
@@ -134,7 +144,7 @@ export function CardMenuPopup({
     },
   })
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (anchorPolicy === 'selection' && isOpen) {
       updatePopupPosition()
     }
@@ -144,7 +154,7 @@ export function CardMenuPopup({
     commandParams: isSlash ? commandParams : undefined,
     replaceTriggerParagraph,
   })
-  const insert = React.useCallback(
+  const insert = useCallback(
     (insertCommand: AnyLexicalCommand | undefined, params: CardMenuInsertParams = {}): void => {
       if (!insertCommand) {
         return
@@ -154,7 +164,7 @@ export function CardMenuPopup({
     [sessionInsert, insertCardItem],
   )
 
-  const showButton = React.useCallback(
+  const showButton = useCallback(
     (paragraph: Element) => {
       const positioningParent = getPositioningParent(paragraph.parentElement)
       if (!positioningParent) {
@@ -165,12 +175,12 @@ export function CardMenuPopup({
     [getPositioningParent],
   )
 
-  const hideButton = React.useCallback(() => {
+  const hideButton = useCallback(() => {
     setButtonAnchor(null)
     closeMenu()
   }, [closeMenu])
 
-  const applyButtonVerdict = React.useCallback(
+  const applyButtonVerdict = useCallback(
     (verdict: PlusButtonVerdict) => {
       if (verdict.type === 'show') {
         showButton(verdict.paragraph)
@@ -181,7 +191,7 @@ export function CardMenuPopup({
     [showButton, hideButton],
   )
 
-  const applyHoverButtonVerdict = React.useCallback(
+  const applyHoverButtonVerdict = useCallback(
     (verdict: PlusButtonVerdict) => {
       if (isOpen) {
         return
@@ -191,8 +201,8 @@ export function CardMenuPopup({
     [isOpen, applyButtonVerdict],
   )
 
-  const openMenuFromButton = React.useCallback(
-    (event?: React.MouseEvent) => {
+  const openMenuFromButton = useCallback(
+    (event?: MouseEvent) => {
       event?.preventDefault()
 
       editor.update(
@@ -207,7 +217,7 @@ export function CardMenuPopup({
     [editor, buttonAnchor, openMenu],
   )
 
-  const hideButtonOnOutsideSelection = React.useCallback(() => {
+  const hideButtonOnOutsideSelection = useCallback(() => {
     if (!buttonAnchor) {
       return
     }
@@ -222,7 +232,7 @@ export function CardMenuPopup({
     }
   }, [editor, buttonAnchor, isOpen, hideButton, containerRef])
 
-  React.useImperativeHandle(
+  useImperativeHandle(
     ref,
     (): CardMenuPopupHandle => ({
       openMenu,
@@ -233,7 +243,7 @@ export function CardMenuPopup({
     [openMenu, applyButtonVerdict, applyHoverButtonVerdict, hideButtonOnOutsideSelection],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isSlash || !isOpen) {
       return
     }
@@ -249,15 +259,15 @@ export function CardMenuPopup({
     })
   }, [editor, isSlash, isOpen, cardMenu, insert, menuNavigator])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isSlash || !isOpen) {
       return
     }
     return registerMenuArrowsClose({ isOpen: () => isOpen, close: closeMenu })
   }, [isSlash, isOpen, closeMenu])
 
-  const previousCardMenuRef = React.useRef<typeof cardMenu | null>(null)
-  React.useEffect(() => {
+  const previousCardMenuRef = useRef<typeof cardMenu | null>(null)
+  useEffect(() => {
     if (previousCardMenuRef.current === cardMenu) {
       return
     }
@@ -265,7 +275,7 @@ export function CardMenuPopup({
     menuNavigator.reset()
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       menuNavigator.consumeScrollRequest()
     }

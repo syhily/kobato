@@ -5,14 +5,16 @@ import { KeyboardSelectionWithGroups } from '@kobato/inkling-internal/components
 import { LinkInputSearchItem } from '@kobato/inkling-internal/components/ui/LinkInputSearchItem'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
-import React from 'react'
-
+import { useEffect, useEffectEvent } from 'react'
 export function useLinkDropdownOpenedTracking(context: string, enabled: boolean): void {
-  React.useEffect(() => {
+  const trackOpened = useEffectEvent(() => {
     if (enabled) {
       trackEvent('Link dropdown: Opened', { context })
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  })
+
+  useEffect(() => {
+    trackOpened()
   }, [])
 }
 
@@ -20,7 +22,7 @@ export function useLinkDropdownEscape(
   onClose: (() => void) | undefined,
   { swallow = false }: { swallow?: boolean } = {},
 ): void {
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         if (swallow) {

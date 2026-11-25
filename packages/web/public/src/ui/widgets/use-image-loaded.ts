@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Ref, type SyntheticEvent } from 'react'
-
+import {
+  type Ref,
+  type SyntheticEvent,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 export interface ImageLoadedHook {
   ref: (node: HTMLImageElement | null) => void
   loaded: boolean
@@ -10,7 +18,7 @@ function forwardRefValue<T>(ref: Ref<T> | undefined, value: T | null): void {
   if (typeof ref === 'function') {
     ref(value)
   } else if (ref && 'current' in ref) {
-    ;(ref as React.RefObject<T | null>).current = value
+    ;(ref as RefObject<T | null>).current = value
   }
 }
 

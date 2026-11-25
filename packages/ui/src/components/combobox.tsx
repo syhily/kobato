@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { cn } from '@kobato/ui/lib/cn'
@@ -42,7 +42,7 @@ interface ComboboxContentProps<Item = unknown> extends Omit<ComponentProps<typeo
   sideOffset?: number
   inputPlaceholder?: string
   emptyMessage?: string
-  children: (item: Item, index: number) => React.ReactNode
+  children: (item: Item, index: number) => ReactNode
 }
 
 function ComboboxContent<Item>({

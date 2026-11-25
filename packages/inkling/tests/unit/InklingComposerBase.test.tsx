@@ -8,7 +8,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { render } from '@testing-library/react'
-import React from 'react'
+import { useEffect } from 'react'
 import { describe, expect, it } from 'vitest'
 
 function EditorTree() {
@@ -53,7 +53,7 @@ describe('InklingComposerBase', () => {
 
     function EditorStateConsumer() {
       const [editor] = useLexicalComposerContext()
-      React.useEffect(() => {
+      useEffect(() => {
         serialized = editor.getEditorState().toJSON()
       }, [editor])
       return null
@@ -79,7 +79,7 @@ describe('InklingComposerBase', () => {
 
     function NodeMapConsumer() {
       const [editor] = useLexicalComposerContext()
-      React.useEffect(() => {
+      useEffect(() => {
         registeredTypes.push(...getRegisteredNodeMap(editor).keys())
       }, [editor])
       return null

@@ -8,8 +8,7 @@ import type { AnyLexicalCommand } from 'lexical'
 import TrashCardIcon from '@kobato/inkling-internal/assets/icons/inkling-trash.svg?react'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
-import React from 'react'
-
+import { type MouseEvent, type ComponentType, type SVGProps, type ReactNode, useEffect, useRef } from 'react'
 export type CardMenuItemData = ResolvedMenuItem
 export type CardMenuSectionData = MenuSection
 
@@ -24,15 +23,15 @@ function useCardMenuItemChrome<T extends HTMLElement>({
   scrollToItem?: boolean
   stopPropagationOnMouseDown?: boolean
 }) {
-  const itemRef = React.useRef<T | null>(null)
+  const itemRef = useRef<T | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (scrollToItem && itemRef.current) {
       itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
     }
   }, [scrollToItem])
 
-  const handleMouseDown = (event: React.MouseEvent) => {
+  const handleMouseDown = (event: MouseEvent) => {
     if (stopPropagationOnMouseDown) {
       event.stopPropagation()
     }
@@ -50,7 +49,7 @@ function useCardMenuItemChrome<T extends HTMLElement>({
   }
 }
 
-function CardMenuItemIcon({ Icon }: { Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }) {
+function CardMenuItemIcon({ Icon }: { Icon: ComponentType<SVGProps<SVGSVGElement>> }) {
   return (
     <div className="text-grey-900 dark:text-grey-500 flex size-7 shrink-0 items-center justify-center rounded-md bg-white dark:bg-transparent">
       <Icon className="size-[1.8rem]" />
@@ -61,15 +60,15 @@ function CardMenuItemIcon({ Icon }: { Icon: React.ComponentType<React.SVGProps<S
 export interface CardMenuItemProps {
   label?: string
   desc?: string
-  Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   isSelected?: boolean
   scrollToItem?: boolean
   dataTestId?: string
   dataItemId?: number
   shortcut?: string
-  onClick?: (event: React.MouseEvent) => void
+  onClick?: (event: MouseEvent) => void
   onRemove?: () => void
-  customContent?: React.ReactNode
+  customContent?: ReactNode
   'data-inkling-cardmenu-idx'?: number
 }
 
@@ -149,7 +148,7 @@ export const CardMenuItem = ({
 
 export interface CardMenuSectionProps {
   label: string
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 export const CardMenuSection = ({ label, children }: CardMenuSectionProps) => {
@@ -174,12 +173,12 @@ export const CardMenuSection = ({ label, children }: CardMenuSectionProps) => {
 
 export interface CardSnippetItemProps {
   label?: string
-  Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   dataTestId?: string
   dataItemId?: number
   isSelected?: boolean
   scrollToItem?: boolean
-  onClick?: (event: React.MouseEvent) => void
+  onClick?: (event: MouseEvent) => void
   onRemove?: () => void
   closeMenu?: () => void
 }
@@ -203,7 +202,7 @@ export const CardSnippetItem = ({
     stopPropagationOnMouseDown: true,
   })
 
-  const handleSnippetRemove = (event: React.MouseEvent) => {
+  const handleSnippetRemove = (event: MouseEvent) => {
     event.stopPropagation()
     onRemove?.()
     closeMenu?.()
@@ -270,7 +269,7 @@ export const CardMenu = ({
           {section.items.map((item, itemIndex) => {
             const index = sectionStartIndexes[sectionIndex] + itemIndex
             const isSelected = index === selectedItemIndex
-            const onClick = (event: React.MouseEvent): void => {
+            const onClick = (event: MouseEvent): void => {
               event.preventDefault()
               event.stopPropagation()
               insert?.(item.insertCommand, {

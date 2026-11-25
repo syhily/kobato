@@ -3,8 +3,7 @@ import { useWordCountHandle } from '@kobato/inkling-internal/context/WordCountHa
 import { publishWordCountCallback } from '@kobato/inkling-internal/plugins/behaviour/word-count-handle'
 import { createWordCounter, type WordCounter } from '@kobato/inkling-internal/plugins/behaviour/word-counter'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { useContext, useLayoutEffect, useRef } from 'react'
 export const WordCountPlugin = ({
   onChange,
   onSelectionChange,
@@ -16,18 +15,18 @@ export const WordCountPlugin = ({
 } = {}) => {
   const [editor] = useLexicalComposerContext()
   const wordCountHandle = useWordCountHandle()
-  const { wordCountLanguage } = React.useContext(InklingUiPrefsContext)
+  const { wordCountLanguage } = useContext(InklingUiPrefsContext)
   const resolvedLanguage = language ?? wordCountLanguage
-  const documentCounterRef = React.useRef<WordCounter | null>(null)
-  const selectionCounterRef = React.useRef<WordCounter | null>(null)
-  const languageRef = React.useRef(resolvedLanguage)
-  React.useLayoutEffect(() => {
+  const documentCounterRef = useRef<WordCounter | null>(null)
+  const selectionCounterRef = useRef<WordCounter | null>(null)
+  const languageRef = useRef(resolvedLanguage)
+  useLayoutEffect(() => {
     languageRef.current = resolvedLanguage
     documentCounterRef.current?.setLanguage(resolvedLanguage)
     selectionCounterRef.current?.setLanguage(resolvedLanguage)
   }, [resolvedLanguage])
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!onChange) {
       return
     }
@@ -41,7 +40,7 @@ export const WordCountPlugin = ({
     }
   }, [editor, onChange])
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!onSelectionChange) {
       return
     }
@@ -55,7 +54,7 @@ export const WordCountPlugin = ({
     }
   }, [editor, onSelectionChange])
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!onChange && !onSelectionChange && resolvedLanguage === undefined) {
       return
     }

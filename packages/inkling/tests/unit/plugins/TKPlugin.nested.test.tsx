@@ -8,19 +8,19 @@ import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer'
 import { render } from '@testing-library/react'
 import { $createParagraphNode, $createTextNode, $getRoot, $isElementNode, createEditor } from 'lexical'
-import React from 'react'
+import { type ContextType, type ReactNode, useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const NESTED_NODES = [ExtendedTextNode, extendedTextNodeReplacement, TKNode]
 
-const cardContextValue: React.ContextType<typeof CardContext> = {
+const cardContextValue: ContextType<typeof CardContext> = {
   captionHasFocus: false,
   nodeKey: 'card-1',
   setCaptionHasFocus: () => {},
 }
 
-function TestWrapper({ children }: { children: React.ReactNode }) {
-  const [tkHandle] = React.useState(createTKHandle)
+function TestWrapper({ children }: { children: ReactNode }) {
+  const [tkHandle] = useState(createTKHandle)
   return (
     <LexicalComposer
       initialConfig={{

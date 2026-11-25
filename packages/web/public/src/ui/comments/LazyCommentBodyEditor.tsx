@@ -6,8 +6,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { loadInklingLabels, useKobatoInklingLabels } from '@kobato/web-client/editor/inkling-labels'
 import { acquireViewportZoomLock, releaseViewportZoomLock } from '@kobato/web-client/lib/viewport-zoom-lock'
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
-
+import { type PointerEvent, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 const CommentBodyEditor = lazy(() =>
   import('@kobato/web-public/ui/comments/CommentBodyEditor').then((module) => ({
     default: module.CommentBodyEditor,
@@ -178,7 +177,7 @@ function EditorPlaceholder({ disabled, className, onActivate, onPrefetch }: Edit
             'aria-label': t('public.comments.editorLabel'),
             tabIndex: 0,
             onPointerEnter: onPrefetch,
-            onPointerDown: (event: React.PointerEvent) => {
+            onPointerDown: (event: PointerEvent) => {
               event.preventDefault()
               onActivate()
             },

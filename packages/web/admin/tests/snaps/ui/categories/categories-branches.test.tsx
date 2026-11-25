@@ -1,4 +1,5 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
+import type { ReactNode } from 'react'
 
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
@@ -47,7 +48,7 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => children,
+  DndContext: ({ children }: { children: ReactNode }) => children,
   PointerSensor: class PointerSensor {},
   KeyboardSensor: class KeyboardSensor {},
   useSensor: () => ({}),
@@ -55,7 +56,7 @@ vi.mock('@dnd-kit/core', () => ({
   closestCenter: () => ({}),
 }))
 vi.mock('@dnd-kit/sortable', () => ({
-  SortableContext: ({ children }: { children: React.ReactNode }) => children,
+  SortableContext: ({ children }: { children: ReactNode }) => children,
   sortableKeyboardCoordinates: {},
   verticalListSortingStrategy: {},
   useSortable: () => ({

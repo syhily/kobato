@@ -4,11 +4,18 @@ import EmojiPicker from '@kobato/inkling-internal/components/ui/EmojiPicker'
 import Portal from '@kobato/inkling-internal/components/ui/Portal'
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { loadEmojiDataset, type EmojiLocale } from '@kobato/inkling-internal/plugins/behaviour/emoji-datasets'
-import React from 'react'
-
+import {
+  type RefObject,
+  type MouseEvent,
+  type CSSProperties,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 interface EmojiPickerPortalProps {
   onEmojiClick: (emoji: { native?: string }) => void
-  positionRef: React.RefObject<HTMLElement | null>
+  positionRef: RefObject<HTMLElement | null>
 }
 
 interface PickerPosition {
@@ -26,10 +33,10 @@ const EMOJI_PICKER_DATASET_LOADERS: Partial<Record<EmojiLocale, EmojiDataLoader>
 }
 
 const EmojiPickerPortal = ({ onEmojiClick, positionRef }: EmojiPickerPortalProps) => {
-  const [position, setPosition] = React.useState<PickerPosition | null>(null)
-  const { darkMode, emojiLocale } = React.useContext(InklingUiPrefsContext)
+  const [position, setPosition] = useState<PickerPosition | null>(null)
+  const { darkMode, emojiLocale } = useContext(InklingUiPrefsContext)
 
-  const handleScroll = React.useCallback(() => {
+  const handleScroll = useCallback(() => {
     if (positionRef.current) {
       const rect = positionRef.current.getBoundingClientRect()
       const windowHeight = window.innerHeight
@@ -44,7 +51,7 @@ const EmojiPickerPortal = ({ onEmojiClick, positionRef }: EmojiPickerPortalProps
     }
   }, [positionRef])
 
-  React.useEffect(() => {
+  useEffect(() => {
     handleScroll()
     document.addEventListener('scroll', handleScroll, true)
     return () => {
@@ -57,11 +64,11 @@ const EmojiPickerPortal = ({ onEmojiClick, positionRef }: EmojiPickerPortalProps
   }
   const { x, y } = position
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
   }
 
-  const style: React.CSSProperties = {
+  const style: CSSProperties = {
     left: x,
     top: y,
     position: 'fixed',

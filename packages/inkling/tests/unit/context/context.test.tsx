@@ -17,7 +17,7 @@ import {
   type SharedEditorStateContextValue,
 } from '@kobato/inkling-internal/context/SharedEditorStateContext'
 import { render } from '@testing-library/react'
-import React from 'react'
+import { type Context, useContext } from 'react'
 import { describe, expect, it } from 'vitest'
 
 describe('host-integration channels', () => {
@@ -59,10 +59,10 @@ describe('host-integration channels', () => {
 
 describe('InklingCollaborationContext', () => {
   it('provides the default context value', () => {
-    let captured: typeof InklingCollaborationContext extends React.Context<infer V> ? V : never
+    let captured: typeof InklingCollaborationContext extends Context<infer V> ? V : never
 
     function Consumer() {
-      captured = React.useContext(InklingCollaborationContext)
+      captured = useContext(InklingCollaborationContext)
       return null
     }
 
@@ -74,10 +74,10 @@ describe('InklingCollaborationContext', () => {
 
 describe('InklingUiPrefsContext', () => {
   it('provides the default context value', () => {
-    let captured: typeof InklingUiPrefsContext extends React.Context<infer V> ? V : never
+    let captured: typeof InklingUiPrefsContext extends Context<infer V> ? V : never
 
     function Consumer() {
-      captured = React.useContext(InklingUiPrefsContext)
+      captured = useContext(InklingUiPrefsContext)
       return null
     }
 
@@ -89,10 +89,10 @@ describe('InklingUiPrefsContext', () => {
 
 describe('CardContext', () => {
   it('provides the default context value', () => {
-    let captured: typeof CardContext extends React.Context<infer V> ? V : never
+    let captured: typeof CardContext extends Context<infer V> ? V : never
 
     function Consumer() {
-      captured = React.useContext(CardContext)
+      captured = useContext(CardContext)
       return null
     }
 

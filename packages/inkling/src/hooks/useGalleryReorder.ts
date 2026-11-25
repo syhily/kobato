@@ -4,6 +4,7 @@ import type {
   DroppablePosition,
   DropResolution,
 } from '@kobato/inkling-internal/utils/draggable/DragDropContainer'
+import type { Dispatch, SetStateAction } from 'react'
 
 import useDropTarget from '@kobato/inkling-internal/hooks/useDropTarget'
 import { pick } from '@kobato/inkling-internal/utils'
@@ -17,8 +18,6 @@ import {
   resolveDrop,
   resolveReorder,
 } from '@kobato/inkling-internal/utils/draggable/reorder-rules'
-import React from 'react'
-
 export type { GalleryImage }
 
 interface UseGalleryReorderOptions {
@@ -30,7 +29,7 @@ interface UseGalleryReorderOptions {
 }
 
 export interface UseGalleryReorderResult {
-  setContainerRef: React.Dispatch<React.SetStateAction<HTMLElement | null>>
+  setContainerRef: Dispatch<SetStateAction<HTMLElement | null>>
   isDraggedOver: boolean
 }
 

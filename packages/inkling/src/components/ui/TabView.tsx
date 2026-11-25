@@ -1,6 +1,4 @@
-import type React from 'react'
-
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 
 const TabView = ({
   tabs,
@@ -9,7 +7,7 @@ const TabView = ({
 }: {
   tabs: { id: string; label: string }[]
   defaultTab?: string
-  tabContent: Record<string, React.ReactNode>
+  tabContent: Record<string, ReactNode>
 }) => {
   const [activeTab, setActiveTab] = useState(defaultTab ?? tabs[0]?.id ?? '')
 

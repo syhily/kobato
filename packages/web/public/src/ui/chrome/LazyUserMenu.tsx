@@ -4,8 +4,7 @@ import { avatarImageUrl } from '@kobato/assets/avatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Suspense, lazy, useState } from 'react'
-
+import { type MouseEvent, Suspense, lazy, useState } from 'react'
 const UserMenu = lazy(() =>
   import('@kobato/web-public/ui/chrome/UserMenu').then((module) => ({ default: module.UserMenu })),
 )
@@ -35,7 +34,7 @@ export function LazyUserMenu(props: LazyUserMenuProps) {
 interface UserMenuTriggerProps {
   currentUser: HeaderCurrentUser
   unreadCount: number | null
-  onClick?: (event: React.MouseEvent) => void
+  onClick?: (event: MouseEvent) => void
 }
 
 function UserMenuTrigger({ currentUser, unreadCount, onClick }: UserMenuTriggerProps) {

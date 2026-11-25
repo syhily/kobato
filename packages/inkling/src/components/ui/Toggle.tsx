@@ -1,5 +1,4 @@
-import React from 'react'
-
+import type { ChangeEvent } from 'react'
 export interface ToggleProps {
   isChecked?: boolean
   onChange?: (checked: boolean) => void
@@ -7,7 +6,7 @@ export interface ToggleProps {
 }
 
 export function Toggle({ isChecked = false, onChange, dataTestId }: ToggleProps) {
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     onChange?.(event.target.checked)
   }
 

@@ -1,11 +1,10 @@
 import { registerTableBehaviour } from '@kobato/inkling-internal/plugins/behaviour/table'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { TableNode } from '@lexical/table'
-import React from 'react'
-
+import { useEffect } from 'react'
 export const InklingTablePlugin = () => {
   const [editor] = useLexicalComposerContext()
-  React.useEffect(() => {
+  useEffect(() => {
     if (!editor.hasNode(TableNode)) {
       return undefined
     }

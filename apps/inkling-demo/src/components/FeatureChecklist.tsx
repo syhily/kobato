@@ -1,5 +1,4 @@
-import React from 'react'
-
+import { useState } from 'react'
 const SECTIONS: Array<{ title: string; items: string[] }> = [
   {
     title: 'On this page already',
@@ -37,7 +36,7 @@ const SECTIONS: Array<{ title: string; items: string[] }> = [
 ]
 
 export default function FeatureChecklist() {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useState(false)
 
   return (
     <>

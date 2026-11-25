@@ -6,7 +6,7 @@ import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour
 import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 import { cardDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'
-import React from 'react'
+import { type ReactNode, createElement } from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockContainer = {
@@ -28,8 +28,8 @@ function makeWrapper(withHandler: boolean) {
   if (withHandler) {
     dragDropHandle.setState({ handler: dragDropHandler })
   }
-  return ({ children }: { children: React.ReactNode }) =>
-    React.createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
+  return ({ children }: { children: ReactNode }) =>
+    createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
 }
 
 const stableCanDrop = () => true
@@ -133,8 +133,8 @@ describe('useDropTarget', () => {
 
   it('registers when the handler arrives after the hook mounted', async () => {
     const dragDropHandle = createDragDropHandle()
-    const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
     const { result } = renderHook(
       () =>
         useDropTarget({

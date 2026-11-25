@@ -1,5 +1,4 @@
-import React from 'react'
-
+import { useCallback, useEffect, useRef, useState } from 'react'
 export interface CardMenuSessionSelection {
   removeAllRanges: () => void
   addRange: (range: Range) => void
@@ -17,15 +16,15 @@ interface OpenMenuOptions {
 }
 
 export function useCardMenuSession({ getSelection = () => document.getSelection() }: UseCardMenuSessionOptions = {}) {
-  const [isOpen, setIsOpen] = React.useState(false)
-  const cachedRange = React.useRef<Range | null>(null)
-  const containerRef = React.useRef<HTMLDivElement | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const cachedRange = useRef<Range | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
-  const saveCursor = React.useCallback((range: Range | null) => {
+  const saveCursor = useCallback((range: Range | null) => {
     cachedRange.current = range
   }, [])
 
-  const restoreCursor = React.useCallback(() => {
+  const restoreCursor = useCallback(() => {
     if (!cachedRange.current) {
       return
     }
@@ -36,7 +35,7 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     }
   }, [getSelection])
 
-  const openMenu = React.useCallback(
+  const openMenu = useCallback(
     ({ anchor }: OpenMenuOptions = {}) => {
       if (anchor) {
         saveCursor(anchor)
@@ -47,7 +46,7 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [saveCursor, restoreCursor],
   )
 
-  const closeMenu = React.useCallback(
+  const closeMenu = useCallback(
     ({ resetCursor = false }: CloseMenuOptions = {}) => {
       if (resetCursor) {
         restoreCursor()
@@ -58,7 +57,7 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [restoreCursor],
   )
 
-  const insert = React.useCallback(
+  const insert = useCallback(
     (doInsert: () => void) => {
       doInsert()
       closeMenu()
@@ -66,7 +65,7 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     [closeMenu],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       return
     }
@@ -83,7 +82,7 @@ export function useCardMenuSession({ getSelection = () => document.getSelection(
     }
   }, [isOpen, closeMenu])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       return
     }

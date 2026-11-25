@@ -23,8 +23,7 @@ import {
 import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { useCallback, useEffect, useMemo, useState } from 'react'
 function noResultOptions(noResultsLabel: string): ListOptionSection[] {
   return [
     {
@@ -42,24 +41,24 @@ interface AtLinkPluginProps {
 export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps) => {
   const [editor] = useLexicalComposerContext()
   const labels = useInklingLabels()
-  const [{ focusedNode, query }, setSession] = React.useState<AtLinkSessionSnapshot>({
+  const [{ focusedNode, query }, setSession] = useState<AtLinkSessionSnapshot>({
     focusedNode: null,
     query: '',
   })
-  const searchOptions = React.useMemo(
+  const searchOptions = useMemo(
     () => ({ noResultOptions: () => noResultOptions(labels['search.noResults']) }),
     [labels],
   )
   const { isSearching, listOptions } = useSearchLinks(query, searchLinks, searchOptions)
 
-  React.useEffect(() => registerAtLinkInsertion(editor), [editor])
+  useEffect(() => registerAtLinkInsertion(editor), [editor])
 
-  React.useEffect(() => registerAtLinkSession(editor, { onSessionChange: setSession }), [editor])
+  useEffect(() => registerAtLinkSession(editor, { onSessionChange: setSession }), [editor])
 
-  React.useEffect(() => registerAtLinkGuards(editor), [editor])
-  React.useEffect(() => registerAtLinkNodeTransform(editor), [editor])
+  useEffect(() => registerAtLinkGuards(editor), [editor])
+  useEffect(() => registerAtLinkNodeTransform(editor), [editor])
 
-  const onItemSelect = React.useCallback(
+  const onItemSelect = useCallback(
     (item?: ListOptionItem) => {
       editor.update(() => {
         if (!item?.value || !focusedNode) {

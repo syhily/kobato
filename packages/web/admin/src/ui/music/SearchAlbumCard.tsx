@@ -1,4 +1,5 @@
 import type { MetingSearchHit } from '@kobato/api/contracts/admin/music'
+import type { MouseEvent } from 'react'
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -18,14 +19,14 @@ export interface SearchAlbumCardProps {
 
 export function SearchAlbumCard({ hit, adding, added, isCurrent, isPlaying, onAdd, onPreview }: SearchAlbumCardProps) {
   const { t } = useI18n()
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = (e: MouseEvent) => {
     e.stopPropagation()
     if (!adding && !added) {
       onAdd(hit)
     }
   }
 
-  const handlePreview = (e: React.MouseEvent) => {
+  const handlePreview = (e: MouseEvent) => {
     e.stopPropagation()
     onPreview(hit)
   }

@@ -5,8 +5,7 @@ import SearchIcon from '@kobato/inkling-internal/assets/icons/inkling-search.svg
 import UploadIcon from '@kobato/inkling-internal/assets/icons/inkling-upload-fill.svg?react'
 import { Loader } from '@kobato/inkling-internal/components/ui/file-selectors/Gif/Loader'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React, { useEffect, useRef } from 'react'
-
+import { type ChangeEvent, useEffect, useRef, useSyncExternalStore } from 'react'
 export interface LibrarySelectorProps {
   browser: LibraryBrowser<LibraryImageItem>
   onPick: (item: LibraryImageItem) => void
@@ -17,7 +16,7 @@ export interface LibrarySelectorProps {
 const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibrarySelectorProps) => {
   const labels = useInklingLabels()
   const selectorRef = useRef<HTMLDivElement | null>(null)
-  const snapshot = React.useSyncExternalStore(browser.subscribe, browser.getSnapshot)
+  const snapshot = useSyncExternalStore(browser.subscribe, browser.getSnapshot)
   const { items, isLoading, error } = snapshot
 
   useEffect(() => {
@@ -36,7 +35,7 @@ const LibrarySelector = ({ browser, onPick, onClickOutside, onUpload }: LibraryS
     }
   }, [onClickOutside])
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
     browser.dispatch({ type: 'search', term: e.target.value })
   }
 

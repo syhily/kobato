@@ -4,11 +4,10 @@ import {
 } from '@kobato/inkling-internal/plugins/behaviour/math-inline'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 export function MathInlinePlugin() {
   const [editor] = useLexicalComposerContext()
-  React.useEffect(() => {
+  useEffect(() => {
     const onDoubleClick = (event: MouseEvent) => {
       dispatchEditMathInlineAtTarget(editor, event.target)
     }

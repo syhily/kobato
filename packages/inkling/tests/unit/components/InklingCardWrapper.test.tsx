@@ -12,7 +12,7 @@ import { mockComposerContext } from '@kobato/inkling/tests/utils/composer-contex
 import { createHostIntegrationValue } from '@kobato/inkling/tests/utils/host-integration-context'
 import { render, screen } from '@testing-library/react'
 import { $getRoot, createEditor, type LexicalEditor, type NodeKey } from 'lexical'
-import React from 'react'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
@@ -36,7 +36,7 @@ function addHtmlNode(editor: LexicalEditor, dataset: Record<string, unknown> = {
 
 function SelectCard({ nodeKey }: { nodeKey: NodeKey }) {
   const store = useCardSelectionStore()
-  React.useEffect(() => {
+  useEffect(() => {
     store.setState({ selectedCardKey: nodeKey })
   }, [nodeKey, store])
   return null

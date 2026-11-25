@@ -17,7 +17,7 @@ import {
   createEditor,
   type LexicalEditor,
 } from 'lexical'
-import React, { useMemo } from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function createTestEditor() {
@@ -29,8 +29,8 @@ function createTestEditor() {
   })
 }
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: LexicalEditor }) {
-  const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: LexicalEditor }) {
+  const contextValue = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )

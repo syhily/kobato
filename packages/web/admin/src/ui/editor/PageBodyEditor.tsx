@@ -14,14 +14,13 @@ import { useFocusModePreference } from '@kobato/web-admin/ui/editor/use-focus-mo
 import { blockQuoteAsideCycle } from '@kobato/web-client/editor/block-quote-aside-cycle'
 import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-client/editor/editor-surface'
 import { FocusIcon } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
-
+import { type ReactNode, useEffect, useMemo } from 'react'
 export interface PageBodyEditorProps {
   initialBody: LexicalEditorState
   bodyKey: string
   onBodyChange: (body: LexicalEditorState) => void
   disabled?: boolean
-  header?: React.ReactNode
+  header?: ReactNode
 }
 
 export function PageBodyEditor(props: PageBodyEditorProps) {
@@ -44,8 +43,7 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
   const { t, localizeMessage } = useI18n()
-  // oxlint-disable-next-line react-hooks/exhaustive-deps
-  const cardConfig = useMemo(() => makePageEditorCardConfig(t, localizeMessage), [t])
+  const cardConfig = useMemo(() => makePageEditorCardConfig(t, localizeMessage), [t, localizeMessage])
   const [focusMode, toggleFocusMode] = useFocusModePreference()
   const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
     initialBody,

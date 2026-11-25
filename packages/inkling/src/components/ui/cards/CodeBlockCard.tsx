@@ -8,9 +8,8 @@ import {
 import { LazyCardEditor } from '@kobato/inkling-internal/components/ui/cards/LazyCardEditor'
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
-const LazyCodeEditor = React.lazy(() =>
+import { lazy, useContext } from 'react'
+const LazyCodeEditor = lazy(() =>
   import('@kobato/inkling-internal/components/ui/cards/CodeBlockEditor').then((module) => ({
     default: module.CodeEditor,
   })),
@@ -61,7 +60,7 @@ export function CodeBlockCard({
   onEscape,
 }: CodeBlockCardProps) {
   const labels = useInklingLabels()
-  const { codeEditor } = React.useContext(InklingUiPrefsContext)
+  const { codeEditor } = useContext(InklingUiPrefsContext)
 
   if (isEditing) {
     if (codeEditor === 'plain') {

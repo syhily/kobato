@@ -1,8 +1,7 @@
 import type { ExternalControlAPI } from '@kobato/inkling'
-import type { MouseEvent as ReactMouseEvent } from 'react'
 
 import { $getRoot, $isDecoratorNode } from 'lexical'
-import React from 'react'
+import { type MouseEvent as ReactMouseEvent, type RefObject, useCallback, useRef } from 'react'
 
 const GUARD_ATTRIBUTES = ['data-lexical-decorator', 'data-inkling-slash-menu', 'data-inkling-portal']
 
@@ -15,17 +14,17 @@ export function useFocusBelowCanvas({
   containerRef,
 }: {
   editorAPI: ExternalControlAPI | null
-  containerRef: React.RefObject<HTMLDivElement | null>
+  containerRef: RefObject<HTMLDivElement | null>
 }) {
-  const skipFocusEditor = React.useRef(false)
+  const skipFocusEditor = useRef(false)
 
-  const onMouseDown = React.useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+  const onMouseDown = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.target instanceof Element && clickedOnGuard(event.target)) {
       skipFocusEditor.current = true
     }
   }, [])
 
-  const onClick = React.useCallback(
+  const onClick = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
       if (!(event.target instanceof Element)) {
         skipFocusEditor.current = false

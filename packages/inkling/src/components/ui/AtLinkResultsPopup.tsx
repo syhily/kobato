@@ -8,8 +8,7 @@ import {
 import { useSelectionAnchoredPopup } from '@kobato/inkling-internal/hooks/useSelectionAnchoredPopup'
 import { createNodeElementAnchor } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { useCallback, useMemo, useRef } from 'react'
 interface AtLinkResultsPopupProps {
   atLinkNode: LexicalNode
   isSearching?: boolean
@@ -23,12 +22,12 @@ export function AtLinkResultsPopup({ atLinkNode, isSearching, listOptions, query
 
   useLinkDropdownOpenedTracking('at-link', !query)
 
-  const popupRef = React.useRef<HTMLDivElement | null>(null)
+  const popupRef = useRef<HTMLDivElement | null>(null)
 
   const testId = 'at-link-results'
 
-  const anchor = React.useMemo(() => createNodeElementAnchor(editor, atLinkNode.getKey()), [editor, atLinkNode])
-  const containerRect = React.useCallback(() => editor.getRootElement()?.getBoundingClientRect() ?? null, [editor])
+  const anchor = useMemo(() => createNodeElementAnchor(editor, atLinkNode.getKey()), [editor, atLinkNode])
+  const containerRect = useCallback(() => editor.getRootElement()?.getBoundingClientRect() ?? null, [editor])
   useSelectionAnchoredPopup({ editor, popupRef, anchor, containerRect })
 
   return (

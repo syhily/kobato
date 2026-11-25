@@ -15,7 +15,7 @@ import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { render, waitFor } from '@testing-library/react'
-import React from 'react'
+import { useContext } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lexical/react/LexicalCollaborationPlugin', () => ({
@@ -171,7 +171,7 @@ describe('InklingComposer', function () {
     let factory: LexicalProviderFactory | undefined
 
     function FactoryConsumer() {
-      const { createWebsocketProvider } = React.useContext(InklingCollaborationContext)
+      const { createWebsocketProvider } = useContext(InklingCollaborationContext)
       factory = createWebsocketProvider
       return null
     }
@@ -221,7 +221,7 @@ describe('InklingComposer', function () {
     let factory: LexicalProviderFactory | undefined
 
     function FactoryConsumer() {
-      factory = React.useContext(InklingCollaborationContext).createWebsocketProvider
+      factory = useContext(InklingCollaborationContext).createWebsocketProvider
       return null
     }
 
@@ -309,7 +309,7 @@ describe('normalizeInitialEditorState', () => {
 })
 
 function PrefsProbe({ onValue }: { onValue: (value: { wordCountLanguage?: string; emojiLocale?: string }) => void }) {
-  const prefs = React.useContext(InklingUiPrefsContext)
+  const prefs = useContext(InklingUiPrefsContext)
   onValue(prefs)
   return null
 }

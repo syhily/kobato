@@ -9,13 +9,12 @@ import { markdownToSanitizedHtml } from '@kobato/inkling-internal/plugins/behavi
 import { $insertDataTransferForRichText } from '@lexical/clipboard'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_LOW } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 export const MarkdownPastePlugin = () => {
   const [editor] = useLexicalComposerContext()
   const modifierState = getModifierState(editor)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof requestIdleCallback === 'function') {
       const handle = requestIdleCallback(() => void loadPasteDialect())
       return () => cancelIdleCallback(handle)
@@ -24,7 +23,7 @@ export const MarkdownPastePlugin = () => {
     return () => clearTimeout(timeout)
   }, [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return editor.registerCommand(
       PASTE_MARKDOWN_COMMAND,
       ({ text, allowBr }) => {

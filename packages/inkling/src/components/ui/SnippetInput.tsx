@@ -7,11 +7,10 @@ import {
   slotToItemIndex,
 } from '@kobato/inkling-internal/components/ui/SnippetInput/snippet-navigator'
 import { type SnippetItem } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
-import React, { useRef, useState } from 'react'
-
+import { type ChangeEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 interface SnippetInputProps {
   value?: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onCreateSnippet?: () => void
   onUpdateSnippet?: (name: string) => void
   onClose?: () => void
@@ -30,7 +29,7 @@ export function SnippetInput({
   const [activeSlot, setActiveSlot] = useState(0)
   const isCreateButtonActive = activeSlot === 0
   const activeMenuItem = slotToItemIndex(activeSlot)
-  const suggestedList = React.useMemo(
+  const suggestedList = useMemo(
     () => snippets.filter((snippet) => snippet.name.toLowerCase().includes(value.toLowerCase())),
     [value, snippets],
   )
@@ -41,7 +40,7 @@ export function SnippetInput({
     setActiveSlot(initialSlot(suggestedList.length))
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target
       if (snippetRef.current && target instanceof Node && !snippetRef.current.contains(target)) {
@@ -55,7 +54,7 @@ export function SnippetInput({
     }
   }, [onClose])
 
-  const handleInputKeyDown = (event: React.KeyboardEvent) => {
+  const handleInputKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.stopPropagation()
       onClose?.()

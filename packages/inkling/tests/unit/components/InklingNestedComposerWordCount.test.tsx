@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import InklingNestedComposer from '@kobato/inkling-internal/components/InklingNestedComposer'
 import InklingCollaborationContext from '@kobato/inkling-internal/context/InklingCollaborationContext'
 import { WordCountHandleContext } from '@kobato/inkling-internal/context/WordCountHandleContext'
@@ -9,11 +11,10 @@ import {
 import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
 import { act, render } from '@testing-library/react'
 import { createEditor } from 'lexical'
-import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lexical/react/LexicalNestedComposer', () => ({
-  LexicalNestedComposer: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  LexicalNestedComposer: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 vi.mock('@lexical/react/LexicalCollaborationContext', () => ({
   useCollaborationContext: () => ({ isCollabActive: false }),

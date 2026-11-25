@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react'
+
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { SearchIconButton } from '@kobato/web-public/ui/Search'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -8,14 +10,14 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('motion/react', () => {
   const MOTION_ONLY_PROPS = new Set(['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap'])
-  const MotionStub = ({ children, ...rest }: { children?: React.ReactNode } & Record<string, unknown>) => {
+  const MotionStub = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) => {
     for (const key of MOTION_ONLY_PROPS) {
       delete rest[key]
     }
     return <div {...rest}>{children}</div>
   }
   return {
-    AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
     motion: new Proxy({}, { get: () => MotionStub }),
   }
 })

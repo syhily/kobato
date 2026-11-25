@@ -1,3 +1,5 @@
+import type { SVGProps } from 'react'
+
 import {
   CardMenu,
   CardMenuItem,
@@ -5,7 +7,6 @@ import {
   CardSnippetItem,
 } from '@kobato/inkling-internal/components/ui/CardMenu'
 import { fireEvent, render, screen } from '@testing-library/react'
-import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('CardMenuItem', () => {
@@ -169,7 +170,7 @@ describe('CardMenu', () => {
   })
 
   it('renders the snippet item icon', () => {
-    const SnippetIcon = (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="snippet-icon" {...props} />
+    const SnippetIcon = (props: SVGProps<SVGSVGElement>) => <svg data-testid="snippet-icon" {...props} />
     const sections = [
       {
         label: 'Snippets',

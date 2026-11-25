@@ -1,21 +1,20 @@
 import { useInklingHostEssentials } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
-import React from 'react'
-
+import { type ReactNode, type ErrorInfo, Component } from 'react'
 interface InklingErrorBoundaryInnerProps {
-  children?: React.ReactNode
-  fallback: React.ReactNode
-  onError: (error: unknown, info: React.ErrorInfo) => void
+  children?: ReactNode
+  fallback: ReactNode
+  onError: (error: unknown, info: ErrorInfo) => void
 }
 
-class InklingErrorBoundaryInner extends React.Component<InklingErrorBoundaryInnerProps, { error: unknown }> {
+class InklingErrorBoundaryInner extends Component<InklingErrorBoundaryInnerProps, { error: unknown }> {
   state = { error: null }
 
   static getDerivedStateFromError(error: unknown) {
     return { error }
   }
 
-  componentDidCatch(error: unknown, info: React.ErrorInfo) {
+  componentDidCatch(error: unknown, info: ErrorInfo) {
     this.props.onError(error, info)
   }
 
@@ -27,7 +26,7 @@ class InklingErrorBoundaryInner extends React.Component<InklingErrorBoundaryInne
   }
 }
 
-export default function InklingErrorBoundary({ children }: { children: React.ReactNode }) {
+export default function InklingErrorBoundary({ children }: { children: ReactNode }) {
   const { onError } = useInklingHostEssentials()
   const labels = useInklingLabels()
 

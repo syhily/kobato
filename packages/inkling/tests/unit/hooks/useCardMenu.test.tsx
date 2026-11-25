@@ -15,7 +15,7 @@ import {
   createEditor,
   type LexicalEditor,
 } from 'lexical'
-import React from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const INSERT_TEST_COMMAND = createCommand('INSERT_TEST_COMMAND')
@@ -31,8 +31,8 @@ function createTestEditor(): LexicalEditor {
 
 function createLabelsWrapper(labels: InklingLabelsInput) {
   const hostValue = createHostIntegrationValue({ cardConfig: {} })
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    const prefsValue = React.useMemo(() => ({ darkMode: false, labels: resolveLabels(labels) }), [])
+  return function Wrapper({ children }: { children: ReactNode }) {
+    const prefsValue = useMemo(() => ({ darkMode: false, labels: resolveLabels(labels) }), [])
     return (
       <InklingHostIntegrationProvider value={hostValue}>
         <InklingUiPrefsContext.Provider value={prefsValue}>{children}</InklingUiPrefsContext.Provider>

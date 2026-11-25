@@ -1,8 +1,7 @@
 import type { LexicalProviderFactory } from '@kobato/inkling-internal/context/InklingCollaborationContext'
 
 import { createLazyProviderFactory } from '@kobato/inkling-internal/services/lazy-collaboration'
-import React from 'react'
-
+import { useEffect, useState } from 'react'
 export function useCollaborationProviderFactory({
   enabled,
   endpoint,
@@ -14,10 +13,10 @@ export function useCollaborationProviderFactory({
   docId?: string
   debug?: boolean
 }): LexicalProviderFactory | null {
-  const [session] = React.useState(() => createLazyProviderFactory())
-  const [createWebsocketProvider, setCreateWebsocketProvider] = React.useState<LexicalProviderFactory | null>(null)
+  const [session] = useState(() => createLazyProviderFactory())
+  const [createWebsocketProvider, setCreateWebsocketProvider] = useState<LexicalProviderFactory | null>(null)
 
-  const [prevEnabled, setPrevEnabled] = React.useState(enabled)
+  const [prevEnabled, setPrevEnabled] = useState(enabled)
   if (prevEnabled !== enabled) {
     setPrevEnabled(enabled)
     if (!enabled) {
@@ -25,7 +24,7 @@ export function useCollaborationProviderFactory({
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!enabled) {
       return
     }

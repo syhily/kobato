@@ -33,7 +33,7 @@ import { NavigationSplash } from '@kobato/web-public/ui/chrome/NavigationSplash'
 import { RumConsentBanner } from '@kobato/web-public/ui/chrome/RumConsentBanner'
 import { LocaleSyncProvider } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useLayoutEffect, useState } from 'react'
+import { type ReactNode, Suspense, lazy, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 import '@kobato/ui/styles/ui.css'
@@ -129,7 +129,7 @@ export function shouldRevalidate({
   return catalogScopeForPathname(currentUrl.pathname) !== catalogScopeForPathname(nextUrl.pathname)
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   const rootData = useRouteLoaderData<{
     admin?: boolean
     theme?: 'dark' | 'light' | null

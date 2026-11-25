@@ -12,8 +12,7 @@ import WordCountPlugin from '@kobato/inkling-internal/plugins/WordCountPlugin'
 import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalNestedComposer, type LexicalNestedComposerProps } from '@lexical/react/LexicalNestedComposer'
-import React from 'react'
-
+import { useContext } from 'react'
 export interface InklingNestedComposerProps extends Pick<
   LexicalNestedComposerProps,
   'initialEditor' | 'initialNodes' | 'initialTheme' | 'skipCollabChecks' | 'skipEditableListener' | 'children'
@@ -32,7 +31,7 @@ const InklingNestedComposer = ({
   children,
 }: InklingNestedComposerProps) => {
   const { isCollabActive } = useCollaborationContext()
-  const { createWebsocketProvider } = React.useContext(InklingCollaborationContext)
+  const { createWebsocketProvider } = useContext(InklingCollaborationContext)
 
   const wordCountOnChange = useWordCountCallback()
   const wordCountOnSelectionChange = useWordCountSelectionCallback()

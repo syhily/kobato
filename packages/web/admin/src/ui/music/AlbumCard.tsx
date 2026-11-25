@@ -1,4 +1,5 @@
 import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
+import type { MouseEvent } from 'react'
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -18,7 +19,7 @@ export function AlbumCard({ music }: AlbumCardProps) {
   const isCurrent = currentTrack?.id === music.id
   const isCurrentPlaying = isCurrent && isPlaying
 
-  const handlePlay = (e: React.MouseEvent) => {
+  const handlePlay = (e: MouseEvent) => {
     e.stopPropagation()
     if (isCurrent) {
       toggle()

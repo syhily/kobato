@@ -4,8 +4,7 @@ import EmojiPickerReact, {
   type EmojiClickData,
   type EmojiDataLoader,
 } from 'emoji-picker-react'
-import React from 'react'
-
+import { useCallback } from 'react'
 export interface EmojiPickerProps {
   colorScheme?: 'light' | 'dark' | 'auto'
   height: number
@@ -21,7 +20,7 @@ export default function EmojiPicker({
   onEmojiSelect,
   emojiData,
 }: EmojiPickerProps) {
-  const handleEmojiClick = React.useCallback(
+  const handleEmojiClick = useCallback(
     (clicked: EmojiClickData) => {
       onEmojiSelect?.({ native: clicked.emoji })
     },

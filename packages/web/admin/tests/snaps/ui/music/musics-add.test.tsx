@@ -1,4 +1,5 @@
 import type { MetingSearchHit } from '@kobato/api/contracts/admin/music'
+import type { ReactNode, ElementType } from 'react'
 
 import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
@@ -96,8 +97,8 @@ vi.mock('motion/react', async () => {
             children,
             as,
             ...rest
-          }: { children?: React.ReactNode; as?: string } & Record<string, unknown>) => {
-            const Tag = (as ?? 'div') as React.ElementType
+          }: { children?: ReactNode; as?: string } & Record<string, unknown>) => {
+            const Tag = (as ?? 'div') as ElementType
             for (const key of MOTION_ONLY_PROPS) {
               delete rest[key]
             }

@@ -1,4 +1,5 @@
 import type { BaseHeaderNode } from '@kobato/inkling-internal/nodes/base/nodes/header/HeaderNode'
+import type { FocusEvent } from 'react'
 
 export type HeaderNodeWriter = (update: (node: BaseHeaderNode) => void) => void
 
@@ -33,7 +34,7 @@ export function headerFieldWriter(write: HeaderNodeWriter) {
 
     blurFallback:
       (field: 'buttonText' | 'buttonUrl', fallback: string) =>
-      (event: React.FocusEvent<HTMLInputElement>): void => {
+      (event: FocusEvent<HTMLInputElement>): void => {
         if (!event.target.value) {
           write((node) => {
             node[field] = fallback

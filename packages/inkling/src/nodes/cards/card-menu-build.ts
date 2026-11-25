@@ -5,6 +5,7 @@ import type {
   SnippetSettings,
 } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import type { AnyLexicalCommand } from 'lexical'
+import type { ComponentType, SVGProps } from 'react'
 
 import SnippetCardIcon from '@kobato/inkling-internal/assets/icons/inkling-card-type-snippet.svg?react'
 import { INSERT_SNIPPET_COMMAND } from '@kobato/inkling-internal/nodes/cards/card-commands'
@@ -14,7 +15,7 @@ interface MenuItemBase {
   label: string
   labelKey?: string
   desc?: string
-  Icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  Icon?: ComponentType<SVGProps<SVGSVGElement>>
   insertCommand?: AnyLexicalCommand
   matches?: ((query: string, label: string) => boolean) | string[]
   priority?: number

@@ -4,14 +4,13 @@ import { $getSelectionRangeRect } from '@kobato/inkling-internal/utils/$getSelec
 import { getScrollAncestor } from '@kobato/inkling-internal/utils/scroll-ancestor'
 import { setFloatingElemPosition } from '@kobato/inkling-internal/utils/set-floating-elem-position'
 import { $getSelection, type LexicalEditor } from 'lexical'
-import React from 'react'
-
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo } from 'react'
 interface FloatingToolbarProps {
   anchorElem: HTMLElement
-  children?: React.ReactNode
+  children?: ReactNode
   editor: LexicalEditor
   isVisible?: boolean
-  toolbarRef?: React.RefObject<HTMLDivElement | null>
+  toolbarRef?: RefObject<HTMLDivElement | null>
   targetElem?: HTMLElement | null
   onReposition?: () => void
   shouldReposition?: boolean
@@ -29,7 +28,7 @@ export default function FloatingToolbar({
   shouldReposition = true,
   controlOpacity,
 }: FloatingToolbarProps) {
-  const updateToolbarPosition = React.useCallback(
+  const updateToolbarPosition = useCallback(
     (reposition = true) => {
       editor.update(() => {
         const toolbarElement = toolbarRef?.current
@@ -62,7 +61,7 @@ export default function FloatingToolbar({
     [anchorElem, controlOpacity, editor, targetElem, toolbarRef],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isVisible) {
       updateToolbarPosition(shouldReposition)
 
@@ -72,7 +71,7 @@ export default function FloatingToolbar({
     }
   }, [isVisible, onReposition, shouldReposition, updateToolbarPosition])
 
-  const scrollElement = React.useMemo(() => getScrollAncestor(anchorElem), [anchorElem])
+  const scrollElement = useMemo(() => getScrollAncestor(anchorElem), [anchorElem])
   usePopupRepositionSubscriptions(updateToolbarPosition, scrollElement)
 
   if (!isVisible) {

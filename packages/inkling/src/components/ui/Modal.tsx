@@ -1,19 +1,13 @@
+import type { ReactNode, KeyboardEvent } from 'react'
+
 import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
 import Portal from '@kobato/inkling-internal/components/ui/Portal'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
-export function Modal({
-  isOpen,
-  onClose,
-  children,
-}: {
-  isOpen?: boolean
-  onClose: () => void
-  children?: React.ReactNode
-}) {
+export function Modal({ isOpen, onClose, children }: { isOpen?: boolean; onClose: () => void; children?: ReactNode }) {
   const labels = useInklingLabels()
 
-  const controlByKeys = (event: React.KeyboardEvent) => {
+  const controlByKeys = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.stopPropagation()
       event.preventDefault()

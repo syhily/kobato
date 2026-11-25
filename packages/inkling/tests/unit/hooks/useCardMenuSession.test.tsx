@@ -1,6 +1,6 @@
 import { useCardMenuSession, type CardMenuSessionSelection } from '@kobato/inkling-internal/hooks/useCardMenuSession'
 import { act, render, screen } from '@testing-library/react'
-import React from 'react'
+import { useMemo } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 function createFakeSelection() {
@@ -18,7 +18,7 @@ function createFakeSelection() {
 
 function Harness({ getSelection }: { getSelection: () => CardMenuSessionSelection | null }) {
   const session = useCardMenuSession({ getSelection })
-  const anchorRange = React.useMemo(() => document.createRange(), [])
+  const anchorRange = useMemo(() => document.createRange(), [])
   return (
     <div>
       <output data-testid="is-open">{String(session.isOpen)}</output>

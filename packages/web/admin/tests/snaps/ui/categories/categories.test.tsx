@@ -6,7 +6,7 @@ import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
 import { CategoriesSkeleton, CategoryRow } from '@kobato/web-admin/ui/categories/CategoryRow'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
 import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tests/utils/render'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()
@@ -39,7 +39,7 @@ queryMocks.queryClient = {
 }
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => children,
+  DndContext: ({ children }: { children: ReactNode }) => children,
   PointerSensor: class PointerSensor {},
   KeyboardSensor: class KeyboardSensor {},
   useSensor: () => ({}),
@@ -48,7 +48,7 @@ vi.mock('@dnd-kit/core', () => ({
 }))
 
 vi.mock('@dnd-kit/sortable', () => ({
-  SortableContext: ({ children }: { children: React.ReactNode }) => children,
+  SortableContext: ({ children }: { children: ReactNode }) => children,
   sortableKeyboardCoordinates: {},
   verticalListSortingStrategy: {},
   useSortable: () => ({

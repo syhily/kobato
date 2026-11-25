@@ -8,8 +8,7 @@ import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 import { useReselectOnEscape } from '@kobato/inkling-internal/hooks/useReselectOnEscape'
 import { $isCodeBlockNode } from '@kobato/inkling-internal/nodes/CodeBlockNode'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { useContext } from 'react'
 export interface CodeBlockNodeComponentProps {
   nodeKey: NodeKey
   code?: string
@@ -26,7 +25,7 @@ export function CodeBlockNodeComponent({
   captionEditorInitialState,
 }: CodeBlockNodeComponentProps) {
   const { setField } = useCardChrome(nodeKey, $isCodeBlockNode)
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const { darkMode } = useContext(InklingUiPrefsContext)
   const isSelected = useCardIsSelected(nodeKey)
   const isEditing = useCardIsEditing(nodeKey)
   const exitEditMode = useReselectOnEscape(nodeKey)

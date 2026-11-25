@@ -15,8 +15,7 @@ import {
 } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useRef, useState } from 'react'
-
+import { type KeyboardEvent, useMemo, useRef, useState } from 'react'
 const WEEKDAY_LABEL_IDS: readonly UiMessageId[] = [
   'admin.analytics.weekday.mon',
   'admin.analytics.weekday.tue',
@@ -95,7 +94,7 @@ export function Heatmap({ metric, className, scope }: HeatmapProps) {
     return `color-mix(in srgb, ${base} ${Math.round(alpha * 100)}%, transparent)`
   }
 
-  const handleCellKeydown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const handleCellKeydown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const row = Math.floor(index / 24)
     const column = index % 24
     let nextIndex: number

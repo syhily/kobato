@@ -1,14 +1,13 @@
 import { debounce } from '@kobato/inkling-internal/utils'
 import { cx } from '@kobato/inkling-internal/utils/cx'
 import { POPUP_LIST_MAX_HEIGHT } from '@kobato/inkling-internal/utils/selection-anchored-popup'
-import React, { useLayoutEffect } from 'react'
-
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 interface DropdownContainerProps {
   dataTestId?: string
   className?: string
   placementTopClass?: string
   placementBottomClass?: string
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 export function DropdownContainer({
@@ -18,11 +17,11 @@ export function DropdownContainer({
   placementBottomClass = 'mt-0.5',
   children,
 }: DropdownContainerProps) {
-  const divRef = React.useRef<HTMLUListElement | null>(null)
+  const divRef = useRef<HTMLUListElement | null>(null)
 
-  const [placement, setPlacement] = React.useState<'top' | 'bottom'>('bottom')
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom')
 
-  const updatePlacement = React.useCallback(() => {
+  const updatePlacement = useCallback(() => {
     const list = divRef.current
     const parent = list?.parentNode
     if (!list || !(parent instanceof HTMLElement)) {
@@ -44,7 +43,7 @@ export function DropdownContainer({
     updatePlacement()
   }, [updatePlacement])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updatePlacementDebounced = debounce(() => {
       updatePlacement()
     }, 250)

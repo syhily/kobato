@@ -1,7 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import React from 'react'
-
+import { useState } from 'react'
 interface SerializedStateTextareaProps {
   isOpen: boolean
 }
@@ -11,7 +10,7 @@ const SerializedStateTextarea = ({ isOpen }: SerializedStateTextareaProps) => {
 
   const renderEditorState = () => JSON.stringify(editor.getEditorState().toJSON(), null, 2)
 
-  const [serializedJson, setSerializedJson] = React.useState(renderEditorState())
+  const [serializedJson, setSerializedJson] = useState(renderEditorState())
 
   const onChange = () => {
     setSerializedJson(renderEditorState())

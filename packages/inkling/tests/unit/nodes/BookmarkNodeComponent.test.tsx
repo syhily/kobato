@@ -21,7 +21,7 @@ import {
   type LexicalEditor,
   type NodeKey,
 } from 'lexical'
-import React from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 registerCardDecorateAdapter()
@@ -49,11 +49,8 @@ function createTestEditor(): LexicalEditor {
   return editor
 }
 
-function EditorComposerProvider({ editor, children }: { editor: LexicalEditor; children: React.ReactNode }) {
-  const value = React.useMemo<React.ContextType<typeof LexicalComposerContext>>(
-    () => [editor, { getTheme: () => null }],
-    [editor],
-  )
+function EditorComposerProvider({ editor, children }: { editor: LexicalEditor; children: ReactNode }) {
+  const value = useMemo<ContextType<typeof LexicalComposerContext>>(() => [editor, { getTheme: () => null }], [editor])
   return <LexicalComposerContext.Provider value={value}>{children}</LexicalComposerContext.Provider>
 }
 

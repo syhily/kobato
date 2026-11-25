@@ -28,7 +28,7 @@ import {
   UNDO_COMMAND,
   type LexicalEditor,
 } from 'lexical'
-import React, { useMemo } from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface CreatedEditor {
@@ -52,8 +52,8 @@ function createTestEditor(parentEditor?: LexicalEditor): CreatedEditor {
   return { editor, root }
 }
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: LexicalEditor }) {
-  const value = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: LexicalEditor }) {
+  const value = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )

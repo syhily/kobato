@@ -3,7 +3,7 @@ import type { LexicalEditor, NodeKey } from 'lexical'
 import useFloatingPanel from '@kobato/inkling-internal/hooks/useFloatingPanel'
 import { LexicalComposerContext, type LexicalComposerContextWithEditor } from '@lexical/react/LexicalComposerContext'
 import { act, render, screen } from '@testing-library/react'
-import React from 'react'
+import { useMemo, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 class MockResizeObserver {
@@ -48,7 +48,7 @@ function setWindowSize(width: number, height: number) {
 }
 
 function Harness({ cardWidth = 'regular' }: { cardWidth?: string }) {
-  const cardRef = React.useRef<HTMLDivElement | null>(null)
+  const cardRef = useRef<HTMLDivElement | null>(null)
   const { ref } = useFloatingPanel({ positionToRef: cardRef, cardWidth })
   return (
     <div data-testid="scroll-container" style={{ overflowY: 'auto' }}>
@@ -66,7 +66,7 @@ function KeyHarnessInner({ cardKey }: { cardKey: NodeKey }) {
 }
 
 function KeyHarness({ cardKey, editor }: { cardKey: NodeKey; editor: LexicalEditor }) {
-  const composerContextValue = React.useMemo<LexicalComposerContextWithEditor>(
+  const composerContextValue = useMemo<LexicalComposerContextWithEditor>(
     () => [editor, { getTheme: () => null }],
     [editor],
   )

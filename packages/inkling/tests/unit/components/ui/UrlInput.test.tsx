@@ -1,19 +1,20 @@
+import type { ContextType, ReactElement } from 'react'
+
 import { UrlInput } from '@kobato/inkling-internal/components/ui/UrlInput'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor, KEY_ENTER_COMMAND, type LexicalEditor } from 'lexical'
-import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 function createTestEditor(): LexicalEditor {
   return createEditor({ namespace: 'test', onError: () => {} })
 }
 
-function createComposerValue(editor: LexicalEditor): React.ContextType<typeof LexicalComposerContext> {
+function createComposerValue(editor: LexicalEditor): ContextType<typeof LexicalComposerContext> {
   return [editor, { getTheme: () => null }]
 }
 
-function renderWithEditor(ui: React.ReactElement, editor: LexicalEditor) {
+function renderWithEditor(ui: ReactElement, editor: LexicalEditor) {
   const composerValue = createComposerValue(editor)
   return render(<LexicalComposerContext.Provider value={composerValue}>{ui}</LexicalComposerContext.Provider>)
 }

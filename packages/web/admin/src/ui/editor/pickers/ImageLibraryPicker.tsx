@@ -9,10 +9,9 @@ import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/Upload
 import { orpcQuery } from '@kobato/web-client/api/orpc-query'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
-import { isValidElement, useState } from 'react'
-
+import { type ReactNode, isValidElement, useState } from 'react'
 export interface ImageLibraryPickerProps {
-  trigger?: React.ReactNode
+  trigger?: ReactNode
   onPick: (image: AdminImageDto) => void
   open?: boolean
   onOpenChange?: (open: boolean) => void

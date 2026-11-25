@@ -45,11 +45,10 @@ import {
 import { SidebarForm } from '@kobato/web-admin/ui/settings/sidebar/SidebarForm'
 import { SocialsEditor } from '@kobato/web-admin/ui/settings/SocialsEditor'
 import { WebmentionsForm } from '@kobato/web-admin/ui/settings/WebmentionsForm'
-import { Children, Fragment, useCallback, useEffect, useRef } from 'react'
-
+import { type ReactNode, Children, Fragment, useCallback, useEffect, useRef } from 'react'
 interface SectionConfig {
   id: SettingsSection
-  render: (bundle: SettingsBundle, tz: readonly string[], masks: SecretMasks) => React.ReactNode
+  render: (bundle: SettingsBundle, tz: readonly string[], masks: SecretMasks) => ReactNode
 }
 
 const SECTION_CONFIGS = [
@@ -169,7 +168,7 @@ function SectionWrapper({
   id: string
   title: string
   icon: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const { ref } = useScrollSpy(id)
   const { flushSection } = useSettingsFlushContext()
@@ -217,7 +216,7 @@ function SectionWrapper({
 
 interface SettingsGroupProps {
   title: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 function SettingsGroup({ title, children }: SettingsGroupProps) {

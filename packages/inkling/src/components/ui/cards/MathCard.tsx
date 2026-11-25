@@ -4,8 +4,7 @@ import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabel
 import { resolveMathArtifact } from '@kobato/inkling-internal/nodes/base/nodes/math/math-artifacts'
 import { MATH_HTML_CONFIG } from '@kobato/inkling-internal/nodes/base/render-context'
 import DOMPurify from 'dompurify'
-import React from 'react'
-
+import { useEffect, useState } from 'react'
 interface MathPreviewState {
   html: string | null
   error: string | null
@@ -18,10 +17,10 @@ interface MathLivePreviewProps {
 
 function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
   const labels = useInklingLabels()
-  const [preview, setPreview] = React.useState<MathPreviewState>({ html: null, error: null })
+  const [preview, setPreview] = useState<MathPreviewState>({ html: null, error: null })
 
   const isRenderable = !!renderMath && !!tex && tex.trim() !== ''
-  const [prevRenderable, setPrevRenderable] = React.useState(isRenderable)
+  const [prevRenderable, setPrevRenderable] = useState(isRenderable)
   if (prevRenderable !== isRenderable) {
     setPrevRenderable(isRenderable)
     if (!isRenderable) {
@@ -29,7 +28,7 @@ function MathLivePreview({ tex, renderMath }: MathLivePreviewProps) {
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!renderMath || !tex || tex.trim() === '') {
       return
     }

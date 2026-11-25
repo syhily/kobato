@@ -1,4 +1,5 @@
 import type { LexicalEditor } from 'lexical'
+import type { ReactElement } from 'react'
 
 import {
   ButtonNode,
@@ -59,7 +60,7 @@ describe('ButtonNode', () => {
     it('decorates with the wide wrapper style', async () => {
       await updateEditor(editor, () => {
         const node = $createButtonNode({ buttonText: 'Click', buttonUrl: 'https://example.com' })
-        const decorated = node.decorate() as React.ReactElement<{ wrapperStyle?: string }>
+        const decorated = node.decorate() as ReactElement<{ wrapperStyle?: string }>
         expect(decorated.props.wrapperStyle).toBe('wide')
       })
     })

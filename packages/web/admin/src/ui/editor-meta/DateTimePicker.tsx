@@ -8,8 +8,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { dateToLocalInputValue, parseLocalDateTimeInput } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import { formatWallClockDateTime, formatWallClockMonth } from '@kobato/web-admin/ui/editor-shell/wall-clock'
 import { CalendarIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
-
+import { type ReactNode, useMemo, useState } from 'react'
 export interface DateTimePickerProps {
   value: string
   onChange: (next: string) => void
@@ -209,7 +208,7 @@ function CalendarDropdown({ options, ...selectProps }: DropdownProps) {
   )
 }
 
-function ColumnScroller({ children }: { children: React.ReactNode }) {
+function ColumnScroller({ children }: { children: ReactNode }) {
   return <div className="flex w-16 flex-col gap-1 overflow-y-auto p-1.5 sm:w-20">{children}</div>
 }
 
@@ -217,7 +216,7 @@ interface SlotButtonProps {
   active: boolean
   onClick: () => void
   disabled?: boolean
-  children: React.ReactNode
+  children: ReactNode
   'aria-label'?: string
 }
 

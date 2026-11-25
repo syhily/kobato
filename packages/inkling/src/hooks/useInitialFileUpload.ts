@@ -1,5 +1,4 @@
-import React from 'react'
-
+import { useEffect, useEffectEvent } from 'react'
 export interface UseInitialFileUploadOptions {
   initialFile: File | null | undefined
   isReady: boolean
@@ -7,10 +6,13 @@ export interface UseInitialFileUploadOptions {
 }
 
 export function useInitialFileUpload({ initialFile, isReady, run }: UseInitialFileUploadOptions): void {
-  React.useEffect(() => {
+  const runInitialUpload = useEffectEvent(() => {
     if (initialFile && isReady) {
       run(initialFile)
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  })
+
+  useEffect(() => {
+    runInitialUpload()
   }, [])
 }

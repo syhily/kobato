@@ -1,5 +1,5 @@
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
-import React from 'react'
+import { type ReactNode, type MouseEvent, useContext } from 'react'
 import { createPortal } from 'react-dom'
 
 function Portal({
@@ -8,16 +8,16 @@ function Portal({
   className,
   'data-testid': dataTestId,
 }: {
-  children?: React.ReactNode
+  children?: ReactNode
   to?: HTMLElement
   className?: string
   'data-testid'?: string
 }) {
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const { darkMode } = useContext(InklingUiPrefsContext)
 
   const container = to || document.body
 
-  function cancelEvents(event: React.MouseEvent) {
+  function cancelEvents(event: MouseEvent) {
     event.stopPropagation()
   }
 

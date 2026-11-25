@@ -10,8 +10,7 @@ import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelection
 import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 import { $isCalloutNode } from '@kobato/inkling-internal/nodes/base'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { useCallback, useState } from 'react'
 function isCalloutColorName(color: string | undefined): color is CalloutColorName {
   return color !== undefined && Object.hasOwn(CALLOUT_COLORS, color)
 }
@@ -40,11 +39,11 @@ export function CalloutNodeComponent({
 }: CalloutNodeComponentProps) {
   const { write, setField } = useCardChrome(nodeKey, $isCalloutNode)
   const isEditing = useCardIsEditing(nodeKey)
-  const [showEmojiPicker, setShowEmojiPicker] = React.useState<boolean>(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false)
 
   const handleEmojiChange = setField('calloutEmoji')
 
-  const handleEmojiSelect = React.useCallback(
+  const handleEmojiSelect = useCallback(
     (newEmoji: unknown): void => {
       const nativeEmoji = getNativeEmoji(newEmoji)
       if (nativeEmoji === undefined) {
@@ -56,14 +55,14 @@ export function CalloutNodeComponent({
     [handleEmojiChange],
   )
 
-  const handleToggleEmoji = React.useCallback(
+  const handleToggleEmoji = useCallback(
     (checked: boolean): void => {
       handleEmojiChange(checked ? calloutEmoji || '💡' : '')
     },
     [calloutEmoji, handleEmojiChange],
   )
 
-  const handleToggleEmojiPicker = React.useCallback((): void => {
+  const handleToggleEmojiPicker = useCallback((): void => {
     setShowEmojiPicker((show) => !show)
   }, [])
 

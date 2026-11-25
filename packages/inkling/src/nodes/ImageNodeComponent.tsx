@@ -26,8 +26,7 @@ import {
 } from '@kobato/inkling-internal/plugins/behaviour/image-lifecycle'
 import { isGif } from '@kobato/inkling-internal/utils/is-gif'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 export interface ImageNodeComponentProps {
   nodeKey: NodeKey
   initialFile?: File
@@ -56,7 +55,7 @@ export function ImageNodeComponent({
   const { editor, write, setField } = useCardChrome(nodeKey, $isImageNode)
   const { onError } = useInklingHostEssentials()
   const uploadSettings = useInklingUploadSettings()
-  const [showLink, setShowLink] = React.useState(false)
+  const [showLink, setShowLink] = useState(false)
   const isSelected = useCardIsSelected(nodeKey)
 
   const {
@@ -101,12 +100,12 @@ export function ImageNodeComponent({
     config: uploadSettings.pinturaConfig,
   })
 
-  const allowedImageCardWidths = React.useMemo(() => {
+  const allowedImageCardWidths = useMemo(() => {
     return getAllowedImageCardWidths(uploadSettings.image?.allowedWidths)
   }, [uploadSettings.image?.allowedWidths])
   const hasMultipleImageCardWidths = allowedImageCardWidths.length > 1
 
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true
     void migrateImageDataUrl(
       { src, isLoading: imageUploader.isLoading, isCancelled: () => !isMounted },
@@ -117,21 +116,23 @@ export function ImageNodeComponent({
     }
   }, [imageUploader.isLoading, onError, src, runFiles])
 
-  React.useEffect(() => {
+  const backfillDimensions = useEffectEvent(() => {
     void backfillImageDimensions(
       editor,
       nodeKey,
       { src, initialFile, triggerFileDialog },
       { write, onError: (error) => onError(error, {}) },
     )
+  })
 
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    backfillDimensions()
   }, [])
   const setHref = setField('href')
 
   const setAltText = setField('alt')
 
-  const handleImageCardResize = React.useCallback(
+  const handleImageCardResize = useCallback(
     (newWidth: unknown) => {
       if (!isCardWidth(newWidth) || !allowedImageCardWidths.includes(newWidth)) {
         return
@@ -144,7 +145,7 @@ export function ImageNodeComponent({
     [allowedImageCardWidths, write],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     clampImageCardWidth(cardWidth, allowedImageCardWidths, { write })
   }, [allowedImageCardWidths, cardWidth, write])
 

@@ -4,14 +4,13 @@ import type { MediaPlaceholderSize, PlaceholderIconName } from '@kobato/inkling-
 import { MediaPlaceholder } from '@kobato/inkling-internal/components/ui/MediaPlaceholder'
 import { ProgressBar } from '@kobato/inkling-internal/components/ui/ProgressBar'
 import { cx } from '@kobato/inkling-internal/utils/cx'
-import React from 'react'
-
-export function uploadProgressStyle(progress?: number): React.CSSProperties {
+import { type CSSProperties, type Ref, useCallback, useRef } from 'react'
+export function uploadProgressStyle(progress?: number): CSSProperties {
   return { width: `${progress?.toFixed(0) ?? '0'}%` }
 }
 export interface UploadFileInputProps {
   name: string
-  fileInputRef?: React.Ref<HTMLInputElement>
+  fileInputRef?: Ref<HTMLInputElement>
   mimeTypes?: string[]
   multiple?: boolean
   disabled?: boolean
@@ -55,13 +54,13 @@ export function UploadFileInput({
 export interface FileInputRefTunnel {
   fileInputRef: FileInputRef
 
-  onFileInputRef: React.Ref<HTMLInputElement>
+  onFileInputRef: Ref<HTMLInputElement>
 }
 
 export function useFileInputRefTunnel(target?: FileInputRef | ((ref: FileInputRef) => void)): FileInputRefTunnel {
-  const localRef = React.useRef<HTMLInputElement | null>(null)
+  const localRef = useRef<HTMLInputElement | null>(null)
 
-  const onFileInputRef = React.useCallback(
+  const onFileInputRef = useCallback(
     (element: HTMLInputElement | null) => {
       localRef.current = element
       if (typeof target === 'function') {

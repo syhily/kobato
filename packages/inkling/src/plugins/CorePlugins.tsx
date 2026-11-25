@@ -24,18 +24,17 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { BLUR_COMMAND, FOCUS_COMMAND } from 'lexical'
-import React from 'react'
-
+import { type ReactElement, type RefObject, type ReactNode, Fragment } from 'react'
 export interface CorePluginScope {
   contentEditableRef: (element: HTMLDivElement | null) => void
   contentEditableClassName: string
   readOnly: boolean
-  placeholder: React.ReactElement
+  placeholder: ReactElement
 
   onEditorChange: (editorState: EditorState) => void
   historyState: HistoryState
   isCollabActive: boolean
-  containerElem: React.RefObject<HTMLElement | null>
+  containerElem: RefObject<HTMLElement | null>
   cursorDidExitAtTop?: () => void
   isNested: boolean
   alignment?: boolean
@@ -55,7 +54,7 @@ export interface CorePluginScope {
 export interface CorePluginEntry {
   key: string
   when?: (scope: CorePluginScope) => boolean
-  render: (scope: CorePluginScope) => React.ReactNode
+  render: (scope: CorePluginScope) => ReactNode
 }
 
 export const CORE_PLUGINS: readonly CorePluginEntry[] = [
@@ -170,7 +169,7 @@ export const CorePlugins = ({ scope }: { scope: CorePluginScope }) => {
   return (
     <>
       {CORE_PLUGINS.map(({ key, when, render }) =>
-        when && !when(scope) ? null : <React.Fragment key={key}>{render(scope)}</React.Fragment>,
+        when && !when(scope) ? null : <Fragment key={key}>{render(scope)}</Fragment>,
       )}
     </>
   )

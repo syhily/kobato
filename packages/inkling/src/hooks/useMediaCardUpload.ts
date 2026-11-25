@@ -9,8 +9,7 @@ import useFileDragAndDrop from '@kobato/inkling-internal/hooks/useFileDragAndDro
 import { useInitialFileUpload } from '@kobato/inkling-internal/hooks/useInitialFileUpload'
 import { useTriggerFileDialog } from '@kobato/inkling-internal/hooks/useTriggerFileDialog'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { type RefObject, useCallback, useRef } from 'react'
 export type MediaUploadKind = 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail'
 export type MediaUploader = ReturnType<FileUploader['useFileUpload']>
 export function useMediaUploader(kind: MediaUploadKind): MediaUploader {
@@ -37,7 +36,7 @@ export interface UseMediaCardUploadOptions<TNode> {
 
 export interface UseMediaCardUploadResult {
   uploader: MediaUploader
-  fileInputRef: React.RefObject<HTMLInputElement | null>
+  fileInputRef: RefObject<HTMLInputElement | null>
   dragHandler: UseFileDragAndDropResult
   onFileChange: (files: FileList | File[] | null) => void
 
@@ -58,9 +57,9 @@ export function useMediaCardUpload<TNode>({
   const [editor] = useLexicalComposerContext()
   const { fileUploader } = useInklingHostEssentials()
   const uploader = useMediaUploader(kind)
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const runFiles = React.useCallback(
+  const runFiles = useCallback(
     (files: FileList | File[] | null, source: MediaUploadSource) => {
       onFiles(files, uploader.upload, source)
     },
@@ -87,7 +86,7 @@ export function useMediaCardUpload<TNode>({
     triggerFileDialog,
   })
 
-  const onFileChange = React.useCallback(
+  const onFileChange = useCallback(
     (files: FileList | File[] | null) => {
       if (!files || files.length === 0) {
         return

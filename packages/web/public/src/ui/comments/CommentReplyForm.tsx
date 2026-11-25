@@ -21,8 +21,7 @@ import { LazyCommentBodyEditor } from '@kobato/web-public/ui/comments/LazyCommen
 import { useCommentGuest } from '@kobato/web-public/ui/comments/use-comment-guest'
 import { useMutation } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
-
+import { type FocusEvent, type SyntheticEvent, useRef, useState } from 'react'
 export interface CommentReplyFormProps {
   commentKey: string
   user?: CommentFormUser
@@ -103,7 +102,7 @@ export function CommentReplyForm({
   const isPending = reply.isPending
   const isReplying = replyToId !== 0 && replyTarget !== undefined
 
-  const onEmailBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+  const onEmailBlur = (event: FocusEvent<HTMLInputElement>) => {
     if (admin || isGuestMode) {
       return
     }
@@ -115,7 +114,7 @@ export function CommentReplyForm({
     }
   }
 
-  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (isCommentEditorStateBlank(body)) {
       setSubmitError(t('public.comments.submitEmpty'))
@@ -273,7 +272,7 @@ interface CommentFormFieldsProps {
   guestProfile?: { name: string; email: string; link?: string } | null
   commentKey: string
   replyToId: number
-  onEmailBlur: (event: React.FocusEvent<HTMLInputElement>) => void
+  onEmailBlur: (event: FocusEvent<HTMLInputElement>) => void
 }
 
 function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {

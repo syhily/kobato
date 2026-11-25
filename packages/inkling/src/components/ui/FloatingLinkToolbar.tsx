@@ -1,14 +1,14 @@
+import type { RefObject } from 'react'
+
 import FloatingToolbar from '@kobato/inkling-internal/components/ui/FloatingToolbar'
 import { LinkToolbar } from '@kobato/inkling-internal/components/ui/LinkToolbar'
 import { $removeLink, $selectLinkText, type HoveredLink } from '@kobato/inkling-internal/plugins/behaviour/link-editing'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
 interface FloatingLinkToolbarProps {
   anchorElem: HTMLElement
   hoveredLink: HoveredLink | null
 
-  toolbarRef: React.RefObject<HTMLDivElement | null>
+  toolbarRef: RefObject<HTMLDivElement | null>
   onEditLink: (data: { href: string }) => void
   onRemoveLink: () => void
 }

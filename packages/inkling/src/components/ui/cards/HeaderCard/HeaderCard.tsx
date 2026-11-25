@@ -35,8 +35,16 @@ import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { cx } from '@kobato/inkling-internal/utils/cx'
 import { isEditorEmpty } from '@kobato/inkling-internal/utils/is-editor-empty'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React, { useContext, useEffect, useState } from 'react'
-
+import {
+  type ChangeEvent,
+  type FocusEvent,
+  type RefObject,
+  type MouseEvent,
+  useContext,
+  useEffect,
+  useEffectEvent,
+  useState,
+} from 'react'
 export interface HeaderCardViewModel {
   alignment?: string
   backgroundColor?: string
@@ -60,10 +68,10 @@ export interface HeaderCardHandlers {
   handleBackgroundSize: (size: string) => void
   handleButtonColor: (color: string, matchingTextColor: string) => void
   handleButtonEnabled: () => void
-  handleButtonText: (event: React.ChangeEvent<HTMLInputElement>) => void
-  handleButtonTextBlur: (event: React.FocusEvent<HTMLInputElement>) => void
+  handleButtonText: (event: ChangeEvent<HTMLInputElement>) => void
+  handleButtonTextBlur: (event: FocusEvent<HTMLInputElement>) => void
   handleButtonUrl: (value: string) => void
-  handleButtonUrlBlur: (event: React.FocusEvent<HTMLInputElement>) => void
+  handleButtonUrlBlur: (event: FocusEvent<HTMLInputElement>) => void
   handleClearBackgroundImage: () => void
   handleHideBackgroundImage: () => void
   handleLayout: (layout: string) => void
@@ -77,7 +85,7 @@ export interface HeaderCardUpload {
   imageDragHandler: DragHandlerLike
   isPinturaEnabled?: boolean
   openImageEditor: (options: { image: string; handleSave: (blob: Blob) => void }) => void
-  setFileInputRef: (ref: React.RefObject<HTMLInputElement | null>) => void
+  setFileInputRef: (ref: RefObject<HTMLInputElement | null>) => void
   onFileChange: (files: File[]) => void
 }
 
@@ -138,25 +146,37 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
   const composerContext = useContext(LexicalComposerContext)
   const editorRoot = composerContext?.[0]?.getRootElement() ?? null
 
+  const isSplitLayout = layout === 'split'
+  const resolveImageTextColor = useEffectEvent(() => resolveHeaderImageTextColor(backgroundImageSrc, layout))
+  const updateTextColor = useEffectEvent((color: string) => {
+    handleTextColor(color)
+  })
+
   useEffect(() => {
     let cancelled = false
-    void resolveHeaderImageTextColor(backgroundImageSrc, layout).then((color) => {
-      if (color && !cancelled) {
-        handleTextColor(color)
-      }
-    })
+    if (backgroundImageSrc && !isSplitLayout) {
+      void resolveImageTextColor().then((color) => {
+        if (color && !cancelled) {
+          updateTextColor(color)
+        }
+      })
+    }
     return () => {
       cancelled = true
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [backgroundImageSrc, layout === 'split'])
+  }, [backgroundImageSrc, isSplitLayout])
 
-  useEffect(() => {
-    if (backgroundColor && layout === 'split') {
+  const syncBackgroundColor = useEffectEvent(() => {
+    if (backgroundColor) {
       handleBackgroundColor(backgroundColor, matchingHeaderTextColor(backgroundColor, editorRoot))
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout === 'split'])
+  })
+
+  useEffect(() => {
+    if (isSplitLayout) {
+      syncBackgroundColor()
+    }
+  }, [isSplitLayout])
 
   const layoutChildren = [
     {
@@ -230,7 +250,7 @@ export function HeaderCard({ view, handlers, upload, editors }: HeaderCardProps)
     }
   }
 
-  const toggleBackgroundSize = (event: React.MouseEvent) => {
+  const toggleBackgroundSize = (event: MouseEvent) => {
     event.stopPropagation()
     if (backgroundSize === 'cover') {
       handleBackgroundSize('contain')

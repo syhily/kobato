@@ -8,8 +8,7 @@ import { INSERT_MEDIA_COMMAND } from '@kobato/inkling-internal/plugins/behaviour
 import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, mergeRegister } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 function isCardDataset(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -69,7 +68,7 @@ function registerCardInsert(
 
 export const CardInsertPlugin = () => {
   const [editor] = useLexicalComposerContext()
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       ...getCardInsertRegistrations()
         .filter(({ node }) => editor.hasNodes([node]))

@@ -12,8 +12,7 @@ import { $isGalleryNode, recalculateImageRows } from '@kobato/inkling-internal/n
 import { galleryUploadIntent } from '@kobato/inkling-internal/nodes/upload-intent'
 import { createPreviewLeasePool } from '@kobato/inkling-internal/utils/preview-lease'
 import { type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { type MouseEvent, useEffect, useState } from 'react'
 export interface GalleryNodeComponentProps {
   nodeKey: NodeKey
   captionEditor: LexicalEditor | null
@@ -29,9 +28,9 @@ export function GalleryNodeComponent({
 }: GalleryNodeComponentProps) {
   const { fileUploader } = useInklingHostEssentials()
   const isSelected = useCardIsSelected(nodeKey)
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const { images, setImages, setPreviewImages } = useGalleryImages(nodeKey)
-  const [previewPool] = React.useState(() => createPreviewLeasePool())
+  const [previewPool] = useState(() => createPreviewLeasePool())
 
   const galleryReorder = useGalleryReorder({ images, updateImages: reorderImages, isSelected })
 
@@ -70,13 +69,13 @@ export function GalleryNodeComponent({
     setImages(newImages)
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       previewPool.releaseAll()
     }
   }, [previewPool])
 
-  function handleToolbarAdd(event: React.MouseEvent): void {
+  function handleToolbarAdd(event: MouseEvent): void {
     event.preventDefault()
     fileInputRef.current?.click()
   }

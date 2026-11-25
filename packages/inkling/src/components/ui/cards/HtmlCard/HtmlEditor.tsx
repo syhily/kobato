@@ -3,8 +3,7 @@ import { html as langHtml } from '@codemirror/lang-html'
 import { keymap } from '@codemirror/view'
 import { darkBaseExtensions, lightBaseExtensions } from '@kobato/inkling-internal/utils/codemirror-config'
 import CodeMirror from '@uiw/react-codemirror'
-import React from 'react'
-
+import { type KeyboardEvent, useCallback, useState } from 'react'
 const htmlExtras = [keymap.of(closeBracketsKeymap), langHtml(), closeBrackets()]
 
 const lightExtensions = [...lightBaseExtensions, ...htmlExtras]
@@ -19,9 +18,9 @@ export default function HtmlEditor({
   html?: string
   updateHtml: (value: string) => void
 }) {
-  const [initialHtml] = React.useState(html)
+  const [initialHtml] = useState(html)
 
-  const onChange = React.useCallback(
+  const onChange = useCallback(
     (value: string) => {
       updateHtml(value)
     },
@@ -30,7 +29,7 @@ export default function HtmlEditor({
 
   const extensions = darkMode ? darkExtensions : lightExtensions
 
-  const handleKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'y')) {
       event.stopPropagation()
     }

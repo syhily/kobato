@@ -7,8 +7,7 @@ import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { createSelectionAnchor } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { useCallback, useMemo, useRef } from 'react'
 interface LinkActionToolbarWithSearchProps {
   anchorElem: HTMLElement
   href?: string
@@ -19,10 +18,10 @@ export function LinkActionToolbarWithSearch({ anchorElem, href, onClose }: LinkA
   const [editor] = useLexicalComposerContext()
   const { siteUrl } = useInklingLinkingSettings()
 
-  const linkToolbarRef = React.useRef<HTMLDivElement | null>(null)
+  const linkToolbarRef = useRef<HTMLDivElement | null>(null)
 
-  const anchor = React.useMemo(() => createSelectionAnchor(editor), [editor])
-  const containerRect = React.useCallback(() => anchorElem.parentElement?.getBoundingClientRect() ?? null, [anchorElem])
+  const anchor = useMemo(() => createSelectionAnchor(editor), [editor])
+  const containerRect = useCallback(() => anchorElem.parentElement?.getBoundingClientRect() ?? null, [anchorElem])
   useSelectionAnchoredPopup({ editor, popupRef: linkToolbarRef, anchor, containerRect, aboveGap: 55 })
 
   const onLinkUpdate = (updatedHref: string, type?: string) => {

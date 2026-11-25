@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { DateRange } from '@kobato/utils/date-range'
+import type { ReactElement } from 'react'
 
 import { calendarMachineDay } from '@kobato/ui/components/calendar'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
@@ -27,7 +28,7 @@ function dayButton(date: Date): HTMLElement {
   return el
 }
 
-function renderPicker(ui: React.ReactElement) {
+function renderPicker(ui: ReactElement) {
   return render(wrapWithI18n(ui))
 }
 

@@ -10,8 +10,7 @@ import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabel
 import { useSearchLinks, type ListOptionItem } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
-import React from 'react'
-
+import { type ChangeEvent, type KeyboardEvent, useContext, useEffect } from 'react'
 export interface UrlInputProps {
   dataTestId?: string
   handleClose?: () => void
@@ -26,10 +25,10 @@ export interface UrlInputProps {
 }
 
 function UrlInputPlugin({ onEnter }: { onEnter?: () => void }) {
-  const composerContext = React.useContext(LexicalComposerContext)
+  const composerContext = useContext(LexicalComposerContext)
   const editor = composerContext?.[0]
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!editor || !onEnter) {
       return
     }
@@ -67,11 +66,11 @@ export function UrlInput({
   useLinkDropdownOpenedTracking('bookmark', searchEnabled && !value)
   useLinkDropdownEscape(handleClose, { swallow: true })
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     handleUrlChange?.(event.target.value)
   }
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') {
       event.preventDefault()
       event.stopPropagation()
@@ -94,7 +93,7 @@ export function UrlInput({
     handleUrlSubmit?.(url || '', type)
   }
 
-  const handleSearchKeyDown = (event: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (event: KeyboardEvent) => {
     if (!event.nativeEvent.isComposing && event.key === 'Enter') {
       const target = event.target
       if (!(target instanceof HTMLInputElement)) {

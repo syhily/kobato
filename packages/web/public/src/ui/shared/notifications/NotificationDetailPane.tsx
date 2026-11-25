@@ -48,7 +48,7 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   const threadQuery = useQuery(
     orpcQuery.account.notifications.thread.queryOptions({ input: { threadId: item.threadId } }),
   )
-  const markRead = useMutation(
+  const { mutate: markRead } = useMutation(
     orpcQuery.account.notifications.markRead.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], true, data.count),
       onError: onMutationError('admin.toast.markReadFailed', t),
@@ -73,10 +73,9 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
 
   useEffect(() => {
     if (!item.read) {
-      markRead.mutate({ ids: [item.id] })
+      markRead({ ids: [item.id] })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id])
+  }, [item.id, item.read, markRead])
 
   const meta = notificationMeta(item)
   const thread = threadQuery.data

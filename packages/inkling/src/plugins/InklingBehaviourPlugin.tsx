@@ -13,10 +13,9 @@ import { registerPasteHandler } from '@kobato/inkling-internal/plugins/behaviour
 import { registerDefaultTransforms } from '@kobato/inkling-internal/transforms'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
-import React from 'react'
-
+import { type RefObject, useEffect, useMemo } from 'react'
 interface InklingBehaviourPluginProps {
-  containerElem?: React.RefObject<HTMLElement | null>
+  containerElem?: RefObject<HTMLElement | null>
   cursorDidExitAtTop?: () => void
   isNested?: boolean
   alignment?: boolean
@@ -30,7 +29,7 @@ function useInklingBehaviour({
   alignment,
 }: {
   editor: LexicalEditor
-  containerElem: React.RefObject<HTMLElement | null>
+  containerElem: RefObject<HTMLElement | null>
   cursorDidExitAtTop?: () => void
   isNested?: boolean
   alignment?: boolean
@@ -40,11 +39,11 @@ function useInklingBehaviour({
 
   const isShiftPressed = getModifierState(editor)
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerMouseEvents(editor, { containerElem, isNested })
   }, [editor, containerElem, isNested])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       registerCardSelection(editor, {
         store: cardSelectionStore,
@@ -65,7 +64,7 @@ function useInklingBehaviour({
     )
   }, [editor, cardSelectionStore, cardPickerStore, isNested, cursorDidExitAtTop, isShiftPressed])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerDefaultTransforms(editor, { alignment: alignment ? 'keep' : 'strip' })
   }, [editor, alignment])
 
@@ -80,7 +79,7 @@ export default function InklingBehaviourPlugin({
 }: InklingBehaviourPluginProps) {
   const [editor] = useLexicalComposerContext()
 
-  const fallbackRef = React.useMemo<React.RefObject<HTMLElement | null>>(
+  const fallbackRef = useMemo<RefObject<HTMLElement | null>>(
     () => ({
       get current() {
         return editor.getRootElement()

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { MusicPickerDialogProps } from '@kobato/web-admin/ui/editor/pickers/MusicPickerDialog'
-import type { ReactElement } from 'react'
+import type { ReactElement, MouseEvent } from 'react'
 
 import { makeAdminMusic } from '@kobato/api/tests/utils/catalog'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
@@ -442,7 +442,7 @@ describe('music-player editing chrome', () => {
       dataTestId: 'remove-music-card',
     })
 
-    const event = { stopPropagation: vi.fn() } as unknown as React.MouseEvent
+    const event = { stopPropagation: vi.fn() } as unknown as MouseEvent
     if (replace?.kind === 'custom') {
       replace.onClick(event)
     }

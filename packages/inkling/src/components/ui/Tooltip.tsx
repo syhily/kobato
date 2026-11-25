@@ -1,9 +1,8 @@
-import React from 'react'
-
+import type { ReactNode } from 'react'
 export interface TooltipProps {
   label?: string
   shortcutKeys?: string | string[]
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 export function Tooltip({ label, shortcutKeys, children }: TooltipProps) {

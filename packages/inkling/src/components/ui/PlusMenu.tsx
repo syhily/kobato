@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import PlusIcon from '@kobato/inkling-internal/assets/icons/plus.svg?react'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
@@ -18,7 +20,7 @@ export function PlusButton({ onClick }: { onClick?: () => void }) {
   )
 }
 
-export function PlusMenu({ children }: { children?: React.ReactNode }) {
+export function PlusMenu({ children }: { children?: ReactNode }) {
   return (
     <div className="absolute left-[-1.6rem]" data-inkling-plus-menu>
       {children}

@@ -6,8 +6,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
 import { useMusicPlayback } from '@kobato/ui/lib/use-music-playback'
 import { ListMusicIcon, Loader2Icon, PauseIcon, PlayIcon, Volume2Icon, VolumeXIcon } from 'lucide-react'
-import { useState } from 'react'
-
+import { type SyntheticEvent, useState } from 'react'
 export type MusicPlayerCardProps = {
   name: string
   artist: string
@@ -17,7 +16,7 @@ export type MusicPlayerCardProps = {
   className?: string
 }
 
-const stopEvent = (event: React.SyntheticEvent) => event.stopPropagation()
+const stopEvent = (event: SyntheticEvent) => event.stopPropagation()
 
 export function MusicPlayerCard({ name, artist, url, cover, lrc, className }: MusicPlayerCardProps) {
   const { t } = useI18n()

@@ -21,8 +21,7 @@ import {
   type InitialEditorStateType,
   type LexicalEditor,
 } from 'lexical'
-import React, { useContext } from 'react'
-
+import { useContext, useEffect } from 'react'
 const Placeholder = ({ text = 'Type here' }) => {
   return (
     <div className="text-grey-500 dark:text-grey-800 pointer-events-none absolute top-0 left-0 !m-0 min-w-full cursor-text font-sans text-sm leading-[2.4rem] font-normal tracking-wide">
@@ -36,14 +35,14 @@ function CaptionPlugin({ parentEditor }: { parentEditor: LexicalEditor }) {
   const { setCaptionHasFocus, captionHasFocus, nodeKey } = useContext(CardContext)
   const isSelected = useCardIsSelected(nodeKey)
 
-  React.useEffect(() => {
+  useEffect(() => {
     return registerCaptionTypeToFocus(editor, {
       isSelected: () => isSelected,
       hasFocus: () => captionHasFocus,
     })
   }, [editor, isSelected, captionHasFocus])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         FOCUS_COMMAND,

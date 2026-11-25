@@ -2,6 +2,7 @@ import type { SaveBodyInput, SaveBodyOutput } from '@kobato/api/contracts/admin/
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { CreateDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-create-draft'
 import type { LocalDraftConfig } from '@kobato/web-admin/ui/editor-shell/drafts/use-local-draft'
+import type { Dispatch, SetStateAction } from 'react'
 import type { NavigateFunction } from 'react-router'
 
 export type EditorShellStatus =
@@ -94,7 +95,7 @@ export interface UseEditorShellStateArgs<
 
 export interface EditorToolbarState {
   metaOpen: boolean
-  setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setMetaOpen: Dispatch<SetStateAction<boolean>>
   published: boolean
   isPending: boolean
   isSavingDraft: boolean
@@ -112,7 +113,7 @@ export interface EditorToolbarState {
 
 export interface EditorSidebarState<TMeta> {
   draft: TMeta
-  onChange: React.Dispatch<React.SetStateAction<TMeta>>
+  onChange: Dispatch<SetStateAction<TMeta>>
   disabled: boolean
   publishStatus: SidebarPublishStatus | null
   revisionSummary: SidebarRevisionSummary | null
@@ -132,14 +133,14 @@ export interface EditorDialogState {
 
 export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
-  setMeta: React.Dispatch<React.SetStateAction<TMeta>>
+  setMeta: Dispatch<SetStateAction<TMeta>>
   body: LexicalEditorState
-  setBody: React.Dispatch<React.SetStateAction<LexicalEditorState>>
+  setBody: Dispatch<SetStateAction<LexicalEditorState>>
   bodyKey: string
   initialBody: LexicalEditorState
   isEditing: boolean
   metaOpen: boolean
-  setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setMetaOpen: Dispatch<SetStateAction<boolean>>
   isLg: boolean
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void

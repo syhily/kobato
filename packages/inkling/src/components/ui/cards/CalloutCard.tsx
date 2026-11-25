@@ -6,9 +6,8 @@ import { ColorOptionSetting, SettingsPanel, ToggleSetting } from '@kobato/inklin
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { lookupLabel } from '@kobato/inkling-internal/labels/inkling-labels'
-import React from 'react'
-
-const EmojiPickerPortal = React.lazy(() => import('@kobato/inkling-internal/components/ui/EmojiPickerPortal'))
+import { Suspense, lazy, useContext, useEffect, useRef } from 'react'
+const EmojiPickerPortal = lazy(() => import('@kobato/inkling-internal/components/ui/EmojiPickerPortal'))
 
 export type CalloutColorName = 'white' | 'grey' | 'blue' | 'green' | 'yellow' | 'red' | 'pink' | 'purple' | 'accent'
 
@@ -117,8 +116,8 @@ export function CalloutCard({
   toggleEmojiPicker,
   showEmojiPicker,
 }: CalloutCardProps) {
-  const emojiButtonRef = React.useRef<HTMLButtonElement | null>(null)
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const emojiButtonRef = useRef<HTMLButtonElement | null>(null)
+  const { darkMode } = useContext(InklingUiPrefsContext)
   const labels = useInklingLabels()
 
   const colorButtons = calloutColorPicker.map((entry) => ({
@@ -127,7 +126,7 @@ export function CalloutCard({
     color: entry.color,
   }))
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isEditing) {
       setShowEmojiPicker?.(false)
     }
@@ -149,9 +148,9 @@ export function CalloutCard({
                 {calloutEmoji}
               </button>
               {isEditing && showEmojiPicker && (
-                <React.Suspense fallback={null}>
+                <Suspense fallback={null}>
                   <EmojiPickerPortal positionRef={emojiButtonRef} onEmojiClick={changeEmoji} />
-                </React.Suspense>
+                </Suspense>
               )}
             </>
           )}

@@ -12,8 +12,7 @@ import InklingNestedEditorPlugin, {
   type FocusNextTarget,
 } from '@kobato/inkling-internal/plugins/InklingNestedEditorPlugin'
 import RestrictContentPlugin from '@kobato/inkling-internal/plugins/RestrictContentPlugin'
-import React from 'react'
-
+import { type ReactNode, useContext } from 'react'
 const Placeholder = ({ text = 'Type here', className = '' }) => {
   return (
     <div className={`placeholder not-inkling-prose pointer-events-none h-0 cursor-text overflow-visible`}>
@@ -38,7 +37,7 @@ interface InklingNestedEditorProps {
   hiddenFormats?: HiddenFormat[]
   useDefaultClasses?: boolean
   dataTestId?: string
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 const InklingNestedEditor = ({
@@ -61,7 +60,7 @@ const InklingNestedEditor = ({
 }: InklingNestedEditorProps) => {
   const initialNodes = nodes === 'minimal' ? MINIMAL_NODES : BASIC_NODES
   const markdownTransformers = nodes === 'minimal' ? MINIMAL_TRANSFORMERS : BASIC_TRANSFORMERS
-  const { isEmojiEnabled } = React.useContext(InklingUiPrefsContext)
+  const { isEmojiEnabled } = useContext(InklingUiPrefsContext)
 
   return (
     <InklingNestedComposer

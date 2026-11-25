@@ -4,7 +4,7 @@ import EmojiPickerPortal from '@kobato/inkling-internal/components/ui/EmojiPicke
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { DEFAULT_LABELS } from '@kobato/inkling-internal/labels/inkling-labels'
 import { render, screen } from '@testing-library/react'
-import React from 'react'
+import { type RefObject, type ReactNode, useMemo } from 'react'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const pickerPropsSpy = vi.hoisted(() => vi.fn())
@@ -19,7 +19,7 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-function createAnchor(rect: { top: number; left: number }): React.RefObject<HTMLElement | null> {
+function createAnchor(rect: { top: number; left: number }): RefObject<HTMLElement | null> {
   const anchor = document.createElement('div')
   document.body.appendChild(anchor)
   vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue({
@@ -82,8 +82,8 @@ describe('EmojiPickerPortal', () => {
   })
 
   it('hands the adapter a dataset loader for the context locale and none without one', () => {
-    function ComposerPrefs({ emojiLocale, children }: { emojiLocale: EmojiLocale; children: React.ReactNode }) {
-      const value = React.useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, emojiLocale }), [emojiLocale])
+    function ComposerPrefs({ emojiLocale, children }: { emojiLocale: EmojiLocale; children: ReactNode }) {
+      const value = useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, emojiLocale }), [emojiLocale])
       return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
     }
     const renderPortal = (emojiLocale?: EmojiLocale) => {

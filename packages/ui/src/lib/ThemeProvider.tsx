@@ -1,7 +1,7 @@
 import { getLogger } from '@kobato/ui/lib/logger'
 import { transitionViewIfSupported } from '@kobato/ui/lib/view-transition'
 import { THEME_COOKIE } from '@kobato/utils/theme-cookie'
-import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 const logger = getLogger('theme')
@@ -36,7 +36,7 @@ function applyTheme(resolved: Resolved) {
 }
 
 export interface ThemeProviderProps {
-  children: React.ReactNode
+  children: ReactNode
   initialResolved?: Resolved
 }
 

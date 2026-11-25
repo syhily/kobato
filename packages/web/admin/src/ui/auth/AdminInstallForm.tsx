@@ -10,7 +10,7 @@ import { formatBytes } from '@kobato/utils/format'
 import { useFileUpload } from '@kobato/web-admin/ui/shared/use-file-upload'
 import { orpc } from '@kobato/web-client/api/client'
 import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type SyntheticEvent, useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 const inputClasses =
@@ -63,7 +63,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     if (file && !/\.(db|db\.tar\.gz|db\.gz|gz)$/i.test(file.name)) {
       setRestoreError(t('auth.install.unsupportedFormat'))
@@ -100,7 +100,7 @@ export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { 
     }
   }
 
-  async function handleRestoreSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function handleRestoreSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     setRestoreError(null)
     await uploadRestore(new FormData(e.currentTarget))

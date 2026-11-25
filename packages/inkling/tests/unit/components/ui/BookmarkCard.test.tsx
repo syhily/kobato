@@ -1,13 +1,13 @@
 import type { SearchLinksFn } from '@kobato/inkling-internal/hooks/useSearchLinks'
+import type { ReactElement } from 'react'
 
 import { BookmarkCard, BookmarkIcon } from '@kobato/inkling-internal/components/ui/cards/BookmarkCard'
 import { InklingHostIntegrationProvider } from '@kobato/inkling-internal/context/InklingHostIntegrationContext'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createEditor } from 'lexical'
-import React from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-function renderWithSearchLinks(searchLinks: SearchLinksFn, ui: React.ReactElement) {
+function renderWithSearchLinks(searchLinks: SearchLinksFn, ui: ReactElement) {
   return render(
     <InklingHostIntegrationProvider
       value={{

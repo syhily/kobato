@@ -9,8 +9,7 @@ import { formatLocalDate } from '@kobato/utils/site-date'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@kobato/web-admin/ui/audit/filter-fields'
 import { useSiteIdentity } from '@kobato/web-client/settings/blog-settings-context'
 import { ChevronRightIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
-
+import { type KeyboardEvent, useCallback, useState } from 'react'
 interface AuditLogRowProps {
   row: AuditLogItemDto
 }
@@ -63,7 +62,7 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
   }, [canExpand])
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
+    (e: KeyboardEvent<HTMLDivElement>) => {
       if (!canExpand) {
         return
       }

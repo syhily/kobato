@@ -5,11 +5,10 @@ import {
   type PopupRectLike,
 } from '@kobato/inkling-internal/utils/selection-anchored-popup'
 import { type LexicalEditor } from 'lexical'
-import React from 'react'
-
+import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
 interface UseSelectionAnchoredPopupOptions {
   editor: LexicalEditor
-  popupRef: React.RefObject<HTMLElement | null>
+  popupRef: RefObject<HTMLElement | null>
   anchor: PopupAnchor
   containerRect: () => PopupRectLike | null
   aboveGap?: number
@@ -30,9 +29,9 @@ export function useSelectionAnchoredPopup({
   absoluteEdge,
   absoluteFlip,
 }: UseSelectionAnchoredPopupOptions) {
-  const scrollContainer = React.useMemo(() => getScrollAncestor(editor.getRootElement()), [editor])
+  const scrollContainer = useMemo(() => getScrollAncestor(editor.getRootElement()), [editor])
 
-  const updatePopupPosition = React.useCallback(() => {
+  const updatePopupPosition = useCallback(() => {
     editor.update(() => {
       const popupElement = popupRef.current
       if (!popupElement) {
@@ -84,7 +83,7 @@ export function useSelectionAnchoredPopup({
     absoluteFlip,
   ])
 
-  React.useEffect(() => {
+  useEffect(() => {
     updatePopupPosition()
   }, [updatePopupPosition])
 
@@ -96,17 +95,17 @@ export function useSelectionAnchoredPopup({
 export function usePopupRepositionSubscriptions(
   update: () => void,
   scrollElement: HTMLElement,
-  observeRef?: React.RefObject<HTMLElement | null>,
+  observeRef?: RefObject<HTMLElement | null>,
 ) {
-  const [observedElement, setObservedElement] = React.useState<HTMLElement | null>(null)
+  const [observedElement, setObservedElement] = useState<HTMLElement | null>(null)
   // oxlint-disable-next-line react-hooks/exhaustive-deps
-  React.useEffect(() => {
+  useEffect(() => {
     const element = observeRef?.current ?? null
     if (element !== observedElement) {
       setObservedElement(element)
     }
   })
-  React.useEffect(() => {
+  useEffect(() => {
     const onReposition = () => update()
     window.addEventListener('resize', onReposition)
     scrollElement.addEventListener('scroll', onReposition)

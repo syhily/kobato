@@ -4,23 +4,22 @@ import { fileTypes, useFileUpload } from '@kobato/inkling-demo/hooks/use-file-up
 import { useFocusBelowCanvas } from '@kobato/inkling-demo/hooks/use-focus-below-canvas'
 import { useSnippets } from '@kobato/inkling-demo/hooks/use-snippets'
 import { klipyConfig, tenorConfig } from '@kobato/inkling-demo/utils/gifConfig'
-import React, { useState } from 'react'
-
+import { type ComponentProps, type ReactNode, useCallback, useRef, useState } from 'react'
 const cardConfig: CardConfig = {
   tenor: tenorConfig ?? undefined,
   klipy: klipyConfig ?? undefined,
 }
 
-type InklingComposerNodes = React.ComponentProps<typeof InklingComposer>['nodes']
+type InklingComposerNodes = ComponentProps<typeof InklingComposer>['nodes']
 
-export function DemoEditorShell({ nodes, children }: { nodes?: InklingComposerNodes; children: React.ReactNode }) {
+export function DemoEditorShell({ nodes, children }: { nodes?: InklingComposerNodes; children: ReactNode }) {
   const [editorAPI, setEditorAPI] = useState<ExternalControlAPI | null>(null)
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const { snippets, createSnippet, deleteSnippet } = useSnippets()
   const sidebar = useDemoSidebar()
   const { onClick } = useFocusBelowCanvas({ editorAPI, containerRef })
 
-  const handleRegisterAPI = React.useCallback((api: ExternalControlAPI | null) => {
+  const handleRegisterAPI = useCallback((api: ExternalControlAPI | null) => {
     setEditorAPI(api)
   }, [])
 

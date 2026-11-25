@@ -2,8 +2,7 @@ import type { PinturaConfig } from '@kobato/inkling-internal/hooks/usePinturaEdi
 import type { ListOptionItem, SearchResult } from '@kobato/inkling-internal/hooks/useSearchLinks'
 import type { TelemetryHandler } from '@kobato/inkling-internal/utils/analytics'
 
-import React from 'react'
-
+import { type ErrorInfo, type ReactNode, createContext, useContext, useMemo } from 'react'
 export interface FileUploader {
   useFileUpload: (type: 'image' | 'video' | 'audio' | 'file' | 'mediaThumbnail') => {
     isLoading?: boolean
@@ -107,60 +106,60 @@ export interface CardConfig
 export interface InklingHostIntegrationContextValue {
   fileUploader: FileUploader
   cardConfig: CardConfig
-  onError: (error: unknown, info: React.ErrorInfo) => void
+  onError: (error: unknown, info: ErrorInfo) => void
 
   dragScrollContainerSelector?: string
 }
 
 export interface InklingHostEssentials {
   fileUploader: FileUploader
-  onError: (error: unknown, info: React.ErrorInfo) => void
+  onError: (error: unknown, info: ErrorInfo) => void
 }
-const InklingHostEssentialsContext = React.createContext<InklingHostEssentials>({
+const InklingHostEssentialsContext = createContext<InklingHostEssentials>({
   fileUploader: {
     useFileUpload: () => ({ upload: () => Promise.resolve(undefined) }),
   },
   onError: () => undefined,
 })
 export function useInklingHostEssentials(): InklingHostEssentials {
-  return React.useContext(InklingHostEssentialsContext)
+  return useContext(InklingHostEssentialsContext)
 }
 
-const InklingGifSettingsContext = React.createContext<GifSettings>({})
-const InklingLinkingSettingsContext = React.createContext<LinkingSettings>({})
-const InklingSnippetSettingsContext = React.createContext<SnippetSettings>({})
-const InklingUploadSettingsContext = React.createContext<UploadSettings>({})
-const InklingMathSettingsContext = React.createContext<MathSettings>({})
-const InklingLibrarySettingsContext = React.createContext<LibrarySettings>({})
+const InklingGifSettingsContext = createContext<GifSettings>({})
+const InklingLinkingSettingsContext = createContext<LinkingSettings>({})
+const InklingSnippetSettingsContext = createContext<SnippetSettings>({})
+const InklingUploadSettingsContext = createContext<UploadSettings>({})
+const InklingMathSettingsContext = createContext<MathSettings>({})
+const InklingLibrarySettingsContext = createContext<LibrarySettings>({})
 
 export function useInklingGifSettings(): GifSettings {
-  return React.useContext(InklingGifSettingsContext)
+  return useContext(InklingGifSettingsContext)
 }
 
 export function useInklingLinkingSettings(): LinkingSettings {
-  return React.useContext(InklingLinkingSettingsContext)
+  return useContext(InklingLinkingSettingsContext)
 }
 
 export function useInklingSnippetSettings(): SnippetSettings {
-  return React.useContext(InklingSnippetSettingsContext)
+  return useContext(InklingSnippetSettingsContext)
 }
 
 export function useInklingUploadSettings(): UploadSettings {
-  return React.useContext(InklingUploadSettingsContext)
+  return useContext(InklingUploadSettingsContext)
 }
 
 export function useInklingMathSettings(): MathSettings {
-  return React.useContext(InklingMathSettingsContext)
+  return useContext(InklingMathSettingsContext)
 }
 
 export function useInklingLibrarySettings(): LibrarySettings {
-  return React.useContext(InklingLibrarySettingsContext)
+  return useContext(InklingLibrarySettingsContext)
 }
 
-const InklingDragScrollContext = React.createContext<string | undefined>(undefined)
+const InklingDragScrollContext = createContext<string | undefined>(undefined)
 
 export function useInklingDragScrollContainerSelector(): string | undefined {
-  return React.useContext(InklingDragScrollContext)
+  return useContext(InklingDragScrollContext)
 }
 
 export function InklingHostIntegrationProvider({
@@ -168,19 +167,19 @@ export function InklingHostIntegrationProvider({
   children,
 }: {
   value: InklingHostIntegrationContextValue
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const { cardConfig } = value
 
-  const essentials = React.useMemo<InklingHostEssentials>(
+  const essentials = useMemo<InklingHostEssentials>(
     () => ({ fileUploader: value.fileUploader, onError: value.onError }),
     [value.fileUploader, value.onError],
   )
-  const gifSettings = React.useMemo<GifSettings>(
+  const gifSettings = useMemo<GifSettings>(
     () => ({ klipy: cardConfig.klipy, tenor: cardConfig.tenor }),
     [cardConfig.klipy, cardConfig.tenor],
   )
-  const linkingSettings = React.useMemo<LinkingSettings>(
+  const linkingSettings = useMemo<LinkingSettings>(
     () => ({
       searchLinks: cardConfig.searchLinks,
       fetchAutocompleteLinks: cardConfig.fetchAutocompleteLinks,
@@ -189,7 +188,7 @@ export function InklingHostIntegrationProvider({
     }),
     [cardConfig.searchLinks, cardConfig.fetchAutocompleteLinks, cardConfig.siteUrl, cardConfig.fetchEmbed],
   )
-  const snippetSettings = React.useMemo<SnippetSettings>(
+  const snippetSettings = useMemo<SnippetSettings>(
     () => ({
       snippets: cardConfig.snippets,
       createSnippet: cardConfig.createSnippet,
@@ -197,15 +196,12 @@ export function InklingHostIntegrationProvider({
     }),
     [cardConfig.snippets, cardConfig.createSnippet, cardConfig.deleteSnippet],
   )
-  const uploadSettings = React.useMemo<UploadSettings>(
+  const uploadSettings = useMemo<UploadSettings>(
     () => ({ image: cardConfig.image, pinturaConfig: cardConfig.pinturaConfig }),
     [cardConfig.image, cardConfig.pinturaConfig],
   )
-  const mathSettings = React.useMemo<MathSettings>(
-    () => ({ renderMath: cardConfig.renderMath }),
-    [cardConfig.renderMath],
-  )
-  const librarySettings = React.useMemo<LibrarySettings>(
+  const mathSettings = useMemo<MathSettings>(() => ({ renderMath: cardConfig.renderMath }), [cardConfig.renderMath])
+  const librarySettings = useMemo<LibrarySettings>(
     () => ({ imageLibrary: cardConfig.imageLibrary }),
     [cardConfig.imageLibrary],
   )

@@ -16,8 +16,7 @@ import trackEvent from '@kobato/inkling-internal/utils/analytics'
 import { isInternalUrl } from '@kobato/inkling-internal/utils/is-internal-url'
 import { $createLinkNode } from '@lexical/link'
 import { $createTextNode, type EditorState, type LexicalEditor, type NodeKey } from 'lexical'
-import React, { useCallback } from 'react'
-
+import { useCallback, useEffect, useEffectEvent, useState } from 'react'
 interface BookmarkNodeComponentProps {
   author?: string
   nodeKey: NodeKey
@@ -51,7 +50,7 @@ export function BookmarkNodeComponent({
   const labels = useInklingLabels()
 
   const isSelected = useCardIsSelected(nodeKey)
-  const [urlInputValue, setUrlInputValue] = React.useState<string>(url)
+  const [urlInputValue, setUrlInputValue] = useState<string>(url)
   const { loading, urlError, clearUrlError, submitUrl, fetchInitialMetadata } = useBookmarkMetadata({
     editor,
     nodeKey,
@@ -95,13 +94,16 @@ export function BookmarkNodeComponent({
     })
   }, [editor, nodeKey])
 
-  React.useEffect(() => {
+  const initializeMetadata = useEffectEvent(() => {
     if (createdWithUrl) {
       fetchInitialMetadata(url).catch(() => {
         handlePasteAsLink()
       })
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  })
+
+  useEffect(() => {
+    initializeMetadata()
   }, [])
 
   const searchEnabled = typeof searchLinks === 'function'

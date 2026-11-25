@@ -1,7 +1,6 @@
 import { $updateCardNode } from '@kobato/inkling-internal/nodes/base'
 import { type LexicalEditor, type LexicalNode, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { type RefObject, useEffect } from 'react'
 export interface TriggerFileDialogCardNode extends LexicalNode {
   set triggerFileDialog(shouldTrigger: boolean)
 }
@@ -10,7 +9,7 @@ export interface UseTriggerFileDialogOptions<TNode extends TriggerFileDialogCard
   editor: LexicalEditor
   nodeKey: NodeKey
   guard: (node: unknown) => node is TNode
-  fileInputRef: React.RefObject<HTMLInputElement | null>
+  fileInputRef: RefObject<HTMLInputElement | null>
   triggerFileDialog: boolean | undefined
 }
 
@@ -21,7 +20,7 @@ export function useTriggerFileDialog<TNode extends TriggerFileDialogCardNode>({
   fileInputRef,
   triggerFileDialog,
 }: UseTriggerFileDialogOptions<TNode>): void {
-  React.useEffect(() => {
+  useEffect(() => {
     if (!triggerFileDialog) {
       return
     }

@@ -21,8 +21,7 @@ import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { useSettingsMutation } from '@kobato/web-admin/ui/settings/use-settings-mutation'
 import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
-
+import { type SubmitEventHandler, type ReactNode, useCallback, useMemo, useRef, useState } from 'react'
 type CacheSlice = CacheSettings['cache']
 
 interface BucketCardProps {
@@ -262,7 +261,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
 interface BucketFieldProps {
   label: string
-  value: React.ReactNode
+  value: ReactNode
 }
 
 function BucketField({ label, value }: BucketFieldProps) {

@@ -1,5 +1,4 @@
-import React from 'react'
-
+import { useCallback, useEffect, useState } from 'react'
 export interface UseKeyboardListSelectionOptions<T> {
   items: T[]
   onSelect: (item: T) => void
@@ -24,11 +23,11 @@ export function useKeyboardListSelection<T>({
     0,
     items.findIndex((item) => item === defaultSelected),
   )
-  const [selectedIndex, setSelectedIndex] = React.useState(defaultIndex)
-  const [scrollSelectedIntoView, setScrollSelectedIntoView] = React.useState(false)
-  const [hasNavigated, setHasNavigated] = React.useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(defaultIndex)
+  const [scrollSelectedIntoView, setScrollSelectedIntoView] = useState(false)
+  const [hasNavigated, setHasNavigated] = useState(false)
 
-  const [prevDefaultIndex, setPrevDefaultIndex] = React.useState(defaultIndex)
+  const [prevDefaultIndex, setPrevDefaultIndex] = useState(defaultIndex)
   if (prevDefaultIndex !== defaultIndex) {
     setPrevDefaultIndex(defaultIndex)
     setSelectedIndex(defaultIndex)
@@ -37,7 +36,7 @@ export function useKeyboardListSelection<T>({
     setSelectedIndex(defaultIndex)
   }
 
-  const handleKeydown = React.useCallback(
+  const handleKeydown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault()
@@ -81,7 +80,7 @@ export function useKeyboardListSelection<T>({
     [items, selectedIndex, onSelect, onEnterWithoutSelection, hasNavigated],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('keydown', handleKeydown, { capture: true })
     return () => {
       window.removeEventListener('keydown', handleKeydown, { capture: true })

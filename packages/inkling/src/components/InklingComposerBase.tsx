@@ -25,11 +25,10 @@ import { LexicalCollaboration } from '@lexical/react/LexicalCollaborationContext
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer'
 import { type CreateEditorArgs } from 'lexical'
-import React from 'react'
-
+import { type ErrorInfo, type ReactNode, useEffect, useMemo, useState } from 'react'
 export type { InklingInitialEditorState }
 
-function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
+function defaultOnError(error: unknown, _info?: ErrorInfo) {
   if (import.meta.env.DEV) {
     console.error(error)
   }
@@ -38,7 +37,7 @@ function defaultOnError(error: unknown, _info?: React.ErrorInfo) {
 export interface InklingComposerProps {
   initialEditorState?: InklingInitialEditorState
   nodes: CreateEditorArgs['nodes']
-  onError?: (error: unknown, info?: React.ErrorInfo) => void
+  onError?: (error: unknown, info?: ErrorInfo) => void
   fileUploader?: FileUploaderInput
   cardConfig?: CardConfig
   darkMode?: boolean
@@ -55,7 +54,7 @@ export interface InklingComposerProps {
   multiplayerDocId?: string
   multiplayerUsername?: string
   dragScrollContainerSelector?: string
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 const InklingComposerBase = ({
@@ -83,12 +82,12 @@ const InklingComposerBase = ({
     requireMultiplayerConfig(multiplayerEndpoint, multiplayerDocId)
   }
 
-  const normalizedInitialEditorState = React.useMemo(
+  const normalizedInitialEditorState = useMemo(
     () => normalizeInitialEditorState(initialEditorState),
     [initialEditorState],
   )
 
-  const [rootExtension] = React.useState(() =>
+  const [rootExtension] = useState(() =>
     buildInklingRootExtension({
       nodes,
       onError: (error: Error) => onError(error),
@@ -97,7 +96,7 @@ const InklingComposerBase = ({
     }),
   )
 
-  const normalizedFileUploader = React.useMemo<FileUploader>(() => normalizeFileUploader(fileUploader), [fileUploader])
+  const normalizedFileUploader = useMemo<FileUploader>(() => normalizeFileUploader(fileUploader), [fileUploader])
 
   const createWebsocketProvider = useCollaborationProviderFactory({
     enabled: enableMultiplayer,
@@ -106,8 +105,8 @@ const InklingComposerBase = ({
     debug: multiplayerDebug,
   })
 
-  React.useEffect(() => setTelemetryHandler(cardConfig.telemetry), [cardConfig.telemetry])
-  const hostIntegrationValue = React.useMemo(
+  useEffect(() => setTelemetryHandler(cardConfig.telemetry), [cardConfig.telemetry])
+  const hostIntegrationValue = useMemo(
     () => ({
       fileUploader: normalizedFileUploader,
       cardConfig,
@@ -116,11 +115,11 @@ const InklingComposerBase = ({
     }),
     [normalizedFileUploader, cardConfig, onError, dragScrollContainerSelector],
   )
-  const collaborationValue = React.useMemo(
+  const collaborationValue = useMemo(
     () => ({ createWebsocketProvider: createWebsocketProvider ?? noopWebsocketProviderFactory }),
     [createWebsocketProvider],
   )
-  const uiPrefsValue = React.useMemo(
+  const uiPrefsValue = useMemo(
     () => ({
       darkMode,
       isTKEnabled,

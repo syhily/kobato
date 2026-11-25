@@ -1,9 +1,8 @@
 import { LazyCardEditor } from '@kobato/inkling-internal/components/ui/cards/LazyCardEditor'
 import { ReadOnlyOverlay } from '@kobato/inkling-internal/components/ui/ReadOnlyOverlay'
 import { sanitizeHtml } from '@kobato/inkling-internal/utils/sanitize-html'
-import React from 'react'
-
-const LazyHtmlEditor = React.lazy(() => import('@kobato/inkling-internal/components/ui/cards/HtmlCard/HtmlEditor'))
+import { lazy } from 'react'
+const LazyHtmlEditor = lazy(() => import('@kobato/inkling-internal/components/ui/cards/HtmlCard/HtmlEditor'))
 
 function HtmlEditorFallback({ html }: { html?: string }) {
   return (

@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { SidebarProvider } from '@kobato/ui/components/sidebar'
 import { UploadImageDialog } from '@kobato/web-admin/ui/shared/image-edit/UploadImageDialog'
@@ -90,7 +92,7 @@ describe('snapshot: AdminSearchDialog', () => {
 })
 
 describe('snapshot: NavMenuItem', () => {
-  function wrap(node: React.ReactNode, path = '/admin/posts') {
+  function wrap(node: ReactNode, path = '/admin/posts') {
     return stableHtml(
       renderInRouter(
         <SidebarProvider>

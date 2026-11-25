@@ -1,9 +1,8 @@
-import React from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
+export function Delayed({ children, waitBeforeShow = 500 }: { children?: ReactNode; waitBeforeShow?: number }) {
+  const [show, setShow] = useState(waitBeforeShow === 0)
 
-export function Delayed({ children, waitBeforeShow = 500 }: { children?: React.ReactNode; waitBeforeShow?: number }) {
-  const [show, setShow] = React.useState(waitBeforeShow === 0)
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (show) {
       return
     }

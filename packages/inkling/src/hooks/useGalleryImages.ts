@@ -8,8 +8,7 @@ import { useCardWriter } from '@kobato/inkling-internal/hooks/useCardWriter'
 import { $isGalleryNode } from '@kobato/inkling-internal/nodes/base'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getNodeByKey, type NodeKey } from 'lexical'
-import React from 'react'
-
+import { useEffect, useState, useSyncExternalStore } from 'react'
 export interface GalleryImagesBinding {
   images: GalleryImage[]
   setImages: GalleryImagesMirror['setImages']
@@ -19,7 +18,7 @@ export function useGalleryImages(nodeKey: NodeKey): GalleryImagesBinding {
   const [editor] = useLexicalComposerContext()
   const write = useCardWriter(nodeKey, $isGalleryNode)
 
-  const [mirror] = React.useState(() =>
+  const [mirror] = useState(() =>
     createGalleryImagesMirror({
       readNodeImages: () =>
         editor.getEditorState().read(() => {
@@ -38,14 +37,14 @@ export function useGalleryImages(nodeKey: NodeKey): GalleryImagesBinding {
     }),
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     mirror.start()
     return () => {
       mirror.dispose()
     }
   }, [mirror])
 
-  const images = React.useSyncExternalStore(mirror.subscribe, mirror.getSnapshot)
+  const images = useSyncExternalStore(mirror.subscribe, mirror.getSnapshot)
 
   return { images, setImages: mirror.setImages, setPreviewImages: mirror.setPreviewImages }
 }

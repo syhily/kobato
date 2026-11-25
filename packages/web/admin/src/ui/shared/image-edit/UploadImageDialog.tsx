@@ -16,8 +16,16 @@ import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes } from '@kobato/utils/format'
 import { orpc } from '@kobato/web-client/api/client'
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
-import { Suspense, type SubmitEventHandler, lazy, useCallback, useEffect, useRef, useState } from 'react'
-
+import {
+  type SubmitEventHandler,
+  type ChangeEvent,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 const ImageEditorCanvas = lazy(() =>
   import('@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas').then((m) => ({
     default: m.ImageEditorCanvas,
@@ -69,7 +77,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
     }
   }, [open])
 
-  const onSelectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const onSelectFile = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0] ?? null
     if (next === null) {
       return

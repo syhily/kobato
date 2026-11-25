@@ -3,8 +3,7 @@ import { useInklingSnippetSettings } from '@kobato/inkling-internal/context/Inkl
 import { focusEditorRoot } from '@kobato/inkling-internal/plugins/behaviour/card-adjacency'
 import { createSnippetFromSource } from '@kobato/inkling-internal/plugins/behaviour/snippet-creation'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { useCallback, useState } from 'react'
 export interface SnippetActionToolbarProps {
   onClose?: () => void
 }
@@ -12,14 +11,14 @@ export interface SnippetActionToolbarProps {
 export function SnippetActionToolbar({ onClose }: SnippetActionToolbarProps) {
   const [editor] = useLexicalComposerContext()
   const { snippets, createSnippet } = useInklingSnippetSettings()
-  const [name, setName] = React.useState('')
+  const [name, setName] = useState('')
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = useCallback(() => {
     onClose?.()
     focusEditorRoot(editor)
   }, [editor, onClose])
 
-  const handleSnippetCreation = React.useCallback(
+  const handleSnippetCreation = useCallback(
     (snippetName: string) => {
       if (createSnippetFromSource(editor, { kind: 'selection' }, snippetName, createSnippet)) {
         handleClose()

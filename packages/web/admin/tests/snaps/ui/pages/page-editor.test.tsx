@@ -1,5 +1,6 @@
 import type { AdminPageDetailDto } from '@kobato/api/contracts/admin/pages'
 import type { PageMetaDraft } from '@kobato/web-admin/ui/pages/page-meta'
+import type { ReactNode } from 'react'
 
 import { MetaSidebar } from '@kobato/web-admin/ui/pages/MetaSidebar'
 import { PageEditorRoute } from '@kobato/web-admin/ui/pages/PageEditorRoute'
@@ -8,7 +9,7 @@ import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-client/tes
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/web-admin/ui/editor/PageBodyEditor', () => ({
-  PageBodyEditor: ({ header }: { header?: React.ReactNode }) => (
+  PageBodyEditor: ({ header }: { header?: ReactNode }) => (
     <div data-testid="page-body-editor">
       {header}
       PageBodyEditor

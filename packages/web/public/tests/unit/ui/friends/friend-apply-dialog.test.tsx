@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react'
+
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -19,14 +21,14 @@ vi.mock('motion/react', () => {
     'whileDrag',
     'whileInView',
   ])
-  const MotionStub = ({ children, ...rest }: { children?: React.ReactNode } & Record<string, unknown>) => {
+  const MotionStub = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) => {
     for (const key of MOTION_ONLY_PROPS) {
       delete rest[key]
     }
     return <div {...rest}>{children}</div>
   }
   return {
-    AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
     motion: new Proxy({}, { get: () => MotionStub }),
   }
 })

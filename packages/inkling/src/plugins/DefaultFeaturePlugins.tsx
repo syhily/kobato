@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react'
+
 import AtLinkPlugin from '@kobato/inkling-internal/plugins/AtLinkPlugin'
 import { CardInsertPlugin } from '@kobato/inkling-internal/plugins/CardInsertPlugin'
 import { CardMenuPlugin } from '@kobato/inkling-internal/plugins/CardMenuPlugin'
@@ -11,11 +13,9 @@ import { InklingTablePlugin } from '@kobato/inkling-internal/plugins/InklingTabl
 import MathInlinePlugin from '@kobato/inkling-internal/plugins/MathInlinePlugin'
 import TypographyPlugin from '@kobato/inkling-internal/plugins/TypographyPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
-import React from 'react'
-
 export interface FeaturePluginEntry {
   key: string
-  Component: React.ComponentType
+  Component: ComponentType
 }
 
 export const DEFAULT_FEATURE_PLUGINS: readonly FeaturePluginEntry[] = [

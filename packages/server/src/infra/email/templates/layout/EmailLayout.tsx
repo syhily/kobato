@@ -5,18 +5,17 @@ import { Body, Container, Html, Link, Section, Text } from '@kobato/server/infra
 import { light } from '@kobato/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { getYear } from 'date-fns'
-import { useState } from 'react'
-
+import { type ReactNode, useState } from 'react'
 interface Props {
   t: ServerTranslator
   receiver: string
   preview?: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 interface FooterSiteLinkProps {
   href: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 function FooterSiteLink({ href, children }: FooterSiteLinkProps) {

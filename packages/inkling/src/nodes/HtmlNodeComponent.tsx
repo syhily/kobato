@@ -7,11 +7,10 @@ import { useCardIsEditing } from '@kobato/inkling-internal/context/CardSelection
 import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPrefsContext'
 import { useCardChrome } from '@kobato/inkling-internal/hooks/useCardChrome'
 import { $isHtmlNode } from '@kobato/inkling-internal/nodes/HtmlNode'
-import React from 'react'
-
+import { useContext } from 'react'
 export function HtmlNodeComponent({ nodeKey, html }: { nodeKey: string; html?: string }) {
   const { setField } = useCardChrome(nodeKey, $isHtmlNode)
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const { darkMode } = useContext(InklingUiPrefsContext)
 
   const isEditing = useCardIsEditing(nodeKey)
 

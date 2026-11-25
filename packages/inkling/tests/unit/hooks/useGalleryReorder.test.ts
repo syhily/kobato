@@ -4,7 +4,7 @@ import { createDragDropHandle } from '@kobato/inkling-internal/plugins/behaviour
 import { DragDropHandler } from '@kobato/inkling-internal/utils/draggable/DragDropHandler'
 import { cardDrag, imageDrag } from '@kobato/inkling/tests/utils/draggable-fixtures'
 import { act, renderHook } from '@testing-library/react'
-import React from 'react'
+import { type ReactNode, createElement } from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockContainer = {
@@ -20,8 +20,8 @@ const registerContainer = vi.spyOn(dragDropHandler, 'registerContainer').mockRet
 const dragDropHandle = createDragDropHandle()
 dragDropHandle.setState({ handler: dragDropHandler })
 
-const wrapper = ({ children }: { children: React.ReactNode }) =>
-  React.createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(DragDropHandleContext.Provider, { value: dragDropHandle }, children)
 
 function createImageContainer(images: GalleryImage[]) {
   const container = document.createElement('div')

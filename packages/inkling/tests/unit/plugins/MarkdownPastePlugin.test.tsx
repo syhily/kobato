@@ -16,7 +16,7 @@ import {
   $isTextNode,
   createEditor,
 } from 'lexical'
-import React, { useMemo } from 'react'
+import { type ReactNode, type ContextType, useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 registerCardDecorateAdapter()
@@ -46,8 +46,8 @@ function createTestEditor() {
 
 type TestEditor = ReturnType<typeof createTestEditor>
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: TestEditor }) {
-  const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: TestEditor }) {
+  const contextValue = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )

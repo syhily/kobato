@@ -1,4 +1,4 @@
-import type React from 'react'
+import type { ReactNode } from 'react'
 
 import { useDragDropHandleState } from '@kobato/inkling-internal/context/DragDropHandleContext'
 
@@ -8,7 +8,7 @@ export function ActionToolbar({
   'data-inkling-card-toolbar': dataInklingCardToolbar,
 }: {
   isVisible?: boolean
-  children?: React.ReactNode
+  children?: ReactNode
   'data-inkling-card-toolbar'?: string
 }) {
   const isDragging = useDragDropHandleState((state) => state.isDragging)

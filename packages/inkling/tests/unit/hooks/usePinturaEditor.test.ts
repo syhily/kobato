@@ -2,7 +2,7 @@ import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPre
 import usePinturaEditor from '@kobato/inkling-internal/hooks/usePinturaEditor'
 import { resolveLabels, type InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import React from 'react'
+import { type ReactNode, createElement, useMemo } from 'react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ink_utils_analytics = await import('@kobato/inkling-internal/utils/analytics')
@@ -23,9 +23,9 @@ async function captureOpenOptions({
   const openDefaultEditor = vi.fn((_options: Record<string, unknown>) => new MockPinturaEditor())
   window.pintura = { openDefaultEditor } as unknown as typeof window.pintura
 
-  function Wrapper({ children }: { children: React.ReactNode }) {
-    const prefsValue = React.useMemo(() => ({ darkMode: false, labels: resolveLabels(labelsInput) }), [])
-    return React.createElement(InklingUiPrefsContext.Provider, { value: prefsValue }, children)
+  function Wrapper({ children }: { children: ReactNode }) {
+    const prefsValue = useMemo(() => ({ darkMode: false, labels: resolveLabels(labelsInput) }), [])
+    return createElement(InklingUiPrefsContext.Provider, { value: prefsValue }, children)
   }
 
   const { result } = renderHook(

@@ -1,3 +1,5 @@
+import type { ChangeEvent, KeyboardEvent } from 'react'
+
 import CloseIcon from '@kobato/inkling-internal/assets/icons/inkling-close.svg?react'
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 
@@ -8,9 +10,9 @@ export const Input = ({
   onKeyDown,
 }: {
   value?: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onClear?: () => void
-  onKeyDown?: (e: React.KeyboardEvent) => void
+  onKeyDown?: (e: KeyboardEvent) => void
 }) => {
   const labels = useInklingLabels()
 

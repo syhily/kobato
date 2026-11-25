@@ -17,7 +17,7 @@ import {
   selectFirstText,
 } from '@kobato/inkling/tests/utils/selection'
 import { render, renderHook } from '@testing-library/react'
-import React from 'react'
+import { type ReactNode, useMemo } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@lexical/react/LexicalComposerContext', () => ({
@@ -28,11 +28,8 @@ vi.mock('@kobato/inkling-internal/utils', async (importActual) => {
   return { ...actual, countWords: vi.fn(actual.countWords) }
 })
 
-function ComposerPrefs({ language, children }: { language?: string; children: React.ReactNode }) {
-  const value = React.useMemo(
-    () => ({ darkMode: false, labels: DEFAULT_LABELS, wordCountLanguage: language }),
-    [language],
-  )
+function ComposerPrefs({ language, children }: { language?: string; children: ReactNode }) {
+  const value = useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, wordCountLanguage: language }), [language])
   return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
 }
 
@@ -72,7 +69,7 @@ describe('WordCountPlugin', () => {
   }
 
   function pluginWrapper(wordCountHandle: WordCountHandle, composerLanguage?: string) {
-    return ({ children }: { children: React.ReactNode }) => (
+    return ({ children }: { children: ReactNode }) => (
       <ComposerPrefs language={composerLanguage}>
         <WordCountHandleContext.Provider value={wordCountHandle}>{children}</WordCountHandleContext.Provider>
       </ComposerPrefs>

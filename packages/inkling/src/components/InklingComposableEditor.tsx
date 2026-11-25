@@ -12,8 +12,7 @@ import CorePlugins from '@kobato/inkling-internal/plugins/CorePlugins'
 import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import React from 'react'
-
+import { type ReactNode, type ReactElement, useCallback, useContext, useRef, useState } from 'react'
 export interface InklingComposableEditorProps {
   onChange?: (editorState: SerializedEditorState) => void
   onBlur?: () => void
@@ -21,8 +20,8 @@ export interface InklingComposableEditorProps {
   markdownTransformers?: readonly Transformer[]
   registerAPI?: (api: ExternalControlAPI | null) => void
   cursorDidExitAtTop?: () => void
-  children?: React.ReactNode
-  placeholder?: React.ReactElement
+  children?: ReactNode
+  placeholder?: ReactElement
   singleParagraph?: boolean
   placeholderText?: string
   placeholderClassName?: string
@@ -66,14 +65,14 @@ const InklingComposableEditor = ({
   const { historyState, onChange: sharedOnChange } = useSharedEditorStateContext()
   const [editor] = useLexicalComposerContext()
   const { isCollabActive } = useCollaborationContext()
-  const { darkMode, isTKEnabled } = React.useContext(InklingUiPrefsContext)
+  const { darkMode, isTKEnabled } = useContext(InklingUiPrefsContext)
   const dragDropHandle = useDragDropHandle()
 
   const parentEditor = getParentEditor(editor)
   const isNested = parentEditor !== null
   const isDragReorderEnabled = isDragEnabled && !readOnly && !isNested
 
-  const _onChange = React.useCallback(
+  const _onChange = useCallback(
     (editorState: EditorState) => {
       if (sharedOnChange) {
         const primaryEditorState = (parentEditor || editor).getEditorState()
@@ -89,8 +88,8 @@ const InklingComposableEditor = ({
     [onChange, sharedOnChange, editor, parentEditor],
   )
 
-  const editorContainerRef = React.useRef<HTMLElement | null>(null)
-  const onWrapperRef = React.useCallback(
+  const editorContainerRef = useRef<HTMLElement | null>(null)
+  const onWrapperRef = useCallback(
     (wrapperElem: HTMLElement | null) => {
       if (!isNested) {
         editorContainerRef.current = wrapperElem
@@ -100,7 +99,7 @@ const InklingComposableEditor = ({
     [isNested, dragDropHandle],
   )
 
-  const [floatingAnchorElem, setFloatingAnchorElem] = React.useState<HTMLDivElement | null>(null)
+  const [floatingAnchorElem, setFloatingAnchorElem] = useState<HTMLDivElement | null>(null)
   const onContentEditableRef = (_floatingAnchorElem: HTMLDivElement | null) => {
     setFloatingAnchorElem(_floatingAnchorElem)
   }

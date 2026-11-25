@@ -20,8 +20,7 @@ import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPan
 import { EditorToolbar } from '@kobato/web-admin/ui/editor-shell/EditorToolbar'
 import { useEditorShellState } from '@kobato/web-admin/ui/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@kobato/web-admin/ui/editor/PageBodyEditor'
-import { useMemo } from 'react'
-
+import { type ReactNode, useMemo } from 'react'
 export interface EditorScreenEntity extends EntityLike {
   title: string
   deletedAt: string | null
@@ -67,7 +66,7 @@ export interface EditorScreenAdapter<
   restoreEntityFn: (id: string) => Promise<unknown>
   invalidateList: () => void
 
-  renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => React.ReactNode
+  renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => ReactNode
 }
 
 export interface EditorScreenProps<

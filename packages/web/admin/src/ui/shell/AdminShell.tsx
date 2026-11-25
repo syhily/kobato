@@ -8,8 +8,7 @@ import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-pla
 import { AdminScrollTopButton } from '@kobato/web-admin/ui/shell/AdminScrollTopButton'
 import { AppSidebar } from '@kobato/web-admin/ui/shell/AppSidebar'
 import { MobileNavBar } from '@kobato/web-admin/ui/shell/MobileNavBar'
-import { createContext, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-
+import { type ReactNode, type RefObject, createContext, use, useEffect, useMemo, useRef, useState } from 'react'
 interface AdminChromeContextValue {
   focused: boolean
   setFocused: (next: boolean) => void
@@ -68,7 +67,7 @@ function MusicPlayerAwareMain({
   children,
 }: {
   focused: boolean
-  mainScrollRef: React.RefObject<HTMLElement | null>
+  mainScrollRef: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
   return (

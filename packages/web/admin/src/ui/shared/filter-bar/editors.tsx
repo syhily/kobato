@@ -21,8 +21,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { DateRangeCalendarPicker } from '@kobato/web-admin/ui/shared/filter-bar/calendar-picker'
 import { SearchableOptionList } from '@kobato/web-admin/ui/shared/filter-bar/option-list'
 import { CheckIcon, ChevronDownIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 export function OptionsValueEditor<K extends string>({
   field,
   value,
@@ -197,7 +196,7 @@ export function TextFilterEditor<K extends string>({
     onChange({ op: value.op, value: next })
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       commit(localValue.trim())
     }

@@ -13,7 +13,7 @@ import { themeClassList } from '@kobato/inkling-internal/themes/inkling-theme-cl
 import { getEditorTheme } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { type LexicalEditor, TextNode } from 'lexical'
-import { useCallback, useContext, useEffect, useState } from 'react'
+import { type MouseEvent, useCallback, useContext, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 function TKIndicator({
@@ -63,7 +63,7 @@ function TKIndicator({
     return null
   }
 
-  const onClick = (e: React.MouseEvent) => {
+  const onClick = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 

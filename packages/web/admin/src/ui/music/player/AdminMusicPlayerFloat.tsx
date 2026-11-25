@@ -11,7 +11,15 @@ import {
 import { ProgressSlider } from '@kobato/web-admin/ui/music/player/ProgressSlider'
 import { Image } from '@kobato/web-public/ui/widgets/Image'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type MouseEvent as ReactMouseEvent,
+  type TouchEvent as ReactTouchEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useLocation } from 'react-router'
 
 const STORAGE_KEY = 'kobato-admin-player-pos'
@@ -68,7 +76,7 @@ export function AdminMusicPlayerFloat() {
 
   const visible = currentTrack !== null && !isMusicPage
 
-  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const handleDragStart = useCallback((e: ReactMouseEvent | ReactTouchEvent) => {
     setDragging(true)
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
@@ -79,7 +87,7 @@ export function AdminMusicPlayerFloat() {
     }
   }, [])
 
-  const stopPropagation = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const stopPropagation = useCallback((e: ReactMouseEvent | ReactTouchEvent) => {
     e.stopPropagation()
   }, [])
 
@@ -88,7 +96,7 @@ export function AdminMusicPlayerFloat() {
       return
     }
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
+    const handleMove = (e: globalThis.MouseEvent | globalThis.TouchEvent) => {
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
       const vw = window.innerWidth

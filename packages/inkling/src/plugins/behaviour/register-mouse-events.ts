@@ -1,11 +1,12 @@
 import type { LexicalEditor } from 'lexical'
+import type { RefObject } from 'react'
 
 import { $isInklingCard } from '@kobato/inkling-internal/nodes/base'
 import { DESELECT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/commands'
 import { $getSelection, $isNodeSelection } from 'lexical'
 
 interface MouseEventsDeps {
-  containerElem: React.RefObject<HTMLElement | null>
+  containerElem: RefObject<HTMLElement | null>
   isNested?: boolean
 }
 

@@ -10,8 +10,7 @@ import {
 import { getParentEditor } from '@kobato/inkling-internal/utils/lexical-internals'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from 'lexical'
-import React from 'react'
-
+import { useContext, useEffect, useLayoutEffect, useState } from 'react'
 export type FocusNextTarget = { focus: (fn: () => void) => void; getRootElement: () => HTMLElement | null }
 
 function InklingNestedEditorPlugin({
@@ -27,18 +26,18 @@ function InklingNestedEditorPlugin({
   defaultInklingEnterBehaviour?: boolean
 }) {
   const [editor] = useLexicalComposerContext()
-  const { nodeKey: parentCardNodeKey } = React.useContext(CardContext)
+  const { nodeKey: parentCardNodeKey } = useContext(CardContext)
   const isParentCardEditing = useCardIsEditing(parentCardNodeKey)
 
-  const [shouldFocus, setShouldFocus] = React.useState(autoFocus)
+  const [shouldFocus, setShouldFocus] = useState(autoFocus)
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (parentCardNodeKey !== undefined) {
       editor.setEditable(isParentCardEditing)
     }
   }, [editor, isParentCardEditing, parentCardNodeKey])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isParentCardEditing) {
       return
     }
@@ -50,7 +49,7 @@ function InklingNestedEditorPlugin({
     }
   }, [shouldFocus, editor, isParentCardEditing])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       editor.registerEditableListener((isEditable) => {
         if (!autoFocus) {

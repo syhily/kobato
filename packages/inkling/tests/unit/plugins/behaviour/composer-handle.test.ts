@@ -5,7 +5,7 @@ import {
   type ComposerHandleBinding,
 } from '@kobato/inkling-internal/plugins/behaviour/composer-handle'
 import { act, renderHook } from '@testing-library/react'
-import React from 'react'
+import { type ReactNode, createElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 interface TestState {
@@ -22,8 +22,8 @@ function createBinding(): ComposerHandleBinding<TestState> {
 }
 
 function handleWrapper(binding: ComposerHandleBinding<TestState>, handle: ComposerHandle<TestState>) {
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return React.createElement(binding.Context.Provider, { value: handle }, children)
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(binding.Context.Provider, { value: handle }, children)
   }
 }
 

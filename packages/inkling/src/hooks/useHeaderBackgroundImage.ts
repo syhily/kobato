@@ -2,7 +2,7 @@ import type { HeaderNodeWriter } from '@kobato/inkling-internal/nodes/header/hea
 
 import { getAccentColor } from '@kobato/inkling-internal/utils/get-accent-color'
 import { LexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useEffectEvent, useState } from 'react'
 
 export interface UseHeaderBackgroundImageOptions {
   layout: string
@@ -71,8 +71,8 @@ export function useHeaderBackgroundImage({
     }
   }
 
-  useEffect(() => {
-    if (layout === 'split' && !backgroundImageSrc && lastBackgroundImage) {
+  const syncBackgroundImage = useEffectEvent(() => {
+    if (!backgroundImageSrc && lastBackgroundImage) {
       if (!imageRemoved) {
         write((node) => {
           node.backgroundImageSrc = lastBackgroundImage
@@ -81,7 +81,12 @@ export function useHeaderBackgroundImage({
         openFileDialog()
       }
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  })
+
+  useEffect(() => {
+    if (layout === 'split') {
+      syncBackgroundImage()
+    }
   }, [layout])
 
   useEffect(() => {

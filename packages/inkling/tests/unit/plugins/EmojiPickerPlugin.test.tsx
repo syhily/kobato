@@ -7,7 +7,7 @@ import { EmojiPickerPlugin } from '@kobato/inkling-internal/plugins/EmojiPickerP
 import { LexicalComposerContext, createLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { render, renderHook } from '@testing-library/react'
 import { KEY_DOWN_COMMAND, createEditor } from 'lexical'
-import React, { act, useMemo } from 'react'
+import { type ReactNode, type ContextType, act, useMemo } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 const searchIndexMocks = vi.hoisted(() => ({
@@ -50,8 +50,8 @@ function createTestEditor() {
   })
 }
 
-function TestWrapper({ children, editor }: { children: React.ReactNode; editor: ReturnType<typeof createTestEditor> }) {
-  const contextValue = useMemo<React.ContextType<typeof LexicalComposerContext>>(
+function TestWrapper({ children, editor }: { children: ReactNode; editor: ReturnType<typeof createTestEditor> }) {
+  const contextValue = useMemo<ContextType<typeof LexicalComposerContext>>(
     () => [editor, createLexicalComposerContext(null, {})],
     [editor],
   )
@@ -60,7 +60,7 @@ function TestWrapper({ children, editor }: { children: React.ReactNode; editor: 
 
 function mountPlugin(editor: ReturnType<typeof createTestEditor>) {
   return renderHook(() => EmojiPickerPlugin(), {
-    wrapper: ({ children }: { children: React.ReactNode }) => <TestWrapper editor={editor}>{children}</TestWrapper>,
+    wrapper: ({ children }: { children: ReactNode }) => <TestWrapper editor={editor}>{children}</TestWrapper>,
   })
 }
 
@@ -72,8 +72,8 @@ function renderPlugin(editor: ReturnType<typeof createTestEditor>) {
   )
 }
 
-function ComposerPrefs({ emojiLocale, children }: { emojiLocale: EmojiLocale; children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, emojiLocale }), [emojiLocale])
+function ComposerPrefs({ emojiLocale, children }: { emojiLocale: EmojiLocale; children: ReactNode }) {
+  const value = useMemo(() => ({ darkMode: false, labels: DEFAULT_LABELS, emojiLocale }), [emojiLocale])
   return <InklingUiPrefsContext.Provider value={value}>{children}</InklingUiPrefsContext.Provider>
 }
 

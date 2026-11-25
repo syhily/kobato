@@ -16,8 +16,7 @@ import {
   type SingleDateFilterValue,
 } from '@kobato/web-admin/ui/shared/filter-bar/date-filter'
 import { CalendarIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
-
+import { type KeyboardEvent, useMemo, useRef, useState } from 'react'
 export function parseDateInput(value: string): Date | undefined {
   if (!value) {
     return undefined
@@ -132,7 +131,7 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && parsedDate) {
       commitDate(parsedDate)
     }

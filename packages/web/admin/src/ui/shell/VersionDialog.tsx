@@ -19,8 +19,7 @@ import {
   RefreshCwIcon,
   TagIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'error'
 
 const IS_DEV_BUILD = APP_VERSION.includes('-dev')
@@ -218,7 +217,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
   )
 }
 
-function VersionLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
+function VersionLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
   return (
     <a
       href={href}

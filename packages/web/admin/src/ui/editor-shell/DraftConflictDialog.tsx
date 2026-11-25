@@ -1,4 +1,5 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+import type { ReactNode } from 'react'
 
 import { Button } from '@kobato/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog'
@@ -70,7 +71,7 @@ export function DraftConflictDialog({
 
 interface DraftPanelProps {
   title: string
-  icon: React.ReactNode
+  icon: ReactNode
   timestamp: number | null
   side: 'left' | 'right'
   diff: ReturnType<typeof diffBodies>

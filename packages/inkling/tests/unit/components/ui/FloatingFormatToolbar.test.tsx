@@ -10,7 +10,7 @@ import {
   createEditor,
   type LexicalEditor,
 } from 'lexical'
-import React from 'react'
+import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 function createTestEditor(): LexicalEditor {
@@ -40,7 +40,7 @@ describe('FloatingFormatToolbar', () => {
         anchorElem={document.body}
         editor={editor}
         toolbarItemType="link"
-        toolbarRef={React.createRef<HTMLDivElement>()}
+        toolbarRef={createRef<HTMLDivElement>()}
         onClose={onClose}
         onOpenLink={() => {}}
         onOpenSnippet={() => {}}

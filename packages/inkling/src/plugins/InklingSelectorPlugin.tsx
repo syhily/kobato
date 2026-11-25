@@ -9,8 +9,7 @@ import { INSERT_CARD_COMMAND } from '@kobato/inkling-internal/plugins/behaviour/
 import { registerSelectorInsertCommands } from '@kobato/inkling-internal/plugins/behaviour/selector-insertion'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_LOW } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 const SELECTOR_OPEN_COMMANDS = [
   [OPEN_GIF_SELECTOR_COMMAND, GifPlugin],
   [OPEN_IMAGE_LIBRARY_COMMAND, LibraryPlugin],
@@ -18,7 +17,7 @@ const SELECTOR_OPEN_COMMANDS = [
 export const InklingSelectorPlugin = () => {
   const [editor] = useLexicalComposerContext()
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!editor.hasNodes([ImageNode])) {
       return
     }

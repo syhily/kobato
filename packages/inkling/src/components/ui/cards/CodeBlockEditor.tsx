@@ -9,8 +9,7 @@ import InklingUiPrefsContext from '@kobato/inkling-internal/context/InklingUiPre
 import { useInklingLabels } from '@kobato/inkling-internal/hooks/useInklingLabels'
 import { darkBaseExtensions, lightBaseExtensions } from '@kobato/inkling-internal/utils/codemirror-config'
 import CodeMirror from '@uiw/react-codemirror'
-import React from 'react'
-
+import { type ChangeEvent, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 const languageMap = new Map<string, () => LanguageSupport>([
   ['javascript', javascript],
   ['js', javascript],
@@ -27,17 +26,17 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ code, language, updateCode, updateLanguage, onEscape }: CodeEditorProps) {
-  const [showLanguage, setShowLanguage] = React.useState(true)
-  const { darkMode } = React.useContext(InklingUiPrefsContext)
+  const [showLanguage, setShowLanguage] = useState(true)
+  const { darkMode } = useContext(InklingUiPrefsContext)
   const labels = useInklingLabels()
-  const viewRef = React.useRef<EditorView | null>(null)
-  const codeRef = React.useRef(code)
+  const viewRef = useRef<EditorView | null>(null)
+  const codeRef = useRef(code)
 
-  React.useEffect(() => {
+  useEffect(() => {
     codeRef.current = code
   }, [code])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onMouseMove = () => {
       setShowLanguage(true)
     }
@@ -49,7 +48,7 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
     }
   }, [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       const view = viewRef.current
       if (view && updateCode) {
@@ -61,7 +60,7 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
     }
   }, [updateCode])
 
-  const onChange = React.useCallback(
+  const onChange = useCallback(
     (value: string) => {
       setShowLanguage(false)
       updateCode?.(value)
@@ -69,18 +68,18 @@ export function CodeEditor({ code, language, updateCode, updateLanguage, onEscap
     [updateCode],
   )
 
-  const onCreateEditor = React.useCallback((view: EditorView) => {
+  const onCreateEditor = useCallback((view: EditorView) => {
     viewRef.current = view
   }, [])
 
-  const onLanguageChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onLanguageChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
       updateLanguage?.(event.target.value)
     },
     [updateLanguage],
   )
 
-  const extensions = React.useMemo(() => {
+  const extensions = useMemo(() => {
     const base = darkMode ? darkBaseExtensions : lightBaseExtensions
     const highlighter = languageMap.get((language ?? '').toLowerCase().trim())
     const escapeHandler = CodeMirrorEditorView.domEventHandlers({

@@ -3,8 +3,7 @@ import type { LexicalEditor, NodeKey } from 'lexical'
 
 import { createBookmarkEmbedFlow } from '@kobato/inkling-internal/hooks/bookmark-embed-flow'
 import { useDisposableStore } from '@kobato/inkling-internal/hooks/useDisposableStore'
-import React from 'react'
-
+import { useSyncExternalStore } from 'react'
 interface UseBookmarkMetadataOptions {
   editor: LexicalEditor
   nodeKey: NodeKey
@@ -29,7 +28,7 @@ export function useBookmarkMetadata({
     () => createBookmarkEmbedFlow({ editor, nodeKey, fetchEmbed }),
     [editor, nodeKey, fetchEmbed],
   )
-  const { loading, urlError } = React.useSyncExternalStore(flow.subscribe, flow.getSnapshot)
+  const { loading, urlError } = useSyncExternalStore(flow.subscribe, flow.getSnapshot)
 
   return {
     loading,

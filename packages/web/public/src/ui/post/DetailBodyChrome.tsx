@@ -14,7 +14,7 @@ import { LikeButton } from '@kobato/web-public/ui/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@kobato/web-public/ui/post/postChrome'
 import { TableOfContents } from '@kobato/web-public/ui/post/TableOfContents'
 import { PencilIcon } from 'lucide-react'
-import { type ReactNode, Suspense, useMemo } from 'react'
+import { type ReactNode, type RefObject, Suspense, useMemo } from 'react'
 import { Await, Link } from 'react-router'
 
 const DRAFT_MARKER_LABEL_IDS = {
@@ -52,7 +52,7 @@ export interface DetailBodyChromeProps {
   bodyHtml: string
   contentLanguage?: string | null
   children?: ReactNode
-  postContentRef: React.RefObject<HTMLDivElement | null>
+  postContentRef: RefObject<HTMLDivElement | null>
   contentWrapperClassName?: string
   metaClassName?: string
 }

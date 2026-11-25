@@ -2,12 +2,11 @@ import { handlePlainTextPaste } from '@kobato/inkling-internal/plugins/behaviour
 import { registerParagraphRestriction } from '@kobato/inkling-internal/plugins/behaviour/restrict-content'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister, COMMAND_PRIORITY_HIGH, PASTE_COMMAND } from 'lexical'
-import React from 'react'
-
+import { useEffect } from 'react'
 export const RestrictContentPlugin = ({ paragraphs, allowBr }: { paragraphs: number; allowBr?: boolean }) => {
   const [editor] = useLexicalComposerContext()
 
-  React.useEffect(() => {
+  useEffect(() => {
     return mergeRegister(
       registerParagraphRestriction(editor, paragraphs),
       editor.registerCommand(
