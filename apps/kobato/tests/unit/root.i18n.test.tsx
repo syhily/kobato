@@ -16,7 +16,7 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ErrorBoundary, Layout, shouldRevalidate } from '@/root'
+import { ErrorBoundary, Layout } from '@/root'
 
 vi.mock('virtual:kobato-route-warmup', () => ({ default: '' }))
 vi.mock('@/route-warmup/RouteWarmupScript', () => ({ RouteWarmupScript: () => null }))
@@ -195,7 +195,7 @@ describe('root i18n — jsdom hydration', () => {
 describe('root ErrorBoundary — loader-failure behavior', () => {
   const boom = () => new Error('boom')
 
-  it('renders only the minimal ErrorView (fallback copy, no BaseLayout chrome) without an i18n payload', async () => {
+  it('renders the workspace fallback without any public chrome when no payload exists', async () => {
     const html = await prerenderToHtml(
       <RouterProvider
         router={makeRouter(
@@ -205,14 +205,11 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
       />,
     )
 
-    expect(html).toContain(fallbackMessages['error.boundary.title'])
-    expect(html).toContain(fallbackMessages['error.boundary.description'])
-
     expect(html).not.toContain('跳转到主要内容')
     expect(html).not.toContain('Skip to main content')
   })
 
-  it('mounts the full error layout and the loader locale when i18n data exists', async () => {
+  it('feeds the workspace fallback copy through the loader locale', async () => {
     const html = await prerenderToHtml(
       <RouterProvider
         router={makeRouter(
@@ -228,44 +225,7 @@ describe('root ErrorBoundary — loader-failure behavior', () => {
       />,
     )
 
-    expect(html).toContain('<html lang="en-US"')
-    expect(html).toContain('Skip to main content')
-    expect(html).toContain('Internal error')
-
-    expect(html).toContain('boom')
-    expect(html).toContain('Skip to main content')
-  })
-})
-describe('root shouldRevalidate — payload scope boundary', () => {
-  function args(currentPath: string, nextPath: string, formAction?: string, defaultShouldRevalidate = false) {
-    return {
-      currentUrl: new URL(`http://localhost${currentPath}`),
-      nextUrl: new URL(`http://localhost${nextPath}`),
-      formAction,
-      defaultShouldRevalidate,
-    } as unknown as Parameters<typeof shouldRevalidate>[0]
-  }
-
-  it('revalidates when a navigation crosses public ↔ workspace', () => {
-    expect(shouldRevalidate(args('/', '/admin/settings'))).toBe(true)
-    expect(shouldRevalidate(args('/posts/hello', '/editor/post/new'))).toBe(true)
-
-    expect(shouldRevalidate(args('/admin/settings', '/'))).toBe(true)
-    expect(shouldRevalidate(args('/admin/signin', '/posts/hello'))).toBe(true)
-  })
-
-  it('keeps the payload for same-scope navigation', () => {
-    expect(shouldRevalidate(args('/', '/posts/hello'))).toBe(false)
-    expect(shouldRevalidate(args('/posts/hello', '/tags/react'))).toBe(false)
-    expect(shouldRevalidate(args('/admin/settings', '/admin/posts'))).toBe(false)
-    expect(shouldRevalidate(args('/editor/post/new', '/editor/page/new'))).toBe(false)
-  })
-
-  it('always defers to the default policy for form actions', () => {
-    expect(shouldRevalidate(args('/', '/', '/admin/signin', true))).toBe(true)
-    expect(shouldRevalidate(args('/admin/settings', '/admin/settings', '/admin/settings/general', true))).toBe(true)
-    expect(shouldRevalidate(args('/', '/', '/signout', true))).toBe(true)
-
-    expect(shouldRevalidate(args('/', '/', '/signout', false))).toBe(false)
+    expect(html).toContain('Something went wrong')
+    expect(html).not.toContain('Skip to main content')
   })
 })

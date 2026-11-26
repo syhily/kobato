@@ -121,7 +121,7 @@ describe('createKobatoServerClient over a real loopback perimeter', () => {
     const boot = await client.public.content.bootstrap()
 
     expect(boot.installState).toBe('installed')
-    expect(boot.currentUser).toEqual({ id: String(userId), name: 'Admin', role: 'admin' })
+    expect(boot.currentUser).toEqual({ id: String(userId), name: 'Admin', email: 'admin@example.com', role: 'admin' })
   })
 
   it('keys perimeter rate limits on the caller-derived clientAddress, not the socket peer', async () => {
@@ -150,7 +150,7 @@ describe('createKobatoServerClient over a real loopback perimeter', () => {
 
     const probe = assemblyClient(inboundRequest({ cookie }))
     const boot = await probe.client.public.content.bootstrap()
-    expect(boot.currentUser).toEqual({ id: String(userId), name: 'Admin', role: 'admin' })
+    expect(boot.currentUser).toEqual({ id: String(userId), name: 'Admin', email: 'admin@example.com', role: 'admin' })
 
     await flushAuditLog()
     expect(await sqliteOf(db).select().from(auditLog).where(eq(auditLog.action, 'logout'))).toHaveLength(0)

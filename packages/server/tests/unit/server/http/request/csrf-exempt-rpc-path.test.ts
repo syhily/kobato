@@ -8,6 +8,8 @@ const EXPECTED_PATHS = [
   '/rpc/admin/backup/download',
   '/rpc/admin/music/proxyCover',
   '/rpc/admin/music/proxyAudio',
+  '/rpc/public/webmentions/receive',
+  '/rpc/public/observability/rumIntake',
 ]
 
 function procedurePaths(tree: Record<string, unknown>, prefix = ''): string[] {

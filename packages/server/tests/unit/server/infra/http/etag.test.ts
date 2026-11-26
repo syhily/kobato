@@ -6,7 +6,6 @@ import {
   listingEtag,
   listingCalendarDay,
   listingRepresentation,
-  notModifiedResponse,
   pageEtag,
   postEtag,
   representationFromLocalization,
@@ -164,41 +163,6 @@ describe('server/infra/http/etag — detail payload fingerprint', () => {
       expect(postEtag({ ...BASE_INPUT, payload })).not.toBe(postEtag(BASE_INPUT))
       expect(pageEtag({ ...BASE_INPUT, payload })).not.toBe(pageEtag(BASE_INPUT))
     }
-  })
-})
-
-describe('server/infra/http/etag — notModifiedResponse', () => {
-  it('carries the request localization as Content-Language plus the detail Cache-Control profile', () => {
-    const tag = 'W/"abc"'
-    const res = notModifiedResponse(tag, {
-      locale: 'zh-TW',
-      timeZone: 'Asia/Taipei',
-      timeFormat: 'yyyy-LL-dd',
-      revision: 'boot-test:process-identity',
-      revisions: { ...representationRevisionsFor(null), detail: 'boot-test:0000000009' },
-    })
-    expect(res.status).toBe(304)
-    expect(res.headers.get('ETag')).toBe(tag)
-    expect(res.headers.get('Content-Language')).toBe('zh-TW')
-    expect(res.headers.get('Cache-Control')).toBe('private, no-cache')
-    expect(res.headers.get('Vary')).toBe('Cookie')
-  })
-
-  it('uses the LISTING profile for a listing 304 (same no-cache value, explicit profile)', () => {
-    const res = notModifiedResponse(
-      'W/"listing"',
-      {
-        locale: 'zh-CN',
-        timeZone: 'Asia/Shanghai',
-        timeFormat: 'yyyy-MM-dd',
-        revision: 'boot-test:process-identity',
-        revisions: representationRevisionsFor(null),
-      },
-      'listing',
-    )
-    expect(res.status).toBe(304)
-    expect(res.headers.get('Content-Language')).toBe('zh-CN')
-    expect(res.headers.get('Cache-Control')).toBe('private, no-cache')
   })
 })
 

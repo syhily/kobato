@@ -7,8 +7,8 @@ const env = e2eEnv()
 describe('admin settings write (HTTP e2e)', () => {
   it('updates the site title and the public site reflects it immediately', async () => {
     const admin = new E2eClient(env.baseUrl)
-    const { res } = await loginAdmin(admin, env)
-    expect(res.status).toBe(302)
+    const { flow } = await loginAdmin(admin, env)
+    expect(flow.type, `login answered ${flow.type}: ${flow.message ?? '(no message)'}`).toBe('redirect')
     const csrfToken = await getAdminCsrfToken(admin)
 
     const renamed = 'E2E Renamed Site'
@@ -22,7 +22,7 @@ describe('admin settings write (HTTP e2e)', () => {
       expect(updated.status).toBe(200)
       expect(JSON.stringify(updated.json.section)).toContain(renamed)
 
-      const anon = new E2eClient(env.baseUrl)
+      const anon = new E2eClient(env.publicBaseUrl)
       const home = await anon.get('/')
       expect(home.status).toBe(200)
       expect(await home.text()).toContain(renamed)
@@ -35,7 +35,7 @@ describe('admin settings write (HTTP e2e)', () => {
       )
     }
 
-    const restored = await new E2eClient(env.baseUrl).get('/')
+    const restored = await new E2eClient(env.publicBaseUrl).get('/')
     expect(await restored.text()).toContain('Kobato Smoke')
   })
 

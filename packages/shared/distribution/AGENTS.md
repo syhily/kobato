@@ -5,7 +5,9 @@ dependencies; no Node runtime, filesystem, packaging implementation, RPC DTOs, o
 
 - `app.ts` — the compile-time `__APP_*__` application identity.
 - `sea-assets.ts` — the only owner of SEA embedded-asset keys and codec vocabulary (writers in `@kobato/pack`, readers
-  in `@kobato/server`).
+  in `@kobato/server` and the two apps): kobato's SPA rides `client/`, sayaka's public-site build rides `sayaka-client/`
+  (the sayaka binary embeds only that prefix plus its manifest), drizzle keeps `drizzle/`, natives `natives/` +
+  `natives-meta/`, observability `observability/`, and the embedded worker bundles `worker/`.
 - `route-warmup.ts` — client-manifest shape, sentinel, and warmup exclusion patterns shared by build, SSR, and browser
   idle loading.
 - `warmup-manifest.ts` — the `warmup-manifest.json` contract (parse/validate/chunk walk) consumed by the build plugin in

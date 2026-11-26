@@ -6,13 +6,14 @@ const env = e2eEnv()
 
 describe('admin posts (HTTP e2e)', () => {
   it('creates, renders, and deletes a post end to end', async () => {
-    const client = new E2eClient(env.baseUrl)
-    const { res } = await loginAdmin(client, env)
-    expect(res.status).toBe(302)
-    const csrfToken = await getAdminCsrfToken(client)
+    const admin = new E2eClient(env.baseUrl)
+    const { flow } = await loginAdmin(admin, env)
+    expect(flow.type, `login answered ${flow.type}: ${flow.message ?? '(no message)'}`).toBe('redirect')
+    const csrfToken = await getAdminCsrfToken(admin)
+    const publicSite = new E2eClient(env.publicBaseUrl)
 
     const created = await callE2eRpc<{ post: { id: string | number; slug: string } }>(
-      client,
+      admin,
       '/admin/posts/upsertMeta',
       {
         title: 'E2E Hello',
@@ -24,14 +25,53 @@ describe('admin posts (HTTP e2e)', () => {
     )
     expect(created.status).toBe(200)
 
-    const detail = await client.get('/posts/e2e-hello')
+    const published = await callE2eRpc(
+      admin,
+      '/admin/posts/publishLatest',
+      {
+        id: String(created.json.post.id),
+        body: {
+          root: {
+            type: 'root',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              {
+                type: 'paragraph',
+                version: 1,
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                children: [
+                  {
+                    type: 'extended-text',
+                    version: 1,
+                    detail: 0,
+                    format: 0,
+                    mode: 'normal',
+                    style: '',
+                    text: 'E2E Hello body.',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      csrfToken,
+    )
+    expect(published.status).toBe(200)
+
+    const detail = await publicSite.get('/posts/e2e-hello')
     expect(detail.status).toBe(200)
     expect(await detail.text()).toContain('E2E Hello')
 
-    const removed = await callE2eRpc(client, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
+    const removed = await callE2eRpc(admin, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
     expect(removed.status).toBe(200)
 
-    const gone = await client.get('/posts/e2e-hello')
+    const gone = await publicSite.get('/posts/e2e-hello')
     expect(gone.status).not.toBe(200)
   })
 })

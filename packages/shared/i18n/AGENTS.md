@@ -2,8 +2,10 @@
 
 The locale layer: `locales` (the four supported tags, alias normalization, `og:locale` spelling, endonyms),
 `content-language` (author metadata, never a UI-locale selector), `messages/ui/*` + `messages/server/*` (English defines
-the message-id types; the other three `satisfies` them), `catalog` + `catalog-scope`, `fallback-messages`, and
-`inkling-labels/*` (the editor chrome's flat label tables).
+the message-id types; the other three `satisfies` them), `catalog` + `catalog-scope`, `fallback-messages`,
+`format-message` (the React-free ICU formatter over a caller-supplied message table — the browser counterpart of the
+server translator, fed from the bootstrap payload's `i18n.messages`), and `inkling-labels/*` (the editor chrome's flat
+label tables).
 
 - Allowed deps: none. No React, no display formatting (that is `@kobato/utils/format`).
 - `uiMessagesForScope(locale, scope)` is memoized and frozen; public scope is the `PUBLIC_MESSAGE_PREFIXES` allowlist

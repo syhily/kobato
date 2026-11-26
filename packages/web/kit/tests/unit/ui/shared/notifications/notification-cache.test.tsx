@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/account/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/public/notifications'
 import type { ReactElement, ReactNode } from 'react'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
@@ -60,7 +60,7 @@ function render(ui: ReactElement) {
   })
 }
 
-const COUNT_KEY = orpcQuery.account.notifications.unreadCount.queryOptions({}).queryKey
+const COUNT_KEY = orpcQuery.public.notifications.unreadCount.queryOptions({}).queryKey
 
 function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
   return {
@@ -80,7 +80,7 @@ function makeItem(overrides: Partial<NotificationDto> = {}): NotificationDto {
 }
 
 function listKey(tab: NotificationTab) {
-  return orpcQuery.account.notifications.list.infiniteOptions({
+  return orpcQuery.public.notifications.list.infiniteOptions({
     input: (pageParam: string) => ({ tab, cursor: pageParam === '' ? undefined : pageParam, limit: 20 }),
     initialPageParam: '',
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -145,7 +145,7 @@ describe('ui/shared/notifications read-state cache patch', () => {
     render(<NotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={1} />)
     fireEvent.click(screen.getByLabelText('全部标为已读'))
 
-    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.account.notifications.key() })
+    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.public.notifications.key() })
     expect(cachedUnreadCount()).toEqual({ count: 0 })
   })
 
@@ -161,13 +161,13 @@ describe('ui/shared/notifications read-state cache patch', () => {
   it('falls back to a full invalidation for a notifications key it cannot parse', () => {
     const item = makeItem()
     seedTab('all', [item])
-    harness.client.setQueryData([['account', 'notifications', 'futureProcedure'], { type: 'query' }], {
+    harness.client.setQueryData([['public', 'notifications', 'futureProcedure'], { type: 'query' }], {
       whatever: true,
     })
 
     patchNotificationReadState(harness.client, [item.id], true, 3)
 
-    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.account.notifications.key() })
+    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.public.notifications.key() })
     expect(cachedItems('all')[0].read).toBe(true)
     expect(cachedUnreadCount()).toEqual({ count: 3 })
   })
@@ -176,6 +176,6 @@ describe('ui/shared/notifications read-state cache patch', () => {
     harness.client.setQueryData(listKey('all'), 'not pages')
 
     expect(() => patchNotificationReadState(harness.client, ['1'], true, 1)).not.toThrow()
-    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.account.notifications.key() })
+    expect(harness.invalidate).toHaveBeenCalledWith({ queryKey: orpcQuery.public.notifications.key() })
   })
 })

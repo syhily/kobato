@@ -14,6 +14,7 @@ import {
   SEA_NATIVE_SKIA_ICU_KEY,
   SEA_OBSERVABILITY_ASSET_PREFIX,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
+  SEA_SAYAKA_CLIENT_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   type SeaAssetCodec,
 } from '@kobato/distribution/sea-assets'
@@ -28,6 +29,7 @@ import {
   seaSmokeWorkerBundlePath,
   seaStagedNativesDir,
   seaWorkerBundlePath,
+  type SeaApp,
 } from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
@@ -329,39 +331,49 @@ async function addTree(
   }
 }
 
-export async function collectSeaAssets() {
+export async function collectSeaAssets(app: SeaApp = 'kobato') {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
-  const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
+  const ctx: PackContext = { packedDir: seaPackedAssetsDir(app), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
-  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'apps', 'kobato', 'build', 'client'), ctx)
+  if (app === 'sayaka') {
+    await addTree(
+      assets,
+      files,
+      SEA_SAYAKA_CLIENT_ASSET_PREFIX,
+      join(repoRoot, 'apps', 'sayaka', 'build', 'client'),
+      ctx,
+    )
+  } else {
+    await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'apps', 'kobato', 'build', 'client'), ctx)
 
-  await addTree(
-    assets,
-    files,
-    SEA_DRIZZLE_ASSET_PREFIX,
-    join(repoRoot, 'packages', 'db', 'drizzle'),
-    ctx,
-    isDrizzleSnapshotArtifact,
-  )
+    await addTree(
+      assets,
+      files,
+      SEA_DRIZZLE_ASSET_PREFIX,
+      join(repoRoot, 'packages', 'db', 'drizzle'),
+      ctx,
+      isDrizzleSnapshotArtifact,
+    )
 
-  await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
+    await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
-  await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
+    await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
-  await addTree(assets, files, SEA_OBSERVABILITY_ASSET_PREFIX, observabilitySourceAssetsDir(), ctx)
+    await addTree(assets, files, SEA_OBSERVABILITY_ASSET_PREFIX, observabilitySourceAssetsDir(), ctx)
 
-  await addNativeAssets(assets, files, ctx)
+    await addNativeAssets(assets, files, ctx)
+  }
 
-  const pkg = await readJson(join(repoRoot, 'apps', 'kobato', 'package.json'))
+  const pkg = await readJson(join(repoRoot, 'apps', app, 'package.json'))
   const manifest: SeaManifest = {
     version: pkg.version ?? fail('package.json has no "version" field'),
     target: `${process.platform}-${process.arch}`,
     files: sortManifestFiles(files),
   }
-  await mkdir(seaIntermediatesDir(), { recursive: true })
-  const manifestPath = seaManifestPath()
+  await mkdir(seaIntermediatesDir(app), { recursive: true })
+  const manifestPath = seaManifestPath(app)
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   assets.set(SEA_MANIFEST_KEY, manifestPath)
 

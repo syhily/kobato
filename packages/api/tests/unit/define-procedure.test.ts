@@ -1,7 +1,7 @@
 import type { NoMeta, ProcedureRouteOf, RpcProcedureMeta } from '@kobato/api/rpc/define-procedure'
 import type { InferContractRouterInputs, InferContractRouterOutputs } from '@orpc/contract'
 
-import { likeDecreaseOutput, likeIncreaseInput, likeIncreaseOutput } from '@kobato/api/contracts/account/likes'
+import { likeDecreaseOutput, likeIncreaseInput, likeIncreaseOutput } from '@kobato/api/contracts/public/likes'
 import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 import { isContractProcedure, oc } from '@orpc/contract'
 import { describe, expect, expectTypeOf, it } from 'vitest'

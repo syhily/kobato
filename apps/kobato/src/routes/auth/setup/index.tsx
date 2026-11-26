@@ -1,103 +1,117 @@
-import type { AppLocale } from '@kobato/i18n/locales'
+import type { AuthFlowOutput } from '@kobato/api/contracts/account/auth'
+import type { SetupVerifyTokenOutput } from '@kobato/api/contracts/account/setup'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpc } from '@kobato/api/browser/client'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
-import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
-import { authFlowError } from '@kobato/server/domains/auth/services/shared'
-import { getInstallState } from '@kobato/server/domains/settings/install-gate'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm'
-import { SetupLocaleSelect } from '@kobato/web-admin/ui/auth/SetupLocaleSelect'
-import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm'
 import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 
-import { authErrorPayload, cookieHeaders, formField, formOptionalField } from '@/routes/auth/flow-response'
+import {
+  authErrorPayload,
+  clientAuthFlowError,
+  isCsrfFailure,
+  toClientActionResult,
+  type ClientI18nCatalog,
+} from '@/lib/client-action-result'
+import { awaitRootBootstrap } from '@/lib/root-bootstrap'
+import { formField, formOptionalField } from '@/routes/auth/flow-response'
 import { titleMeta } from '@/seo/title-meta'
+import { AdminInstallForm } from '@/ui/auth/AdminInstallForm'
+import { SetupLocaleSelect } from '@/ui/auth/SetupLocaleSelect'
+import { SetupTokenVerifyForm } from '@/ui/auth/SetupTokenVerifyForm'
 
 import type { Route } from './+types/index'
 
-function fail(messageKey: UiMessageId, locale: AppLocale) {
-  const flow = authFlowError(messageKey)
-  return data(authErrorPayload(flow.message, flow.descriptor, locale))
+function fail(messageKey: UiMessageId, catalog: ClientI18nCatalog) {
+  return toClientActionResult(clientAuthFlowError(messageKey), catalog)
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  if ((await getInstallState(rc.db)) === 'installed') {
+export async function clientLoader() {
+  const boot = await awaitRootBootstrap()
+  if (boot.installState === 'installed') {
     throw redirect('/admin/signin', { status: 303 })
   }
-
-  const { caller } = createSsrCaller({ request, context })
-  const status = await caller.account.setup.status({})
+  const status = await orpc.account.setup.status({})
   return data({
     setupTokenVerified: status.setupTokenVerified,
     csrfToken: status.csrfToken ?? undefined,
   })
 }
 
-export async function action({ request, context }: Route.ActionArgs) {
-  const rc = getRequestContext({ request, context })
-  if ((await getInstallState(rc.db)) === 'installed') {
+export async function clientAction({ request }: Route.ClientActionArgs) {
+  const boot = await awaitRootBootstrap()
+  const catalog: ClientI18nCatalog = { locale: boot.i18n.locale, messages: boot.i18n.messages }
+  if (boot.installState === 'installed') {
     throw redirect('/admin/signin', { status: 303 })
   }
 
-  const { caller, responseHeaders } = createSsrCaller({ request, context })
-  const { session } = rc
-  const locale = rc.localization.locale
   const formData = await request.formData()
   const intent = formData.get('intent')
 
   if (intent === 'verify-token') {
-    if (!validateCsrfForAction(session, request, formData)) {
-      return fail('error.api.csrfFailed', locale)
+    let result: SetupVerifyTokenOutput
+    try {
+      result = await orpc.account.setup.verifyToken({ token: formField(formData, 'setup_token') })
+    } catch (error) {
+      if (!isCsrfFailure(error)) {
+        throw error
+      }
+      return fail('error.api.csrfFailed', catalog)
     }
-
-    const result = await caller.account.setup.verifyToken({ token: formField(formData, 'setup_token') })
     if (result.kind === 'verified') {
       return data({ setupTokenVerified: true })
     }
     return data(
-      authErrorPayload(result.message, result.descriptor, locale),
+      authErrorPayload(result.message, result.descriptor, catalog),
       result.status === undefined ? undefined : { status: result.status },
     )
   }
 
   if (intent === 'install' || intent === null) {
-    if (session.get('setupTokenVerified') !== true) {
-      return fail('auth.setup.error.tokenNotVerified', locale)
+    let result: AuthFlowOutput
+    try {
+      result = await orpc.account.setup.install({
+        title: formField(formData, 'title'),
+        name: formField(formData, 'name'),
+        email: formField(formData, 'email'),
+        password: formField(formData, 'password'),
+        locale: formOptionalField(formData, 'locale'),
+      })
+    } catch (error) {
+      if (!isCsrfFailure(error)) {
+        throw error
+      }
+      return fail('error.api.csrfFailed', catalog)
     }
-
-    if (!validateCsrfForAction(session, request, formData)) {
-      return fail('error.api.csrfFailed', locale)
-    }
-
-    const result = await caller.account.setup.install({
-      title: formField(formData, 'title'),
-      name: formField(formData, 'name'),
-      email: formField(formData, 'email'),
-      password: formField(formData, 'password'),
-      locale: formOptionalField(formData, 'locale'),
-    })
 
     if (result.type === 'success') {
-      return fail('auth.setup.error.unknown', locale)
+      return fail('auth.setup.error.unknown', catalog)
     }
     if (result.type === 'redirect') {
-      return redirect(result.to, { headers: cookieHeaders(responseHeaders) })
+      throw redirect(result.to)
     }
-    return data(authErrorPayload(result.message, result.descriptor, locale), {
-      headers: cookieHeaders(responseHeaders),
-    })
+    return data(authErrorPayload(result.message, result.descriptor, catalog))
   }
 
-  return fail('auth.setup.error.unknownAction', locale)
+  return fail('auth.setup.error.unknownAction', catalog)
 }
 
 export const meta = titleMeta('meta.title.auth.setup')
+
+function actionError(actionData: unknown): { error: string } | null {
+  if (
+    typeof actionData === 'object' &&
+    actionData !== null &&
+    'error' in actionData &&
+    typeof actionData.error === 'string'
+  ) {
+    return { error: actionData.error }
+  }
+  return null
+}
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   const { t } = useI18n()
@@ -119,14 +133,14 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
 
       <SetupLocaleSelect value={locale} onValueChange={setLocale} disabled={isSubmitting} />
 
-      {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
+      {actionError(actionData) !== null && loaderData.setupTokenVerified ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
-          {actionData.error}
+          {actionError(actionData)?.error}
         </div>
       ) : null}
 
       {!loaderData.setupTokenVerified ? (
-        <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
+        <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionError(actionData)} />
       ) : (
         <AdminInstallForm locale={locale} />
       )}

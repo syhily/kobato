@@ -12,13 +12,13 @@ import {
 import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const accountSetupContract = {
-  status: defineProcedure({ method: 'GET', path: '/setup/status' })
+  status: defineProcedure({ method: 'GET', path: '/setup/status' }, { installGateExempt: true })
     .input(setupStatusInput)
     .output(setupStatusOutputSchema),
-  verifyToken: defineProcedure({ method: 'POST', path: '/setup/verify-token' })
+  verifyToken: defineProcedure({ method: 'POST', path: '/setup/verify-token' }, { installGateExempt: true })
     .input(setupVerifyTokenInput)
     .output(setupVerifyTokenOutputSchema),
-  install: defineProcedure({ method: 'POST', path: '/setup/install' })
+  install: defineProcedure({ method: 'POST', path: '/setup/install' }, { installGateExempt: true })
     .input(setupInstallInput)
     .output(authFlowOutputSchema),
   restore: defineProcedure(

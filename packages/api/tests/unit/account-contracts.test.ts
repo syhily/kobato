@@ -19,31 +19,11 @@ import {
   commentsMyCountsOutputSchema,
   commentsResolveEntityInputSchema,
   commentsResolveEntityOutputSchema,
-  commentIdInputSchema,
   commentLoadMineInputSchema,
   commentLoadMineOutputSchema,
   commentSearchMineEntitiesInputSchema,
   commentSearchMineEntitiesOutputSchema,
-  commentUpdateOwnInputSchema,
 } from '@kobato/api/contracts/account/comments'
-import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/account/friends'
-import {
-  newsletterConfirmSchema,
-  newsletterOkOutputSchema,
-  newsletterSubscribeSchema,
-  newsletterUnsubscribeSchema,
-} from '@kobato/api/contracts/account/newsletter'
-import {
-  listNotificationsInput,
-  listNotificationsOutput,
-  markNotificationsReadInput,
-  markNotificationsUnreadInput,
-  notificationThreadInput,
-  notificationThreadOutput,
-  replyNotificationInput,
-  replyNotificationOutput,
-  unreadCountOutput,
-} from '@kobato/api/contracts/account/notifications'
 import {
   accountPasskeyDeleteInput,
   accountPasskeyListOutputSchema,
@@ -73,12 +53,8 @@ import {
   setupVerifyTokenOutputSchema,
 } from '@kobato/api/contracts/account/setup'
 import { successDto } from '@kobato/api/contracts/primitives'
-import { ownCommentMutationDto } from '@kobato/api/contracts/public/comments'
 import { accountAuthContract } from '@kobato/api/rpc/account/auth'
 import { commentsAuthedContract } from '@kobato/api/rpc/account/comments'
-import { friendsContract } from '@kobato/api/rpc/account/friends'
-import { newsletterContract } from '@kobato/api/rpc/account/newsletter'
-import { notificationsContract } from '@kobato/api/rpc/account/notifications'
 import { passkeyContract } from '@kobato/api/rpc/account/passkey'
 import { accountSelfContract } from '@kobato/api/rpc/account/self'
 import { accountSetupContract } from '@kobato/api/rpc/account/setup'
@@ -151,24 +127,6 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
   'comments/authed': {
     contract: commentsAuthedContract as unknown as Record<string, unknown>,
     routes: {
-      updateOwn: {
-        method: 'POST',
-        path: '/comments/update-own',
-        input: commentUpdateOwnInputSchema,
-        output: ownCommentMutationDto,
-      },
-      requestDeleteOwn: {
-        method: 'POST',
-        path: '/comments/request-delete-own',
-        input: commentIdInputSchema,
-        output: ownCommentMutationDto,
-      },
-      cancelDeleteOwn: {
-        method: 'POST',
-        path: '/comments/cancel-delete-own',
-        input: commentIdInputSchema,
-        output: ownCommentMutationDto,
-      },
       loadMine: {
         method: 'GET',
         path: '/comments/load-mine',
@@ -187,71 +145,6 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         path: '/comments/resolve-entity',
         input: commentsResolveEntityInputSchema,
         output: commentsResolveEntityOutputSchema,
-      },
-    },
-  },
-  friends: {
-    contract: friendsContract as unknown as Record<string, unknown>,
-    routes: {
-      apply: { method: 'POST', path: '/friends/apply', input: applyFriendSchema, output: friendsApplyOutputSchema },
-    },
-  },
-  newsletter: {
-    contract: newsletterContract as unknown as Record<string, unknown>,
-    routes: {
-      subscribe: {
-        method: 'POST',
-        path: '/newsletter/subscribe',
-        input: newsletterSubscribeSchema,
-        output: newsletterOkOutputSchema,
-      },
-      confirm: {
-        method: 'POST',
-        path: '/newsletter/confirm',
-        input: newsletterConfirmSchema,
-        output: newsletterOkOutputSchema,
-      },
-      unsubscribe: {
-        method: 'POST',
-        path: '/newsletter/unsubscribe',
-        input: newsletterUnsubscribeSchema,
-        output: newsletterOkOutputSchema,
-      },
-    },
-  },
-  notifications: {
-    contract: notificationsContract as unknown as Record<string, unknown>,
-    routes: {
-      list: {
-        method: 'GET',
-        path: '/notifications/list',
-        input: listNotificationsInput,
-        output: listNotificationsOutput,
-      },
-      unreadCount: { method: 'GET', path: '/notifications/unread-count', output: unreadCountOutput },
-      markRead: {
-        method: 'POST',
-        path: '/notifications/mark-read',
-        input: markNotificationsReadInput,
-        output: unreadCountOutput,
-      },
-      markUnread: {
-        method: 'POST',
-        path: '/notifications/mark-unread',
-        input: markNotificationsUnreadInput,
-        output: unreadCountOutput,
-      },
-      thread: {
-        method: 'GET',
-        path: '/notifications/thread',
-        input: notificationThreadInput,
-        output: notificationThreadOutput,
-      },
-      reply: {
-        method: 'POST',
-        path: '/notifications/reply',
-        input: replyNotificationInput,
-        output: replyNotificationOutput,
       },
     },
   },
@@ -377,20 +270,21 @@ describe('accountContract composition', () => {
       'auth',
       'setup',
       'comments',
-      'notifications',
       'passkey',
-      'likes',
-      'friends',
-      'newsletter',
     ])
     expect(accountContract.profile).toBe(accountSelfContract.profile)
     expect(accountContract.auth).toBe(accountAuthContract)
     expect(accountContract.setup).toBe(accountSetupContract)
     expect(accountContract.comments).toBe(commentsAuthedContract)
-    expect(accountContract.notifications).toBe(notificationsContract)
     expect(accountContract.passkey).toBe(passkeyContract)
-    expect(accountContract.friends).toBe(friendsContract)
-    expect(accountContract.newsletter).toBe(newsletterContract)
+  })
+
+  it('carries only authentication, install, self, passkey, and the my-comments reads', () => {
+    expect(Object.keys(commentsAuthedContract)).toEqual(['loadMine', 'searchMineEntities', 'myCounts', 'resolveEntity'])
+    expect('likes' in accountContract).toBe(false)
+    expect('friends' in accountContract).toBe(false)
+    expect('notifications' in accountContract).toBe(false)
+    expect('newsletter' in accountContract).toBe(false)
   })
 })
 

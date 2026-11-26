@@ -1,15 +1,14 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
 import { useNavigate } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { MusicDetailView } from '@/ui/music/MusicDetailView'
 
 import type { Route } from './+types/detail'
 
-export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  requireRole(rc.viewer ?? undefined, 'author')
+export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'author', { pathname: new URL(request.url).pathname })
   return { id: params.id }
 }
 

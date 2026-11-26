@@ -1,4 +1,4 @@
-import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths'
+import { type SeaApp, seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from '@kobato/pack/sea/paths'
 import { readAppPackage, seaAppDefines } from '@kobato/pack/vite/app-metadata'
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -6,15 +6,25 @@ import { pathToFileURL } from 'node:url'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
-export const SEA_BUNDLE_DEFINED_GLOBALS = Object.keys(seaAppDefines(readAppPackage()))
+const APP_PACKAGE_DIRS: Record<SeaApp, string> = { kobato: 'apps/kobato', sayaka: 'apps/sayaka' }
 
-const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
+export const ALLOWED_EXTERNAL_SPECIFIERS: Record<SeaApp, readonly string[]> = {
+  kobato: ['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'],
+  sayaka: ['@napi-rs/canvas'],
+}
+
+export function seaBundleDefinedGlobals(app: SeaApp): string[] {
+  return Object.keys(seaAppDefines(readAppPackage(APP_PACKAGE_DIRS[app])))
+}
+
+export const SEA_BUNDLE_DEFINED_GLOBALS = seaBundleDefinedGlobals('kobato')
+
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
 export const FORBIDDEN_BROWSER_TELEMETRY_MARKERS = ['@openobserve/'] as const
 
-function isAllowedSpecifier(specifier: string) {
-  return builtins.has(specifier) || specifier.startsWith('node:') || allowedExternalSpecifiers.has(specifier)
+function isAllowedSpecifier(specifier: string, allowedExternalSpecifiers: readonly string[]) {
+  return builtins.has(specifier) || specifier.startsWith('node:') || allowedExternalSpecifiers.includes(specifier)
 }
 
 function executableLines(text: string) {
@@ -34,7 +44,11 @@ function executableLines(text: string) {
 
 const buildGlobalPattern = /\b__(?:APP|SEA)_[A-Z0-9_]*__\b/g
 
-export function scanBundleText(text: string, definedGlobals: readonly string[]) {
+export function scanBundleText(
+  text: string,
+  definedGlobals: readonly string[],
+  allowedExternalSpecifiers: readonly string[] = ALLOWED_EXTERNAL_SPECIFIERS.kobato,
+) {
   const errors: string[] = []
 
   if (text.includes('import.meta.env')) {
@@ -55,7 +69,7 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
         errors.push(`relative runtime require remains: ${specifier}`)
         continue
       }
-      if (!isAllowedSpecifier(specifier)) {
+      if (!isAllowedSpecifier(specifier, allowedExternalSpecifiers)) {
         errors.push(`external runtime require remains: ${specifier}`)
       }
     }
@@ -69,7 +83,7 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
         errors.push(`relative require remains: ${specifier}`)
         continue
       }
-      if (!isAllowedSpecifier(specifier)) {
+      if (!isAllowedSpecifier(specifier, allowedExternalSpecifiers)) {
         errors.push(`external require remains: ${specifier}`)
       }
     }
@@ -83,7 +97,7 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
         errors.push(`relative dynamic import remains: ${specifier}`)
         continue
       }
-      if (!isAllowedSpecifier(specifier)) {
+      if (!isAllowedSpecifier(specifier, allowedExternalSpecifiers)) {
         errors.push(`external dynamic import remains: ${specifier}`)
       }
     }
@@ -95,7 +109,7 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
           errors.push(`relative import remains: ${specifier}`)
           continue
         }
-        if (!isAllowedSpecifier(specifier)) {
+        if (!isAllowedSpecifier(specifier, allowedExternalSpecifiers)) {
           errors.push(`external import remains: ${specifier}`)
         }
       }
@@ -116,17 +130,36 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
   return errors
 }
 
-function checkBundle(bundlePath: string) {
-  return scanBundleText(readFileSync(bundlePath, 'utf-8'), SEA_BUNDLE_DEFINED_GLOBALS)
+interface CheckedBundle {
+  app: SeaApp
+  path: string
+}
+
+function checkedBundles(): CheckedBundle[] {
+  return [
+    ...[seaServerBundlePath('kobato'), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()].map((path) => ({
+      app: 'kobato' as const,
+      path,
+    })),
+    { app: 'sayaka', path: seaServerBundlePath('sayaka') },
+  ]
+}
+
+function checkBundle(bundle: CheckedBundle) {
+  return scanBundleText(
+    readFileSync(bundle.path, 'utf-8'),
+    seaBundleDefinedGlobals(bundle.app),
+    ALLOWED_EXTERNAL_SPECIFIERS[bundle.app],
+  )
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let failed = false
-  for (const bundlePath of [seaServerBundlePath(), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()]) {
-    const errors = checkBundle(bundlePath)
+  for (const bundle of checkedBundles()) {
+    const errors = checkBundle(bundle)
     if (errors.length > 0) {
       failed = true
-      console.error(`SEA bundle check failed for ${bundlePath}:`)
+      console.error(`SEA bundle check failed for ${bundle.app} (${bundle.path}):`)
       for (const error of errors) {
         console.error(`- ${error}`)
       }

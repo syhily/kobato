@@ -1,16 +1,16 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
+import { orpc } from '@kobato/api/browser/client'
 import { useNavigate, useOutletContext } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { UserDetailView } from '@/ui/users/UserDetailView'
 
 import type { Route } from './+types/detail'
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'admin')
-  return { passkeyEnabled: await caller.admin.users.passkeyFlag() }
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
+  return { passkeyEnabled: await orpc.admin.users.passkeyFlag() }
 }
 
 export const meta = titleMeta('meta.title.admin.userDetail')

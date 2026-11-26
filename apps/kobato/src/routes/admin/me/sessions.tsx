@@ -1,32 +1,27 @@
 import type { MySessionItem } from '@kobato/api/contracts/account/self'
 
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { MySessionsView } from '@kobato/web-admin/ui/account/MySessionsView'
-import {
-  DEFAULT_MY_SORT,
-  MY_SESSION_SORT_OPTIONS,
-  parseSessionSort,
-  type SessionSortState,
-} from '@kobato/web-admin/ui/sessions/sort'
+import { orpc } from '@kobato/api/browser/client'
 import { data } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { MySessionsView } from '@/ui/account/MySessionsView'
+import { DEFAULT_MY_SORT, MY_SESSION_SORT_OPTIONS, parseSessionSort, type SessionSortState } from '@/ui/sessions/sort'
 
 import type { Route } from './+types/sessions'
 
 export const meta = titleMeta('meta.title.admin.mySessions')
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer, session } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'visitor')
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'visitor', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(
     url.searchParams.get('sort'),
     MY_SESSION_SORT_OPTIONS,
     DEFAULT_MY_SORT,
   )
-  const sessions = await caller.account.sessions()
+  const sessions = await orpc.account.sessions()
   const sorted = [...sessions].sort((a, b) => {
     let cmp = 0
     switch (sort.field) {
@@ -46,7 +41,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),
     expiresAtIso: s.expiresAt.toISOString(),
-    isCurrent: s.sid === session.id,
+    isCurrent: s.isCurrent,
   }))
   return data({ items })
 }

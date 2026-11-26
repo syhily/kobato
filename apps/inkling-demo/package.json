@@ -14,7 +14,7 @@
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
-    "@kobato/web-public": "workspace:*",
+    "@kobato/web-kit": "workspace:*",
     "@lexical/headless": "catalog:",
     "@lexical/link": "catalog:",
     "@lexical/list": "catalog:",

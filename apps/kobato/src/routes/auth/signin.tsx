@@ -1,30 +1,30 @@
+import type { AuthFlowOutput } from '@kobato/api/contracts/account/auth'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { orpc } from '@kobato/api/browser/client'
 import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
-import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
-import { authFlowError } from '@kobato/server/domains/auth/services/shared'
-import { getInstallState } from '@kobato/server/domains/settings/install-gate'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider'
 import { safeRedirectPath } from '@kobato/utils/safe-url'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { LoginForm } from '@kobato/web-admin/ui/auth/AdminCredentialsForm'
-import { LostPasswordForm } from '@kobato/web-admin/ui/auth/LostPasswordForm'
-import { MagicLinkConfirmForm } from '@kobato/web-admin/ui/auth/MagicLinkConfirmForm'
-import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm'
-import { ResetPasswordForm } from '@kobato/web-admin/ui/auth/ResetPasswordForm'
 import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { data, redirect, useNavigation } from 'react-router'
 
 import {
   authErrorPayload,
   authMessagePayload,
-  cookieHeaders,
-  formField,
-  toActionResult,
-} from '@/routes/auth/flow-response'
+  isCsrfFailure,
+  toClientActionResult,
+  clientAuthFlowError,
+  type ClientI18nCatalog,
+} from '@/lib/client-action-result'
+import { awaitRootBootstrap } from '@/lib/root-bootstrap'
+import { formField } from '@/routes/auth/flow-response'
 import { titleMeta } from '@/seo/title-meta'
+import { type LoginActionData, LoginForm } from '@/ui/auth/AdminCredentialsForm'
+import { LostPasswordForm } from '@/ui/auth/LostPasswordForm'
+import { MagicLinkConfirmForm } from '@/ui/auth/MagicLinkConfirmForm'
+import { OtpForm } from '@/ui/auth/OtpForm'
+import { ResetPasswordForm } from '@/ui/auth/ResetPasswordForm'
 
 import type { Route } from './+types/signin'
 
@@ -46,18 +46,17 @@ function hasError(data: unknown): data is { error: string } {
   )
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  if ((await getInstallState(rc.db)) === 'noAdmin') {
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  if (boot.installState === 'noAdmin') {
     throw redirect('/admin/setup', { status: 303 })
   }
-
-  const { caller } = createSsrCaller({ request, context })
-  const result = await caller.account.auth.status({
-    redirectTo: rc.url.searchParams.get('redirect_to'),
-    action: rc.url.searchParams.get('action'),
-    token: rc.url.searchParams.get('token'),
-    error: rc.url.searchParams.get('error'),
+  const url = new URL(request.url)
+  const result = await orpc.account.auth.status({
+    redirectTo: url.searchParams.get('redirect_to'),
+    action: url.searchParams.get('action'),
+    token: url.searchParams.get('token'),
+    error: url.searchParams.get('error'),
   })
   if (result.kind === 'redirect') {
     throw redirect(result.to)
@@ -76,107 +75,94 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   })
 }
 
-export async function action({ request, context }: Route.ActionArgs) {
-  const rc = getRequestContext({ request, context })
-  const locale = rc.localization.locale
-  if ((await getInstallState(rc.db)) === 'noAdmin') {
+export async function clientAction({ request }: Route.ClientActionArgs) {
+  const boot = await awaitRootBootstrap()
+  const catalog: ClientI18nCatalog = { locale: boot.i18n.locale, messages: boot.i18n.messages }
+  if (boot.installState === 'noAdmin') {
     throw redirect('/admin/setup', { status: 303 })
   }
-
-  const { caller, responseHeaders } = createSsrCaller({ request, context })
-  const redirectTo = rc.url.searchParams.get('redirect_to')
-  const action = rc.url.searchParams.get('action')
+  const url = new URL(request.url)
+  const redirectTo = url.searchParams.get('redirect_to')
+  const action = url.searchParams.get('action')
 
   const formData = await request.formData()
 
-  if (!validateCsrfForAction(rc.session, request, formData)) {
-    return toActionResult(authFlowError('error.api.csrfFailed'), locale, responseHeaders)
+  const dispatchFlow = async (run: () => Promise<AuthFlowOutput>, extraData?: Record<string, unknown>) => {
+    let result: AuthFlowOutput
+    try {
+      result = await run()
+    } catch (error) {
+      if (!isCsrfFailure(error)) {
+        throw error
+      }
+      return toClientActionResult(clientAuthFlowError('error.api.csrfFailed'), catalog)
+    }
+    return toClientActionResult(result, catalog, extraData)
   }
 
   if (action === 'lostpassword') {
-    return toActionResult(
-      await caller.account.auth.passwordResetRequest({ email: formField(formData, 'email') }),
-      locale,
-      responseHeaders,
-    )
+    return dispatchFlow(() => orpc.account.auth.passwordResetRequest({ email: formField(formData, 'email') }))
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
-    return toActionResult(
-      await caller.account.auth.passwordReset({
+    return dispatchFlow(() =>
+      orpc.account.auth.passwordReset({
         token: formField(formData, 'reset_token'),
         password: formField(formData, 'password'),
         purpose: action === 'resetpassword' ? 'password-reset' : 'author-invite',
         redirectTo,
       }),
-      locale,
-      responseHeaders,
     )
   }
 
   if (action === 'cancelotp') {
-    return toActionResult(await caller.account.auth.otpCancel({ redirectTo }), locale, responseHeaders)
+    return dispatchFlow(() => orpc.account.auth.otpCancel({ redirectTo }))
   }
 
   if (action === 'verifyotp') {
-    return toActionResult(
-      await caller.account.auth.otpVerify({ code: formField(formData, 'otp_code'), redirectTo }),
-      locale,
-      responseHeaders,
-    )
+    return dispatchFlow(() => orpc.account.auth.otpVerify({ code: formField(formData, 'otp_code'), redirectTo }))
   }
 
   if (action === 'resendotp') {
-    return toActionResult(await caller.account.auth.otpResend({}), locale, responseHeaders)
+    return dispatchFlow(() => orpc.account.auth.otpResend({}))
   }
 
   if (action === 'passkey') {
-    return toActionResult(
-      await caller.account.passkey.authFinish({
+    return dispatchFlow(() =>
+      orpc.account.passkey.authFinish({
         response: formField(formData, 'passkey_response'),
         challenge: formField(formData, 'passkey_challenge'),
         redirectTo,
       }),
-      locale,
-      responseHeaders,
     )
   }
 
   if (action === 'identify') {
-    const result = await caller.account.auth.identify({ email: formField(formData, 'email'), redirectTo })
+    const result = await orpc.account.auth.identify({ email: formField(formData, 'email'), redirectTo })
     switch (result.kind) {
       case 'passkey':
-        return data({ method: 'passkey' as const })
+        return data<LoginActionData>({ method: 'passkey' })
       case 'password':
-        return data({ method: 'password' as const })
+        return data<LoginActionData>({ method: 'password' })
       case 'magic-link-sent':
-        return data(authMessagePayload(result.message, result.descriptor, locale), {
-          headers: cookieHeaders(responseHeaders),
-        })
+        return data(authMessagePayload(result.message, result.descriptor, catalog))
       case 'error':
-        return data(authErrorPayload(result.message, result.descriptor, locale), {
-          headers: cookieHeaders(responseHeaders),
-        })
+        return data(authErrorPayload(result.message, result.descriptor, catalog))
     }
   }
 
   if (action === 'magiclink') {
-    return toActionResult(
-      await caller.account.auth.magicLink({ token: formField(formData, 'magic_token'), redirectTo }),
-      locale,
-      responseHeaders,
-    )
+    return dispatchFlow(() => orpc.account.auth.magicLink({ token: formField(formData, 'magic_token'), redirectTo }))
   }
 
-  return toActionResult(
-    await caller.account.auth.login({
-      email: formField(formData, 'email'),
-      password: formField(formData, 'password'),
-      redirectTo,
-    }),
-    locale,
-    responseHeaders,
-    { redirectTo: safeRedirectPath(redirectTo, AUTH_ACTION_REDIRECT_FALLBACK, rc.url.origin) },
+  return dispatchFlow(
+    () =>
+      orpc.account.auth.login({
+        email: formField(formData, 'email'),
+        password: formField(formData, 'password'),
+        redirectTo,
+      }),
+    { redirectTo: safeRedirectPath(redirectTo, AUTH_ACTION_REDIRECT_FALLBACK, url.origin) },
   )
 }
 

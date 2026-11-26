@@ -32,7 +32,7 @@ const { avatarRouter } = await import('@kobato/server/http/controllers/public/av
 const { commentsPublicRouter } = await import('@kobato/server/http/controllers/public/comments-public.controller')
 const commentsRouter = commentsPublicRouter
 const { commentsTokenRouter } = await import('@kobato/server/http/controllers/public/comments-token.controller')
-const { likesRouter } = await import('@kobato/server/http/controllers/account/likes.controller')
+const { likesRouter } = await import('@kobato/server/http/controllers/public/likes.controller')
 
 const db = getTestDb()
 

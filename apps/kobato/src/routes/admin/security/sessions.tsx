@@ -1,27 +1,21 @@
 import type { AdminSessionItem } from '@kobato/api/contracts/admin/users'
 
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { resolveAppLocalization } from '@kobato/settings/app-localization'
+import { orpc } from '@kobato/api/browser/client'
 import { compareDisplayText } from '@kobato/utils/format'
-import { SessionsView } from '@kobato/web-admin/ui/sessions/SessionsView'
-import {
-  DEFAULT_ADMIN_SORT,
-  SESSION_SORT_OPTIONS,
-  parseSessionSort,
-  type SessionSortState,
-} from '@kobato/web-admin/ui/sessions/sort'
 import { data } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { SessionsView } from '@/ui/sessions/SessionsView'
+import { DEFAULT_ADMIN_SORT, SESSION_SORT_OPTIONS, parseSessionSort, type SessionSortState } from '@/ui/sessions/sort'
 
 import type { Route } from './+types/sessions'
 
 export const meta = titleMeta('meta.title.admin.sessions')
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer, session } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'admin')
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime' | 'userName'> = parseSessionSort(
     url.searchParams.get('sort'),
@@ -29,8 +23,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     DEFAULT_ADMIN_SORT,
   )
 
-  const all = await caller.admin.users.listSessions()
-  const { locale } = resolveAppLocalization()
+  const all = await orpc.admin.users.listSessions()
+  const locale = boot.i18n.locale
   const sorted = [...all].sort((a, b) => {
     let cmp = 0
     switch (sort.field) {
@@ -58,7 +52,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),
     expiresAtIso: s.expiresAt.toISOString(),
-    isCurrent: s.sid === session.id,
+    isCurrent: s.isCurrent,
   }))
   return data({ items })
 }

@@ -284,11 +284,11 @@ describe('content.bootstrap', () => {
     expect(json.i18n.revision).toBe(getBlogSettingsSnapshotSync().revision)
   })
 
-  it('ships the full catalog and the active locale Inkling labels to a SIGNED-IN workspace document', async () => {
+  it('ships the full catalog and the active locale Inkling labels to a workspace-scoped signed-in call', async () => {
     for (const path of ['/admin/settings', '/editor/post/new']) {
       const res = await callRpc(
         '/public/content/bootstrap',
-        undefined,
+        { scope: 'workspace' },
         makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
       )
       const json = await parseRpcJson<{
@@ -311,7 +311,7 @@ describe('content.bootstrap', () => {
     })
     const localized = await callRpc(
       '/public/content/bootstrap',
-      undefined,
+      { scope: 'workspace' },
       makeAuthedCtx({ db, csrfToken: 'test-csrf-token', url: 'http://localhost/admin/settings' }),
     )
     const localizedJson = await parseRpcJson<{ i18n: { locale: string; inklingLabels: Record<string, string> } }>(
@@ -322,7 +322,7 @@ describe('content.bootstrap', () => {
     expect(JSON.stringify(localizedJson.i18n.inklingLabels)).not.toContain('开始撰写内容…')
   })
 
-  it('keeps auth/setup on the workspace catalog but without an editor label table', async () => {
+  it('keeps the auth/setup pages on the caller-selected catalog and never carries an editor label table anonymously', async () => {
     for (const path of ['/admin/signin', '/admin/setup']) {
       const res = await callRpc(
         '/public/content/bootstrap',
@@ -333,9 +333,21 @@ describe('content.bootstrap', () => {
         i18n: { messages: Record<string, string>; inklingLabels?: Record<string, string> }
       }>(res)
 
-      expect(Object.keys(json.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
+      expect(Object.keys(json.i18n.messages).sort(), path).toEqual(publicUiKeys(uiMessagesZhCN))
       expect(json.i18n.messages['auth.setup.intro'], path).toBeDefined()
       expect(json.i18n, path).not.toHaveProperty('inklingLabels')
+
+      const scoped = await callRpc(
+        '/public/content/bootstrap',
+        { scope: 'workspace' },
+        makePublicCtx({ db, csrfToken: 'test-csrf-token', url: `http://localhost${path}` }),
+      )
+      const scopedJson = await parseRpcJson<{
+        i18n: { messages: Record<string, string>; inklingLabels?: Record<string, string> }
+      }>(scoped)
+
+      expect(Object.keys(scopedJson.i18n.messages).sort(), path).toEqual(Object.keys(uiMessagesZhCN).sort())
+      expect(scopedJson.i18n, path).not.toHaveProperty('inklingLabels')
     }
   })
 

@@ -24,9 +24,13 @@ connectivity-probed (`validateS3Config`) before persisting.
 - Asset URLs are site-owned: content stores origin-relative `/storage/<key>` references; `resolveAssetUrl`
   (`infra/storage/public-url.ts`) emits `${siteIdentity.website}/storage/<key>` for BOTH drivers — never the CDN base.
   Both directions share the path grammar owned by `packages/shared/assets/src/asset-url.ts`.
-- With S3 primary, `/storage/*` and `/fonts/embedded/*` 302 to `getPublicBaseUrl()` via `s3StorageRedirect`; the CDN
-  transform template is applied AT THAT BOUNDARY — clients signal transform intent with `w`/`h`/`q` params on the
-  site-owned URL and the redirect substitutes them.
+- With S3 primary, the `storage.object` and `fonts.embedded` procedures answer the `redirect` envelope to
+  `getPublicBaseUrl()` via `s3StorageRedirect` (`domains/storage/redirect.ts`; an unconfigured public base is the
+  `'unavailable'` signal, which the controllers translate into `SERVICE_UNAVAILABLE`); the CDN transform template is
+  applied AT THAT BOUNDARY — clients signal transform intent with `w`/`h`/`q` params on the site-owned URL and the
+  redirect substitutes them. Local-driver reads go through `domains/storage/local-object.ts` (`lookupStoredLocalObject`
+  → stat-backed etag `"size-mtime"`, `openStoredLocalObject` → byte-range stream) and the shared answer builder
+  `http/media-resource.ts`.
 - Boundaries that must be absolute (feeds, OG meta) absolutize srcs while computing `bodyHtmlFeed`
   (`absolutizeAssetSrcForFeed` in `@kobato/inkling/headless/cards/card-html.ts`). `asset-url-backfill.ts` rewrites
   legacy references once at boot and after each completed storage migration.

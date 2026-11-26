@@ -3,38 +3,15 @@ import { join } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
-const ROUTE_GROUPS = {
-  public: {
-    roots: ['apps/kobato/src/root.tsx', 'apps/kobato/src/routes/public'],
-    allowed: [
-      '@kobato/server/http/route-cache-headers',
-      '@kobato/server/http/ssr-caller',
-      '@kobato/server/infra/http/headers',
-      '@kobato/server/infra/http/status',
-      '@kobato/server/infra/trace/react-router',
-      '@kobato/server/render/warmup/manifest',
-    ],
-  },
-  admin: {
-    roots: ['apps/kobato/src/routes/admin', 'apps/kobato/src/routes/editor'],
-    allowed: [
-      '@kobato/server/domains/auth/rbac',
-      '@kobato/server/http/request-context',
-      '@kobato/server/http/ssr-caller',
-      '@kobato/server/infra/http/status',
-    ],
-  },
-  auth: {
-    roots: ['apps/kobato/src/routes/auth'],
-    allowed: [
-      '@kobato/server/domains/auth/csrf',
-      '@kobato/server/domains/auth/services/shared',
-      '@kobato/server/domains/settings/install-gate',
-      '@kobato/server/http/request-context',
-      '@kobato/server/http/ssr-caller',
-    ],
-  },
-} as const
+const CLIENT_TREES = [
+  'apps/kobato/src/routes',
+  'apps/kobato/src/ui',
+  'apps/kobato/src/lib',
+  'apps/kobato/src/document',
+  'apps/kobato/src/route-warmup',
+  'apps/kobato/src/seo',
+  'apps/kobato/src/root.tsx',
+] as const
 
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
@@ -64,24 +41,24 @@ function sourceFiles(root: string, out: string[]): void {
   }
 }
 
-describe('route server surfaces', () => {
-  for (const [name, group] of Object.entries(ROUTE_GROUPS)) {
-    it(`${name} routes use exactly the audited server modules`, () => {
-      const files: string[] = []
-      for (const root of group.roots) {
-        sourceFiles(join(REPO_ROOT, root), files)
-      }
-      expect(files.length).toBeGreaterThan(0)
+describe('kobato client code boundary', () => {
+  it('routes, ui, lib, document, route-warmup, seo, and root import no @kobato/server module', () => {
+    const files: string[] = []
+    for (const root of CLIENT_TREES) {
+      const treeFiles: string[] = []
+      sourceFiles(join(REPO_ROOT, root), treeFiles)
+      expect(treeFiles.length, root).toBeGreaterThan(0)
+      files.push(...treeFiles)
+    }
 
-      const actual = new Set<string>()
-      for (const file of files) {
-        for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-          if (specifier.startsWith('@kobato/server/')) {
-            actual.add(specifier)
-          }
+    const offenders: string[] = []
+    for (const file of files) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier === '@kobato/server' || specifier.startsWith('@kobato/server/')) {
+          offenders.push(`${file.slice(REPO_ROOT.length + 1)}: ${specifier}`)
         }
       }
-      expect([...actual].sort()).toEqual([...group.allowed].sort())
-    })
-  }
+    }
+    expect(offenders, 'client code ships to the browser — reach the backend over @kobato/api only').toEqual([])
+  })
 })

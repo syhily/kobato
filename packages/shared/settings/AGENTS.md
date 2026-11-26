@@ -11,11 +11,14 @@ The isomorphic settings model and its single source of truth.
 - `secrets.ts` owns `SECRET_FIELDS`, `declareSecret`, redaction, and mask metadata; encryption and secret-preserving
   writes stay server-side. `projection.ts` owns admin projections and their runtime schemas; loader shapes are `z.infer`
   derivatives, never parallel interfaces.
+- `csp.ts` is the single CSP builder (`buildCspHeader` / `siteUsesHttps`) shared by kobato's HTTP perimeter and sayaka's
+  document perimeter; it derives every origin from the bundle's asset host and configured website and NEVER widens
+  `connect-src 'self'`.
 - `telemetry/` is the observability protocol layer: the browser-safe RUM bootstrap (relay placeholder token; the client
   identity schema is `sections/observability.ts`) and the OpenObserve stream/metric/pipeline identity. The intake path
   and SDK proxy URL builder belong to `@kobato/api`; runtime SDK adapters stay with their consumers. No OpenTelemetry
   SDK, OpenObserve client, Docker, retention mutation, or server config.
-- Admin navigation display metadata belongs to `@kobato/web-admin`, not this package.
+- Admin navigation display metadata belongs to the workspace admin UI (`apps/kobato/src/ui`), not this package.
 - `cache-registry.ts` + `cache-bucket.ts` are the cache DECLARATION layer, never a storage plane: one `CacheDeclaration`
   per bucket (stable `id` = the directory under `<storage.data>/cache`, UI-message-id `labelId`/`descriptionId`, default
   prefix/TTL, `tunable` flag); `cache-bucket.ts` derives the `CacheBucketId` union, `CACHE_BUCKET_IDS`, tunable

@@ -11,23 +11,22 @@ const nodeRequire = createRequire(resolve(REPO_ROOT, 'apps/kobato/vite.config.ts
 const ENTRIES = {
   root: 'packages/ui/src/styles/ui.css',
   admin: 'apps/kobato/src/styles/admin.css',
-  public: 'apps/kobato/src/styles/public.css',
+  sayaka: 'apps/sayaka/src/styles/public.css',
   demo: 'apps/inkling-demo/src/styles/public.css',
   inkling: 'packages/inkling/src/styles/index.css',
 } as const
 
 const SOURCE_ROOTS = [
   'apps/kobato/src',
+  'apps/sayaka/src',
   'apps/inkling-demo/src',
   'packages/ui/src',
-  'packages/web/admin/src',
   'packages/web/kit/src',
-  'packages/web/public/src',
   'packages/inkling/src',
 ] as const
 
 const BRIDGE_SHEETS = {
-  admin: ['packages/web/admin/src/styles/inkling-editor.css'],
+  admin: ['apps/kobato/src/ui/styles/inkling-editor.css'],
   public: ['packages/web/kit/src/styles/inkling-comment-editor.css'],
   demo: [],
 } as const
@@ -144,25 +143,27 @@ describe('Tailwind compile contract', () => {
         'apps/kobato/src/routes/admin',
         'apps/kobato/src/routes/auth',
         'apps/kobato/src/routes/editor',
+        'apps/kobato/src/ui',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
-        'packages/web/admin/src/ui',
         'packages/web/kit/src/ui',
       ],
-      public: [
-        'apps/kobato/src/root.tsx',
-        'apps/kobato/src/routes/public',
+      sayaka: [
+        'apps/sayaka/src/document',
+        'apps/sayaka/src/root.tsx',
+        'apps/sayaka/src/route-warmup',
+        'apps/sayaka/src/routes',
+        'apps/sayaka/src/rum',
+        'apps/sayaka/src/ui',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/kit/src/ui',
-        'packages/web/public/src/ui',
       ],
       demo: [
         'apps/inkling-demo/src/**/*.{ts,tsx}',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/kit/src/ui',
-        'packages/web/public/src/ui',
       ],
       inkling: ['packages/inkling/src'],
     }
@@ -175,19 +176,19 @@ describe('Tailwind compile contract', () => {
       expect(sheet, name).toBeDefined()
       expect(sheet!.scanPaths, `${name}: compiled scan set drifted from the intended map`).toEqual(paths)
     }
-    for (const name of ['root', 'admin', 'public', 'demo']) {
+    for (const name of ['root', 'admin', 'sayaka', 'demo']) {
       expect(compiled.get(name)!.root, `${name}: entry must keep source(none)`).toBe('none')
     }
   })
 
   it('resolves every var() reference each document loads', async () => {
-    const [rootSheet, adminSheet, publicSheet, demoSheet, inklingSheet] = await Promise.all(
+    const [rootSheet, adminSheet, sayakaSheet, demoSheet, inklingSheet] = await Promise.all(
       Object.values(ENTRIES).map((entry) => compileEntry(entry)),
     )
     const inlineDefs = inlineStyleProperties()
     const documents: Record<string, string[]> = {
       admin: [rootSheet.css, adminSheet.css, inklingSheet.css, ...BRIDGE_SHEETS.admin.map(readRaw)],
-      public: [rootSheet.css, publicSheet.css, inklingSheet.css, ...BRIDGE_SHEETS.public.map(readRaw)],
+      sayaka: [rootSheet.css, sayakaSheet.css, inklingSheet.css, ...BRIDGE_SHEETS.public.map(readRaw)],
       demo: [rootSheet.css, demoSheet.css],
     }
     for (const [document_, texts] of Object.entries(documents)) {
@@ -211,10 +212,9 @@ describe('Tailwind compile contract', () => {
   })
 
   it('keeps the base border default after each sheet preflight', async () => {
-    const sheets = await Promise.all(
-      (['root', 'admin', 'public', 'demo'] as const).map((name) => compileEntry(ENTRIES[name])),
-    )
-    for (const [index, name] of (['root', 'admin', 'public', 'demo'] as const).entries()) {
+    const sheetNames = ['root', 'admin', 'sayaka', 'demo'] as const
+    const sheets = await Promise.all(sheetNames.map((name) => compileEntry(ENTRIES[name])))
+    for (const [index, name] of sheetNames.entries()) {
       const css = sheets[index]!.css
       const borderDefault = /[^{}]*\{[^}]*border-color:\s*var\(--border\)[^}]*\}/.exec(css)
       expect(borderDefault, `${name}: base border default missing from the sheet`).not.toBeNull()

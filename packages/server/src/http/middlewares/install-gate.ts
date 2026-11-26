@@ -10,19 +10,7 @@ const log = getLogger('install.gate')
 
 const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/ready'])
 
-const EXEMPT_PATH_PREFIXES = [
-  '/assets/',
-  '/build/',
-  '/fonts/',
-  '/images/',
-  '/favicon',
-  '/logo',
-  '/apple-touch-icon',
-  '/robots.txt',
-  '/sitemap.xml',
-  '/__manifest',
-  '/api/rum/intake/',
-]
+const EXEMPT_PATH_PREFIXES = ['/admin/assets/']
 
 function isExempt(pathname: string): boolean {
   if (EXEMPT_PATHS.has(pathname)) {

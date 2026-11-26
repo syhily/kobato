@@ -1,24 +1,22 @@
 import { hasAtLeast } from '@kobato/auth/roles'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
 import { data, Outlet, redirect } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
-import { useDetachPublicCss } from '@/document/use-detach-public-css'
+import { awaitRootBootstrap } from '@/lib/root-bootstrap'
+import { AdminErrorFallback } from '@/ui/shell/AdminErrorFallback'
 
 import type { Route } from './+types/layout'
 import '@/styles/admin.css'
 
-export const handle: RouteHandle = { layout: 'admin', postFonts: true }
+export const handle: RouteHandle = { postFonts: true }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const { url } = rc
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  const user = boot.currentUser ?? undefined
+  const role = user?.role ?? null
   if (!hasAtLeast(role, 'author')) {
-    const redirectPath = url.pathname
+    const redirectPath = new URL(request.url).pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
@@ -27,7 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       id: user?.id ?? '',
       name: user?.name ?? '',
       email: user?.email ?? '',
-      role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
+      role: user?.role ?? null,
     },
   })
 }
@@ -35,7 +33,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export { AdminErrorFallback as ErrorBoundary }
 
 export default function EditorLayoutRoute({ loaderData }: Route.ComponentProps) {
-  useDetachPublicCss()
   return (
     <>
       <Outlet context={{ currentUser: loaderData.currentUser }} />

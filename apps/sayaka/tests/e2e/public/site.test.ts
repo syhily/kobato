@@ -1,0 +1,41 @@
+import { E2eClient, e2eEnv } from '@kobato/pack/instance/client/http'
+import { describe, expect, it } from 'vitest'
+
+const env = e2eEnv()
+
+describe('public site (HTTP e2e)', () => {
+  it('GET /health — 200 on the seeded instance (kobato origin)', async () => {
+    const client = new E2eClient(env.baseUrl)
+    const res = await client.get('/health')
+    expect(res.status).toBe(200)
+  })
+
+  it('GET / — SSR home carries the seeded site title (sayaka origin)', async () => {
+    const client = new E2eClient(env.publicBaseUrl)
+    const res = await client.get('/')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/html')
+    expect(await res.text()).toContain('Kobato Smoke')
+  })
+
+  it('GET /archives — 200 text/html (sayaka origin)', async () => {
+    const client = new E2eClient(env.publicBaseUrl)
+    const res = await client.get('/archives')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/html')
+  })
+
+  it('GET /feed — RSS feed over HTTP (sayaka origin)', async () => {
+    const client = new E2eClient(env.publicBaseUrl)
+    const res = await client.get('/feed')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/xml|rss/i)
+  })
+
+  it('GET /sitemap.xml — XML sitemap (sayaka origin)', async () => {
+    const client = new E2eClient(env.publicBaseUrl)
+    const res = await client.get('/sitemap.xml')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toContain('<?xml')
+  })
+})

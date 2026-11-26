@@ -12,8 +12,7 @@
   `render-live.ts`, fixtures), never a `*.test.ts`. Tree-specific helpers sit beside their tree
   (`tests/unit/nodes/base/test-helpers.ts`, `tests/unit/transforms/test-helpers.ts`) — never a nested `test-utils/`
   directory or an `index.ts` barrel.
-- `tests/utils/lexical.ts` is the WORKSPACE-canonical Lexical document-model fixture: `@kobato/web-kit`,
-  `@kobato/web-admin`, and the app's test trees import it cross-package (the one sanctioned `@kobato/inkling/tests/*`
-  deep import, pinned by `apps/kobato/tests/arch/package-dag.test.ts`). Import helpers through
-  `@kobato/inkling/tests/utils/...`; production internals use the private `@kobato/inkling-internal/...` alias rather
-  than relative traversal.
+- `tests/utils/lexical.ts` is the WORKSPACE-canonical Lexical document-model fixture: `@kobato/web-kit` and the app test
+  trees import it cross-package (the one sanctioned `@kobato/inkling/tests/*` deep import, pinned by
+  `apps/kobato/tests/arch/package-dag.test.ts`). Import helpers through `@kobato/inkling/tests/utils/...`; production
+  internals use the private `@kobato/inkling-internal/...` alias rather than relative traversal.

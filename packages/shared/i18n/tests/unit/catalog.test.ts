@@ -9,7 +9,7 @@ import {
   uiMessagesForScope,
   type MessageCatalogSource,
 } from '@kobato/i18n/catalog'
-import { catalogScopeForPathname, isPublicMessageKey, isWorkspacePath } from '@kobato/i18n/catalog-scope'
+import { isPublicMessageKey } from '@kobato/i18n/catalog-scope'
 import { SUPPORTED_LOCALES, type AppLocale } from '@kobato/i18n/locales'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import { gzipSync } from 'node:zlib'
@@ -171,25 +171,6 @@ describe('i18n/catalog', () => {
 })
 
 describe('i18n/catalog-scope', () => {
-  it('classifies workspace paths, including the auth/setup pages', () => {
-    for (const path of [
-      '/admin',
-      '/admin/',
-      '/admin/settings',
-      '/admin/signin',
-      '/admin/setup',
-      '/editor',
-      '/editor/post/new',
-    ]) {
-      expect(isWorkspacePath(path), path).toBe(true)
-      expect(catalogScopeForPathname(path), path).toBe('workspace')
-    }
-    for (const path of ['/', '/posts/hello', '/administrator', '/editors', '/adminx']) {
-      expect(isWorkspacePath(path), path).toBe(false)
-      expect(catalogScopeForPathname(path), path).toBe('public')
-    }
-  })
-
   it('ships exactly the public namespace allowlist', () => {
     for (const locale of SUPPORTED_LOCALES) {
       const full = uiMessagesFor(locale)

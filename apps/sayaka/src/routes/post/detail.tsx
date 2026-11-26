@@ -1,0 +1,84 @@
+import type { RouteHandle } from '@sayaka/root'
+
+import { bundleFromMatches, i18nFromMatches, routeMeta, seoForPost } from '@kobato/catalog/seo/meta'
+import { getSayakaContext } from '@sayaka/server/request-context'
+import { detailHeaders } from '@sayaka/server/route-cache-headers'
+import { sinkUnhandledRejection, streamDetailExtras, unwrapDetail } from '@sayaka/server/unwrap'
+import { PostDetailBody } from '@sayaka/ui/post/PostDetailBody'
+import { WebmentionList } from '@sayaka/ui/webmentions/WebmentionList'
+import { Suspense, useMemo } from 'react'
+import { Await, data } from 'react-router'
+
+import type { Route } from './+types/detail'
+
+export const handle: RouteHandle = { postFonts: true }
+export const headers = detailHeaders
+
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const ctx = getSayakaContext({ context })
+  const detailPromise = sinkUnhandledRejection(
+    ctx.client.public.content.posts.bySlug({
+      slug: params.slug,
+      ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
+    }),
+  )
+  const boot = await ctx.bootstrap()
+  const result = await unwrapDetail(detailPromise, boot.i18n.locale)
+
+  const { comments, webmentions } = streamDetailExtras(ctx.client, result.payload.critical.commentKey)
+
+  return data(
+    {
+      post: result.payload.post,
+      bodyHtml: result.payload.bodyHtml,
+      visibleTags: result.payload.visibleTags,
+      sidebarPosts: result.payload.sidebarPosts,
+      tags: result.payload.tags,
+      detail: { ...result.payload.critical, comments, webmentions },
+      draftMarker: result.payload.draftMarker,
+      eid: ctx.analyticsEventId,
+    },
+    { headers: result.etag === null ? undefined : { ETag: result.etag } },
+  )
+}
+
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  const bundle = bundleFromMatches(matches)
+  const i18n = i18nFromMatches(matches)
+  if (!loaderData) {
+    return routeMeta(undefined, bundle, i18n)
+  }
+  return routeMeta(seoForPost(loaderData.post), bundle, i18n)
+}
+
+export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
+  const { post, bodyHtml, visibleTags, sidebarPosts, tags, detail, draftMarker } = loaderData
+  const sidebar = useMemo(
+    () => ({
+      posts: sidebarPosts,
+      tags,
+      recentComments: detail.recentComments,
+    }),
+    [sidebarPosts, tags, detail.recentComments],
+  )
+  return (
+    <PostDetailBody
+      post={post}
+      headings={post.headings}
+      bodyHtml={bodyHtml}
+      visibleTags={visibleTags}
+      mode={detail.admin ? 'admin' : 'public'}
+      likes={detail.likes}
+      commentKey={detail.commentKey}
+      commentsPromise={detail.comments}
+      webmentions={
+        <Suspense fallback={null}>
+          <Await resolve={detail.webmentions}>{(mentions) => <WebmentionList mentions={mentions} />}</Await>
+        </Suspense>
+      }
+      currentUser={detail.currentUser}
+      draftMarker={draftMarker}
+      sidebar={sidebar}
+    />
+  )
+}

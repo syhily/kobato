@@ -1,5 +1,6 @@
 import { dbProjects } from '@kobato/test/projects/db-projects'
 import { kobatoAppProjects } from '@kobato/test/projects/kobato-app-projects'
+import { sayakaAppProjects } from '@kobato/test/projects/sayaka-app-projects'
 import { serverProjects } from '@kobato/test/projects/server-projects'
 import sharedSnapsProject from '@kobato/test/projects/shared-snaps'
 import sharedUnitProject from '@kobato/test/projects/shared-unit'
@@ -22,6 +23,7 @@ export const allTestProjects = [
   ...dbProjects,
   ...serverProjects,
   ...kobatoAppProjects,
+  ...sayakaAppProjects,
   inklingUnitConfigPath,
   demoUnitConfigPath,
   apiUnitConfigPath,

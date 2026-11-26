@@ -56,7 +56,7 @@ describe('projectLogLine — HTTP records', () => {
     })
   })
 
-  it.each(['/health', '/ready', '/rpc/public/observability/rumStatus', '/api/rum/intake/rum/v1/default/rum'])(
+  it.each(['/health', '/ready', '/rpc/public/observability/rumStatus', '/rpc/public/observability/rumIntake'])(
     'drops a quiet line for the self-telemetry path %s',
     (url) => {
       const projection = projectLogLine(

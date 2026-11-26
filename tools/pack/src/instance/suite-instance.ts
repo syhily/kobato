@@ -2,14 +2,17 @@ import type { SmokeServer } from '@kobato/pack/instance/sea-instance'
 import type { SmokeDatabases, TempDirs } from '@kobato/pack/instance/temp'
 
 import {
+  bootSayakaServer,
   bootServer,
   ensureBinaryExists,
+  sayakaInstanceEnv,
   seaInstanceEnv,
   waitForExit,
   waitForHttp,
 } from '@kobato/pack/instance/sea-instance'
 import { relaxRateLimits, seedInstalledInstance } from '@kobato/pack/instance/seed'
 import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
+import { pickFreePort } from '@kobato/pack/process'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'node:crypto'
 import { rm } from 'node:fs/promises'
@@ -21,8 +24,11 @@ export interface SuiteInstance {
   dirs: TempDirs
   databases: SmokeDatabases
   server: SmokeServer
+  sayaka: SmokeServer
   serverLogPath: string
+  sayakaLogPath: string
   baseUrl: string
+  publicBaseUrl: string
   adminEmail: string
   adminPassword: string
 }
@@ -36,39 +42,73 @@ function healthUrl(server: SmokeServer): string {
   return `http://127.0.0.1:${server.port}/health`
 }
 
-async function dispose(dirs: TempDirs, server: SmokeServer | null): Promise<void> {
+async function stopServer(server: SmokeServer | null): Promise<void> {
   if (server !== null && !server.exitState.exited) {
     server.child.kill('SIGTERM')
     await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
   }
+}
+
+async function dispose(dirs: TempDirs, kobato: SmokeServer | null, sayaka: SmokeServer | null): Promise<void> {
+  await stopServer(sayaka)
+  await stopServer(kobato)
   await rm(dirs.root, { recursive: true, force: true }).catch(() => undefined)
 }
 
-export async function bootSuiteInstance(binaryPath: string, options: SuiteInstanceOptions): Promise<SuiteInstance> {
+export async function bootSuiteInstance(
+  kobatoBinaryPath: string,
+  sayakaBinaryPath: string,
+  options: SuiteInstanceOptions,
+): Promise<SuiteInstance> {
   const log = options.log ?? ((): void => undefined)
-  await ensureBinaryExists(binaryPath)
+  await ensureBinaryExists(kobatoBinaryPath)
+  await ensureBinaryExists(sayakaBinaryPath)
 
   const dirs = await makeTempDirs()
   const databases = smokeDatabases(dirs)
-  const serverLogPath = join(dirs.root, 'server.log')
+  const serverLogPath = join(dirs.root, 'kobato.log')
+  const sayakaLogPath = join(dirs.root, 'sayaka.log')
   const env = seaInstanceEnv(dirs, databases)
-  let server: SmokeServer | null = null
+  const kobatoPort = await pickFreePort()
+  const sayakaPort = await pickFreePort()
+  const publicBaseUrl = `http://127.0.0.1:${sayakaPort}`
+  let kobato: SmokeServer | null = null
+  let sayaka: SmokeServer | null = null
 
   try {
-    log(`    binary:   ${binaryPath}`)
+    log(`    kobato:   ${kobatoBinaryPath}`)
+    log(`    sayaka:   ${sayakaBinaryPath}`)
     log(`    database: ${databases.database}`)
     log(`    temp dir: ${dirs.root}`)
 
-    const fresh = await bootServer(binaryPath, dirs, env, serverLogPath)
-    server = fresh
+    const fresh = await bootServer(kobatoBinaryPath, dirs, env, serverLogPath, { port: kobatoPort })
+    kobato = fresh
     log(`    waiting for ${healthUrl(fresh)} (log: ${serverLogPath})`)
     const gate = await waitForHttp(healthUrl(fresh), fresh.exitState)
     if (gate.status !== 303) {
       throw new Error(`expected /health 303 → /admin/setup on a fresh instance, got ${gate.status}`)
     }
-    fresh.child.kill('SIGTERM')
-    await waitForExit(fresh, SHUTDOWN_TIMEOUT_MS)
 
+    const freshSayaka = await bootSayakaServer(
+      sayakaBinaryPath,
+      sayakaInstanceEnv(`http://127.0.0.1:${kobatoPort}`, sayakaPort),
+      sayakaLogPath,
+      { cwd: dirs.cwd },
+    )
+    sayaka = freshSayaka
+    log(`    waiting for ${publicBaseUrl}/ (sayaka install gate; log: ${sayakaLogPath})`)
+    const sayakaGate = await waitForHttp(`${publicBaseUrl}/`, freshSayaka.exitState)
+    if (
+      sayakaGate.status !== 303 ||
+      new URL(sayakaGate.headers.get('location') ?? '', publicBaseUrl).pathname !== '/admin/setup'
+    ) {
+      throw new Error(
+        `expected sayaka / 303 → /admin/setup on a fresh instance, got ${sayakaGate.status} location=${sayakaGate.headers.get('location') ?? '(none)'}`,
+      )
+    }
+
+    await stopServer(kobato)
+    kobato = null
     const adminPassword = randomBytes(12).toString('hex')
     await seedInstalledInstance(databases.database, {
       email: options.adminEmail,
@@ -76,29 +116,36 @@ export async function bootSuiteInstance(binaryPath: string, options: SuiteInstan
     })
     relaxRateLimits(databases.database)
 
-    const seeded = await bootServer(binaryPath, dirs, env, serverLogPath)
-    server = seeded
-    log(`    waiting for ${healthUrl(seeded)} (seeded restart)`)
+    const seeded = await bootServer(kobatoBinaryPath, dirs, env, serverLogPath, { port: kobatoPort })
+    kobato = seeded
+    log(`    waiting for ${healthUrl(seeded)} (seeded restart behind the running sayaka)`)
     const health = await waitForHttp(healthUrl(seeded), seeded.exitState)
     if (health.status !== 200) {
       throw new Error(`expected /health 200 on the seeded instance, got ${health.status}`)
+    }
+    const home = await waitForHttp(`${publicBaseUrl}/`, sayaka.exitState)
+    if (home.status !== 200) {
+      throw new Error(`expected sayaka / 200 on the seeded instance, got ${home.status}`)
     }
 
     return {
       dirs,
       databases,
       server: seeded,
+      sayaka,
       serverLogPath,
-      baseUrl: `http://127.0.0.1:${seeded.port}`,
+      sayakaLogPath,
+      baseUrl: `http://127.0.0.1:${kobatoPort}`,
+      publicBaseUrl,
       adminEmail: options.adminEmail,
       adminPassword,
     }
   } catch (error) {
-    await dispose(dirs, server)
+    await dispose(dirs, kobato, sayaka)
     throw error
   }
 }
 
 export async function stopSuiteInstance(instance: SuiteInstance): Promise<void> {
-  await dispose(instance.dirs, instance.server)
+  await dispose(instance.dirs, instance.server, instance.sayaka)
 }

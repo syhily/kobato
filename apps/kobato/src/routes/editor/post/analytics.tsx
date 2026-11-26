@@ -1,25 +1,26 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller, isOrpcNotFound } from '@kobato/server/http/ssr-caller'
-import { notFound } from '@kobato/server/infra/http/status'
+import { orpc } from '@kobato/api/browser/client'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { idFromString } from '@kobato/utils/id'
-import { PostAnalyticsHeader, PostAnalyticsView } from '@kobato/web-admin/ui/analytics/PostAnalyticsView'
-import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { Link } from 'react-router'
 
+import { isOrpcErrorWithCode } from '@/lib/orpc-error'
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
+import { notFound } from '@/lib/route-status'
 import { titleMeta } from '@/seo/title-meta'
+import { PostAnalyticsHeader, PostAnalyticsView } from '@/ui/analytics/PostAnalyticsView'
+import { useAnalyticsState } from '@/ui/analytics/use-analytics-state'
 
 import type { Route } from './+types/analytics'
 
-export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'author')
+export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'author', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
   const postId = idFromString(params.id)
   try {
-    return await caller.admin.posts.analytics({ postId, search: url.searchParams.toString() })
+    return await orpc.admin.posts.analytics({ postId, search: url.searchParams.toString() })
   } catch (error) {
-    if (isOrpcNotFound(error)) {
+    if (isOrpcErrorWithCode(error, 'NOT_FOUND')) {
       notFound()
     }
     throw error

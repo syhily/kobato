@@ -40,6 +40,13 @@ export function isContentRedirectSignal(value: unknown): value is ContentRedirec
   return contentRedirectSignalSchema.safeParse(value).success
 }
 
+export const contentBootstrapInputSchema = z
+  .object({
+    scope: z.enum(['public', 'workspace']).default('public'),
+  })
+  .default({ scope: 'public' })
+export type ContentBootstrapInput = z.input<typeof contentBootstrapInputSchema>
+
 export const contentBootstrapI18nSchema = z.object({
   locale: z.enum(SUPPORTED_LOCALES),
   revision: z.string(),
@@ -50,7 +57,7 @@ export type ContentBootstrapI18n = z.infer<typeof contentBootstrapI18nSchema>
 
 export const contentBootstrapOutputSchema = z.object({
   admin: z.boolean(),
-  currentUser: z.custom<{ id: string; name: string; role: Role } | null>(),
+  currentUser: z.custom<{ id: string; name: string; email: string; role: Role } | null>(),
   blogSettings: z.custom<BlogSettingsBundle>().nullable(),
   fonts: z.custom<ResolvedFonts>().nullable(),
   theme: z.enum(['dark', 'light']).nullable(),

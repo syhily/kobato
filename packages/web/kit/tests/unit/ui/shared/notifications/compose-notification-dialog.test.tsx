@@ -23,7 +23,7 @@ const captured = vi.hoisted(() => ({
 
 const orpcQueryMod = await import('@kobato/api/browser/orpc-query')
 vi.spyOn(orpcQueryMod, 'orpcQuery', 'get').mockImplementation((() => ({
-  account: { notifications: { key: () => ['account', 'notifications'] } },
+  public: { notifications: { key: () => ['public', 'notifications'] } },
   admin: {
     users: {
       list: {

@@ -65,6 +65,7 @@ const sessions = impl.sessions.handler(async ({ context }) => {
     loginAt: row.loginAt,
     lastActiveAt: row.lastActiveAt,
     expiresAt: row.expiresAt,
+    isCurrent: row.sid === context.session.id,
   }))
 })
 

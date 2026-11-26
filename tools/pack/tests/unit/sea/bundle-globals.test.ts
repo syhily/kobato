@@ -1,4 +1,5 @@
 import {
+  ALLOWED_EXTERNAL_SPECIFIERS,
   FORBIDDEN_BROWSER_TELEMETRY_MARKERS,
   SEA_BUNDLE_DEFINED_GLOBALS,
   scanBundleText,
@@ -86,5 +87,22 @@ describe('scanBundleText: browser-only RUM exclusion', () => {
 
   it('keeps the server OTel SDK bundleable while the browser RUM SDK stays client-only', () => {
     expect([...FORBIDDEN_BROWSER_TELEMETRY_MARKERS]).toEqual(['@openobserve/'])
+  })
+})
+
+describe('scanBundleText: per-app allowed externals', () => {
+  it('pins the per-app allowlists', () => {
+    expect(ALLOWED_EXTERNAL_SPECIFIERS.kobato).toEqual(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
+    expect(ALLOWED_EXTERNAL_SPECIFIERS.sayaka).toEqual(['@napi-rs/canvas'])
+  })
+
+  it('flags an external require outside the given app allowlist', () => {
+    const text = `const mod = require('@napi-rs/canvas')`
+    expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS)).toEqual(['external require remains: @napi-rs/canvas'])
+  })
+
+  it('allows the sayaka canvas require only under the sayaka allowlist', () => {
+    const text = `const mod = require('@napi-rs/canvas')`
+    expect(scanBundleText(text, SEA_BUNDLE_DEFINED_GLOBALS, ['@napi-rs/canvas'])).toEqual([])
   })
 })

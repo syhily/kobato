@@ -1,17 +1,14 @@
-import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { comment } from '@kobato/db/sqlite/schema/comment'
 import { page } from '@kobato/db/sqlite/schema/page'
 import { post } from '@kobato/db/sqlite/schema/post'
 import { user } from '@kobato/db/sqlite/schema/user'
 import { EMPTY_COMMENT_EDITOR_STATE } from '@kobato/inkling/headless/comment-schema'
-import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { commentsAuthedRouter } from '@kobato/server/http/controllers/account/comments-authed.controller'
-import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeAuthedCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { call } from '@orpc/server'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()
 
@@ -111,70 +108,6 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
     const u = await seedVisitor({ name: 'U4', email: 'u4@x.com' })
     const res = await call(commentsAuthedRouter.searchMineEntities, {}, { context: ctxFor(u) })
     expect(res.entities).toEqual([])
-  })
-})
-
-describe('commentsAuthedRouter — delete-request wire shape', () => {
-  beforeEach(() => {
-    initAllBatchers(getDatabaseHandle())
-  })
-
-  afterEach(() => {
-    resetAllBatchers()
-  })
-
-  it('requestDeleteOwn returns the wire comment with the flag set', async () => {
-    const u = await seedVisitor({ name: 'U7', email: 'u7@x.com' })
-    const pid = await seedPost('Delete Audit Post', 'delete-audit-post')
-    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-
-    const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.comment.id).toBe(String(cid))
-    expect(res.comment.deleteRequestedAt).not.toBeNull()
-  })
-
-  it('requestDeleteOwn returns the same wire comment on the idempotent no-op path', async () => {
-    const u = await seedVisitor({ name: 'U8', email: 'u8@x.com' })
-    const pid = await seedPost('Delete Audit Twice', 'delete-audit-twice')
-    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-
-    await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.comment.deleteRequestedAt).not.toBeNull()
-  })
-
-  it('cancelDeleteOwn returns the wire comment with the flag cleared', async () => {
-    const u = await seedVisitor({ name: 'U9', email: 'u9@x.com' })
-    const pid = await seedPost('Cancel Audit Post', 'cancel-audit-post')
-    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-
-    await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    const res = await call(commentsAuthedRouter.cancelDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.comment.id).toBe(String(cid))
-    expect(res.comment.deleteRequestedAt).toBeNull()
-  })
-})
-
-describe('commentsAuthedRouter.updateOwn', () => {
-  beforeEach(() => {
-    initAllBatchers(getDatabaseHandle())
-  })
-
-  afterEach(() => {
-    resetAllBatchers()
-  })
-
-  it('returns the updated wire comment', async () => {
-    const u = await seedVisitor({ name: 'U10', email: 'u10@x.com' })
-    const pid = await seedPost('Own Edit Post', 'own-edit-post')
-    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-
-    const body = makeCommentBody('edited body')
-    const res = await call(commentsAuthedRouter.updateOwn, { commentId: String(cid), body }, { context: ctxFor(u) })
-
-    expect(res.comment.id).toBe(String(cid))
-    expect(res.comment.userId).toBe(String(u))
-    expect(JSON.stringify(res.comment.body)).toContain('edited body')
   })
 })
 

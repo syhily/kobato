@@ -6,9 +6,10 @@ canonical owner package's `tests/utils/`, imported cross-package as `@kobato/<ow
 sanctioned cross-package `tests/` edge (`apps/kobato/tests/arch/package-dag.test.ts`). Product-coupled fixtures must not
 move back here. Canonical fixture owners: `@kobato/settings/tests/utils/blog-settings.ts`,
 `@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/catalog.ts`, `@kobato/inkling/tests/utils/lexical.ts`,
-`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`,
-`@kobato/web-admin/tests/utils/settings-mutation-mock.ts`, and the server harnesses under `@kobato/server/tests/utils/`
-(session, mail capture, integration DBs, request context).
+`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the server harnesses
+under `@kobato/server/tests/utils/` (session, mail capture, integration DBs, request context). The settings-mutation
+mock is app-local: `apps/kobato/tests/utils/settings-mutation-mock.ts`, imported as
+`@tests/utils/settings-mutation-mock`.
 
 ## Import surface
 
@@ -27,7 +28,10 @@ purpose + the `*.duckdb.test.ts` suffix).
 `test.projects` (pinned by `apps/kobato/tests/arch/vitest-project-registry.test.ts`). Placement: multi-leaf projects
 glob every leaf (`packages/shared/*/tests/unit/**` — a new leaf joins automatically); each module group has ONE
 multi-project owner (which also owns its `*-duckdb` project); single-project packages keep a package-local
-`tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path.
+`tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path. Each app owns its projects in
+`projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — the sayaka projects point their
+setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings bundle, no
+server/db seams).
 
 ## Zero services
 
@@ -48,7 +52,7 @@ never mount React). `node.ts` preloads `@date-fns/tz` so `TZDate` binds the real
 
 - Pool defaults from `vitestTestBase`: `pool: 'threads'`, `maxWorkers: 4` (`--maxWorkers=<n>` for more cores); DOM-heavy
   trees override `pool: 'vmThreads'` (`web-unit`, `web-snaps`, `ui-unit`, `demo-unit`, `inkling-unit`), and
-  `web-tz-unit` runs forks for its runtime `process.env.TZ` write.
+  `app-tz-unit` runs forks for its runtime `process.env.TZ` write.
 - `isolate: true` everywhere: each file gets a fresh module registry, so `vi.mock` holders, product global state, and
   native engines cannot leak across files.
 - SQLite: one in-memory database per file; `clearAllTables(db)` resets tables and `sqlite_sequence` (server helpers may

@@ -5,14 +5,18 @@ import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
 const CLIENT_LAYERS = [
-  'packages/web/admin/src/ui',
+  'apps/kobato/src/ui',
   'apps/kobato/src/document',
+  'apps/kobato/src/lib',
   'apps/kobato/src/route-warmup',
-  'apps/kobato/src/rum',
   'packages/web/kit/src',
-  'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
+  'apps/sayaka/src/document',
+  'apps/sayaka/src/route-warmup',
+  'apps/sayaka/src/routes',
+  'apps/sayaka/src/ui',
+  'apps/sayaka/src/rum',
   'packages/api/src/contracts',
   'packages/api/src/browser',
   'packages/shared/catalog/src/seo',
@@ -242,12 +246,15 @@ function collectServerOnlyImportViolations(filePaths: readonly string[], rule: S
 }
 
 const I18N_SCANNED_ROOTS = [
-  'packages/web/admin/src/ui',
+  'apps/kobato/src/ui',
   'apps/kobato/src/document',
+  'apps/kobato/src/lib',
   'apps/kobato/src/route-warmup',
-  'apps/kobato/src/rum',
+  'apps/sayaka/src/document',
+  'apps/sayaka/src/route-warmup',
+  'apps/sayaka/src/routes',
+  'apps/sayaka/src/ui',
   'packages/web/kit/src',
-  'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
   'packages/api/src/contracts',
@@ -261,7 +268,7 @@ const I18N_SCANNED_ROOTS = [
   'packages/shared/sanitize/src',
 ]
 
-const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx']
+const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx', 'apps/sayaka/src/root.tsx']
 
 function collectScannedFiles(): string[] {
   const files: string[] = []

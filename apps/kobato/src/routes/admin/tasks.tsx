@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { TasksView } from '@kobato/web-admin/ui/jobs/TasksView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { TasksView } from '@/ui/jobs/TasksView'
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.tasks')
 

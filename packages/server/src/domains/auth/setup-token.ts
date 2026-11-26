@@ -2,7 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 
 import { findLiveOneTimeToken, deleteOneTimeToken, upsertOneTimeToken } from '@kobato/db/sqlite/operations/identity/otp'
 import { boxLog } from '@kobato/server/infra/logger/box-console'
-import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 
 const TOKEN_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60
@@ -59,4 +59,12 @@ export async function verifySetupToken(db: Database, candidate: string): Promise
 export async function isSetupTokenActive(db: Database): Promise<boolean> {
   const token = await readSetupToken(db)
   return token !== null
+}
+
+export async function liveSetupToken(db: Database): Promise<string | null> {
+  return readSetupToken(db)
+}
+
+export function setupTokenFingerprint(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
 }

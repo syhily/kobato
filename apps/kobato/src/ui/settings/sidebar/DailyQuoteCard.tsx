@@ -1,0 +1,189 @@
+import type { SidebarSettings } from '@kobato/settings/types'
+
+import { Button } from '@kobato/ui/components/button'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { UploadIcon } from 'lucide-react'
+import { useRef } from 'react'
+import { Controller, useWatch } from 'react-hook-form'
+import { toast } from 'sonner'
+
+import { SettingsRow } from '@/ui/settings/SettingsSection'
+import { SettingGroup } from '@/ui/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/settings/shell/SettingGroupContent'
+import { SettingsSelect } from '@/ui/settings/shell/SettingsSelect'
+import { useSettingsCard } from '@/ui/settings/shell/use-settings-card'
+import {
+  type DailyQuoteState,
+  isQuoteRow,
+  MAX_CUSTOM_QUOTES,
+  MIN_CUSTOM_QUOTES,
+  SOURCE_OPTIONS,
+} from '@/ui/settings/sidebar/model'
+
+export function DailyQuoteCard({ sidebar }: { sidebar: SidebarSettings }) {
+  const { t } = useI18n()
+  const { form, settingGroupProps, save, isSaving } = useSettingsCard<SidebarSettings, DailyQuoteState>({
+    section: 'sidebar',
+    source: sidebar,
+    toState: (source) => ({
+      source: source.sidebar.dailyQuote.source,
+      customQuotes: source.sidebar.dailyQuote.customQuotes.map((quote) => ({ ...quote })),
+    }),
+    fromState: (state) => ({
+      sidebar: { dailyQuote: { source: state.source, customQuotes: state.customQuotes } },
+    }),
+  })
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const source = useWatch({ control: form.control, name: 'source' })
+  const customQuotes = useWatch({ control: form.control, name: 'customQuotes' })
+
+  async function handleQuotesFile(file: File) {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(await file.text())
+    } catch {
+      toast.error(t('admin.settings.sidebar.quote.error.parseTitle'), {
+        description: t('admin.settings.sidebar.quote.error.parseDescription'),
+      })
+      return
+    }
+    if (!Array.isArray(parsed) || !parsed.every(isQuoteRow)) {
+      toast.error(t('admin.settings.sidebar.quote.error.shapeTitle'), {
+        description: t('admin.settings.sidebar.quote.error.shapeDescription'),
+      })
+      return
+    }
+    if (parsed.length < MIN_CUSTOM_QUOTES) {
+      toast.error(t('admin.settings.sidebar.quote.error.tooFewTitle'), {
+        description: t('admin.settings.sidebar.quote.error.tooFewDescription', {
+          count: parsed.length,
+          min: MIN_CUSTOM_QUOTES,
+        }),
+      })
+      return
+    }
+    if (parsed.length > MAX_CUSTOM_QUOTES) {
+      toast.error(t('admin.settings.sidebar.quote.error.tooManyTitle'), {
+        description: t('admin.settings.sidebar.quote.error.tooManyDescription', {
+          count: parsed.length,
+          max: MAX_CUSTOM_QUOTES,
+        }),
+      })
+      return
+    }
+    const quotes = parsed.map((row) => ({
+      content: row.content.trim().slice(0, 100),
+      author: typeof row.author === 'string' ? row.author.trim().slice(0, 30) : '',
+    }))
+    form.setValue('customQuotes', quotes, { shouldDirty: true })
+    void save('customQuotes')
+  }
+
+  function handleClear() {
+    form.setValue('customQuotes', [], { shouldDirty: true })
+    void save('customQuotes')
+  }
+
+  const count = customQuotes.length
+  const statusText =
+    count === 0
+      ? t('admin.settings.sidebar.quote.status.empty')
+      : [
+          t('admin.settings.sidebar.quote.status.configured', { count }),
+          source === 'custom' && count < MIN_CUSTOM_QUOTES
+            ? t('admin.settings.sidebar.quote.status.insufficient', { min: MIN_CUSTOM_QUOTES })
+            : '',
+        ]
+          .filter((part) => part !== '')
+          .join(' ')
+
+  return (
+    <SettingGroup
+      title={t('admin.settings.sidebar.quote.title')}
+      description={t('admin.settings.sidebar.quote.description')}
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow label={t('admin.settings.sidebar.quote.source')} htmlFor="sidebar-daily-quote-source">
+          <Controller
+            control={form.control}
+            name="source"
+            render={({ field }) => (
+              <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
+                <SelectTrigger id="sidebar-daily-quote-source" className="w-full">
+                  <SelectValue>
+                    {(value: string | null) => {
+                      const option = SOURCE_OPTIONS.find((o) => o.value === value)
+                      return option === undefined ? (value ?? '') : t(option.labelId)
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {t(option.labelId)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </SettingsSelect>
+            )}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('admin.settings.sidebar.quote.custom')}
+          hint={t('admin.settings.sidebar.quote.uploadHint', {
+            min: MIN_CUSTOM_QUOTES,
+            max: MAX_CUSTOM_QUOTES,
+          })}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                aria-label={t('admin.settings.sidebar.quote.chooseFile')}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    void handleQuotesFile(file)
+                  }
+                  e.target.value = ''
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <UploadIcon data-icon="sm" />
+                {t('admin.settings.sidebar.quote.upload')}
+              </Button>
+              {count > 0 && (
+                <Button type="button" variant="ghost" size="sm" disabled={isSaving} onClick={handleClear}>
+                  {t('admin.settings.sidebar.quote.clear')}
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">{statusText}</p>
+            {count > 0 && (
+              <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+                {customQuotes.slice(0, 3).map((quote) => (
+                  <li key={quote.content} className="truncate">
+                    {quote.content}
+                    {quote.author ? ` —— ${quote.author}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </SettingsRow>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}

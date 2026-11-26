@@ -17,18 +17,23 @@ import {
 } from '@kobato/server/tests/utils/analytics-db'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { authorSession } from '@kobato/server/tests/utils/session'
-import { makeLoaderArgs, unwrapLoaderData } from '@tests/utils/context'
+import { unwrapLoaderData } from '@tests/utils/context'
+import { stubRouteRequestContext } from '@tests/utils/orpc-client-mock'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
-vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView', () => ({
+vi.mock('@/ui/analytics/PostAnalyticsView', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,
 }))
 
 const db = getTestDb()
-const session = authorSession()
 
 analytics.handle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analytics.handle)
@@ -37,6 +42,14 @@ const adminRoute = await import('@/routes/admin/posts/analytics')
 const editorRoute = await import('@/routes/editor/post/analytics')
 
 const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000')
+
+const paritySession = authorSession()
+paritySession.set('csrfToken', 'post-analytics-parity-csrf-token')
+
+function parityArgs(params: Record<string, string>) {
+  stubRouteRequestContext({ request, session: paritySession, db })
+  return { request, params } as never
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -121,10 +134,10 @@ describe('post analytics route parity (real db + real analytics)', () => {
     await seedViews(postId)
 
     const adminData = unwrapLoaderData<AdminPostAnalyticsData>(
-      await adminRoute.loader(makeLoaderArgs({ request, session, db, params: { postId: String(postId) } })),
+      await adminRoute.clientLoader(parityArgs({ postId: String(postId) })),
     )
     const editorData = unwrapLoaderData<AdminPostAnalyticsData>(
-      await editorRoute.loader(makeLoaderArgs({ request, session, db, params: { id: String(postId) } })),
+      await editorRoute.clientLoader(parityArgs({ id: String(postId) })),
     )
 
     expect(editorData).toEqual(adminData)
@@ -136,10 +149,10 @@ describe('post analytics route parity (real db + real analytics)', () => {
     await seedViews(postId)
 
     const adminData = unwrapLoaderData<AdminPostAnalyticsData>(
-      await adminRoute.loader(makeLoaderArgs({ request, session, db, params: { postId: String(postId) } })),
+      await adminRoute.clientLoader(parityArgs({ postId: String(postId) })),
     )
     const editorData = unwrapLoaderData<AdminPostAnalyticsData>(
-      await editorRoute.loader(makeLoaderArgs({ request, session, db, params: { id: String(postId) } })),
+      await editorRoute.clientLoader(parityArgs({ id: String(postId) })),
     )
 
     for (const data of [adminData, editorData]) {
@@ -153,11 +166,7 @@ describe('post analytics route parity (real db + real analytics)', () => {
   })
 
   it('404s both routes for an unknown post', async () => {
-    await expect(
-      adminRoute.loader(makeLoaderArgs({ request, session, db, params: { postId: '404' } })),
-    ).rejects.toMatchObject({ status: 404 })
-    await expect(
-      editorRoute.loader(makeLoaderArgs({ request, session, db, params: { id: '404' } })),
-    ).rejects.toMatchObject({ status: 404 })
+    await expect(adminRoute.clientLoader(parityArgs({ postId: '404' }))).rejects.toMatchObject({ status: 404 })
+    await expect(editorRoute.clientLoader(parityArgs({ id: '404' }))).rejects.toMatchObject({ status: 404 })
   })
 })

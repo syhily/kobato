@@ -1,5 +1,7 @@
 import type { SetupVerifyTokenError, SetupVerifyTokenOutput } from '@kobato/api/contracts/account/setup'
+import type { Database } from '@kobato/db/sqlite/database'
 import type { AuthFlowError } from '@kobato/server/domains/auth/services/shared'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 
 import { accountSetupContract } from '@kobato/api/rpc/account/setup'
 import { findFirstAdminUser, hasAdmin } from '@kobato/db/sqlite/operations/identity/user'
@@ -7,7 +9,12 @@ import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { signUpAdminSchema } from '@kobato/server/domains/auth/schema'
 import { signUpInitialAdminWithSession } from '@kobato/server/domains/auth/services/setup'
 import { authFlowError, authFlowValidationError } from '@kobato/server/domains/auth/services/shared'
-import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@kobato/server/domains/auth/setup-token'
+import {
+  getSetupToken,
+  liveSetupToken,
+  setupTokenFingerprint,
+  verifySetupToken,
+} from '@kobato/server/domains/auth/setup-token'
 import { restoreSetupUploadedBackup, stageUploadedBackup } from '@kobato/server/domains/backup/upload-restore'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { wireAuthFlow } from '@kobato/server/http/controllers/account/auth-shared'
@@ -35,8 +42,12 @@ const status = implementPublic(accountSetupContract).status.handler(async ({ con
     await getSetupToken(context.db)
   } catch {}
   const csrfToken = context.session.get('csrfToken')
+  const live = await liveSetupToken(context.db)
   return {
-    setupTokenVerified: context.session.get('setupTokenVerified') === true,
+    setupTokenVerified:
+      context.session.get('setupTokenVerified') === true &&
+      live !== null &&
+      context.session.get('setupTokenVerifiedFor') === setupTokenFingerprint(live),
     csrfToken: typeof csrfToken === 'string' ? csrfToken : null,
   }
 })
@@ -58,6 +69,7 @@ const verifyToken = implementPublic(accountSetupContract).verifyToken.handler(
       return verifyError(authFlowError('auth.setup.error.tokenInvalid'))
     }
     context.session.set('setupTokenVerified', true)
+    context.session.set('setupTokenVerifiedFor', setupTokenFingerprint(input.token))
     context.markSessionDirty()
     return { kind: 'verified' }
   },
@@ -67,7 +79,7 @@ const install = implementPublic(accountSetupContract).install.handler(async ({ i
   if (context.session.get('setupTokenVerified') !== true) {
     return wireAuthFlow(authFlowError('auth.setup.error.tokenNotVerified'), context)
   }
-  if (!(await isSetupTokenActive(context.db))) {
+  if (!(await verifiedForLiveToken(context))) {
     return wireAuthFlow(authFlowError('auth.setup.error.tokenExpired'), context)
   }
   const parsed = signUpAdminSchema.safeParse({
@@ -89,6 +101,21 @@ const install = implementPublic(accountSetupContract).install.handler(async ({ i
   return wireAuthFlow(result, context)
 })
 
+async function verifiedForLiveToken(context: {
+  db: Database
+  session: BlogSession
+  markSessionDirty(): void
+}): Promise<boolean> {
+  const live = await liveSetupToken(context.db)
+  if (live === null || context.session.get('setupTokenVerifiedFor') !== setupTokenFingerprint(live)) {
+    context.session.unset('setupTokenVerified')
+    context.session.unset('setupTokenVerifiedFor')
+    context.markSessionDirty()
+    return false
+  }
+  return true
+}
+
 const restoreImpl = implementPublic({ restore: accountSetupContract.restore })
   .use(async ({ context, next }) => {
     if (await hasAdmin(context.db)) {
@@ -97,7 +124,7 @@ const restoreImpl = implementPublic({ restore: accountSetupContract.restore })
     if (context.session.get('setupTokenVerified') !== true) {
       throw new ActionFailure(403, descriptorFor('backup.error.setupTokenIncomplete'))
     }
-    if (!(await isSetupTokenActive(context.db))) {
+    if (!(await verifiedForLiveToken(context))) {
       throw new ActionFailure(403, descriptorFor('auth.setup.error.tokenExpired'))
     }
     return next({})

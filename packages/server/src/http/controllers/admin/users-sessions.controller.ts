@@ -24,6 +24,7 @@ const listSessions = impl.listSessions.handler(async ({ context }) => {
     userName: row.userName === '' ? translator.format('auth.sessions.deletedUser') : row.userName,
     userEmail: row.userEmail,
     userRole: row.userRole,
+    isCurrent: row.sid === context.session.id,
   }))
 })
 

@@ -1,22 +1,6 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
 export default [
-  layout('routes/public/layout.tsx', [
-    index('routes/public/home.tsx'),
-    route('page/:num', 'routes/public/home.tsx', { id: 'home-page' }),
-    route('archives', 'routes/public/archives.tsx'),
-    route('categories', 'routes/public/categories.tsx'),
-    route('cats/:slug', 'routes/public/category/list.tsx'),
-    route('cats/:slug/page/:num', 'routes/public/category/list.tsx', { id: 'category-list-page' }),
-    route('tags/:slug', 'routes/public/tag/list.tsx'),
-    route('tags/:slug/page/:num', 'routes/public/tag/list.tsx', { id: 'tag-list-page' }),
-    route('search/:keyword', 'routes/public/search/list.tsx'),
-    route('search/:keyword/page/:num', 'routes/public/search/list.tsx', { id: 'search-list-page' }),
-    route('posts/:slug', 'routes/public/post/detail.tsx'),
-    route(':slug', 'routes/public/page/detail.tsx'),
-    route('*', 'routes/public/not-found.tsx'),
-  ]),
-
   layout('routes/auth/layout.tsx', [
     route('admin/signin', 'routes/auth/signin.tsx'),
     route('admin/setup', 'routes/auth/setup/index.tsx'),
@@ -59,4 +43,6 @@ export default [
     ]),
     layout('routes/admin/settings/layout.tsx', [route('admin/settings', 'routes/admin/settings/index.tsx')]),
   ]),
+  index('routes/not-found.tsx'),
+  route('*', 'routes/not-found.tsx', { id: 'routes/not-found-splat' }),
 ] satisfies RouteConfig

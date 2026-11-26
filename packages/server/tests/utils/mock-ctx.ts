@@ -13,6 +13,7 @@ export interface MockCtxOptions {
   clientAddress?: string
   url?: string
   cookie?: string
+  headers?: Record<string, string>
   csrfToken?: string
   db?: Database
   localization?: LocalizationOverride
@@ -44,10 +45,9 @@ function makeSessionStub(user: { id: string; role: string } | undefined, session
 export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
   const userId = opts.userId ?? '1'
   const role = opts.role ?? 'admin'
-  const request = new Request(
-    opts.url ?? 'http://localhost/rpc',
-    opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
-  )
+  const request = new Request(opts.url ?? 'http://localhost/rpc', {
+    headers: { ...(opts.cookie === undefined ? undefined : { Cookie: opts.cookie }), ...opts.headers },
+  })
   const lazySnapshot = createLazyAppSnapshot()
   return {
     request,
@@ -78,10 +78,9 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
 }
 
 export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
-  const request = new Request(
-    opts.url ?? 'http://localhost/rpc',
-    opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
-  )
+  const request = new Request(opts.url ?? 'http://localhost/rpc', {
+    headers: { ...(opts.cookie === undefined ? undefined : { Cookie: opts.cookie }), ...opts.headers },
+  })
   const lazySnapshot = createLazyAppSnapshot()
   return {
     request,

@@ -12,8 +12,6 @@ const RUM_LOADER_MARKER = '/api/rum/intake'
 
 const SERVER_FORBIDDEN_RUM_MARKERS = ['@openobserve/', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
 
-const EAGER_CHUNK_PATTERNS = [/\/entry\.client-[^/]+\.js$/, /\/root-[^/]+\.js$/] as const
-
 const SERVER_OTEL_MARKERS = ['OTLPTraceExporter', 'BatchSpanProcessor', 'PeriodicExportingMetricReader'] as const
 
 function walk(dir: string, files: string[]): void {
@@ -46,24 +44,6 @@ function containsAny(path: string, markers: readonly string[]): boolean {
   return markers.some((marker) => text.includes(marker))
 }
 
-function preloadedClientChunks(): Set<string> {
-  const manifestPath = join(CLIENT_DIR, 'assets', 'warmup-manifest.json')
-  expect(existsSync(manifestPath), 'warmup manifest is missing from the client build').toBe(true)
-  const parsed = JSON.parse(read(manifestPath)) as Record<string, unknown>
-  const chunks = new Set<string>()
-  for (const value of Object.values(parsed)) {
-    if (!Array.isArray(value)) {
-      continue
-    }
-    for (const entry of value) {
-      if (typeof entry === 'string') {
-        chunks.add(entry.replace(/^\/assets\//, ''))
-      }
-    }
-  }
-  return chunks
-}
-
 const available = existsSync(CLIENT_DIR) && existsSync(SERVER_DIR)
 const required = process.env.KOBATO_REQUIRE_PRODUCTION_BUILD === '1'
 
@@ -74,30 +54,11 @@ if (required && !available) {
 }
 
 describe.skipIf(!available)('production bundle telemetry composition', () => {
-  it('ships the browser RUM SDK as a separate lazy client chunk, never in the eager graph', () => {
-    const clientFiles = bundleFiles(CLIENT_DIR)
-    const eagerFiles = clientFiles.filter((file) => EAGER_CHUNK_PATTERNS.some((pattern) => pattern.test(file)))
-    expect(eagerFiles.length, 'the client entry/root chunks were not found').toBeGreaterThan(0)
-
-    const sdkFiles = clientFiles.filter((file) => containsAny(file, RUM_SDK_MARKERS))
-    expect(sdkFiles.length, 'the browser RUM SDK chunk is missing from the client build').toBeGreaterThan(0)
-
-    const loaderFiles = clientFiles.filter((file) => read(file).includes(RUM_LOADER_MARKER))
-    expect(loaderFiles.length, 'the RUM loader chunk is missing from the client build').toBeGreaterThan(0)
-
-    for (const eager of eagerFiles) {
-      for (const marker of [...RUM_SDK_MARKERS, RUM_LOADER_MARKER]) {
-        expect(read(eager), `${relative(PROJECT_ROOT, eager)} contains ${marker}`).not.toContain(marker)
-      }
-    }
-    for (const sdkFile of sdkFiles) {
-      expect(eagerFiles, `${relative(PROJECT_ROOT, sdkFile)} is an eager chunk`).not.toContain(sdkFile)
-    }
-
-    const preloaded = preloadedClientChunks()
-    for (const file of [...sdkFiles, ...loaderFiles]) {
-      expect(preloaded.has(file.slice(file.lastIndexOf('/') + 1))).toBe(false)
-    }
+  it('ships no browser RUM SDK chunk in the workspace client bundle', () => {
+    const offenders = bundleFiles(CLIENT_DIR).filter((file) =>
+      containsAny(file, [...RUM_SDK_MARKERS, RUM_LOADER_MARKER]),
+    )
+    expect(offenders.map((file) => relative(PROJECT_ROOT, file))).toEqual([])
   })
 
   it('carries no browser RUM marker in the server bundle', () => {

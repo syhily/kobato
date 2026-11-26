@@ -1,34 +1,30 @@
+import { orpc } from '@kobato/api/browser/client'
 import { hasAtLeast } from '@kobato/auth/roles'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
-import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell'
-import { data, Outlet, redirect } from 'react-router'
+import { data, Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
-import { useDetachPublicCss } from '@/document/use-detach-public-css'
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
+import { AdminErrorFallback } from '@/ui/shell/AdminErrorFallback'
+import { AdminShell } from '@/ui/shell/AdminShell'
 
 import type { Route } from './+types/layout'
 
 import '@/styles/admin.css'
 
-export const handle: RouteHandle = { layout: 'admin', postFonts: true }
+export const handle: RouteHandle = { postFonts: true }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  const user = viewer ?? undefined
-  const role = viewer?.role ?? null
-  if (!hasAtLeast(role, 'visitor')) {
-    const redirectPath = new URL(request.url).pathname
-    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
-  }
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'visitor', { pathname: new URL(request.url).pathname })
+  const user = boot.currentUser ?? undefined
+  const role = user?.role ?? null
 
   const [pendingComments, pendingWebmentions, userCount] = hasAtLeast(role, 'admin')
     ? await Promise.all([
-        caller.admin.comments.pendingCount(),
-        caller.admin.webmentions.pendingCount(),
-        caller.admin.users.count(),
+        orpc.admin.comments.pendingCount(),
+        orpc.admin.webmentions.pendingCount(),
+        orpc.admin.users.count(),
       ])
     : ([{ all: 0 }, 0, 0] as const)
   return data({
@@ -36,9 +32,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       id: user?.id ?? '',
       name: user?.name ?? '',
       email: user?.email ?? '',
-      role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
+      role: user?.role ?? null,
     },
-    siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '',
+    siteTitle: boot.blogSettings?.siteIdentity?.title ?? '',
     pendingCommentCount: pendingComments.all,
     pendingWebmentionCount: pendingWebmentions,
     userCount,
@@ -48,7 +44,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export { AdminErrorFallback as ErrorBoundary }
 
 export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps) {
-  useDetachPublicCss()
   return (
     <>
       <AdminShell

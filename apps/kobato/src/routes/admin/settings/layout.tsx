@@ -1,9 +1,11 @@
 import type { SecretMasks, SettingsBundle } from '@kobato/settings/types'
 
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
+import { orpc } from '@kobato/api/browser/client'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { ORPCError } from '@orpc/server'
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
+
+import { isOrpcErrorWithCode } from '@/lib/orpc-error'
+import { awaitRootBootstrap } from '@/lib/root-bootstrap'
 
 import type { Route } from './+types/layout'
 
@@ -17,13 +19,14 @@ export interface SettingsOutletContext extends ParentContext {
   masks: SecretMasks
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller } = createSsrCaller({ request, context })
+export async function clientLoader() {
+  await awaitRootBootstrap()
   try {
-    return await caller.admin.settings.bootstrap()
+    return await orpc.admin.settings.bootstrap()
   } catch (error) {
-    if (error instanceof ORPCError && error.code === 'SERVICE_UNAVAILABLE') {
-      throw new Response(error.message, { status: 503 })
+    if (isOrpcErrorWithCode(error, 'SERVICE_UNAVAILABLE')) {
+      const message = typeof error.message === 'string' ? error.message : 'Service unavailable'
+      throw new Response(message, { status: 503 })
     }
     throw error
   }

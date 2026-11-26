@@ -15,6 +15,7 @@ import {
   SEA_OBSERVABILITY_DASHBOARD_PREFIX,
   SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
+  SEA_SAYAKA_CLIENT_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
 } from '@kobato/distribution/sea-assets'
 import { readFileSync } from 'node:fs'
@@ -105,19 +106,9 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     forbiddenLiterals: [`'worker/process-worker.mjs'`],
   },
   {
-    file: 'packages/server/src/render/warmup/manifest.ts',
-    names: ['SEA_CLIENT_ASSET_PREFIX'],
-    forbiddenLiterals: [`'client/assets/warmup-manifest.json'`, `'client/assets/manifest-'`],
-  },
-  {
     file: 'packages/server/src/infra/db/paths.ts',
     names: ['SEA_DRIZZLE_ASSET_PREFIX'],
     forbiddenLiterals: [`'drizzle/'`],
-  },
-  {
-    file: 'packages/server/src/infra/hono/node.ts',
-    names: ['SEA_CLIENT_ASSET_PREFIX'],
-    forbiddenLiterals: [`'client/'`],
   },
   {
     file: 'packages/server/src/domains/observability/assets.ts',
@@ -127,6 +118,16 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       'OBSERVABILITY_DASHBOARD_FILES',
     ],
     forbiddenLiterals: [`'observability/`, `'observability/dashboards/`, `'observability/rum-privacy.vrl'`],
+  },
+  {
+    file: 'apps/sayaka/src/server/hono/node.ts',
+    names: ['SEA_SAYAKA_CLIENT_ASSET_PREFIX'],
+    forbiddenLiterals: [`'sayaka-client/'`],
+  },
+  {
+    file: 'apps/sayaka/src/server/warmup-manifest.ts',
+    names: ['SEA_SAYAKA_CLIENT_ASSET_PREFIX'],
+    forbiddenLiterals: [`'sayaka-client/'`],
   },
 ]
 
@@ -140,6 +141,7 @@ describe('contract: SEA embedded-asset keys', () => {
     expect(SEA_PROCESS_WORKER_BUNDLE_KEY).toBe('worker/process-worker.mjs')
     expect(SEA_SMOKE_WORKER_BUNDLE_KEY).toBe('worker/smoke-worker.mjs')
     expect(SEA_CLIENT_ASSET_PREFIX).toBe('client/')
+    expect(SEA_SAYAKA_CLIENT_ASSET_PREFIX).toBe('sayaka-client/')
     expect(SEA_DRIZZLE_ASSET_PREFIX).toBe('drizzle/')
     expect(SEA_NATIVE_ASSET_PREFIX).toBe('natives/')
     expect(SEA_NATIVE_SHARP_ADDON_KEY).toBe('natives/sharp.node')

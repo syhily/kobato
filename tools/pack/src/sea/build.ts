@@ -3,12 +3,21 @@ import { collectSeaAssets } from '@kobato/pack/sea/assets'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
 import { run } from '@kobato/pack/sea/exec'
 import { runInjectStep } from '@kobato/pack/sea/inject'
-import { seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from '@kobato/pack/sea/paths'
+import {
+  SEA_APPS,
+  seaBinaryFileName,
+  seaBinaryPath,
+  seaBinarySha256Path,
+  seaIntermediatesDir,
+  type SeaApp,
+} from '@kobato/pack/sea/paths'
 import { createHash } from 'node:crypto'
 import { readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const REQUIRED_NODE_VERSION = '26.10.0'
+
+const SEA_BUNDLES = ['server', 'worker', 'smoke', 'sayaka'] as const
 
 function ensureNodeVersion() {
   const required = REQUIRED_NODE_VERSION.split('.').map(Number)
@@ -24,10 +33,34 @@ function ensureNodeVersion() {
   }
 }
 
-async function writeBinaryChecksum() {
+async function writeBinaryChecksum(app: SeaApp) {
   const hash = createHash('sha256')
-  hash.update(await readFile(seaBinaryPath()))
-  await writeFile(seaBinarySha256Path(), `${hash.digest('hex')}  ${seaBinaryFileName()}\n`)
+  hash.update(await readFile(seaBinaryPath(app)))
+  await writeFile(seaBinarySha256Path(app), `${hash.digest('hex')}  ${seaBinaryFileName(app)}\n`)
+}
+
+const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
+
+async function buildAppBinary(app: SeaApp) {
+  console.log(`==> collect assets (${app})`)
+  const { assets, stats } = await collectSeaAssets(app)
+  console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
+
+  console.log(`==> inject blob into the ${app} binary (--build-sea)`)
+  await runInjectStep(assets, app)
+
+  await writeBinaryChecksum(app)
+
+  const { size } = await stat(seaBinaryPath(app))
+  const binaryMb = mb(size)
+  if (size > BINARY_MAX_BYTES) {
+    fail(`the ${app} binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
+  }
+  console.log(
+    `==> ${app} binary complete: ${seaBinaryPath(app)} (${binaryMb} MB, within the ${
+      BINARY_MAX_BYTES / 1024 / 1024
+    } MB budget)`,
+  )
 }
 
 async function main() {
@@ -37,35 +70,22 @@ async function main() {
   console.log('==> react-router build')
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
 
-  console.log('==> vite bundle')
-  await rm(seaIntermediatesDir(), { recursive: true, force: true })
-  for (const seaBundle of ['server', 'worker', 'smoke']) {
+  console.log('==> vite bundles')
+  for (const app of SEA_APPS) {
+    await rm(seaIntermediatesDir(app), { recursive: true, force: true })
+  }
+  for (const bundle of SEA_BUNDLES) {
     run('pnpm', ['exec', 'vite', 'build', '--config', join(import.meta.dirname, '..', '..', 'vite.config.ts')], {
-      env: { ...process.env, SEA_BUNDLE: seaBundle },
+      env: { ...process.env, SEA_BUNDLE: bundle },
     })
   }
 
   console.log('==> bundle check')
   run(process.execPath, [join(import.meta.dirname, 'check-bundle.ts')])
 
-  console.log('==> collect assets')
-  const { assets, stats } = await collectSeaAssets()
-  const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
-  console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
-
-  console.log('==> inject blob into node binary (--build-sea)')
-  await runInjectStep(assets)
-
-  await writeBinaryChecksum()
-
-  const { size } = await stat(seaBinaryPath())
-  const binaryMb = (size / 1024 / 1024).toFixed(1)
-  if (size > BINARY_MAX_BYTES) {
-    fail(`binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
+  for (const app of SEA_APPS) {
+    await buildAppBinary(app)
   }
-  console.log(
-    `==> SEA build complete: ${seaBinaryPath()} (${binaryMb} MB, within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget)`,
-  )
 }
 
 await main()

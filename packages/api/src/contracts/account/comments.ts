@@ -1,11 +1,6 @@
 import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schema'
 import { z } from 'zod'
 
-export const commentUpdateOwnInputSchema = z.object({ commentId: z.string(), body: commentEditorStateSchema })
-export type CommentUpdateOwnInput = z.input<typeof commentUpdateOwnInputSchema>
-export const commentIdInputSchema = z.object({ commentId: z.string() })
-export type CommentIdInput = z.infer<typeof commentIdInputSchema>
-
 export const myCommentItemDto = z.object({
   id: z.string(),
   body: commentEditorStateSchema,

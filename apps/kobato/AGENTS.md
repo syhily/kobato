@@ -1,60 +1,88 @@
 # Kobato app
 
-`apps/kobato` is the deployable React Router 8 Framework Mode app (`appDirectory: 'src'`, SSR). It wires routes to
-product code and owns nothing reusable: UI in `@kobato/web-*`/`@kobato/ui`, backend in `@kobato/server`, contracts in
-`@kobato/api`. The browser runtime under `src/document/`, `src/rum/`, and `src/route-warmup/` is consumed by this app
-alone — nothing outside `apps/kobato` imports it.
+`apps/kobato` is the backend deployable (ADR-0009): a React Router 8 **SPA** (`appDirectory: 'src'`, `ssr: false`)
+served by its own Hono app, carrying the `admin/`, `editor/`, and `auth/` workspace and the `/rpc/*` oRPC transport —
+the feeds, the sitemap, robots.txt, manifest.webmanifest, and the `/tags` + `/search` 301s are sayaka's, and every
+public resource (images, storage, embedded fonts, branding assets, the Webmention receive, the RUM intake) is a
+`public.*` procedure pair that sayaka serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and
+the two forwarded path families. kobato wires routes to product code and owns the workspace admin UI in `src/ui/` (the
+former `@kobato/web-admin` package, absorbed per ADR-0009); reusable cross-surface modules stay in `@kobato/web-kit`,
+primitives in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/api`. The browser runtime under
+`src/document/` and `src/route-warmup/` is consumed by this app alone — nothing outside `apps/kobato` imports it.
 
-- `src/root.tsx`, `src/routes.ts`, `src/entry.server.tsx`, `src/server.ts` — the framework entry set (`server.ts` is
-  resolved by `@kobato/server/infra/hono/dev.ts`); `src/zod-config.ts` must be imported first, before any schema
-  evaluates.
-- `src/routes/` — four surface trees (`public/`, `auth/`, `admin/`, `editor/`); see `src/routes/AGENTS.md`. Route
-  modules wire loader/action data to controllers and render; no business logic, no DB imports.
+- `src/root.tsx`, `src/routes.ts`, `src/server.ts` — the framework entry set (`src/entry.server.tsx` is gone: SPA mode
+  prerenders `/__spa-fallback.html` through React Router's default entry, renamed to `index.html` by the build);
+  `src/zod-config.ts` must be imported first, before any schema evaluates.
+- Client code (`routes`, `ui`, `root.tsx`, `src/{lib,document,route-warmup,seo}`) imports NO `@kobato/server` — every
+  backend call goes through the `orpc` singleton (`@kobato/api/browser/client`); pinned by
+  `tests/arch/route-server-surface.test.ts`.
+- `src/ui/` — the admin product layer: components, domain controllers, the page editor composition, and the admin style
+  adapters in `ui/styles/`. See `src/ui/AGENTS.md` (+ `src/ui/settings/AGENTS.md`) for the layer contract. Production
+  sources there are browser-safe: no `node:*` value imports and no `@kobato/server` imports (value or type). The oRPC
+  client is typed by `ContractRouterClient<typeof apiContract>` from `@kobato/api` (reached through
+  `@kobato/api/browser/client`); wire DTO shapes come from `@kobato/api/contracts`. Imports use `@/ui/...` inside the
+  tree and the sanctioned external specifiers (`@kobato/web-kit/...`, `@kobato/ui/...`, the shared leaves) — never the
+  sayaka app (`@sayaka/*`), never `@kobato/catalog/seo` (route title/meta resolution lives in the app layer), never
+  `@kobato/inkling` across packages. The intra-package feature graph is pinned by `ALLOWED_FEATURE_IMPORTS` in
+  `tests/arch/admin-feature-graph.test.ts`: `ui/shared` is the reuse hub (never a dependent of a feature), every other
+  cross-feature edge is an audited allowlist row.
+- Legacy-regression bans (the admin UI): no `apps/kobato/src/blog.config.ts`, no `DEFAULT_SETTINGS` / `BlogConstants` /
+  per-section "reset to defaults" actions / monolithic `BlogConfigContext` (settings UI uses per-section hooks), no
+  `data-admin-shell` selector, no `@/ui/ui/shadcn/components/ui/` nesting.
+- `src/lib/` — client code shared by every loader/action: `root-bootstrap` (the one-per-document
+  `public.content.bootstrap` singleton through the in-flight memo — requested with `scope: 'workspace'` so the admin SPA
+  receives its full message catalog, `requireRoleFromBootstrap` guard), `client-action-result` (`toClientActionResult`,
+  `authErrorPayload` / `authMessagePayload`, `clientAuthFlowError`, `isCsrfFailure`), `guard-loader`
+  (`guardLoader('<role>')`), `orpc-error` (`isOrpcErrorWithCode`), `route-status` (`notFound()` — React Router 8 has no
+  `notFound` export).
+- `src/server/` — the SPA-era Hono app: `spa-shell` (the pure nonce-CSP document handler for `/__spa-fallback.html`),
+  `backend-server` (`createBackendServer` — middleware pipeline + `/admin/assets/*` statics + shell documents + 404;
+  under the kobato SEA binary `clientAssetsRoot()` resolves the assets from the VFS `client/` prefix, on disk from
+  `build/client`), `dev-server-ref` (reads the Vite dev server from the `globalThis` slot in dev).
 - `src/seo/` — the typed route-meta factory over `@kobato/catalog/seo` builders (app-owned because it feeds the `meta`
   route export).
-- `src/document/` — document-level behavior mounted once by the root or a layout route: `use-chunk-error-recovery`,
-  `use-detach-public-css`, `use-device-env-beacon` + `device-env`, `use-focus-hash`, `use-ios-no-zoom`.
-- `src/rum/` — frontend RUM: `use-rum`, `use-rum-consent`, the SDK entry `openobserve-rum.ts`, `rum-sanitizer.ts`,
-  `rum-budget.ts`, `rum-route.ts`, `rum-url-policy.ts`, `rum-consent.ts`.
+- `src/document/` — document-level behavior mounted once by the root: `use-chunk-error-recovery`, `use-ios-no-zoom`.
 - `src/route-warmup/` — `RouteWarmupScript` renders the inline idle-preload script; the manifest contract lives in
-  `@kobato/distribution/warmup-manifest`, wire constants in `@kobato/distribution/route-warmup`.
-- `src/styles/` — app-owned Tailwind entries; see `src/styles/AGENTS.md`.
+  `@kobato/distribution/warmup-manifest`, wire constants in `@kobato/distribution/route-warmup`. `use-route-warmup` is
+  mounted by the root `App` (fetches `/admin/assets/warmup-manifest.json` once per document, tier 1 at root-data time,
+  the role's tier 2 through the idle loader — production only; dev returns early).
+- `src/styles/` — the app's one Tailwind entry; see `src/styles/AGENTS.md`.
 - `tests/` — `arch/`, `unit/`, `it/`, `snaps/`, `browser/`, `e2e/`; see `tests/AGENTS.md`.
 - Imports: `@/...` app source, `@tests/...` app test helpers, `@kobato/<package>/...` product code. No relative
   specifiers outside the documented exceptions (root `AGENTS.md`).
 - `drizzle-orm` is a tests-only devDependency (seed/assertion code); production source never imports it.
 
+## Build & dev
+
+- `pnpm -C apps/kobato build` = `react-router build && vite build --config vite.backend.config.ts`: the first builds the
+  client (assets under `build/client`, prerendered SPA fallback renamed `index.html`) plus the prerender-only server
+  build; the second overwrites `build/server/index.js` with the backend bundle (`src/server.ts`).
+- Vite `base: '/admin/'` prefixes every client asset URL (`/admin/assets/*`) while route URLs stay `/admin/...` and
+  `/editor/...` — React Router's `basename` stays `/` and is independent of Vite's `base`.
+- `pnpm dev` runs Vite on 4321; the shared `reactRouterHonoServer` plugin hands `/rpc/*`, `/health`, and the resource
+  routes to the Hono app and excludes `/admin/*` + `/editor/*` documents (plus `.data`) so React Router's dev middleware
+  serves them; a dev-only pre-middleware rewrites `/editor/*` → `/admin/editor/*` so Vite's base middleware lets them
+  through.
+- `pnpm start` runs `node ./apps/kobato/build/server/index.js` — the backend bundle. `pnpm run sea:build` (root) turns
+  the same outputs into the `dist-sea/kobato` SEA binary, which serves `/admin/assets/*` (the shell's `index.html`
+  included) out of its embedded VFS `client/` prefix.
+
 ## Document runtime
 
 - Document-level hooks mount once per document — never per form or per route component that can render more than once.
-- `use-rum` — mounted once by the root `App`, renders no DOM, runs only in an effect, and returns before the dynamic
-  import when the bootstrap is absent, DNT/GPC deny, or the schema check fails. `clientIdentity: 'forward'` adds the
-  consent gate (`rum-consent`, localStorage `kobato.rum.consent`); `declined` fully stops a running SDK; `App` renders
-  `RumConsentBanner` only post-mount, only while undecided. The bootstrap is emitted in EVERY build once the server-side
-  pipeline gate passes; `import.meta.env.SSR` early return keeps the dynamic-import edge out of the server graph. It
-  carries a `{ id, template }` route identity and nothing else.
-- `openobserve-rum.ts` is the ONE client SDK entry: dynamically imports `@openobserve/browser-rum-slim` after the gate
-  and points the SDK's `proxy` at the same-origin `/api/rum/intake` relay (the OpenObserve endpoint/organization and
-  real token never reach the browser). `startRum` is idempotent and never throws.
-- `rum-sanitizer.ts` — the pure, synchronous `beforeSend` allowlist: builds a NEW event; unknown shapes, unrecognized
-  URLs, and any thrown error drop it. The OpenObserve ingest pipeline is the authoritative fail-closed boundary — run
-  `trace:init` before enabling frontend RUM.
-- Status polling: typed `orpc.public.observability.rumStatus` gates consent — a false/error/malformed response calls
-  `setTrackingConsent('not-granted')`, recovery restores it; a null bootstrap suspends the SDK. The external intake path
-  and SDK proxy URL builder live in `@kobato/api`; `rum-url-policy.ts` derives self-telemetry exclusions from procedure
-  metadata; `rum-budget.ts` owns the session caps.
-- `use-device-env-beacon` sends one standard-oRPC-envelope `sendBeacon` per page view to
-  `/rpc/public/analytics/recordDeviceEnv`, DNT honored. `device-env` reads every browser API defensively —
-  absent/non-finite values are omitted, never sent as null.
 - iOS auto-zoom: iOS Safari zooms when focusing a control with `font-size < 16px`; rewriting the viewport `<meta>` from
   `focusin` is too late. The lock is refcounted in `@kobato/web-kit/ui/comments/viewport-zoom-lock` (iOS/iPadOS WebKit
   only): every focus-ending activation holds the lock BEFORE focus lands. `useIosNoZoomOnFocus()` is mounted once at the
   top of the root `App`; the comment composer's activation handoff holds the same lock. Do NOT re-install the hook
   per-form and do NOT rewrite the viewport `<meta>` anywhere else.
 - Chunk-error recovery: `use-chunk-error-recovery` and `useReloadOnChunkError` call `triggerChunkReload` from
-  `@kobato/web-public/ui/chrome/chunk-reload`, the reload store `ChunkReloadOverlay` subscribes to.
+  `@kobato/web-kit/ui/chrome/chunk-reload`, the reload store `ChunkReloadOverlay` subscribes to.
 - `RouteWarmupScript` imports the virtual module `virtual:kobato-route-warmup`, declared in
-  `src/route-warmup/compiled-script.d.ts` and resolved by `routeWarmupPlugin` (`tools/pack/src/vite/route-warmup.ts`):
-  empty in dev, the bundled idle loader in a production build. The id must stay unresolvable to a real file — a file
-  behind that import resolves first and silently disables the inline script. That idle loader is the one non-React
-  script in the app.
+  `src/route-warmup/compiled-script.d.ts` and resolved by `routeWarmupPlugin` (`tools/pack/src/vite/route-warmup.ts`,
+  invoked from `vite.config.ts` with the workspace tiers: tier-1 `root` + the admin landing, tier-2
+  `routes/admin|editor|auth/` — no public tier). Empty in dev, the bundled idle loader in a production build. The id
+  must stay unresolvable to a real file — a file behind that import resolves first and silently disables the inline
+  script. That idle loader is the one non-React script in the app.
+- The root `Layout` is the static shell: no nonce props (`Scripts` / `ScrollRestoration` run without one — the shell
+  handler injects the nonce into every inline script), no loader-data-dependent preload links. The root
+  `HydrateFallback` is the branded splash prerendered into the SPA fallback document.

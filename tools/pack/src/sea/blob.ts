@@ -1,9 +1,9 @@
-import { seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths'
+import { type SeaApp, seaConfigPath, seaServerBundlePath } from '@kobato/pack/sea/paths'
 import { writeFile } from 'node:fs/promises'
 
-export async function writeSeaConfig(assets: Map<string, string>, output: string) {
+export async function writeSeaConfig(app: SeaApp, assets: Map<string, string>, output: string) {
   const config = {
-    main: seaServerBundlePath(),
+    main: seaServerBundlePath(app),
     mainFormat: 'module',
     output,
     assets: Object.fromEntries(assets),
@@ -12,5 +12,5 @@ export async function writeSeaConfig(assets: Map<string, string>, output: string
     useSnapshot: false,
     useVfs: true,
   }
-  await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)
+  await writeFile(seaConfigPath(app), `${JSON.stringify(config, null, 2)}\n`)
 }

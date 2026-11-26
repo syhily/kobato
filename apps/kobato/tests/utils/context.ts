@@ -1,23 +1,10 @@
+import type { RequestContext } from '@kobato/server/http/request-context'
 import type { MakeRequestContextOptions } from '@kobato/server/tests/utils/request-context'
 
-import { requestContext } from '@kobato/server/http/request-context'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
-import { RouterContextProvider } from 'react-router'
+import { stubRouteRequestContext } from '@tests/utils/orpc-client-mock'
 
-export type MakeContextOptions = MakeRequestContextOptions
-
-export function makeRouteContext(options: MakeContextOptions = {}): RouterContextProvider {
-  const context = new RouterContextProvider()
-  context.set(requestContext, makeRequestContext(options))
-  return context
-}
-
-export function makeLoaderArgs(
-  options: MakeContextOptions & { params?: Record<string, string | undefined> } = {},
-): any {
-  const request = options.request ?? new Request('http://localhost/')
-  const context = makeRouteContext({ ...options, request })
-  return { request, context, params: options.params ?? {} }
+export function makeRouteContext(options: MakeRequestContextOptions = {}): RequestContext {
+  return stubRouteRequestContext(options)
 }
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters

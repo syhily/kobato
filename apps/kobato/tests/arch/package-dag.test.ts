@@ -9,6 +9,7 @@ const CONFIG_PACKAGE = '@kobato/tsconfig'
 const IGNORE_DIRS = new Set([
   'node_modules',
   '.git',
+  '.worktrees',
   '.cache',
   '.turbo',
   'coverage',
@@ -47,6 +48,8 @@ const API_SHARED_DEPS = [
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
+const PACK_INTERNAL_SCOPES = INTERNAL_SCOPES.filter((scope) => scope !== 'sayaka')
+
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/tsconfig': [],
   '@kobato/inkling': [
@@ -74,23 +77,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/server': ['@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
-  '@kobato/web-admin': [
-    '@kobato/web-kit',
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/server',
-    '@kobato/test',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/distribution',
-    '@kobato/settings',
-    '@kobato/assets',
-    '@kobato/sanitize',
-  ],
-
   '@kobato/web-kit': [
     '@kobato/ui',
     '@kobato/inkling',
@@ -102,25 +88,26 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
     '@kobato/test',
   ],
-
-  '@kobato/web-public': [
-    '@kobato/web-kit',
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/settings',
-    '@kobato/assets',
-    '@kobato/sanitize',
-    '@kobato/test',
-  ],
   '@kobato/test': [],
 
   kobato: INTERNAL_SCOPES,
-  '@kobato/pack': INTERNAL_SCOPES,
+  sayaka: [
+    '@kobato/api',
+    '@kobato/assets',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/distribution',
+    '@kobato/i18n',
+    '@kobato/inkling',
+    '@kobato/pack',
+    '@kobato/sanitize',
+    '@kobato/settings',
+    '@kobato/test',
+    '@kobato/ui',
+    '@kobato/utils',
+    '@kobato/web-kit',
+  ],
+  '@kobato/pack': PACK_INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
   '@kobato/font-split': [],
@@ -128,7 +115,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/distribution', '@kobato/assets', '@kobato/utils'],
-  '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-public'],
+  '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-kit'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
   '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
@@ -143,22 +130,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
   '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
-  '@kobato/web-admin': [
-    '@kobato/web-admin',
-    '@kobato/web-kit',
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/distribution',
-    '@kobato/settings',
-    '@kobato/assets',
-    '@kobato/sanitize',
-  ],
-
   '@kobato/web-kit': [
     '@kobato/web-kit',
     '@kobato/ui',
@@ -170,40 +141,40 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/assets',
     '@kobato/sanitize',
   ],
-
-  '@kobato/web-public': [
-    '@kobato/web-public',
-    '@kobato/web-kit',
-    '@kobato/ui',
-    '@kobato/inkling',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/auth',
-    '@kobato/catalog',
-    '@kobato/settings',
-    '@kobato/assets',
-    '@kobato/sanitize',
-  ],
   '@kobato/test': ['@kobato/test'],
   kobato: [
     'kobato',
     '@kobato/api',
+    '@kobato/assets',
     '@kobato/auth',
     '@kobato/catalog',
     '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
+    '@kobato/sanitize',
     '@kobato/server',
     '@kobato/settings',
     '@kobato/ui',
     '@kobato/utils',
-    '@kobato/web-admin',
     '@kobato/web-kit',
-    '@kobato/web-public',
+  ],
+  sayaka: [
+    'sayaka',
+    '@kobato/api',
+    '@kobato/assets',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/distribution',
+    '@kobato/i18n',
+    '@kobato/inkling',
+    '@kobato/sanitize',
+    '@kobato/settings',
+    '@kobato/ui',
+    '@kobato/utils',
+    '@kobato/web-kit',
   ],
 
-  '@kobato/pack': INTERNAL_SCOPES,
+  '@kobato/pack': PACK_INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/font-split': ['@kobato/font-split'],
 }
@@ -212,6 +183,8 @@ const SRC_IMPORT_EXCEPTIONS: readonly { file: string; specifier: string }[] = []
 
 const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
   'tools/pack/src/sea/server-entry.ts:../../../../apps/kobato/build/server/index.js',
+  'tools/pack/src/sea/sayaka-entry.ts:./sayaka-sea-cli',
+  'tools/pack/src/sea/sayaka-entry.ts:../../../../apps/sayaka/build/server/index.js',
 
   'tools/pack/src/sea/vfs-capabilities.ts:./lib/greet.mjs',
 ])
@@ -222,6 +195,14 @@ const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
   'packages/ui/tests/unit/contract/dark-variant.test.ts',
 ])
+
+function resolveInternalScope(specifier: string): string | undefined {
+  const scoped = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+  if (scoped !== undefined) {
+    return scoped
+  }
+  return specifier.startsWith('@sayaka/') ? 'sayaka' : undefined
+}
 
 function isAllowedRelativeImport(file: string, specifier: string): boolean {
   if (specifier.startsWith('./+types/')) {
@@ -273,6 +254,38 @@ function sourceFiles(...roots: string[]): string[] {
   return files.sort()
 }
 
+function stylesheetFiles(...roots: string[]): string[] {
+  const files: string[] = []
+  const visit = (dir: string): void => {
+    if (!existsSync(dir)) {
+      return
+    }
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (IGNORE_DIRS.has(entry.name)) {
+        continue
+      }
+      const full = `${dir}/${entry.name}`
+      if (entry.isDirectory()) {
+        visit(full)
+      } else if (entry.isFile() && entry.name.endsWith('.css')) {
+        files.push(full)
+      }
+    }
+  }
+  for (const root of roots) {
+    visit(root)
+  }
+  return files.sort()
+}
+
+function cssImportSpecifiers(source: string): string[] {
+  const specifiers: string[] = []
+  for (const match of source.matchAll(/@import\s+['"]([^'"]+)['"]/g)) {
+    specifiers.push(match[1]!)
+  }
+  return specifiers
+}
+
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
@@ -305,8 +318,9 @@ function declaredInternalDeps(pkgName: string): string[] {
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
   }
-  return Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).filter((dep) =>
-    dep.startsWith('@kobato/'),
+  const internalNames = new Set(REPO_PACKAGES.map((pkg) => pkg.name))
+  return Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).filter(
+    (dep) => dep.startsWith('@kobato/') || internalNames.has(dep),
   )
 }
 describe('package DAG', () => {
@@ -336,7 +350,15 @@ describe('package DAG', () => {
       const actual = new Set<string>()
       for (const file of sourceFiles(pkg.dir)) {
         for (const specifier of importSpecifiers(readSource(file))) {
-          const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+          const target = resolveInternalScope(specifier)
+          if (target !== undefined) {
+            actual.add(target)
+          }
+        }
+      }
+      for (const file of stylesheetFiles(pkg.dir)) {
+        for (const specifier of cssImportSpecifiers(readFileSync(`${REPO_ROOT}/${file}`, 'utf8'))) {
+          const target = resolveInternalScope(specifier)
           if (target !== undefined) {
             actual.add(target)
           }
@@ -485,6 +507,21 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
+  it('the @sayaka/ app alias appears only inside the sayaka package', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
+      if (file.startsWith('apps/sayaka/')) {
+        continue
+      }
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier.startsWith('@sayaka/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('the @tests alias appears only inside the app test tree', () => {
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
@@ -511,6 +548,8 @@ describe('package DAG', () => {
     const required: Record<string, string[]> = {
       '@/*': ['../../apps/kobato/src/*'],
       '@tests/*': ['../../apps/kobato/tests/*'],
+      '@sayaka/*': ['../../apps/sayaka/src/*'],
+      '@sayaka/tests/*': ['../../apps/sayaka/tests/*'],
       '@kobato/inkling-demo/*': ['../../apps/inkling-demo/src/*'],
       '@kobato/inkling-internal/*': ['../../packages/inkling/src/*'],
       '@kobato/inkling/tests/*': ['../../packages/inkling/tests/*'],
@@ -533,7 +572,15 @@ describe('package DAG', () => {
   })
 
   it('source and test trees contain no unregistered relative module imports', () => {
-    const governedRoots = ['apps/kobato/src', 'apps/kobato/tests', 'apps/inkling-demo', 'packages', 'tools'] as const
+    const governedRoots = [
+      'apps/kobato/src',
+      'apps/kobato/tests',
+      'apps/sayaka/src',
+      'apps/sayaka/tests',
+      'apps/inkling-demo',
+      'packages',
+      'tools',
+    ] as const
 
     const offenders: string[] = []
     for (const file of sourceFiles(...governedRoots)) {
@@ -611,8 +658,6 @@ describe('package DAG', () => {
       'packages/api',
       'packages/server',
       'packages/ui',
-      'packages/web/public',
-      'packages/web/admin',
       'packages/web/kit',
       'packages/inkling',
     ]) {
@@ -626,14 +671,13 @@ describe('package DAG', () => {
   it('product source trees use package-root imports', () => {
     const rootAnchored = new Set([
       'kobato',
+      'sayaka',
       ...SHARED_SPLIT,
       '@kobato/api',
       '@kobato/db',
       '@kobato/server',
       '@kobato/ui',
-      '@kobato/web-admin',
       '@kobato/web-kit',
-      '@kobato/web-public',
       '@kobato/inkling',
       '@kobato/test',
       '@kobato/pack',
@@ -657,7 +701,7 @@ describe('package DAG', () => {
   })
 
   it('the private inkling alias stays inside the editor package except its white-box host pin', () => {
-    const whiteBoxHostPin = 'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx'
+    const whiteBoxHostPin = 'apps/kobato/tests/unit/ui/editor/cards/host-cards.test.tsx'
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
       if (file.startsWith('packages/inkling/') || file === whiteBoxHostPin) {

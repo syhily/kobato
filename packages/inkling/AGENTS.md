@@ -102,8 +102,8 @@ model; the feed downgrade + defensive host-card substitution live server-side
   `generateDecoratorNode` — a DISTINCT class per dist entry), `kobato-image-node.tsx`, `menu-matches.ts`, and the
   load-bearing `index.ts` (registers every card at module scope). Card chrome i18n reads `admin.editor.cards.*` through
   `@kobato/ui`'s `useI18n()`.
-- The music card ships WITHOUT a picker — the dialog is host data flow; web-admin registers it via
-  `registerCardPicker(MUSIC_PLAYER_NODE_TYPE, ...)` in `packages/web/admin/src/ui/editor/music-card-picker.tsx`.
+- The music card ships WITHOUT a picker — the dialog is host data flow; the admin editor registers it via
+  `registerCardPicker(MUSIC_PLAYER_NODE_TYPE, ...)` in `apps/kobato/src/ui/editor/music-card-picker.tsx`.
 - `defineCard` (`src/nodes/cards/host-cards.ts`) validates, assembles, registers, and stores the raw spec
   (`host-card-registry.ts`). Type preservation: `CardSpecFieldMap`/`CardSpecAccessorMap`; base classes interface-merge
   (no hand-written `declare __*`).

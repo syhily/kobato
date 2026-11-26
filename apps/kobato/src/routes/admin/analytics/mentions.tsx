@@ -1,19 +1,19 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
+import { orpc } from '@kobato/api/browser/client'
 import { Card, CardContent } from '@kobato/ui/components/card'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatNumber } from '@kobato/utils/format'
-import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker'
-import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
+
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
+import { DateRangePicker } from '@/ui/analytics/DateRangePicker'
+import { useAnalyticsState } from '@/ui/analytics/use-analytics-state'
 
 import type { Route } from './+types/mentions'
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'admin')
-
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
-  return caller.admin.analytics.mentions({ search: url.searchParams.toString() })
+  return orpc.admin.analytics.mentions({ search: url.searchParams.toString() })
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {

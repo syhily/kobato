@@ -1,8 +1,9 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { RealtimeFeed } from '@kobato/web-admin/ui/analytics/RealtimeFeed'
 
-export const loader = guardOnlyLoader('admin')
+import { guardLoader } from '@/lib/guard-loader'
+import { RealtimeFeed } from '@/ui/analytics/RealtimeFeed'
+
+export const clientLoader = guardLoader('admin')
 
 export default function WpAdminAnalyticsRealtime() {
   const { t } = useI18n()

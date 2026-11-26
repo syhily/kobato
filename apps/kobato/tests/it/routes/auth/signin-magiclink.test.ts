@@ -15,9 +15,15 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { makeSession } from '@kobato/server/tests/utils/session'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { makeRouteContext } from '@tests/utils/context'
+import { orpcStubCookies } from '@tests/utils/orpc-client-mock'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const db = getTestDb()
 const mail = await createCaptureMailFixture()
@@ -46,7 +52,7 @@ const MAGIC_LINK_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { action, loader } = await import('@/routes/auth/signin')
+const { clientAction, clientLoader } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
@@ -128,20 +134,17 @@ async function callAction(
   clientAddress = '127.0.0.1',
   requestUrl = 'http://localhost/admin/signin',
 ): Promise<Response & { data?: any }> {
-  const routeContext = setContext(actionName, redirectTo, clientAddress)
+  setContext(actionName, redirectTo, clientAddress)
   const url = new URL(requestUrl)
-  const request = new Request(requestUrl, {
+  const routedUrl = new URL(url)
+  routedUrl.searchParams.set('action', actionName ?? 'login')
+  routedUrl.searchParams.set('redirect_to', redirectTo)
+  const request = new Request(routedUrl, {
     method: 'POST',
     body: formData,
   })
   try {
-    return (await action({
-      request,
-      url,
-      context: routeContext,
-      params: {},
-      pattern: 'admin/signin',
-    })) as Response
+    return (await clientAction({ request } as never)) as Response
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -150,17 +153,15 @@ async function callAction(
   }
 }
 
+function getSetCookie(): string | null {
+  return orpcStubCookies()[0] ?? null
+}
+
 async function callLoader(search: string): Promise<Response & { data?: any }> {
   const url = new URL(`http://localhost/admin/signin${search}`)
-  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
+  makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
   try {
-    return (await loader({
-      request: new Request(url),
-      url,
-      context: routeContext,
-      params: {},
-      pattern: 'admin/signin',
-    })) as unknown as Response
+    return (await clientLoader({ request: new Request(url) } as never)) as unknown as Response
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -277,7 +278,7 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toBe('/admin')
-    expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
 
     const sessions = await sqliteOf(db).select().from(sessionTable).where(eq(sessionTable.userId, admin.id))
     expect(sessions).toHaveLength(1)

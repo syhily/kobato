@@ -1,6 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
-import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/account/notifications'
+import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/public/notifications'
 import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
 import { defaultMigrationsFolder, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import {

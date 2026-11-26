@@ -17,6 +17,20 @@ describe('extractRequestFacts', () => {
     expect(first.analyticsEventId).not.toBe(second.analyticsEventId)
   })
 
+  it('adopts a syntactically valid inbound analytics event id', () => {
+    const facts = extractRequestFacts(request({ 'x-kobato-analytics-event': '4D2E6C1A-9F2B-4C3D-8E5F-1A2B3C4D5E6F' }))
+    expect(facts.analyticsEventId).toBe('4D2E6C1A-9F2B-4C3D-8E5F-1A2B3C4D5E6F')
+  })
+
+  it.each(['not-a-uuid', '4d2e6c1a9f2b4c3d8e5f1a2b3c4d5e6f', '4d2e6c1a-9f2b-4c3d-8e5f-1a2b3c4d5e6f00', ''])(
+    'mints a fresh id when the inbound analytics event id is garbage (%s)',
+    (value) => {
+      const facts = extractRequestFacts(request({ 'x-kobato-analytics-event': value }))
+      expect(facts.analyticsEventId).toMatch(UUID_RE)
+      expect(facts.analyticsEventId).not.toBe(value)
+    },
+  )
+
   it('extracts every persisted UA Client Hint, high-entropy ones included', () => {
     const facts = extractRequestFacts(
       request({

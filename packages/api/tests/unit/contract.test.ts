@@ -6,8 +6,8 @@ import {
   likeIncreaseInput,
   likeIncreaseOutput,
   likeValidateInput,
-} from '@kobato/api/contracts/account/likes'
-import { likesContract } from '@kobato/api/rpc/account/likes'
+} from '@kobato/api/contracts/public/likes'
+import { likesContract } from '@kobato/api/rpc/public/likes'
 import { isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
 
@@ -56,21 +56,37 @@ describe('apiContract composition', () => {
     expect(Object.keys(apiContract.public)).toEqual([
       'content',
       'comments',
+      'likes',
+      'friends',
+      'notifications',
+      'newsletter',
       'webmentions',
       'avatar',
       'github',
       'images',
       'music',
+      'branding',
+      'fonts',
+      'storage',
       'analytics',
       'observability',
+      'feeds',
+      'sitemap',
     ])
     expect(Object.keys(apiContract.admin)).toHaveLength(25)
   })
 
   it('composes the very same procedure objects as the domain module', () => {
-    const procedures = contractProcedures(apiContract.account.likes as Record<string, unknown>)
+    const procedures = contractProcedures(apiContract.public.likes as Record<string, unknown>)
     expect(procedures.increase).toBe(likesContract.increase)
     expect(procedures.decrease).toBe(likesContract.decrease)
     expect(procedures.validate).toBe(likesContract.validate)
+  })
+
+  it('leaves the promoted domains out of the account group', () => {
+    expect('likes' in apiContract.account).toBe(false)
+    expect('friends' in apiContract.account).toBe(false)
+    expect('notifications' in apiContract.account).toBe(false)
+    expect('newsletter' in apiContract.account).toBe(false)
   })
 })

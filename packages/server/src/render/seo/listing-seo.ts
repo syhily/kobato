@@ -1,6 +1,6 @@
+import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
-import type { MetaDescriptor } from 'react-router'
 
 import { type FeedLinkOptions, routeMeta } from '@kobato/catalog/seo/meta'
 import { pagePath } from '@kobato/server/domains/content/urls'
@@ -31,7 +31,7 @@ export function listingSeo(
     ogImageUrl,
   }: ListingSeoProps,
   bundle?: BlogSettingsBundle | null,
-): MetaDescriptor[] {
+): ListingPageLoaderData['seo'] {
   let pageTitle = title
   if (pageNum > 1) {
     const t = createServerTranslator(locale)

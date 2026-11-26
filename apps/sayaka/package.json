@@ -1,0 +1,85 @@
+{
+  "name": "sayaka",
+  "version": "8.2.2-dev",
+  "private": true,
+  "description": "The server-rendered public frontend of Kobato, talking to a kobato backend over oRPC",
+  "keywords": [
+    "blog",
+    "cms",
+    "kobato",
+    "sayaka",
+    "こばと"
+  ],
+  "homepage": "https://github.com/syhily/kobato",
+  "bugs": {
+    "url": "https://github.com/syhily/kobato/issues",
+    "email": "syhily@gmail.com"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Yufan Sheng",
+    "email": "syhily@gmail.com",
+    "url": "https://syhily"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/kobato"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "cd ../.. && react-router dev apps/sayaka",
+    "start": "cd ../.. && node ./apps/sayaka/build/server/index.js",
+    "typegen": "react-router typegen"
+  },
+  "devDependencies": {
+    "@hono/node-server": "catalog:",
+    "@kobato/api": "workspace:*",
+    "@kobato/assets": "workspace:*",
+    "@kobato/auth": "workspace:*",
+    "@kobato/catalog": "workspace:*",
+    "@kobato/distribution": "workspace:*",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/pack": "workspace:*",
+    "@kobato/sanitize": "workspace:*",
+    "@kobato/settings": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "@kobato/web-kit": "workspace:*",
+    "@napi-rs/canvas": "catalog:",
+    "@number-flow/react": "catalog:",
+    "@openobserve/browser-rum-slim": "catalog:",
+    "@orpc/contract": "catalog:",
+    "@orpc/server": "catalog:",
+    "@playwright/test": "catalog:",
+    "@react-router/dev": "catalog:",
+    "@react-router/node": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "happy-dom": "catalog:",
+    "hono": "catalog:",
+    "hono-pino": "catalog:",
+    "lucide-react": "catalog:",
+    "medium-zoom": "catalog:",
+    "motion": "catalog:",
+    "pino": "catalog:",
+    "qrcode.react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "tailwindcss": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "engines": {
+    "node": ">=26.9.0"
+  }
+}

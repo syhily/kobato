@@ -5,11 +5,16 @@
 pnpm monorepo with four top-level code roots — no new roots are created (`docs/` holds prose, gitignored `data/` holds
 runtime state):
 
-- `apps/` — deployable apps: `kobato` (React Router 8 Framework Mode, SSR, React 19, `appDirectory: 'src'`) and
-  `inkling-demo` (standalone Inkling playground, `pnpm demo`).
+- `apps/` — deployable apps: `kobato` (the backend: a React Router 8 **SPA** workspace — `ssr: false`, React 19,
+  `appDirectory: 'src'` — served by its own Hono app under the Vite base `/admin/`, so all workspace assets live at
+  `/admin/assets/*`; builds `build/client` plus the backend bundle `build/server/index.js` via
+  `vite.backend.config.ts`), `sayaka` (the public-front-end split from ADR-0009: a second React Router 8 SSR app that
+  serves the public document perimeter and forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo`
+  (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/ui`, `@kobato/inkling`
-  (Lexical editor with a React-free `/headless/` document model), `packages/web/*` (`web-admin`, `web-kit`,
-  `web-public`), and eight isomorphic React-free leaves under `packages/shared/*`.
+  (Lexical editor with a React-free `/headless/` document model), `packages/web/kit` (`web-kit`, the one web package —
+  the admin UI lives in `apps/kobato/src/ui` per ADR-0009), and eight isomorphic React-free leaves under
+  `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
@@ -30,9 +35,10 @@ Runtime facts:
 
 - `pnpm dev` / `pnpm start` run with cwd at the repository root (cwd-anchored `kobato.config.json` / `./data`);
   build-time code anchors paths on `import.meta.url`, never `process.cwd()`.
-- Distribution is a single SEA executable; runtime config is `kobato.config.json`, validated through `CONFIG_TABLE`.
-  `apps/kobato/package.json` is the version source of truth — every package carries the same version
-  (`pnpm version:sync <version>` repairs drift).
+- Distribution is a pair of SEA executables built by `pnpm run sea:build` (`tools/pack`): `dist-sea/kobato` (the
+  backend + the workspace SPA) and `dist-sea/sayaka` (the public site), each with a `.sha256` sidecar; runtime config is
+  `kobato.config.json`, validated through `CONFIG_TABLE`. `apps/kobato/package.json` is the version source of truth —
+  every package carries the same version (`pnpm version:sync <version>` repairs drift).
 - Tailwind: package-owned `@source` partials, exactly one compile per surface — the ownership contract lives in
   `apps/kobato/src/styles/AGENTS.md`.
 
@@ -58,10 +64,10 @@ A comment must describe the present, never a past state of the tree (`apps/kobat
 ## Import conventions
 
 All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single workspace path table is
-`@kobato/tsconfig/tsconfig.base.json` (consumer tsconfigs only extend it). App source: `@/...`; app test helpers:
-`@tests/...` (app tests only). Everything else: `@kobato/<package>/...`. No relative specifiers in source or tests —
-exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated probe JavaScript, and
-import-scanner test fixtures.
+`@kobato/tsconfig/tsconfig.base.json` (consumer tsconfigs only extend it). App source: `@/...` in `apps/kobato`,
+`@sayaka/...` in `apps/sayaka`; app test helpers: `@tests/...` (kobato app tests only). Everything else:
+`@kobato/<package>/...`. No relative specifiers in source or tests — exceptions: React Router generated `./+types/*`,
+the SEA build-output entry, generated probe JavaScript, and import-scanner test fixtures.
 
 - Source never imports a package's `tests/` tree; the one sanctioned cross-package seam is
   `@kobato/<owner>/tests/utils/<name>` — the canonical fixture registry lives in `tools/test/AGENTS.md`.
@@ -80,10 +86,17 @@ section pins the direction graph only — package composition rules live in each
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
-- Web direction: `web-admin` → `web-kit` ← `web-public`; the kit imports neither leaf. Web packages never import
-  `@kobato/server` (admin allows it tests-only). The browser oRPC client is typed exclusively through `@kobato/api`.
+- Web direction: `packages/web` holds exactly one package, `web-kit` — the admin UI lives in `apps/kobato/src/ui` and
+  the public UI in `apps/sayaka/src/ui` (ADR-0009). The kit imports neither app, neither consuming UI tree, nor a shared
+  leaf beyond its declarations. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit; kobato's
+  `src/ui` imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato allows it tests-only).
+  The browser oRPC client is typed exclusively through `@kobato/api`.
 - `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
+- `apps/sayaka` is the public-front-end split (ADR-0009): it never imports `@kobato/server` or `@kobato/db` and never
+  touches the database — it reaches `kobato` exclusively over oRPC (`createKobatoServerClient` from `@kobato/api`) and
+  HTTP forwarding. Its declared-dependency allow-list and src targets are pinned in
+  `apps/kobato/tests/arch/package-dag.test.ts`.
 - Refactor from architectural correctness, not minimal diff size.
 
 ## Skills
@@ -94,15 +107,21 @@ skills are pinned in `skills-lock.json`.
 ## Build & CI
 
 `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run test`, `pnpm run build`. Before committing:
-`pnpm run fmt && pnpm run lint`, then `pnpm run test`, then `pnpm run build`.
+`pnpm run fmt && pnpm run lint`, then `pnpm run test`, then `pnpm run build`. `pnpm run build` builds both apps;
+`pnpm run dev:sayaka` runs the sayaka dev server, and `pnpm run split:smoke` boots the built kobato + sayaka pair and
+verifies the split deployment perimeter (install gate, CSP/ETag/304, forwarded RPCs, rate-limit keying).
 
-`pnpm run lint` is the one static gate: it runs `react-router typegen` (route modules import generated `./+types/*`),
-then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and TypeScript compiler diagnostics in a
-single pass. There is no separate type-check command and `tsc` is never run (`oxlint.config.ts` sets
+Dev workflow: `pnpm run dev` boots kobato's Vite dev server on 4321 — the shared `reactRouterHonoServer` plugin serves
+`/rpc/*`, `/health`, and the resource routes through the Hono app while `/admin/*` + `/editor/*` documents (and React
+Router's `.data` requests) stay on React Router's dev middleware; `pnpm dev:sayaka` adds the public origin on 4322.
+
+`pnpm run lint` is the one static gate: it runs `react-router typegen` for both apps (route modules import generated
+`./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and TypeScript compiler
+diagnostics in a single pass. There is no separate type-check command and `tsc` is never run (`oxlint.config.ts` sets
 `typeAware`/`typeCheck`). Each file type-checks through its nearest `tsconfig.json`, so a new package or config file
 needs no root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files and `scripts/`.
 oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the generated
-`apps/kobato/.react-router/types/`) is never type-checked.
+`apps/*/.react-router/types/`) is never type-checked.
 
 ## Tests
 
@@ -124,9 +143,9 @@ Tests live next to the covered package — no root-level test tree.
   "no browser globals" tests declare `@vitest-environment node`, realm-safe DOM comparisons use identity (`!==`).
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative. `any`,
   `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks.
-- Coverage measures the backend/app runtime surface — `apps/kobato/src`, `api`, `db`, `server`, and `shared/*`. The
-  product UI trees — `web-admin`/`web-kit`/`web-public`, `@kobato/ui`, and `@kobato/inkling` — sit outside the workspace
-  coverage thresholds by design.
+- Coverage measures the backend/app runtime surface — `apps/kobato/src`, `apps/sayaka/src`, `api`, `db`, `server`, and
+  `shared/*`. The product UI trees — `apps/kobato/src/ui`, `apps/sayaka/src/ui`, `packages/web/kit`, `@kobato/ui`, and
+  `@kobato/inkling` — sit outside the workspace coverage thresholds by design.
 
 ## Git
 

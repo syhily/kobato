@@ -2,10 +2,10 @@ import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
 import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 import type { RawAccessEvent } from '@kobato/server/domains/analytics/types'
 
+import { isBot } from '@kobato/api/client/is-bot'
 import { lookupCity } from '@kobato/server/domains/analytics/geoip/lookup'
 import { getDailySalt } from '@kobato/server/domains/analytics/salt'
 import { parseUaFields } from '@kobato/server/domains/analytics/ua-parse'
-import { isBot } from '@kobato/server/infra/http/is-bot'
 import { createHash } from 'node:crypto'
 
 function hashIp(ip: string): string {

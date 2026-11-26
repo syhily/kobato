@@ -1,16 +1,16 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
 
 export const meta = titleMeta('meta.title.admin.analytics')
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 const SUBNAV: readonly { to: string; labelId: UiMessageId; icon: typeof ChartLineIcon; end: boolean }[] = [
   { to: '/admin/analytics', labelId: 'admin.analytics.nav.overview', icon: ChartLineIcon, end: true },

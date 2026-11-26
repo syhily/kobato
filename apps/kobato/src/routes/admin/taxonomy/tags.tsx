@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { TagsView } from '@/ui/tags/TagsView'
 
-export const loader = guardOnlyLoader('author')
+export const clientLoader = guardLoader('author')
 
 export const meta = titleMeta('meta.title.admin.tags')
 

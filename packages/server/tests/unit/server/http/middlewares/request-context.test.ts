@@ -299,13 +299,20 @@ describe('requestContextMiddleware', () => {
     expect(session.get('csrfToken')).toBe(deriveStatelessCsrfToken(minted!))
   })
 
-  it('anonymous GET on a cookie-exempt path (feed/sitemap/assets): mints nothing', async () => {
+  it('anonymous GET on a cookie-exempt path (workspace assets): mints nothing', async () => {
     const { app, session } = await buildApp({}, { presetCsrfToken: false })
-    app.get('/feed', (c) => c.json({ ok: true }))
-    const res = await app.request('/feed')
+    app.get('/admin/assets/entry-abc.js', (c) => c.json({ ok: true }))
+    const res = await app.request('/admin/assets/entry-abc.js')
     expect(res.headers.getSetCookie()).toEqual([])
     expect(session.get('csrfToken')).toBeUndefined()
     expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+  })
+
+  it('anonymous GET on a former public-asset path now mints the anonymous cookie', async () => {
+    const { app } = await buildApp({}, { presetCsrfToken: false })
+    app.get('/assets/main.js', (c) => c.json({ ok: true }))
+    const res = await app.request('/assets/main.js')
+    expect(res.headers.getSetCookie().some((cookie) => cookie.startsWith('__csrf='))).toBe(true)
   })
 
   it('anonymous request can still commit when the route marks the session dirty (OTP/setup explicit flows)', async () => {

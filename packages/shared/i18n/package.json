@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@formatjs/icu-messageformat-parser": "catalog:",
+    "@formatjs/intl": "catalog:",
     "@kobato/tsconfig": "workspace:*",
     "happy-dom": "catalog:",
     "react-intl": "catalog:",

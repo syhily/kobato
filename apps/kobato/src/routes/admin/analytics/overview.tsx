@@ -1,15 +1,16 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { AnalyticsDashboard } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard'
-import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
+import { orpc } from '@kobato/api/browser/client'
+
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
+import { AnalyticsDashboard } from '@/ui/analytics/AnalyticsDashboard'
+import { useAnalyticsState } from '@/ui/analytics/use-analytics-state'
 
 import type { Route } from './+types/overview'
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'admin')
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
-  return caller.admin.analytics.overview({ search: url.searchParams.toString() })
+  return orpc.admin.analytics.overview({ search: url.searchParams.toString() })
 }
 
 export default function WpAdminAnalyticsOverview({ loaderData }: Route.ComponentProps) {

@@ -42,6 +42,15 @@ export function seaInstanceEnv(dirs: TempDirs, databases: SmokeDatabases): Recor
   }
 }
 
+export function sayakaInstanceEnv(kobatoOrigin: string, sayakaPort: number): Record<string, string> {
+  return {
+    SAYAKA_HOST: '127.0.0.1',
+    SAYAKA_PORT: String(sayakaPort),
+    SAYAKA_KOBATO_RPC_URL: `${kobatoOrigin}/rpc`,
+    NODE_ENV: 'production',
+  }
+}
+
 export async function ensureBinaryExists(binaryPath: string): Promise<void> {
   try {
     await stat(binaryPath)
@@ -50,19 +59,51 @@ export async function ensureBinaryExists(binaryPath: string): Promise<void> {
   }
 }
 
+export interface BootServerOptions {
+  port?: number
+}
+
 export async function bootServer(
   binaryPath: string,
   dirs: TempDirs,
   env: Record<string, string>,
   logPath: string,
+  options: BootServerOptions = {},
 ): Promise<SmokeServer> {
-  const port = await pickFreePort()
+  const port = options.port ?? (await pickFreePort())
   const logStream = createWriteStream(logPath, { flags: 'w' })
   const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
   const parentEnv = scrubbedParentEnv()
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
     env: { ...parentEnv, ...env, server__port: String(port) },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  child.stdout?.pipe(logStream)
+  child.stderr?.pipe(logStream)
+  const exitState = watchChildExit(child)
+  return { child, exitState, port, logStream, logClosed, healthResponse: null }
+}
+
+export interface BootSayakaServerOptions {
+  cwd?: string
+}
+
+export async function bootSayakaServer(
+  binaryPath: string,
+  env: Record<string, string>,
+  logPath: string,
+  options: BootSayakaServerOptions = {},
+): Promise<SmokeServer> {
+  const port = Number(env.SAYAKA_PORT)
+  if (!Number.isInteger(port) || port <= 0) {
+    fail(`sayaka needs SAYAKA_PORT in its environment, got ${env.SAYAKA_PORT}`)
+  }
+  const logStream = createWriteStream(logPath, { flags: 'w' })
+  const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
+  const child = spawn(binaryPath, [], {
+    cwd: options.cwd ?? process.cwd(),
+    env: { ...scrubbedParentEnv(), ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   child.stdout?.pipe(logStream)

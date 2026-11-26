@@ -15,6 +15,61 @@ export function safeBoolean() {
 export const successDto = z.object({ success: z.boolean() })
 export type SuccessOutput = z.infer<typeof successDto>
 
+export const resourceRepresentationSchema = z.object({
+  contentType: z.string(),
+  cacheControl: z.string(),
+  contentLanguage: z.string().nullable(),
+})
+export type ResourceRepresentation = z.infer<typeof resourceRepresentationSchema>
+
+export const resourceOkSchema = resourceRepresentationSchema.extend({
+  kind: z.literal('ok'),
+  body: z.string(),
+  etag: z.string(),
+})
+export type ResourceOk = z.infer<typeof resourceOkSchema>
+
+export const resourceNotModifiedSchema = resourceRepresentationSchema.extend({
+  kind: z.literal('not-modified'),
+  etag: z.string(),
+})
+export type ResourceNotModified = z.infer<typeof resourceNotModifiedSchema>
+
+export const resourceBinaryOkSchema = resourceRepresentationSchema.extend({
+  kind: z.literal('ok'),
+  body: z.instanceof(Blob),
+  etag: z.string().optional(),
+})
+export type ResourceBinaryOk = z.infer<typeof resourceBinaryOkSchema>
+
+export const resourceRedirectSchema = z.object({
+  kind: z.literal('redirect'),
+  location: z.string(),
+  cacheControl: z.string().nullable(),
+})
+export type ResourceRedirect = z.infer<typeof resourceRedirectSchema>
+
+export const rangeNotSatisfiableSchema = resourceRepresentationSchema.extend({
+  kind: z.literal('range-not-satisfiable'),
+  etag: z.string(),
+  contentRange: z.string(),
+})
+export type RangeNotSatisfiable = z.infer<typeof rangeNotSatisfiableSchema>
+
+export const streamOutputSchema = z.custom<ReadableStream<Uint8Array>>((value) => value instanceof ReadableStream)
+export type StreamOutput = z.infer<typeof streamOutputSchema>
+
+export const mediaResourceOutputSchema = z.union([
+  resourceNotModifiedSchema,
+  resourceRedirectSchema,
+  rangeNotSatisfiableSchema,
+  streamOutputSchema,
+])
+export type MediaResourceOutput = z.infer<typeof mediaResourceOutputSchema>
+
+export const resourceOutputSchema = z.union([resourceNotModifiedSchema, resourceOkSchema])
+export type ResourceOutput = z.infer<typeof resourceOutputSchema>
+
 export const okDto = z.object({ ok: z.literal(true) })
 export type OkOutput = z.infer<typeof okDto>
 

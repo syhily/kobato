@@ -1,11 +1,11 @@
 import { bootSuiteInstance, stopSuiteInstance } from '@kobato/pack/instance/suite-instance'
 import { fail } from '@kobato/pack/process'
-import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
+import { repoRoot, seaBinaryPath, sayakaBinarySiblingPath } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { resolve as resolvePath } from 'node:path'
 
-const USAGE = 'Usage: node tools/pack/src/sea/browser.ts [--managed] [path-to-binary]'
+const USAGE = 'Usage: node tools/pack/src/sea/browser.ts [--managed] [path-to-kobato-binary]'
 const PLAYWRIGHT_CONFIG = resolvePath(import.meta.dirname, '..', '..', 'playwright.config.ts')
 
 function uniquePostSlug() {
@@ -34,27 +34,30 @@ function runPlaywright(extraEnv: Record<string, string>) {
   return result.status ?? 1
 }
 
-function runExternal(baseUrl: string) {
+function runExternal(publicBaseUrl: string) {
   const { KOBATO_BROWSER_ADMIN_EMAIL, KOBATO_BROWSER_ADMIN_PASSWORD } = process.env
   if (!KOBATO_BROWSER_ADMIN_EMAIL || !KOBATO_BROWSER_ADMIN_PASSWORD) {
     fail(
       'KOBATO_BROWSER_BASE_URL is set but KOBATO_BROWSER_ADMIN_EMAIL / KOBATO_BROWSER_ADMIN_PASSWORD are missing. ' +
-        'The journeys sign in and stage one post through the admin HTTP surface.',
+        'Point KOBATO_BROWSER_BASE_URL at the sayaka origin — the journeys sign in and stage one post through the forwarded admin surface.',
     )
   }
-  console.log(`==> browser journeys (external instance ${baseUrl})`)
+  console.log(`==> browser journeys (external instance ${publicBaseUrl})`)
   console.warn(
     '    the global setup stages one post and resets the general settings baseline on THIS instance — never point this at production',
   )
-  return runPlaywright({ KOBATO_BROWSER_BASE_URL: baseUrl })
+  return runPlaywright({ KOBATO_BROWSER_BASE_URL: publicBaseUrl })
 }
 
-async function runManaged(binaryPath: string) {
-  console.log('==> SEA browser journeys (managed boot + Playwright)')
-  const instance = await bootSuiteInstance(binaryPath, { adminEmail: 'browser-admin@kobato.local', log: console.log })
+async function runManaged(kobatoBinaryPath: string, sayakaBinaryPath: string) {
+  console.log('==> SEA browser journeys (managed pair boot + Playwright)')
+  const instance = await bootSuiteInstance(kobatoBinaryPath, sayakaBinaryPath, {
+    adminEmail: 'browser-admin@kobato.local',
+    log: console.log,
+  })
   try {
     return runPlaywright({
-      KOBATO_BROWSER_BASE_URL: instance.baseUrl,
+      KOBATO_BROWSER_BASE_URL: instance.publicBaseUrl,
       KOBATO_BROWSER_ADMIN_EMAIL: instance.adminEmail,
       KOBATO_BROWSER_ADMIN_PASSWORD: instance.adminPassword,
     })
@@ -75,7 +78,9 @@ async function main(): Promise<number> {
   if (!managed && externalBaseUrl !== undefined) {
     return runExternal(externalBaseUrl.replace(/\/+$/, ''))
   }
-  return runManaged(binaryArg === undefined ? seaBinaryPath() : resolvePath(repoRoot, binaryArg))
+  const kobatoBinaryPath = binaryArg === undefined ? seaBinaryPath('kobato') : resolvePath(repoRoot, binaryArg)
+  const sayakaBinaryPath = binaryArg === undefined ? seaBinaryPath('sayaka') : sayakaBinarySiblingPath(kobatoBinaryPath)
+  return runManaged(kobatoBinaryPath, sayakaBinaryPath)
 }
 
 const status = await main().catch((error: unknown) => {

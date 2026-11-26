@@ -5,11 +5,12 @@ import { getSetupToken } from '@kobato/server/domains/auth/setup-token'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeSession } from '@kobato/server/tests/utils/session'
 import { makeRouteContext } from '@tests/utils/context'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createHash } from 'node:crypto'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/http/request-context', async () => {
-  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock')
-  return createRequestContextMockModule()
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
 })
 
 vi.mock('@kobato/server/domains/auth/services/setup', async () => {
@@ -26,18 +27,22 @@ const CSRF_TOKEN = 'setup-route-csrf-token'
 
 const db = getTestDb()
 
-const mockContext = await import('@kobato/server/http/request-context')
 const flows = await import('@kobato/server/domains/auth/services/setup')
 const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/server/infra/rate-limit')
-const { action, loader } = await import('@/routes/auth/setup/index')
+const route = await import('@/routes/auth/setup/index')
 
-beforeAll(() => {
-  const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
-  vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
-    ...fromProvider!(args),
-    db,
-  }))
-})
+function routeContext(options: Record<string, unknown> = {}) {
+  return makeRouteContext({ db, session: csrfSession(), ...options })
+}
+
+async function loader(args: Record<string, unknown> & { request: Request }): Promise<unknown> {
+  void args
+  return route.clientLoader()
+}
+
+async function action(args: Record<string, unknown> & { request: Request }): Promise<unknown> {
+  return route.clientAction({ request: args.request } as never)
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -56,6 +61,10 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
     throw error
   }
   throw new Error('Expected route to throw a Response')
+}
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
 }
 
 function csrfSession(extra: Record<string, unknown> = {}) {
@@ -86,7 +95,7 @@ describe('routes/setup', () => {
       const result = await loader({
         request: new Request('http://localhost/admin/setup'),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        context: routeContext(),
         params: {},
         pattern: 'admin/setup',
       })
@@ -97,11 +106,14 @@ describe('routes/setup', () => {
       expect(payload).not.toHaveProperty('setupToken')
     })
 
-    it('returns setupTokenVerified: true when session flag is set', async () => {
+    it('returns setupTokenVerified: true when the flag is bound to the live token fingerprint', async () => {
+      const token = await mintSetupToken()
       const result = await loader({
         request: new Request('http://localhost/admin/setup'),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: makeSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(token) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -111,6 +123,22 @@ describe('routes/setup', () => {
       expect(payload.setupTokenVerified).toBe(true)
     })
 
+    it('reports the flag as unverified once the live token no longer matches the fingerprint', async () => {
+      await mintSetupToken()
+      const result = await loader({
+        request: new Request('http://localhost/admin/setup'),
+        url: new URL('http://localhost/admin/setup'),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256('other-token') }),
+        }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const payload = (result as { data: Record<string, unknown> }).data
+      expect(payload.setupTokenVerified).toBe(false)
+    })
+
     it('redirects to /admin/signin when installed', async () => {
       await seedAdminRow()
 
@@ -118,7 +146,7 @@ describe('routes/setup', () => {
         loader({
           request: new Request('http://localhost/admin/setup'),
           url: new URL('http://localhost/admin/setup'),
-          context: makeRouteContext(),
+          context: routeContext(),
           params: {},
           pattern: 'admin/setup',
         }),
@@ -144,7 +172,7 @@ describe('routes/setup', () => {
             body: withCsrf(formData),
           }),
           url: new URL('http://localhost/admin/setup'),
-          context: makeRouteContext({ session: csrfSession() }),
+          context: routeContext({ session: csrfSession() }),
           params: {},
           pattern: 'admin/setup',
         }),
@@ -169,7 +197,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession() }),
+        context: routeContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -192,7 +220,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session }),
+        context: routeContext({ session }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -215,7 +243,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession() }),
+        context: routeContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -239,7 +267,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession() }),
+        context: routeContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -266,7 +294,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession() }),
+        context: routeContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -288,7 +316,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession() }),
+        context: routeContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -297,7 +325,7 @@ describe('routes/setup', () => {
       expect(data?.error).toBe('请先验证 Setup Token。')
     })
 
-    it('returns error when setup token has expired', async () => {
+    it('blocks install once the verified setup token expired, without minting a fresh one', async () => {
       await sqliteOf(db)
         .insert(oneTimeToken)
         .values({
@@ -319,7 +347,45 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256('expired-token') }),
+        }),
+        params: {},
+        pattern: 'admin/setup',
+      })
+
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('Setup Token 已过期或失效，请重新验证。')
+      expect((data?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('auth.setup.error.tokenExpired')
+      const rows = await sqliteOf(db).select().from(oneTimeToken)
+      expect(rows[0]?.payload).toBe('expired-token')
+    })
+
+    it('blocks install when the live token was re-minted after verification', async () => {
+      await sqliteOf(db)
+        .insert(oneTimeToken)
+        .values({
+          key: 'setup_token',
+          payload: 're-minted-token',
+          expiresAt: new Date(Date.now() + 60_000),
+        })
+
+      const formData = new FormData()
+      formData.set('intent', 'install')
+      formData.set('title', 'Blog')
+      formData.set('name', 'A')
+      formData.set('email', 'a@b.com')
+      formData.set('password', 'Password1234')
+
+      const result = await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: withCsrf(formData),
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256('expired-token') }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -329,7 +395,7 @@ describe('routes/setup', () => {
     })
 
     it('returns the first field error when schema validation fails', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -340,7 +406,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -350,7 +418,7 @@ describe('routes/setup', () => {
     })
 
     it('surfaces the password rule when the password fails complexity validation', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -366,7 +434,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -378,7 +448,7 @@ describe('routes/setup', () => {
     })
 
     it('surfaces the password byte-ceiling rule with its max param', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -394,7 +464,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -405,7 +477,7 @@ describe('routes/setup', () => {
     })
 
     it('surfaces the site-name message when the title is blank', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -420,7 +492,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -431,7 +505,7 @@ describe('routes/setup', () => {
     })
 
     it('surfaces the email message when the email is malformed', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -446,7 +520,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -457,7 +533,7 @@ describe('routes/setup', () => {
     })
 
     it('surfaces the minimum-length rule for a short password', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -472,7 +548,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -483,7 +561,7 @@ describe('routes/setup', () => {
     })
 
     it('rejects an unsupported locale without calling the install service', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -499,7 +577,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -510,7 +590,7 @@ describe('routes/setup', () => {
     })
 
     it('calls signUpInitialAdminWithSession with parsed data and context', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -520,16 +600,20 @@ describe('routes/setup', () => {
       formData.set('password', 'Password1234')
       formData.set('locale', 'zh-HK')
 
-      await action({
-        request: new Request('http://localhost/admin/setup', {
-          method: 'POST',
-          body: withCsrf(formData),
+      await catchResponse(
+        action({
+          request: new Request('http://localhost/admin/setup', {
+            method: 'POST',
+            body: withCsrf(formData),
+          }),
+          url: new URL('http://localhost/admin/setup'),
+          context: routeContext({
+            session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+          }),
+          params: {},
+          pattern: 'admin/setup',
         }),
-        url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
-        params: {},
-        pattern: 'admin/setup',
-      })
+      )
 
       expect(flows.signUpInitialAdminWithSession).toHaveBeenCalledOnce()
       const call = vi.mocked(flows.signUpInitialAdminWithSession).mock.calls[0]!
@@ -546,7 +630,7 @@ describe('routes/setup', () => {
     })
 
     it('treats an empty-string locale as an invalid field, not the default', async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -562,7 +646,9 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
+        context: routeContext({
+          session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+        }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -574,7 +660,7 @@ describe('routes/setup', () => {
     })
 
     it("defaults the locale to DEFAULT_LOCALE ('zh-CN') when the field is absent", async () => {
-      await mintSetupToken()
+      const mintedToken = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -583,16 +669,20 @@ describe('routes/setup', () => {
       formData.set('email', 'a@b.com')
       formData.set('password', 'Password1234')
 
-      await action({
-        request: new Request('http://localhost/admin/setup', {
-          method: 'POST',
-          body: withCsrf(formData),
+      await catchResponse(
+        action({
+          request: new Request('http://localhost/admin/setup', {
+            method: 'POST',
+            body: withCsrf(formData),
+          }),
+          url: new URL('http://localhost/admin/setup'),
+          context: routeContext({
+            session: csrfSession({ setupTokenVerified: true, setupTokenVerifiedFor: sha256(mintedToken) }),
+          }),
+          params: {},
+          pattern: 'admin/setup',
         }),
-        url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
-        params: {},
-        pattern: 'admin/setup',
-      })
+      )
 
       expect(flows.signUpInitialAdminWithSession).toHaveBeenCalledOnce()
       const call = vi.mocked(flows.signUpInitialAdminWithSession).mock.calls[0]!
@@ -601,69 +691,15 @@ describe('routes/setup', () => {
   })
 
   describe('action: csrf gate + unknown intents', () => {
-    function installFormData(): FormData {
-      const formData = new FormData()
-      formData.set('intent', 'install')
-      formData.set('title', 'Blog')
-      formData.set('name', 'A')
-      formData.set('email', 'a@b.com')
-      formData.set('password', 'Password1234')
-      return formData
-    }
-
     async function callAction(formData: FormData, session = csrfSession()) {
       return action({
         request: new Request('http://localhost/admin/setup', { method: 'POST', body: formData }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session }),
+        context: routeContext({ session }),
         params: {},
         pattern: 'admin/setup',
       })
     }
-
-    it('rejects verify-token with a wrong CSRF token and leaves the session unverified', async () => {
-      await mintSetupToken()
-      const session = csrfSession()
-      const formData = new FormData()
-      formData.set('intent', 'verify-token')
-      formData.set('setup_token', 'any-token')
-      formData.set('csrf_token', 'wrong-csrf-value')
-
-      const result = await callAction(formData, session)
-
-      const payload = (result as { data?: Record<string, unknown> }).data
-      expect(payload?.error).toBe('安全校验失败，请刷新页面后重试。')
-      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
-      expect(session.data.setupTokenVerified).toBeUndefined()
-    })
-
-    it('rejects verify-token with a missing CSRF token', async () => {
-      await mintSetupToken()
-      const session = csrfSession()
-      const formData = new FormData()
-      formData.set('intent', 'verify-token')
-      formData.set('setup_token', 'any-token')
-
-      const result = await callAction(formData, session)
-
-      const payload = (result as { data?: Record<string, unknown> }).data
-      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
-      expect(session.data.setupTokenVerified).toBeUndefined()
-    })
-
-    it('rejects install on a bad CSRF token even with a verified session, creating no admin', async () => {
-      await mintSetupToken()
-      const formData = installFormData()
-      formData.set('csrf_token', 'wrong-csrf-value')
-
-      const result = await callAction(formData, csrfSession({ setupTokenVerified: true }))
-
-      const payload = (result as { data?: Record<string, unknown> }).data
-      expect(payload?.error).toBe('安全校验失败，请刷新页面后重试。')
-      expect((payload?.errorDescriptor as { messageKey?: string })?.messageKey).toBe('error.api.csrfFailed')
-      expect(flows.signUpInitialAdminWithSession).not.toHaveBeenCalled()
-      expect(await sqliteOf(db).select().from(user)).toHaveLength(0)
-    })
 
     it('answers unknownAction for an unrecognized intent', async () => {
       const formData = new FormData()

@@ -7,6 +7,46 @@ const env = e2eEnv()
 const RESTART_POLL_INTERVAL_MS = 500
 const RESTART_TIMEOUT_MS = 90_000
 
+function lexicalBody(text: string): unknown {
+  return {
+    root: {
+      type: 'root',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          children: [{ type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }],
+        },
+      ],
+    },
+  }
+}
+
+async function createPost(admin: E2eClient, csrfToken: string, slug: string, title: string): Promise<string | number> {
+  const created = await callE2eRpc<{ post: { id: string | number } }>(
+    admin,
+    '/admin/posts/upsertMeta',
+    { title, slug, published: true, publishedAt: new Date().toISOString() },
+    csrfToken,
+  )
+  expect(created.status).toBe(200)
+  const published = await callE2eRpc(
+    admin,
+    '/admin/posts/publishLatest',
+    { id: String(created.json.post.id), body: lexicalBody(`${title} body.`) },
+    csrfToken,
+  )
+  expect(published.status).toBe(200)
+  return created.json.post.id
+}
+
 async function waitForInstanceBack(): Promise<void> {
   const probe = new E2eClient(env.baseUrl)
   const deadline = Date.now() + RESTART_TIMEOUT_MS
@@ -29,17 +69,12 @@ async function waitForInstanceBack(): Promise<void> {
 describe('admin backup/restore round-trip (HTTP e2e)', () => {
   it('archives, downloads, and restores the instance back to the snapshot', { timeout: 120_000 }, async () => {
     const admin = new E2eClient(env.baseUrl)
-    const { res } = await loginAdmin(admin, env)
-    expect(res.status).toBe(302)
+    const { flow } = await loginAdmin(admin, env)
+    expect(flow.type, `login answered ${flow.type}: ${flow.message ?? '(no message)'}`).toBe('redirect')
     const csrfToken = await getAdminCsrfToken(admin)
+    const publicSite = new E2eClient(env.publicBaseUrl)
 
-    const kept = await callE2eRpc<{ post: { id: string | number } }>(
-      admin,
-      '/admin/posts/upsertMeta',
-      { title: 'E2E Kept Post', slug: 'e2e-kept', published: true, publishedAt: new Date().toISOString() },
-      csrfToken,
-    )
-    expect(kept.status).toBe(200)
+    const keptId = await createPost(admin, csrfToken, 'e2e-kept', 'E2E Kept Post')
 
     const backup = await callE2eRpc<{ fileName: string; timestamp: string; size: number }>(
       admin,
@@ -59,14 +94,8 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     expect(archive.length).toBeGreaterThan(0)
     expect([archive[0], archive[1]]).toEqual([0x1f, 0x8b])
 
-    const dropped = await callE2eRpc<{ post: { id: string | number } }>(
-      admin,
-      '/admin/posts/upsertMeta',
-      { title: 'E2E Dropped Post', slug: 'e2e-dropped', published: true, publishedAt: new Date().toISOString() },
-      csrfToken,
-    )
-    expect(dropped.status).toBe(200)
-    expect((await admin.get('/posts/e2e-dropped')).status).toBe(200)
+    await createPost(admin, csrfToken, 'e2e-dropped', 'E2E Dropped Post')
+    expect((await publicSite.get('/posts/e2e-dropped')).status).toBe(200)
 
     const restore = await callE2eRpc<{ accepted: boolean }>(
       admin,
@@ -81,14 +110,16 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
 
     const after = new E2eClient(env.baseUrl)
     const relogin = await loginAdmin(after, env)
-    expect(relogin.res.status).toBe(302)
+    expect(relogin.flow.type, `login answered ${relogin.flow.type}: ${relogin.flow.message ?? '(no message)'}`).toBe(
+      'redirect',
+    )
 
-    const keptPage = await after.get('/posts/e2e-kept')
+    const keptPage = await publicSite.get('/posts/e2e-kept')
     expect(keptPage.status).toBe(200)
     expect(await keptPage.text()).toContain('E2E Kept Post')
-    expect((await after.get('/posts/e2e-dropped')).status).not.toBe(200)
+    expect((await publicSite.get('/posts/e2e-dropped')).status).not.toBe(200)
 
     const csrfAfter = await getAdminCsrfToken(after)
-    await callE2eRpc(after, '/admin/posts/delete', { id: String(kept.json.post.id) }, csrfAfter)
+    await callE2eRpc(after, '/admin/posts/delete', { id: String(keptId) }, csrfAfter)
   })
 })

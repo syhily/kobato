@@ -47,6 +47,7 @@ export interface BlogSessionData {
   csrfToken?: string
   absoluteExpiry?: number
   setupTokenVerified?: boolean
+  setupTokenVerifiedFor?: string
 }
 
 type BlogSessionValue = BlogSessionData[keyof BlogSessionData]

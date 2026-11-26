@@ -2,15 +2,17 @@ import type { SmokeServer } from '@kobato/pack/instance/sea-instance'
 
 import { scanAccessEvents } from '@kobato/pack/instance/analytics'
 import {
+  bootSayakaServer,
   bootServer,
   ensureBinaryExists,
+  sayakaInstanceEnv,
   seaInstanceEnv,
   waitForExit,
   waitForHttp,
 } from '@kobato/pack/instance/sea-instance'
 import { readConvergedConfig, seedInstalledInstance } from '@kobato/pack/instance/seed'
 import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
-import { fail, fetchManual, scrubbedParentEnv, sleep } from '@kobato/pack/process'
+import { fail, fetchManual, pickFreePort, scrubbedParentEnv, sleep } from '@kobato/pack/process'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
 import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
 import { spawnSync } from 'node:child_process'
@@ -52,7 +54,7 @@ function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
 }
 
-async function checkBinarySize(binaryPath: string) {
+async function checkBinarySize(app: 'kobato' | 'sayaka', binaryPath: string) {
   const binary = await stat(binaryPath).catch(() => null)
   if (binary === null) {
     throw new Error(`${binaryPath} not found — run pnpm run sea:build first`)
@@ -64,7 +66,7 @@ async function checkBinarySize(binaryPath: string) {
   return `${mb} MB binary within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`
 }
 
-function checkVersion(binaryPath: string) {
+function checkVersion(app: 'kobato' | 'sayaka', binaryPath: string) {
   const result = spawnSync(binaryPath, ['--version'], { encoding: 'utf-8', timeout: VERSION_TIMEOUT_MS })
   if (result.error) {
     throw new Error(`spawn failed: ${result.error.message}`)
@@ -74,7 +76,7 @@ function checkVersion(binaryPath: string) {
     throw new Error(`exit code ${result.status ?? 'unknown'}:\n${tailLines(output, 20)}`)
   }
   const line = result.stdout.trim()
-  if (!/^kobato \S+/m.test(line)) {
+  if (!new RegExp(`^${app} \\S+`, 'm').test(line)) {
     throw new Error(`unexpected output: ${line || '(empty)'}`)
   }
   return line
@@ -220,7 +222,7 @@ function checkWorker(binaryPath: string, env: Record<string, string>) {
 const SEED_ADMIN_PASSWORD = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 const SEED_ADMIN_EMAIL = 'smoke-admin@kobato.local'
 
-async function checkShutdown(server: SmokeServer) {
+async function checkShutdown(label: string, server: SmokeServer) {
   const started = Date.now()
   server.child.kill('SIGTERM')
   const outcome = await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
@@ -229,13 +231,13 @@ async function checkShutdown(server: SmokeServer) {
     throw new Error(`still running ${SHUTDOWN_TIMEOUT_MS / 1000}s after SIGTERM (sent SIGKILL)`)
   }
   if (process.platform === 'win32') {
-    return `terminated after ${elapsed}s (win32: SIGTERM maps to TerminateProcess)`
+    return `${label} terminated after ${elapsed}s (win32: SIGTERM maps to TerminateProcess)`
   }
   if (outcome.code === 0) {
-    return `exit code 0 after ${elapsed}s`
+    return `${label} exit code 0 after ${elapsed}s`
   }
   if (outcome.signal === 'SIGTERM') {
-    return `terminated by SIGTERM after ${elapsed}s`
+    return `${label} terminated by SIGTERM after ${elapsed}s`
   }
   throw new Error(`unexpected exit: code ${outcome.code ?? 'null'}, signal ${outcome.signal ?? 'none'}`)
 }
@@ -314,42 +316,34 @@ async function assertCalendarPng(res: Response) {
   return `200 ${contentType.split(';')[0]}, ${body.length} bytes`
 }
 
-async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
-  let ssrPath: string | null = null
-  await check('GET /health — boot + install gate', async () => {
-    const res = healthResponse ?? (await fetchManual(`${baseUrl}/health`))
-    const location = res.headers.get('location')
-    if (res.status === 303 && location === '/admin/setup') {
-      ssrPath = '/admin/setup'
-      return '303 → /admin/setup (fresh install)'
-    }
-    if (res.status === 200) {
-      ssrPath = '/'
-      return '200 (instance already installed)'
-    }
-    throw new Error(
-      `expected 303 → /admin/setup or 200, got ${res.status}${location ? ` (location: ${location})` : ''}`,
-    )
-  })
-
-  let assetPath: string | null = null
-  if (ssrPath !== null) {
-    const pagePath = ssrPath
-    await check(`GET ${pagePath} — SSR HTML`, async () => {
-      const body = await fetchSsrPage(baseUrl, pagePath)
-      const match = /(?:href|src)="(\/assets\/[^"]+?\.js)"/.exec(body)
-      if (!match) {
-        throw new Error('no /assets/*.js reference found in the SSR HTML')
+async function runHttpChecks(publicBaseUrl: string, kobatoOrigin: string | null, healthResponse: Response | null) {
+  if (kobatoOrigin !== null) {
+    await check('GET /health — boot + install gate (kobato origin)', async () => {
+      const res = healthResponse ?? (await fetchManual(`${kobatoOrigin}/health`))
+      if (res.status === 303 && res.headers.get('location') === '/admin/setup') {
+        return '303 → /admin/setup (fresh install)'
       }
-      assetPath = match[1] ?? null
-      return `200 text/html, ${body.length} bytes, first asset ${assetPath ?? ''}`
+      if (res.status === 200) {
+        return '200 (instance already installed)'
+      }
+      throw new Error(`expected 303 → /admin/setup or 200, got ${res.status}`)
     })
   }
 
-  if (assetPath !== null) {
-    const firstAsset = assetPath
-    await check(`GET ${firstAsset} — embedded static asset`, async () => {
-      const res = await fetchManual(`${baseUrl}${firstAsset}`)
+  let homeHtml: string | null = null
+  await check('GET / — SSR home document (sayaka origin)', async () => {
+    homeHtml = await fetchSsrPage(publicBaseUrl, '/')
+    return `200 text/html, ${homeHtml.length} bytes`
+  })
+
+  if (homeHtml !== null) {
+    const html = homeHtml
+    await check('one /assets/* fingerprint asset from the home document answers 200', async () => {
+      const match = /(?:href|src)="(\/assets\/[^"]+?\.js)"/.exec(html)
+      if (!match) {
+        throw new Error('no /assets/*.js reference found in the home document')
+      }
+      const res = await fetchManual(`${publicBaseUrl}${match[1]}`)
       const body = await res.arrayBuffer()
       const contentType = res.headers.get('content-type') ?? ''
       if (res.status !== 200) {
@@ -366,9 +360,9 @@ async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
   }
 }
 
-async function checkCalendar(baseUrl: string, { optional }: { optional: boolean }) {
-  await check(`GET ${calendarPath()} — canvas render over HTTP`, async () => {
-    const res = await fetchManual(`${baseUrl}${calendarPath()}`)
+async function checkCalendar(publicBaseUrl: string, { optional }: { optional: boolean }) {
+  await check(`GET ${calendarPath()} — canvas render over HTTP (sayaka origin)`, async () => {
+    const res = await fetchManual(`${publicBaseUrl}${calendarPath()}`)
     if (optional && res.status >= 300 && res.status < 400) {
       return `SKIP — ${res.status} redirect (uninstalled instance)`
     }
@@ -379,43 +373,141 @@ async function checkCalendar(baseUrl: string, { optional }: { optional: boolean 
   })
 }
 
-async function runManaged(binaryPath: string) {
-  await ensureBinaryExists(binaryPath)
+interface RunContext {
+  kobatoBinaryPath: string
+  sayakaBinaryPath: string
+  dirs: Awaited<ReturnType<typeof makeTempDirs>>
+  databases: ReturnType<typeof smokeDatabases>
+}
+
+async function runServiceFreeChecks(
+  context: Pick<RunContext, 'kobatoBinaryPath' | 'sayakaBinaryPath' | 'dirs' | 'databases'>,
+) {
+  await check('kobato SEA binary within the compression budget', () =>
+    checkBinarySize('kobato', context.kobatoBinaryPath),
+  )
+  await check('sayaka SEA binary within the compression budget', () =>
+    checkBinarySize('sayaka', context.sayakaBinaryPath),
+  )
+  await check('kobato --version', () => checkVersion('kobato', context.kobatoBinaryPath))
+  await check('sayaka --version', () => checkVersion('sayaka', context.sayakaBinaryPath))
+  await check('kobato --smoke-vfs (mounted asset VFS)', () => checkVfs(context.kobatoBinaryPath))
+  await check('kobato --smoke-intl (four-locale ICU data)', () => checkIntl(context.kobatoBinaryPath))
+  await check('kobato --smoke-natives (sharp + canvas + duckdb)', () =>
+    checkNatives(context.kobatoBinaryPath, context.dirs.cache),
+  )
+  await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(context.dirs.cache))
+  await check('kobato --smoke-worker (sharp worker pool)', () =>
+    checkWorker(context.kobatoBinaryPath, seaInstanceEnv(context.dirs, context.databases)),
+  )
+}
+
+async function runManaged(kobatoBinaryPath: string, sayakaBinaryPath: string) {
+  await ensureBinaryExists(kobatoBinaryPath)
+  await ensureBinaryExists(sayakaBinaryPath)
   const dirs = await makeTempDirs()
   const databases = smokeDatabases(dirs)
-  serverLogPath = join(dirs.root, 'server.log')
+  serverLogPath = join(dirs.root, 'kobato.log')
+  const sayakaLogPath = join(dirs.root, 'sayaka.log')
 
-  console.log(`    binary:   ${binaryPath}`)
+  console.log(`    kobato:   ${kobatoBinaryPath}`)
+  console.log(`    sayaka:   ${sayakaBinaryPath}`)
   console.log(`    database: ${databases.database}`)
   console.log(`    temp dir: ${dirs.root}`)
 
   const env = seaInstanceEnv(dirs, databases)
+  const kobatoPort = await pickFreePort()
+  const sayakaPort = await pickFreePort()
+  const kobatoOrigin = `http://127.0.0.1:${kobatoPort}`
+  const publicBaseUrl = `http://127.0.0.1:${sayakaPort}`
 
-  let server = null as SmokeServer | null
+  let kobato = null as SmokeServer | null
+  let sayaka = null as SmokeServer | null
   try {
-    await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
-    await check('kobato --version', () => checkVersion(binaryPath))
-    await check('kobato --smoke-vfs (mounted asset VFS)', () => checkVfs(binaryPath))
-    await check('kobato --smoke-intl (four-locale ICU data)', () => checkIntl(binaryPath))
-    await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
-    await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
+    await runServiceFreeChecks({ kobatoBinaryPath, sayakaBinaryPath, dirs, databases })
 
     {
-      await check('kobato --smoke-worker (sharp worker pool)', () => checkWorker(binaryPath, env))
-
-      const booted = await check('server boot (natives + migrations)', async () => {
-        server = await bootServer(binaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'))
-        console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
+      const booted = await check('kobato boot (natives + migrations)', async () => {
+        kobato = await bootServer(kobatoBinaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'), {
+          port: kobatoPort,
+        })
+        console.log(`    waiting for ${kobatoOrigin}/health (log: ${serverLogPath})`)
         const started = Date.now()
-        server.healthResponse = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
-        return `HTTP ${server.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s on port ${server.port}`
+        kobato.healthResponse = await waitForHttp(`${kobatoOrigin}/health`, kobato.exitState)
+        return `HTTP ${kobato.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s on port ${kobatoPort}`
       })
 
-      if (booted && server !== null) {
-        const bootedServer = server
-        await runHttpChecks(`http://127.0.0.1:${bootedServer.port}`, bootedServer.healthResponse)
-        await check('SIGTERM clean shutdown', () => checkShutdown(bootedServer))
-        await Promise.race([bootedServer.logClosed, sleep(2_000)])
+      if (booted && kobato !== null) {
+        const freshKobato = kobato
+        await check('install gate on kobato — /health 303 → /admin/setup', async () => {
+          const res = freshKobato.healthResponse ?? (await fetchManual(`${kobatoOrigin}/health`))
+          if (res.status !== 303 || res.headers.get('location') !== '/admin/setup') {
+            throw new Error(`got ${res.status} location=${res.headers.get('location') ?? '(none)'}`)
+          }
+          return '303 → /admin/setup (fresh install)'
+        })
+
+        const sayakaBooted = await check('sayaka boot on the fresh pair', async () => {
+          sayaka = await bootSayakaServer(
+            sayakaBinaryPath,
+            sayakaInstanceEnv(kobatoOrigin, sayakaPort),
+            sayakaLogPath,
+            {
+              cwd: dirs.cwd,
+            },
+          )
+          console.log(`    waiting for ${publicBaseUrl}/ (sayaka; log: ${sayakaLogPath})`)
+          const started = Date.now()
+          sayaka.healthResponse = await waitForHttp(`${publicBaseUrl}/`, sayaka.exitState)
+          return `HTTP ${sayaka.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s on port ${sayakaPort}`
+        })
+
+        if (sayakaBooted && sayaka !== null) {
+          const freshSayaka = sayaka
+          await check('install gate through sayaka — / 303 → /admin/setup', async () => {
+            const res = freshSayaka.healthResponse ?? (await fetchManual(`${publicBaseUrl}/`))
+            if (
+              res.status !== 303 ||
+              new URL(res.headers.get('location') ?? '', publicBaseUrl).pathname !== '/admin/setup'
+            ) {
+              throw new Error(`got ${res.status} location=${res.headers.get('location') ?? '(none)'}`)
+            }
+            return '303 → /admin/setup'
+          })
+          await check('/admin/setup through sayaka — SPA shell + one embedded asset', async () => {
+            const res = await fetchManual(`${publicBaseUrl}/admin/setup`)
+            if (res.status !== 200) {
+              throw new Error(`got ${res.status}`)
+            }
+            const body = await res.text()
+            const match = /(?:href|src)="(\/admin\/assets\/[^"]+?\.js)"/.exec(body)
+            if (!match) {
+              throw new Error('no /admin/assets/*.js reference found in the setup shell')
+            }
+            const asset = await fetchManual(`${publicBaseUrl}${match[1]}`)
+            const bytes = await asset.arrayBuffer()
+            const contentType = asset.headers.get('content-type') ?? ''
+            if (asset.status !== 200) {
+              throw new Error(`asset ${match[1]} answered ${asset.status}`)
+            }
+            if (!/javascript|ecmascript/i.test(contentType)) {
+              throw new Error(`unexpected asset content-type: ${contentType}`)
+            }
+            if (bytes.byteLength <= 1024) {
+              throw new Error(`suspiciously small asset: ${bytes.byteLength} bytes`)
+            }
+            return `200 shell, asset ${contentType.split(';')[0]} ${bytes.byteLength} bytes`
+          })
+        }
+
+        await check('kobato SIGTERM clean shutdown', () => checkShutdown('kobato', freshKobato))
+        kobato = null
+        await Promise.race([freshKobato.logClosed, sleep(2_000)])
+        if (sayaka !== null) {
+          const stoppedSayaka = sayaka
+          await check('sayaka SIGTERM clean shutdown', () => checkShutdown('sayaka', stoppedSayaka))
+          sayaka = null
+        }
         await check('natives cache reused by the server', () => checkNativesReuse())
         await check('config file converged (env written back)', async () => {
           const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
@@ -436,64 +528,86 @@ async function runManaged(binaryPath: string) {
           KOBATO_CACHE_DIR: dirs.cache,
           NODE_ENV: 'production',
         }
-        const restarted = await check('server restart (seeded install, config file only)', async () => {
-          server = await bootServer(binaryPath, dirs, fileOnlyEnv, serverLogPath ?? fail('serverLogPath unset'))
-          console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
+        const restarted = await check('kobato restart (seeded install, config file only)', async () => {
+          kobato = await bootServer(kobatoBinaryPath, dirs, fileOnlyEnv, serverLogPath ?? fail('serverLogPath unset'), {
+            port: kobatoPort,
+          })
+          console.log(`    waiting for ${kobatoOrigin}/health (log: ${serverLogPath})`)
           const started = Date.now()
-          server.healthResponse = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
-          return `HTTP ${server.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s on port ${server.port}`
+          kobato.healthResponse = await waitForHttp(`${kobatoOrigin}/health`, kobato.exitState)
+          return `HTTP ${kobato.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s on port ${kobatoPort}`
         })
 
-        if (restarted && server !== null) {
-          const seededServer = server
-          const baseUrl = `http://127.0.0.1:${seededServer.port}`
-          await check('GET /health — installed instance', async () => {
-            const res = seededServer.healthResponse ?? (await fetchManual(`${baseUrl}/health`))
-            if (res.status !== 200) {
-              throw new Error(`expected 200, got ${res.status}`)
-            }
-            return '200 (admin present)'
+        if (restarted && kobato !== null) {
+          const seededKobato = kobato
+          const sayakaRestarted = await check('sayaka boot on the seeded pair', async () => {
+            sayaka = await bootSayakaServer(
+              sayakaBinaryPath,
+              sayakaInstanceEnv(kobatoOrigin, sayakaPort),
+              sayakaLogPath,
+              { cwd: dirs.cwd },
+            )
+            console.log(`    waiting for ${publicBaseUrl}/ (sayaka; log: ${sayakaLogPath})`)
+            const started = Date.now()
+            sayaka.healthResponse = await waitForHttp(`${publicBaseUrl}/`, sayaka.exitState)
+            return `HTTP ${sayaka.healthResponse.status} after ${((Date.now() - started) / 1000).toFixed(1)}s`
           })
-          await check('GET / — SSR HTML (installed)', async () => {
-            const body = await fetchSsrPage(baseUrl, '/')
-            return `200 text/html, ${body.length} bytes`
-          })
-          await checkCalendar(baseUrl, { optional: false })
-          const BROWSER_UA =
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
-          const PAGE_VIEWS = 3
-          await check(`${PAGE_VIEWS} page views recorded over HTTP`, async () => {
-            for (let i = 0; i < PAGE_VIEWS; i++) {
-              const res = await fetch(`${baseUrl}/`, {
-                headers: { 'user-agent': BROWSER_UA },
-                redirect: 'manual',
-                signal: AbortSignal.timeout(5_000),
-              })
+
+          if (sayakaRestarted && sayaka !== null) {
+            await check('GET /health — installed instance (kobato origin)', async () => {
+              const res = seededKobato.healthResponse ?? (await fetchManual(`${kobatoOrigin}/health`))
               if (res.status !== 200) {
-                throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
+                throw new Error(`expected 200, got ${res.status}`)
               }
-            }
-            await sleep(1_500)
-            return `${PAGE_VIEWS} GET / with a browser UA`
-          })
-          await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
-          await Promise.race([seededServer.logClosed, sleep(2_000)])
-          await check('natives cache reused after restart', () => checkNativesReuse())
-          await check('DuckDB analytics round-trip (page views → access_events)', async () => {
-            const { rows, paths } = await scanAccessEvents(databases.analytics)
-            if (rows < PAGE_VIEWS) {
-              throw new Error(
-                `expected ≥ ${PAGE_VIEWS} access_events rows after ${PAGE_VIEWS} page views, found ${rows}`,
-              )
-            }
-            return `${rows} access_events rows, ${paths} distinct paths`
-          })
+              return '200 (admin present)'
+            })
+            await runHttpChecks(publicBaseUrl, kobatoOrigin, null)
+            await checkCalendar(publicBaseUrl, { optional: false })
+            const BROWSER_UA =
+              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+            const PAGE_VIEWS = 3
+            await check(`${PAGE_VIEWS} page views recorded over HTTP (sayaka origin)`, async () => {
+              for (let i = 0; i < PAGE_VIEWS; i++) {
+                const res = await fetch(`${publicBaseUrl}/`, {
+                  headers: { 'user-agent': BROWSER_UA },
+                  redirect: 'manual',
+                  signal: AbortSignal.timeout(5_000),
+                })
+                if (res.status !== 200) {
+                  throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
+                }
+              }
+              await sleep(1_500)
+              return `${PAGE_VIEWS} GET / with a browser UA through sayaka`
+            })
+            await check('kobato SIGTERM clean shutdown (seeded install)', () => checkShutdown('kobato', seededKobato))
+            kobato = null
+            await Promise.race([seededKobato.logClosed, sleep(2_000)])
+            const seededSayaka = sayaka
+            await check('sayaka SIGTERM clean shutdown (seeded install)', () => checkShutdown('sayaka', seededSayaka))
+            sayaka = null
+            await check('natives cache reused after restart', () => checkNativesReuse())
+            await check('DuckDB analytics round-trip (page views → access_events)', async () => {
+              const { rows, paths } = await scanAccessEvents(databases.analytics)
+              if (rows < PAGE_VIEWS) {
+                throw new Error(
+                  `expected ≥ ${PAGE_VIEWS} access_events rows after ${PAGE_VIEWS} page views, found ${rows}`,
+                )
+              }
+              return `${rows} access_events rows, ${paths} distinct paths`
+            })
+          } else if (kobato !== null && !kobato.exitState.exited) {
+            await checkShutdown('kobato', seededKobato)
+            kobato = null
+          }
         }
       }
     }
   } finally {
-    if (server !== null && !server.exitState.exited) {
-      server.child.kill('SIGKILL')
+    for (const server of [sayaka, kobato]) {
+      if (server !== null && !server.exitState.exited) {
+        server.child.kill('SIGKILL')
+      }
     }
   }
 
@@ -502,23 +616,17 @@ async function runManaged(binaryPath: string) {
   }
 }
 
-async function runBinaryOnly(binaryPath: string) {
-  await ensureBinaryExists(binaryPath)
+async function runBinaryOnly(kobatoBinaryPath: string, sayakaBinaryPath: string) {
+  await ensureBinaryExists(kobatoBinaryPath)
+  await ensureBinaryExists(sayakaBinaryPath)
   const dirs = await makeTempDirs()
   const databases = smokeDatabases(dirs)
 
-  console.log(`    binary:   ${binaryPath}`)
+  console.log(`    kobato:   ${kobatoBinaryPath}`)
+  console.log(`    sayaka:   ${sayakaBinaryPath}`)
   console.log(`    temp dir: ${dirs.root}`)
 
-  await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
-  await check('kobato --version', () => checkVersion(binaryPath))
-  await check('kobato --smoke-vfs (mounted asset VFS)', () => checkVfs(binaryPath))
-  await check('kobato --smoke-intl (four-locale ICU data)', () => checkIntl(binaryPath))
-  await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
-  await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
-  await check('kobato --smoke-worker (sharp worker pool)', () =>
-    checkWorker(binaryPath, seaInstanceEnv(dirs, databases)),
-  )
+  await runServiceFreeChecks({ kobatoBinaryPath, sayakaBinaryPath, dirs, databases })
 
   return async () => {
     await rm(dirs.root, { recursive: true, force: true }).catch(() => undefined)
@@ -541,25 +649,27 @@ async function main() {
 
   if (args[0] === '--external') {
     if (!args[1]) {
-      fail('Usage: node tools/pack/src/sea/smoke.ts --external <baseUrl>')
+      fail('Usage: node tools/pack/src/sea/smoke.ts --external <sayakaBaseUrl>')
     }
-    const baseUrl = normalizeBaseUrl(args[1])
-    console.log(`==> SEA smoke (external: ${baseUrl})`)
-    await runHttpChecks(baseUrl, null)
-    await checkCalendar(baseUrl, { optional: true })
+    const publicBaseUrl = normalizeBaseUrl(args[1])
+    console.log(`==> SEA smoke (external: ${publicBaseUrl})`)
+    await runHttpChecks(publicBaseUrl, null, null)
+    await checkCalendar(publicBaseUrl, { optional: true })
   } else if (args[0] === '--binary-only') {
-    const binaryPath = args[1] ? resolvePath(repoRoot, args[1]) : seaBinaryPath()
+    const kobatoBinary = args[1] ? resolvePath(repoRoot, args[1]) : seaBinaryPath('kobato')
+    const sayakaBinary = args[1] ? pairedSayakaBinary(kobatoBinary) : seaBinaryPath('sayaka')
     console.log('==> SEA smoke (binary-only)')
-    cleanup = await runBinaryOnly(binaryPath)
+    cleanup = await runBinaryOnly(kobatoBinary, sayakaBinary)
   } else {
     if (args[0]?.startsWith('--')) {
       fail(
-        'Usage: node tools/pack/src/sea/smoke.ts [--external <baseUrl> | --binary-only [path-to-binary] | path-to-binary]',
+        'Usage: node tools/pack/src/sea/smoke.ts [--external <sayakaBaseUrl> | --binary-only [path-to-kobato-binary] | path-to-kobato-binary]',
       )
     }
-    const binaryPath = args[0] ? resolvePath(repoRoot, args[0]) : seaBinaryPath()
-    console.log('==> SEA smoke (managed)')
-    cleanup = await runManaged(binaryPath)
+    const kobatoBinary = args[0] ? resolvePath(repoRoot, args[0]) : seaBinaryPath('kobato')
+    const sayakaBinary = args[0] ? pairedSayakaBinary(kobatoBinary) : seaBinaryPath('sayaka')
+    console.log('==> SEA smoke (managed pair)')
+    cleanup = await runManaged(kobatoBinary, sayakaBinary)
   }
 
   const failed = results.filter((result) => !result.ok)
@@ -585,6 +695,10 @@ async function main() {
     await cleanup()
   }
   process.exit(failed.length === 0 ? 0 : 1)
+}
+
+function pairedSayakaBinary(kobatoBinary: string): string {
+  return kobatoBinary.replace(/(^|\/)kobato(\.exe)?$/, `$1sayaka$2`)
 }
 
 await main()

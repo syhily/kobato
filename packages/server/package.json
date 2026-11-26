@@ -44,7 +44,6 @@
     "@opentelemetry/sdk-trace": "catalog:",
     "@orpc/contract": "catalog:",
     "@orpc/server": "catalog:",
-    "@react-router/dev": "catalog:",
     "@shikijs/transformers": "catalog:",
     "@simplewebauthn/server": "catalog:",
     "@smithy/types": "catalog:",

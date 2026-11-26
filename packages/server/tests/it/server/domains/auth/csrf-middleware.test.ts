@@ -9,7 +9,7 @@ const PROCEDURE_ROUTES: readonly string[] = [
   '/rpc/content/bootstrap',
   '/rpc/public/comments/getRaw',
   '/rpc/public/comments/replyComment',
-  '/rpc/account/notifications/list',
+  '/rpc/public/notifications/list',
   '/rpc/admin/analytics/overview',
 ]
 
@@ -125,7 +125,7 @@ describe('csrfGuard middleware', () => {
     '/rpc/comments/getRaw',
     '/rpc/public/comments/replyComment',
     '/rpc/comments/replyComment',
-    '/rpc/account/notifications/list',
+    '/rpc/public/notifications/list',
     '/rpc/notifications/list',
     '/rpc/admin/analytics/overview',
     '/rpc/analytics/overview',

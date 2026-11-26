@@ -28,7 +28,6 @@ const PINNED_INLINE_PROJECT_NAMES = [
   'shared-unit',
   'shared-snaps',
   'web-unit',
-  'web-tz-unit',
   'web-snaps',
   'ui-unit',
   'ui-snaps',
@@ -41,7 +40,11 @@ const PINNED_INLINE_PROJECT_NAMES = [
   'app-unit',
   'app-it',
   'app-duckdb',
+  'app-tz-unit',
   'app-snaps',
+  'sayaka-unit',
+  'sayaka-it',
+  'sayaka-snaps',
 ] as const
 
 const PINNED_CONFIG_PATH_ENTRIES = [
@@ -52,7 +55,12 @@ const PINNED_CONFIG_PATH_ENTRIES = [
   traceUnitConfigPath,
 ] as const
 
-const OUT_OF_DEFAULT_TEST_TREES = ['apps/kobato/tests/e2e', 'apps/kobato/tests/browser'] as const
+const OUT_OF_DEFAULT_TEST_TREES = [
+  'apps/kobato/tests/e2e',
+  'apps/kobato/tests/browser',
+  'apps/sayaka/tests/e2e',
+  'apps/sayaka/tests/browser',
+] as const
 
 const SKIPPED_TREE_DIRS = new Set(['node_modules', '__snapshots__', 'e2e', 'browser'])
 

@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { ImagesView } from '@/ui/images/ImagesView'
 
-export const loader = guardOnlyLoader('author')
+export const clientLoader = guardLoader('author')
 
 export const meta = titleMeta('meta.title.admin.images')
 

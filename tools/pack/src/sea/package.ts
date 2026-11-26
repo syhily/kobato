@@ -24,8 +24,8 @@ function parseArgs(): CliArgs {
   return { command, target, deb: flags.includes('--deb') }
 }
 
-function binaryName(target: string): string {
-  return process.platform === 'win32' ? `kobato-${target}.exe` : `kobato-${target}`
+function binaryName(app: 'kobato' | 'sayaka', target: string): string {
+  return process.platform === 'win32' ? `${app}-${target}.exe` : `${app}-${target}`
 }
 
 async function sha256File(path: string): Promise<string> {
@@ -51,16 +51,19 @@ function capture(command: string, args: string[]): string {
 }
 
 async function renameBinary(target: string): Promise<void> {
-  const shaPath = seaBinarySha256Path()
-  const sidecar = await readFile(shaPath, 'utf-8')
-  const recorded = sidecar.trim().split(/\s+/)[0]
-  if (recorded !== (await sha256File(seaBinaryPath()))) {
-    fail(`checksum mismatch for ${seaBinaryPath()} — rebuild with pnpm run sea:build`)
+  for (const app of ['kobato', 'sayaka'] as const) {
+    const binaryPath = seaBinaryPath(app)
+    const shaPath = seaBinarySha256Path(app)
+    const sidecar = await readFile(shaPath, 'utf-8')
+    const recorded = sidecar.trim().split(/\s+/)[0]
+    if (recorded !== (await sha256File(binaryPath))) {
+      fail(`checksum mismatch for ${binaryPath} — rebuild with pnpm run sea:build`)
+    }
+    const dest = join(seaDistDir(), binaryName(app, target))
+    await rename(binaryPath, dest)
+    await rm(shaPath)
+    console.log(`==> renamed to ${dest} (build checksum verified)`)
   }
-  const dest = join(seaDistDir(), binaryName(target))
-  await rename(seaBinaryPath(), dest)
-  await rm(shaPath)
-  console.log(`==> renamed to ${dest} (build checksum verified)`)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,21 +81,25 @@ async function readAppVersion(): Promise<string> {
 
 async function archiveBinary(target: string, deb: boolean): Promise<void> {
   const dist = seaDistDir()
-  const binName = binaryName(target)
-  const binPath = join(dist, binName)
-  const tarName = `kobato-${target}.tar.gz`
 
-  const tar = spawnSync('tar', ['-czf', tarName, binName], { cwd: dist })
-  if (tar.error || tar.status !== 0) {
-    fail(`tar failed for ${tarName}: ${tar.error?.message ?? `exit ${tar.status ?? 'unknown'}`}`)
+  for (const app of ['kobato', 'sayaka'] as const) {
+    const binName = binaryName(app, target)
+    const binPath = join(dist, binName)
+    const tarName = `${app}-${target}.tar.gz`
+
+    const tar = spawnSync('tar', ['-czf', tarName, binName], { cwd: dist })
+    if (tar.error || tar.status !== 0) {
+      fail(`tar failed for ${tarName}: ${tar.error?.message ?? `exit ${tar.status ?? 'unknown'}`}`)
+    }
+
+    await writeVerifiedChecksum(join(dist, tarName), `${join(dist, tarName)}.sha256`, tarName)
+    await writeVerifiedChecksum(binPath, join(dist, `${app}-${target}.sha256`), binName)
+    console.log(`==> packaged dist-sea/${tarName} (+ checksum sidecars)`)
   }
-
-  await writeVerifiedChecksum(join(dist, tarName), `${join(dist, tarName)}.sha256`, tarName)
-  await writeVerifiedChecksum(binPath, join(dist, `kobato-${target}.sha256`), binName)
-  console.log(`==> packaged dist-sea/${tarName} (+ checksum sidecars)`)
 
   if (deb) {
     const version = await readAppVersion()
+    const binName = binaryName('kobato', target)
     const debName = basename(capture('bash', ['scripts/build-deb.sh', join('dist-sea', binName), version, 'dist-sea']))
     const debPath = join(dist, debName)
     await writeVerifiedChecksum(debPath, `${debPath}.sha256`, debName)

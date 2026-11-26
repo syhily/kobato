@@ -50,7 +50,7 @@ beforeEach(async () => {
 })
 
 async function apply(input: Record<string, unknown>): Promise<Response> {
-  return callRpc('/account/friends/apply', input, makePublicCtx({ db }))
+  return callRpc('/public/friends/apply', input, makePublicCtx({ db }))
 }
 
 async function friendRows(): Promise<(typeof friend.$inferSelect)[]> {

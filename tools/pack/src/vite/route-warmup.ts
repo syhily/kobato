@@ -19,8 +19,20 @@ const TIER2_PREFIXES = [
 
 export type Tier2Bucket = (typeof TIER2_PREFIXES)[number][1]
 
-export function tier2BucketForRouteId(id: string): Tier2Bucket | null {
-  for (const [prefix, bucket] of TIER2_PREFIXES) {
+export interface RouteWarmupTiering {
+  tier1Routes?: readonly string[]
+  tier2Prefixes?: ReadonlyArray<readonly [string, Tier2Bucket]>
+}
+
+export interface RouteWarmupPluginOptions extends RouteWarmupTiering {
+  warmupEntry?: string
+}
+
+export function tier2BucketForRouteId(
+  id: string,
+  tier2Prefixes: ReadonlyArray<readonly [string, Tier2Bucket]> = TIER2_PREFIXES,
+): Tier2Bucket | null {
+  for (const [prefix, bucket] of tier2Prefixes) {
     if (id.startsWith(prefix)) {
       return bucket
     }
@@ -28,14 +40,18 @@ export function tier2BucketForRouteId(id: string): Tier2Bucket | null {
   return null
 }
 
-export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket, string[]> {
-  const tier1 = new Set<string>(TIER1_ROUTES)
+export function deriveTier2RouteIds(
+  manifest: RouteManifest,
+  tiering: RouteWarmupTiering = {},
+): Record<Tier2Bucket, string[]> {
+  const tier1 = new Set<string>(tiering.tier1Routes ?? TIER1_ROUTES)
+  const tier2Prefixes = tiering.tier2Prefixes ?? TIER2_PREFIXES
   const buckets: Record<Tier2Bucket, string[]> = { public: [], admin: [], editor: [], auth: [] }
   for (const id of Object.keys(manifest.routes)) {
     if (tier1.has(id)) {
       continue
     }
-    const bucket = tier2BucketForRouteId(id)
+    const bucket = tier2BucketForRouteId(id, tier2Prefixes)
     if (bucket) {
       buckets[bucket].push(id)
     }
@@ -69,52 +85,54 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
-const WARMUP_ENTRY = fileURLToPath(
+const DEFAULT_WARMUP_ENTRY = fileURLToPath(
   new URL('../../../../apps/kobato/src/route-warmup/idle-script.entry.ts', import.meta.url),
 )
 const VIRTUAL_ID = 'virtual:kobato-route-warmup'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
-let compiledWarmupPromise: Promise<string> | null = null
-
-function bundleWarmupScript(): Promise<string> {
-  if (!compiledWarmupPromise) {
-    compiledWarmupPromise = (async () => {
-      const result = await build({
-        configFile: false,
-        logLevel: 'warn',
-        resolve: { tsconfigPaths: true },
-        build: {
-          write: false,
-          minify: true,
-          sourcemap: false,
-          target: 'es2020',
-          rolldownOptions: {
-            input: WARMUP_ENTRY,
-            output: { format: 'iife' },
-          },
-        },
-      })
-
-      const outputs = (Array.isArray(result) ? result : [result]).flatMap((r) => ('output' in r ? r.output : []))
-      for (const chunk of outputs) {
-        if (chunk.type === 'chunk' && chunk.fileName.endsWith('.js')) {
-          if (!chunk.code.includes(CHUNKS_SENTINEL)) {
-            throw new Error(
-              '[route-warmup] bundled inline script is missing the chunk sentinel — did the minifier config change?',
-            )
-          }
-          return chunk.code
-        }
-      }
-      throw new Error('[route-warmup] inline script build produced no JS chunk')
-    })()
-  }
-  return compiledWarmupPromise
-}
-
-export function routeWarmupPlugin(): Plugin {
+export function routeWarmupPlugin(options: RouteWarmupPluginOptions = {}): Plugin {
+  const tiering: RouteWarmupTiering = { tier1Routes: options.tier1Routes, tier2Prefixes: options.tier2Prefixes }
+  const warmupEntry = options.warmupEntry ?? DEFAULT_WARMUP_ENTRY
   let isServe = false
+  let compiledWarmupPromise: Promise<string> | null = null
+
+  function bundleWarmupScript(): Promise<string> {
+    if (!compiledWarmupPromise) {
+      compiledWarmupPromise = (async () => {
+        const result = await build({
+          configFile: false,
+          logLevel: 'warn',
+          resolve: { tsconfigPaths: true },
+          build: {
+            write: false,
+            minify: true,
+            sourcemap: false,
+            target: 'es2020',
+            rolldownOptions: {
+              input: warmupEntry,
+              output: { format: 'iife' },
+            },
+          },
+        })
+
+        const outputs = (Array.isArray(result) ? result : [result]).flatMap((r) => ('output' in r ? r.output : []))
+        for (const chunk of outputs) {
+          if (chunk.type === 'chunk' && chunk.fileName.endsWith('.js')) {
+            if (!chunk.code.includes(CHUNKS_SENTINEL)) {
+              throw new Error(
+                '[route-warmup] bundled inline script is missing the chunk sentinel — did the minifier config change?',
+              )
+            }
+            return chunk.code
+          }
+        }
+        throw new Error('[route-warmup] inline script build produced no JS chunk')
+      })()
+    }
+    return compiledWarmupPromise
+  }
+
   return {
     name: 'route-warmup',
     enforce: 'post',
@@ -181,8 +199,8 @@ export function routeWarmupPlugin(): Plugin {
           chunkSizes.set(`/assets/${file}`, stat.size)
         }
 
-        const tier2Ids = deriveTier2RouteIds(manifest)
-        const t1Raw = collectManifestChunks(manifest, TIER1_ROUTES)
+        const tier2Ids = deriveTier2RouteIds(manifest, tiering)
+        const t1Raw = collectManifestChunks(manifest, [...(tiering.tier1Routes ?? TIER1_ROUTES)])
         const t2PubRaw = collectManifestChunks(manifest, tier2Ids.public)
         const t2AdminRaw = collectManifestChunks(manifest, tier2Ids.admin)
         const t2EditorRaw = collectManifestChunks(manifest, tier2Ids.editor)

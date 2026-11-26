@@ -17,6 +17,6 @@ export default defineConfig({
     environment: 'happy-dom',
     include: ['packages/web/*/tests/snaps/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude],
-    setupFiles: [path.resolve(REPO_ROOT, 'packages/web/admin/tests/utils/setup/snaps.ts')],
+    setupFiles: [path.resolve(REPO_ROOT, 'packages/web/kit/tests/utils/setup/snaps.ts')],
   },
 })

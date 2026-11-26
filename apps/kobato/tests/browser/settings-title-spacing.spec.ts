@@ -1,8 +1,12 @@
-import { expect, test } from '@tests/browser/support/fixtures'
-import { openSettings } from '@tests/browser/support/journey'
+import { expect, test } from '@kobato/pack/browser/fixtures'
+import { openSettings } from '@kobato/pack/browser/journey'
 
 const ANALYTICS_NAV_LABEL = '分析统计'
 const COLLECTION_TITLE = '采集与过滤策略'
+
+test.beforeEach(async ({ settingsApi }) => {
+  await settingsApi.resetGeneral()
+})
 
 test('settings section titles have balanced spacing with adjacent cards', async ({ adminPage: page }) => {
   await openSettings(page)

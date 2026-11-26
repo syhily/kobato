@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { AddMusicView } from '@kobato/web-admin/ui/music/AddMusicView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { AddMusicView } from '@/ui/music/AddMusicView'
 
-export const loader = guardOnlyLoader('author')
+export const clientLoader = guardLoader('author')
 
 export const meta = titleMeta('meta.title.admin.musicAdd')
 

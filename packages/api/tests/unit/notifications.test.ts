@@ -1,5 +1,5 @@
-import { replyNotificationInput } from '@kobato/api/contracts/account/notifications'
 import { adminSendBroadcastInput, adminSendDirectInput } from '@kobato/api/contracts/admin/notifications'
+import { replyNotificationInput } from '@kobato/api/contracts/public/notifications'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import { makeTranslator } from '@kobato/i18n/tests/utils/i18n'

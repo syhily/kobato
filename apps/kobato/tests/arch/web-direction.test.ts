@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 
 const KIT_ROOT = 'packages/web/kit/src'
-const PUBLIC_ROOT = 'packages/web/public/src'
-const ADMIN_ROOTS = ['packages/web/admin/src/ui', 'packages/web/admin/src/styles']
+const WORKSPACE_UI_ROOT = 'apps/kobato/src/ui'
 
 function walk(root: string, out: string[]): void {
   if (!existsSync(root)) {
@@ -54,32 +53,27 @@ function offendersImporting(roots: string[], banned: readonly string[]): string[
 }
 
 describe('web direction', () => {
-  it('keeps packages/web at exactly the two product leaves plus the cross-surface kit', () => {
+  it('keeps packages/web at exactly the cross-surface kit', () => {
     const leaves = readdirSync(`${REPO_ROOT}/packages/web`, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
 
-    expect(leaves, 'cross-leaf modules live in @kobato/web-kit; app-only runtime lives in apps/kobato').toEqual([
-      'admin',
-      'kit',
-      'public',
-    ])
+    expect(
+      leaves,
+      'sayaka is the public site — an app under apps/; the admin UI moved into apps/kobato/src/ui',
+    ).toEqual(['kit'])
   })
 
-  it('keeps the kit below both leaves: no kit module imports @kobato/web-admin, @kobato/web-public, or @kobato/server', () => {
-    expect(offendersImporting([KIT_ROOT], ['@kobato/web-admin', '@kobato/web-public', '@kobato/server'])).toEqual([])
+  it('keeps the kit below every consumer: no kit module imports @kobato/server or the sayaka app', () => {
+    expect(offendersImporting([KIT_ROOT], ['@kobato/server', '@sayaka/'])).toEqual([])
   })
 
-  it('keeps the public leaf below admin: no public module imports @kobato/web-admin or @kobato/server', () => {
-    expect(offendersImporting([PUBLIC_ROOT], ['@kobato/web-admin', '@kobato/server'])).toEqual([])
+  it('keeps the workspace UI tree off the sayaka app: no apps/kobato/src/ui module imports @sayaka/', () => {
+    expect(offendersImporting([WORKSPACE_UI_ROOT], ['@sayaka/'])).toEqual([])
   })
 
-  it('keeps the admin leaf off the public leaf: no admin module imports @kobato/web-public', () => {
-    expect(offendersImporting(ADMIN_ROOTS, ['@kobato/web-public'])).toEqual([])
-  })
-
-  it('keeps route title/meta resolution in the app layer: no web package imports @kobato/catalog/seo', () => {
-    expect(offendersImporting([KIT_ROOT, PUBLIC_ROOT, ...ADMIN_ROOTS], ['@kobato/catalog/seo'])).toEqual([])
+  it('keeps route title/meta resolution in the app layer: no web package or workspace UI module imports @kobato/catalog/seo', () => {
+    expect(offendersImporting([KIT_ROOT, WORKSPACE_UI_ROOT], ['@kobato/catalog/seo'])).toEqual([])
   })
 })

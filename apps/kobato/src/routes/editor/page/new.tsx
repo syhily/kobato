@@ -1,10 +1,10 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell'
 import { useNavigate } from 'react-router'
 
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { PageEditorShell } from '@/ui/pages/PageEditorShell'
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 export const meta = titleMeta('meta.title.editor.pageNew')
 

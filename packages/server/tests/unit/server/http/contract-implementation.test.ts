@@ -1,5 +1,5 @@
 import type { apiContract } from '@kobato/api/contract'
-import type { LikeIncreaseInput } from '@kobato/api/contracts/account/likes'
+import type { LikeIncreaseInput } from '@kobato/api/contracts/public/likes'
 import type { ContractImplementation } from '@kobato/server/http/contract-implementation'
 import type { AuthedHandlerContext, HandlerContext } from '@kobato/server/http/orpc-base'
 
@@ -8,8 +8,7 @@ import {
   likeDecreaseOutput,
   likeIncreaseInput,
   likeIncreaseOutput,
-} from '@kobato/api/contracts/account/likes'
-import { likesContract } from '@kobato/api/rpc/account/likes'
+} from '@kobato/api/contracts/public/likes'
 import { adminPagesContract } from '@kobato/api/rpc/admin/pages'
 import { adminPostsContract } from '@kobato/api/rpc/admin/posts'
 import {
@@ -19,10 +18,11 @@ import {
   type ProcedureRouteOf,
   type RpcProcedureMeta,
 } from '@kobato/api/rpc/define-procedure'
+import { likesContract } from '@kobato/api/rpc/public/likes'
 import { apiRouter } from '@kobato/server/http/api-router'
-import { likesRouter } from '@kobato/server/http/controllers/account/likes.controller'
 import { adminPagesRouter } from '@kobato/server/http/controllers/admin/pages.controller'
 import { adminPostsRouter } from '@kobato/server/http/controllers/admin/posts.controller'
+import { likesRouter } from '@kobato/server/http/controllers/public/likes.controller'
 import { implementAuthed, implementPublic, resourceRateLimit } from '@kobato/server/http/orpc-base'
 import { oc } from '@orpc/contract'
 import { describe, expect, expectTypeOf, it } from 'vitest'
@@ -88,7 +88,7 @@ describe('contract implementer typing', () => {
 describe('router composition against the contract', () => {
   it('likesRouter and its apiRouter mount carry the branded shape', () => {
     const composed: LikesShape = likesRouter
-    const mounted: LikesShape = apiRouter.account.likes
+    const mounted: LikesShape = apiRouter.public.likes
     expectTypeOf(apiRouter).toExtend<ContractImplementation<typeof apiContract, HandlerContext>>()
     expectTypeOf(likesRouter.increase['~orpc'].route.method).toEqualTypeOf<'POST'>()
     expectTypeOf(likesRouter.increase['~orpc'].route.path).toEqualTypeOf<'/likes/increase'>()
@@ -196,7 +196,7 @@ describe('router composition against the contract', () => {
     expectTypeOf<AllBranded<typeof adminPostsContract>>().toEqualTypeOf<true>()
     expectTypeOf<AllBranded<typeof plainPing>>().toEqualTypeOf<false>()
     expectTypeOf<
-      AllBranded<{ nested: { ok: typeof apiRouter.account.likes.increase; plain: typeof plainPing } }>
+      AllBranded<{ nested: { ok: typeof apiRouter.public.likes.increase; plain: typeof plainPing } }>
     >().toEqualTypeOf<false>()
   })
 })

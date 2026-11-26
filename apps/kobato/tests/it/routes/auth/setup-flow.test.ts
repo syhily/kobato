@@ -8,28 +8,33 @@ import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batch
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { emptySession } from '@kobato/server/tests/utils/session'
 import { makeRouteContext } from '@tests/utils/context'
+import { orpcStubCookies } from '@tests/utils/orpc-client-mock'
 import { eq, sql } from 'drizzle-orm'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/server/http/request-context', async () => {
-  const { createRequestContextMockModule } = await import('@tests/utils/auth-context-mock')
-  return createRequestContextMockModule()
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
 })
 
 const db = getTestDb()
 
 const CSRF_TOKEN = 'setup-flow-csrf-token'
 
-const mockContext = await import('@kobato/server/http/request-context')
-const { action, loader } = await import('@/routes/auth/setup/index')
+const route = await import('@/routes/auth/setup/index')
 
-beforeAll(() => {
-  const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
-  vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
-    ...fromProvider!(args),
-    db,
-  }))
-})
+function routeContext(options: Record<string, unknown> = {}) {
+  return makeRouteContext({ db, session: emptySession(), ...options })
+}
+
+async function loader(args: Record<string, unknown> & { request: Request }): Promise<unknown> {
+  void args
+  return route.clientLoader()
+}
+
+async function action(args: Record<string, unknown> & { request: Request }): Promise<unknown> {
+  return route.clientAction({ request: args.request } as never)
+}
 
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
@@ -54,12 +59,10 @@ describe('integration: /admin/setup full install flow', () => {
     const session = emptySession()
     session.set('csrfToken', CSRF_TOKEN)
 
+    routeContext({ session })
+
     const loaderResult = await loader({
       request: new Request('http://localhost/admin/setup'),
-      url: new URL('http://localhost/admin/setup'),
-      context: makeRouteContext({ session }),
-      params: {},
-      pattern: 'admin/setup',
     })
 
     const loaderPayload = (loaderResult as { data: Record<string, unknown> }).data
@@ -71,15 +74,13 @@ describe('integration: /admin/setup full install flow', () => {
     verifyFormData.set('setup_token', setupToken)
     verifyFormData.set('csrf_token', CSRF_TOKEN)
 
+    routeContext({ session })
+
     const verifyResult = await action({
       request: new Request('http://localhost/admin/setup', {
         method: 'POST',
         body: verifyFormData,
       }),
-      url: new URL('http://localhost/admin/setup'),
-      context: makeRouteContext({ session }),
-      params: {},
-      pattern: 'admin/setup',
     })
 
     const verifyPayload = (verifyResult as { data?: Record<string, unknown> }).data
@@ -94,16 +95,23 @@ describe('integration: /admin/setup full install flow', () => {
     installFormData.set('locale', 'en-US')
     installFormData.set('csrf_token', CSRF_TOKEN)
 
-    const response = (await action({
-      request: new Request('http://localhost/admin/setup', {
-        method: 'POST',
-        body: installFormData,
-      }),
-      url: new URL('http://localhost/admin/setup'),
-      context: makeRouteContext({ session }),
-      params: {},
-      pattern: 'admin/setup',
-    })) as Response
+    routeContext({ session })
+
+    let response: Response
+    try {
+      await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: installFormData,
+        }),
+      })
+      throw new Error('expected the install action to throw its redirect')
+    } catch (error) {
+      if (!(error instanceof Response)) {
+        throw error
+      }
+      response = error
+    }
 
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe('/admin')
@@ -152,8 +160,7 @@ describe('integration: /admin/setup full install flow', () => {
 
     expect(await sqliteOf(db).select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
 
-    const cookies = response.headers.getSetCookie()
-    expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)
+    expect(orpcStubCookies().some((c) => c.startsWith('__session='))).toBe(true)
   })
 
   it('install action without verification returns error', async () => {
@@ -168,15 +175,13 @@ describe('integration: /admin/setup full install flow', () => {
     formData.set('password', 'CorrectHorse1')
     formData.set('csrf_token', CSRF_TOKEN)
 
+    routeContext({ session })
+
     const result = await action({
       request: new Request('http://localhost/admin/setup', {
         method: 'POST',
         body: formData,
       }),
-      url: new URL('http://localhost/admin/setup'),
-      context: makeRouteContext({ session }),
-      params: {},
-      pattern: 'admin/setup',
     })
 
     const payload = (result as { data?: { error?: string } }).data

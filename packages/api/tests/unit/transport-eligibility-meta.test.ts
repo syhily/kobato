@@ -13,18 +13,26 @@ function markedPaths(flag: 'installGateExempt' | 'telemetryExcluded'): string[] 
 }
 
 describe('install-gate and telemetry metadata', () => {
-  it('exempts exactly setup restore and RUM status from the install gate', () => {
+  it('exempts exactly the setup surface, bootstrap, the branding assets, RUM status, and the two inbound protocols from the install gate', () => {
     expect(markedPaths('installGateExempt')).toEqual([
+      '/rpc/account/setup/install',
       '/rpc/account/setup/restore',
+      '/rpc/account/setup/status',
+      '/rpc/account/setup/verifyToken',
+      '/rpc/public/branding/asset',
+      '/rpc/public/content/bootstrap',
+      '/rpc/public/observability/rumIntake',
       '/rpc/public/observability/rumStatus',
+      '/rpc/public/webmentions/receive',
     ])
   })
 
-  it('excludes exactly the device beacon, realtime events, and RUM status from self telemetry', () => {
+  it('excludes exactly the device beacon, realtime events, RUM status, and the RUM intake from self telemetry', () => {
     expect(markedPaths('telemetryExcluded')).toEqual([...TELEMETRY_EXCLUDED_RPC_PATHS].sort())
     expect(markedPaths('telemetryExcluded')).toEqual([
       '/rpc/admin/analytics/events',
       '/rpc/public/analytics/recordDeviceEnv',
+      '/rpc/public/observability/rumIntake',
       '/rpc/public/observability/rumStatus',
     ])
   })

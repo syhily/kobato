@@ -8,7 +8,7 @@ formatters).
 Never move back here: role/security and the SSRF/passkey network boundary (`@kobato/auth`); `toc`
 (`@kobato/inkling/headless`); avatar URL rules and the Gravatar mirror policy (`@kobato/assets`); app identity
 (`@kobato/distribution/app`); Zod helpers, comment entity parse/serialize, and the `Comments` summary
-(`@kobato/api/contracts`); `is-bot` (`@kobato/server/infra/http`); session sort (`@kobato/web-admin/ui/sessions`).
+(`@kobato/api/contracts`); `is-bot` (`@kobato/api/client`); session sort (`apps/kobato/src/ui/sessions`).
 
 - Allowed deps: `@kobato/i18n` only. Never the api contracts, settings, cache, assets, sanitize, or any product package.
 - No React, no `node:*` value imports (umbrella rules apply).

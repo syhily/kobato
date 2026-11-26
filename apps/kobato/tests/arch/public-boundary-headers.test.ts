@@ -4,7 +4,7 @@ import { parseAst } from 'vite'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const PUBLIC_ROUTES_DIR = join(PROJECT_ROOT, 'apps/kobato/src/routes/public')
+const PUBLIC_ROUTES_DIR = join(PROJECT_ROOT, 'apps/sayaka/src/routes')
 
 const LEGITIMATE_EXCEPTIONS: ReadonlySet<string> = new Set()
 
@@ -194,7 +194,7 @@ describe('public route ErrorBoundary modules preserve document headers — scann
 
 describe('public route ErrorBoundary modules preserve document headers', () => {
   it('scans a non-vacuous set (the public layout owns the current boundary)', () => {
-    expect(publicBoundaryModules()).toContain('apps/kobato/src/routes/public/layout.tsx')
+    expect(publicBoundaryModules()).toContain('apps/sayaka/src/routes/layout.tsx')
   })
 
   it('every public module exporting ErrorBoundary forwards documentHeaders through headers()', () => {

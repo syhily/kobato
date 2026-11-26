@@ -36,7 +36,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-const WEB_SRC_ROOTS = ['packages/web/admin/src', 'packages/web/kit/src', 'packages/web/public/src']
+const WEB_SRC_ROOTS = ['apps/kobato/src/ui', 'packages/web/kit/src']
 
 function packageDirs(): string[] {
   const out: string[] = []
@@ -109,8 +109,8 @@ describe('structure conventions', () => {
   it('contains no doubled directory segment under any src tree', () => {
     const roots = [
       'packages/server/src',
-      'packages/web/admin/src',
-      'packages/web/public/src',
+      'apps/kobato/src/ui',
+      'packages/web/kit/src',
       'packages/ui/src',
       'packages/inkling/src',
       'packages/db/src',
@@ -142,7 +142,7 @@ describe('structure conventions', () => {
   })
 
   it('lets a settings section directory own its view or form file', () => {
-    const root = `${REPO_ROOT}/packages/web/admin/src/ui/settings`
+    const root = `${REPO_ROOT}/apps/kobato/src/ui/settings`
     expect(statSync(`${root}/cache/CacheView.tsx`).isFile()).toBe(true)
     expect(statSync(`${root}/rate-limit/ThresholdForm.tsx`).isFile()).toBe(true)
     expect(statSync(`${root}/backup/BackupView.tsx`).isFile()).toBe(true)
@@ -164,7 +164,7 @@ describe('structure conventions', () => {
   })
 
   it('keeps the canonical admin UI domain directories', () => {
-    const root = `${REPO_ROOT}/packages/web/admin/src/ui`
+    const root = `${REPO_ROOT}/apps/kobato/src/ui`
     const actual = readdirSync(root, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
@@ -193,11 +193,15 @@ describe('structure conventions', () => {
       'settings',
       'shared',
       'shell',
+      'styles',
       'tags',
       'users',
       'webmentions',
     ]
-    expect(actual, 'a new admin domain directory joins this table with its API/server counterpart').toEqual(expected)
+    expect(
+      actual,
+      'a new admin domain directory joins this table with its API/server counterpart (styles/ holds the ui style adapters)',
+    ).toEqual(expected)
   })
 
   it('prefixes every admin route metadata path with /admin', () => {

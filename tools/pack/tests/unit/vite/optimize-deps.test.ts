@@ -14,8 +14,7 @@ describe('appOptimizeDeps', () => {
     for (const hint of [
       '@kobato/ui > cn',
       '@kobato/ui > pino',
-      '@kobato/web-public > motion/react',
-      '@kobato/web-admin > lexical',
+      '@kobato/inkling > @lexical/clipboard',
       '@kobato/inkling > emoji-picker-react',
       '@kobato/inkling > emoji-picker-react/data',
       '@kobato/inkling > emoji-picker-react/data/emojis-en',
@@ -29,6 +28,12 @@ describe('appOptimizeDeps', () => {
 
   it('pre-bundles the full shiki bundle through the shiki owner', () => {
     expect(include).toContain('@kobato/server > shiki/bundle/full')
+  })
+
+  it('keeps app-declared editor entries bare', () => {
+    for (const entry of ['lexical', '@lexical/react/LexicalComposerContext']) {
+      expect(include).toContain(entry)
+    }
   })
 
   it('excludes the native modules', () => {

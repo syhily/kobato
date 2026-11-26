@@ -16,7 +16,6 @@ import type {
 } from '@kobato/db/duckdb/queries/types'
 import type { Assert, Equals } from '@kobato/utils/type-equals'
 
-import { NOTIFICATION_KINDS as WIRE_NOTIFICATION_KINDS } from '@kobato/api/contracts/account/notifications'
 import { LOGIN_METHODS as WIRE_LOGIN_METHODS } from '@kobato/api/contracts/account/self'
 import { METRIC_TYPES as WIRE_METRIC_TYPES } from '@kobato/api/contracts/admin/analytics'
 import {
@@ -33,6 +32,7 @@ import {
   WEBMENTION_STATUSES as WIRE_STATUSES,
   WEBMENTION_VERIFY_STATUSES as WIRE_VERIFY_STATUSES,
 } from '@kobato/api/contracts/admin/webmentions'
+import { NOTIFICATION_KINDS as WIRE_NOTIFICATION_KINDS } from '@kobato/api/contracts/public/notifications'
 import { WEBMENTION_TYPES as WIRE_TYPES } from '@kobato/api/contracts/public/webmentions'
 import { METRIC_TYPES } from '@kobato/db/duckdb/queries/types'
 import { JOB_RUN_STATUSES, JOB_RUN_TRIGGERS } from '@kobato/db/sqlite/schema/job-run'

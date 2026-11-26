@@ -1,0 +1,13 @@
+import { rootMatchesWithI18n } from '@kobato/i18n/tests/utils/i18n'
+import { meta } from '@sayaka/routes/archives'
+import { describe, expect, it } from 'vitest'
+
+describe('route: public/archives', () => {
+  describe('meta', () => {
+    it('returns an array containing the page title', () => {
+      const result = meta({ matches: rootMatchesWithI18n() } as never)
+      expect(Array.isArray(result)).toBe(true)
+      expect(result).toContainEqual({ title: '归档 - 且听书吟' })
+    })
+  })
+})

@@ -3,7 +3,13 @@ import type { BrowserContext, Page } from '@playwright/test'
 
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/pack/instance/client/http'
 import { callE2eRpc } from '@kobato/pack/instance/client/rpc'
-import { bootDevServer, stopDevServer, writeDevConfig, type DevServer } from '@kobato/pack/instance/dev-instance'
+import {
+  bootDevServer,
+  bootSayakaDevServer,
+  stopDevServer,
+  writeDevConfig,
+  type DevServer,
+} from '@kobato/pack/instance/dev-instance'
 import { seedInstalledInstance } from '@kobato/pack/instance/seed'
 import { pickFreePort, sleep } from '@kobato/pack/process'
 import { TRACE_METRIC_STREAMS } from '@kobato/settings/telemetry/metrics'
@@ -491,10 +497,10 @@ async function loginAsAdmin(page: Page, fx: SmokeFixtures): Promise<void> {
   ])
 }
 
-async function uploadLargeImage(page: Page, jpeg: Buffer): Promise<number> {
+async function uploadLargeImage(page: Page, kobatoOrigin: string, jpeg: Buffer): Promise<number> {
   const base64 = jpeg.toString('base64')
   const clientModulePath = resolveFromRepo('packages/api/src/browser/client.ts')
-  await page.goto('/admin', { waitUntil: 'networkidle' })
+  await page.goto(`${kobatoOrigin}/admin`, { waitUntil: 'networkidle' })
   const started = Date.now()
   await page.evaluate((encoded: string) => {
     const script = document.createElement('script')
@@ -793,10 +799,13 @@ async function main(): Promise<void> {
   await mkdir(dataDir, { recursive: true })
   const configPath = join(tempRoot, 'kobato.config.json')
   const serverLog = join(tempRoot, 'kobato-dev.log')
+  const sayakaLog = join(tempRoot, 'sayaka-dev.log')
 
   const o2Port = await pickFreePort()
   const appPort = await pickFreePort()
-  const origin = `http://127.0.0.1:${appPort}`
+  const sayakaPort = await pickFreePort()
+  const origin = `http://127.0.0.1:${sayakaPort}`
+  const kobatoOrigin = `http://127.0.0.1:${appPort}`
   const fx = fixtures()
   const suffix = randomBytes(4).toString('hex')
   const state = buildState({
@@ -810,6 +819,7 @@ async function main(): Promise<void> {
   })
 
   let server: DevServer | null = null
+  let sayaka: DevServer | null = null
   let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null
 
   try {
@@ -834,6 +844,14 @@ async function main(): Promise<void> {
 
     log('==> booting DEV server (installed)')
     server = await bootDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+
+    log('==> booting sayaka DEV server (public perimeter)')
+    sayaka = await bootSayakaDevServer({
+      repoRoot: REPO_ROOT,
+      port: sayakaPort,
+      kobatoRpcUrl: `${kobatoOrigin}/rpc`,
+      logPath: sayakaLog,
+    })
     const staged = await stagePost(origin, fx)
     await stageScheduledPost(staged.session, fx)
 
@@ -915,7 +933,7 @@ async function main(): Promise<void> {
     await page.waitForURL(/\/admin\/posts/, { timeout: 20_000 })
     await saveFromEditor(page, staged.post.id, fx)
     const jpeg = await makeLargeJpeg()
-    const imageUploadMs = await uploadLargeImage(page, jpeg)
+    const imageUploadMs = await uploadLargeImage(page, kobatoOrigin, jpeg)
     const failedResponse = await page.goto(`/posts/${encodeURIComponent(fx.search)}-missing`, {
       waitUntil: 'networkidle',
     })
@@ -1837,6 +1855,9 @@ async function main(): Promise<void> {
     }
   } finally {
     await browser?.close().catch(() => undefined)
+    if (sayaka !== null) {
+      await stopDevServerOrFail(sayaka).catch(() => undefined)
+    }
     if (server !== null) {
       await stopDevServerOrFail(server).catch(() => undefined)
     }

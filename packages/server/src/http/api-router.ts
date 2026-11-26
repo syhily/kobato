@@ -4,10 +4,6 @@ import type { ContractImplementation } from '@kobato/server/http/contract-implem
 import { accountRouter } from '@kobato/server/http/controllers/account/account.controller'
 import { authRouter } from '@kobato/server/http/controllers/account/auth.controller'
 import { commentsAuthedRouter } from '@kobato/server/http/controllers/account/comments-authed.controller'
-import { friendsRouter } from '@kobato/server/http/controllers/account/friends.controller'
-import { likesRouter } from '@kobato/server/http/controllers/account/likes.controller'
-import { newsletterRouter } from '@kobato/server/http/controllers/account/newsletter.controller'
-import { notificationsRouter } from '@kobato/server/http/controllers/account/notifications.controller'
 import { passkeyRouter } from '@kobato/server/http/controllers/account/passkey.controller'
 import { setupRouter } from '@kobato/server/http/controllers/account/setup.controller'
 import { analyticsRouter } from '@kobato/server/http/controllers/admin/analytics.controller'
@@ -39,16 +35,26 @@ import { adminUsersSessionsRouter } from '@kobato/server/http/controllers/admin/
 import { adminWebmentionsRouter } from '@kobato/server/http/controllers/admin/webmentions.controller'
 import { publicAnalyticsRouter } from '@kobato/server/http/controllers/public/analytics.controller'
 import { avatarRouter } from '@kobato/server/http/controllers/public/avatar.controller'
+import { brandingRouter } from '@kobato/server/http/controllers/public/branding.controller'
+import { commentsOwnRouter } from '@kobato/server/http/controllers/public/comments-own.controller'
 import { commentsPublicRouter } from '@kobato/server/http/controllers/public/comments-public.controller'
 import { commentsTokenRouter } from '@kobato/server/http/controllers/public/comments-token.controller'
 import { contentBootstrap } from '@kobato/server/http/controllers/public/content-bootstrap.controller'
 import { contentCommentsByKey } from '@kobato/server/http/controllers/public/content-comments.controller'
 import { contentDetailRouter } from '@kobato/server/http/controllers/public/content-detail.controller'
 import { contentListingsRouter } from '@kobato/server/http/controllers/public/content-listings.controller'
+import { feedsRouter } from '@kobato/server/http/controllers/public/feeds.controller'
+import { fontsRouter } from '@kobato/server/http/controllers/public/fonts.controller'
+import { friendsRouter } from '@kobato/server/http/controllers/public/friends.controller'
 import { githubRouter } from '@kobato/server/http/controllers/public/github.controller'
 import { imageRouter } from '@kobato/server/http/controllers/public/image.controller'
+import { likesRouter } from '@kobato/server/http/controllers/public/likes.controller'
 import { musicRouter } from '@kobato/server/http/controllers/public/music.controller'
+import { newsletterRouter } from '@kobato/server/http/controllers/public/newsletter.controller'
+import { notificationsRouter } from '@kobato/server/http/controllers/public/notifications.controller'
 import { publicObservabilityRouter } from '@kobato/server/http/controllers/public/observability.controller'
+import { sitemapRouter } from '@kobato/server/http/controllers/public/sitemap.controller'
+import { storageRouter } from '@kobato/server/http/controllers/public/storage.controller'
 import { webmentionPublicRouter } from '@kobato/server/http/controllers/public/webmention-public.controller'
 
 export const apiRouter = {
@@ -63,25 +69,30 @@ export const apiRouter = {
       categories: { list: contentListingsRouter.categoriesList },
       archives: contentListingsRouter.archives,
     },
-    comments: { ...commentsPublicRouter, ...commentsTokenRouter },
+    comments: { ...commentsPublicRouter, ...commentsOwnRouter, ...commentsTokenRouter },
+    likes: likesRouter,
+    friends: friendsRouter,
+    notifications: notificationsRouter,
+    newsletter: newsletterRouter,
     webmentions: webmentionPublicRouter,
     avatar: avatarRouter,
     github: githubRouter,
     images: imageRouter,
     music: musicRouter,
+    branding: brandingRouter,
+    fonts: fontsRouter,
+    storage: storageRouter,
     analytics: publicAnalyticsRouter,
     observability: publicObservabilityRouter,
+    feeds: feedsRouter,
+    sitemap: sitemapRouter,
   },
   account: {
     ...accountRouter,
     auth: authRouter,
     setup: setupRouter,
     comments: commentsAuthedRouter,
-    notifications: notificationsRouter,
     passkey: passkeyRouter,
-    likes: likesRouter,
-    friends: friendsRouter,
-    newsletter: newsletterRouter,
   },
   admin: {
     users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },

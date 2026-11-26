@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 const API_LITERAL = /['"`](\/api\/[^'"`]+)['"`]/g
 const RESOURCE_PATHS = new Set<string>()
-const RESOURCE_PREFIXES = ['/api/rum/intake/'] as const
+const RESOURCE_PREFIXES: readonly string[] = []
 const RETIRED_JSON_ROUTES = [
   '/api/admin/backup/restore-status',
   '/api/admin/backup/restore-progress',
@@ -21,7 +21,7 @@ const RETIRED_JSON_ROUTES = [
   '/api/rum/status',
   '/api/setup/restore',
 ] as const
-const TELEMETRY_POLICY = 'apps/kobato/src/rum/rum-url-policy.ts'
+const TELEMETRY_POLICIES = ['apps/kobato/src/rum/rum-url-policy.ts', 'apps/sayaka/src/rum/rum-url-policy.ts'] as const
 const OUTBOUND_API_PREFIXES = [
   'packages/server/src/domains/music/providers/',
   'packages/server/src/domains/observability/',
@@ -55,6 +55,8 @@ function productionFiles(): string[] {
   walk(join(REPO_ROOT, 'packages/server/src'), files)
   walk(join(REPO_ROOT, 'packages/web'), files)
   walk(join(REPO_ROOT, 'apps/kobato/src/rum'), files)
+  walk(join(REPO_ROOT, 'apps/sayaka/src/rum'), files)
+  walk(join(REPO_ROOT, 'apps/sayaka/src/server'), files)
   return files.filter((file) => {
     const relativeFile = relative(REPO_ROOT, file)
     return !file.includes('/tests/') && !OUTBOUND_API_PREFIXES.some((prefix) => relativeFile.startsWith(prefix))
@@ -78,7 +80,7 @@ describe('HTTP resource surface', () => {
   it('allows /api paths only for the OpenObserve intake and other external protocol resources', () => {
     const offenders = productionFiles().flatMap((file) => {
       const relativeFile = relative(REPO_ROOT, file)
-      if (relativeFile === TELEMETRY_POLICY) {
+      if (TELEMETRY_POLICIES.includes(relativeFile as (typeof TELEMETRY_POLICIES)[number])) {
         return []
       }
       return apiLiterals(file)
@@ -86,6 +88,11 @@ describe('HTTP resource surface', () => {
         .map((path) => `${relativeFile}: unregistered resource ${path}`)
     })
     expect(offenders).toEqual([])
+  })
+
+  it('keeps the kobato resource registry empty — every /api path is a contract procedure now', () => {
+    expect([...RESOURCE_PATHS]).toEqual([])
+    expect([...RESOURCE_PREFIXES]).toEqual([])
   })
 
   it('keeps health probes as resources and has no retired route in the resource registry', () => {

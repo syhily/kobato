@@ -66,7 +66,13 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
       },
     })
 
-    c.req.raw = new Request(c.req.raw, { body, duplex: 'half' } as RequestInit)
+    const init: RequestInit & { duplex: 'half' } = {
+      method: c.req.raw.method,
+      headers: c.req.raw.headers,
+      body,
+      duplex: 'half',
+    }
+    c.req.raw = new Request(c.req.raw.url, init)
 
     return next()
   }

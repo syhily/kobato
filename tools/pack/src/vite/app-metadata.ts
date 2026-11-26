@@ -16,8 +16,8 @@ const appPackageSchema = z.object({
 
 export type AppPackage = z.infer<typeof appPackageSchema>
 
-export function readAppPackage(): AppPackage {
-  const raw = readFileSync(resolve(repoRoot, 'apps/kobato/package.json'), 'utf-8')
+export function readAppPackage(appDir = 'apps/kobato'): AppPackage {
+  const raw = readFileSync(resolve(repoRoot, appDir, 'package.json'), 'utf-8')
   return appPackageSchema.parse(JSON.parse(raw))
 }
 

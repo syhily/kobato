@@ -13,7 +13,7 @@ export function browserEnv(): BrowserEnv {
   if (!KOBATO_BROWSER_BASE_URL || !KOBATO_BROWSER_ADMIN_EMAIL || !KOBATO_BROWSER_ADMIN_PASSWORD) {
     throw new Error(
       'KOBATO_BROWSER_* env vars are not set — run the suite via `pnpm run test:browser` / `pnpm run sea:browser`, ' +
-        'or point it at a running instance with KOBATO_BROWSER_BASE_URL + KOBATO_BROWSER_ADMIN_EMAIL/PASSWORD.',
+        'or point KOBATO_BROWSER_BASE_URL at the sayaka origin (the one listener a browser needs) plus KOBATO_BROWSER_ADMIN_EMAIL/PASSWORD.',
     )
   }
   return {

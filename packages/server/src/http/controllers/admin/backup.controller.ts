@@ -28,10 +28,10 @@ import {
   startRestoreFromStaged,
 } from '@kobato/server/domains/backup/upload-restore'
 import { implementAdmin, rateLimitByIp } from '@kobato/server/http/orpc-base'
-import { nodeStreamToWeb } from '@kobato/server/http/resources/serve-local-file'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
+import { nodeStreamToWeb } from '@kobato/server/infra/node-streams'
 import { tryBackupRestorePasswordRateLimit } from '@kobato/server/infra/rate-limit'
 import { activeBackend } from '@kobato/server/infra/storage/registry'
 import { rmSync } from 'node:fs'

@@ -1,18 +1,18 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { MyProfileView } from '@kobato/web-admin/ui/account/MyProfileView'
+import { orpc } from '@kobato/api/browser/client'
 import { data } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { MyProfileView } from '@/ui/account/MyProfileView'
 
 import type { Route } from './+types/profile'
 
 export const meta = titleMeta('meta.title.admin.profile')
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'visitor')
-  const [profile, myCounts] = await Promise.all([caller.account.profile(), caller.account.comments.myCounts()])
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'visitor', { pathname: new URL(request.url).pathname })
+  const [profile, myCounts] = await Promise.all([orpc.account.profile(), orpc.account.comments.myCounts()])
   return data({
     user: profile.user,
     counts: myCounts,

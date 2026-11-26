@@ -1,8 +1,10 @@
+import type { KobatoServerClientOptions } from '@kobato/api/client/create-server-client'
 import type { apiContract } from '@kobato/api/contract'
 import type { ContractRouterClient } from '@orpc/contract'
 
 import { createKobatoServerClient } from '@kobato/api/client/create-server-client'
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { RESOURCE_STREAM_HEADER } from '@kobato/api/client/resource-stream'
+import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 
 interface CapturedCall {
   url: string
@@ -76,6 +78,24 @@ async function captureCall(clientAddress?: string): Promise<CapturedCall> {
   return calls[0]!
 }
 
+function makeHangingFetch(): NonNullable<KobatoServerClientOptions['fetch']> {
+  return (_request, init) =>
+    new Promise<Response>((_resolve, reject) => {
+      const signal = (init as { signal?: AbortSignal }).signal
+      signal?.addEventListener(
+        'abort',
+        () => {
+          reject(signal.reason)
+        },
+        { once: true },
+      )
+    })
+}
+
+async function flush(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 describe('api/client/create-server-client — forwarded header policy', () => {
   it.each(Object.entries(FORWARDED_HEADERS))('forwards %s from the inbound request', async (name, value) => {
     const call = await captureCall()
@@ -103,6 +123,25 @@ describe('api/client/create-server-client — forwarded header policy', () => {
   it('omits X-Forwarded-For when the caller derived no address', async () => {
     const call = await captureCall()
     expect(call.headers.get('x-forwarded-for')).toBeNull()
+  })
+
+  it('sends the analytics event id on every call when provided, and omits it otherwise', async () => {
+    const calls: CapturedCall[] = []
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      analyticsEventId: '4d2e6c1a-9f2b-4c3d-8e5f-1a2b3c4d5e6f',
+      fetch: makeCapturingFetch(calls),
+    })
+    await client.public.content.bootstrap()
+    await client.public.content.bootstrap()
+    expect(calls).toHaveLength(2)
+    for (const call of calls) {
+      expect(call.headers.get('x-kobato-analytics-event')).toBe('4d2e6c1a-9f2b-4c3d-8e5f-1a2b3c4d5e6f')
+    }
+
+    const call = await captureCall()
+    expect(call.headers.get('x-kobato-analytics-event')).toBeNull()
   })
 })
 
@@ -216,20 +255,229 @@ describe('api/client/create-server-client — abort signal composition', () => {
     expect(signal?.aborted).toBe(true)
   })
 
-  it('passes the inbound signal through unchanged when the call has no per-call signal', async () => {
+  it('aborts the fetch signal when the inbound signal is already aborted', async () => {
     const inbound = new AbortController()
-    const request = new Request('https://sayaka.example/', { signal: inbound.signal })
+    inbound.abort()
     const { signals, fetch } = makeSignalCapture()
     const { client } = createKobatoServerClient({
       url: 'https://kobato.internal/rpc',
-      request,
+      request: new Request('https://sayaka.example/', { signal: inbound.signal }),
       fetch,
     })
 
     await client.public.content.bootstrap()
-
-    expect(signals[0]).toBe(request.signal)
-    inbound.abort()
     expect(signals[0]?.aborted).toBe(true)
+  })
+})
+
+describe('api/client/create-server-client — bounded request timeout', () => {
+  it('cuts off a never-answering upstream after the configured timeout', async () => {
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      requestTimeoutMs: 20,
+      fetch: makeHangingFetch(),
+    })
+
+    const outcome = await client.public.content.bootstrap().then(
+      () => 'answered',
+      (error: unknown) => (error instanceof Error && error.name === 'TimeoutError' ? 'TimeoutError' : String(error)),
+    )
+    expect(outcome).toBe('TimeoutError')
+  })
+
+  it('lets the declared restore timeout win over a smaller factory default', async () => {
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      requestTimeoutMs: 20,
+      fetch: async () => {
+        await flush(60)
+        return new Response(JSON.stringify({ json: { accepted: true } }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      },
+    })
+
+    await expect(
+      client.admin.backup.uploadRestore({ file: new File(['kobato-backup'], 'backup.tar.gz') }),
+    ).resolves.toEqual({ accepted: true })
+  })
+
+  it('releases the timeout once headers arrive so a streamed body is never cut', async () => {
+    let drain!: () => void
+    const gate = new Promise<void>((resolve) => {
+      drain = resolve
+    })
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('first'))
+        void gate.then(() => {
+          controller.enqueue(new TextEncoder().encode('second'))
+          controller.close()
+        })
+      },
+    })
+    const hold = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      requestTimeoutMs: 25,
+      fetch: async () => {
+        await flush(5)
+        return new Response(body, {
+          status: 200,
+          headers: [
+            [RESOURCE_STREAM_HEADER, '200'],
+            ['content-type', 'font/woff2'],
+          ],
+        })
+      },
+    })
+
+    await hold.client.public.fonts.embedded({ path: '/fonts/embedded/x' })
+    await flush(60)
+    drain()
+    const captured = hold.takeResourceStream('public.fonts.embedded')
+    expect(captured).not.toBeNull()
+    const chunks: string[] = []
+    for await (const chunk of captured!.body) {
+      chunks.push(new TextDecoder().decode(chunk))
+    }
+    expect(chunks).toEqual(['first', 'second'])
+  })
+})
+
+describe('api/client/create-server-client — resource stream capture', () => {
+  function streamResponse(init: { status?: number; etag?: string; compressed?: boolean }): Response {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('first'))
+        controller.enqueue(new TextEncoder().encode('second'))
+        controller.close()
+      },
+    })
+    return new Response(body, {
+      status: init.status ?? 200,
+      headers: [
+        [RESOURCE_STREAM_HEADER, String(init.status ?? 200)],
+        ['content-type', 'font/woff2'],
+        ['cache-control', 'public, max-age=31536000, immutable'],
+        ['accept-ranges', 'bytes'],
+        ...(init.compressed === true
+          ? ([
+              ['content-encoding', 'gzip'],
+              ['content-length', '28'],
+            ] as [string, string][])
+          : []),
+        ...(init.etag === undefined ? [] : [['etag', init.etag] as [string, string]]),
+        ['set-cookie', '__csrf=should-not-leak; Path=/'],
+      ],
+    })
+  }
+
+  async function callEmbedded(fetch: KobatoServerClientOptions['fetch']) {
+    const hold = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      fetch,
+    })
+    const output = await hold.client.public.fonts.embedded({ path: '/fonts/embedded/x' })
+    return { hold, output }
+  }
+
+  it('captures a marker response as the resource stream and answers the call with a stub', async () => {
+    const { hold, output } = await callEmbedded(async () => streamResponse({ status: 206, etag: '"7-100"' }))
+    expect(output).toBeUndefined()
+    const captured = hold.takeResourceStream('public.fonts.embedded')
+    expect(captured).not.toBeNull()
+    expect(captured!.status).toBe(206)
+    expect(captured!.headers.get('content-type')).toBe('font/woff2')
+    expect(captured!.headers.get('etag')).toBe('"7-100"')
+    expect(captured!.headers.get(RESOURCE_STREAM_HEADER)).toBeNull()
+    expect(captured!.headers.getSetCookie()).toEqual([])
+    const chunks: string[] = []
+    for await (const chunk of captured!.body) {
+      chunks.push(new TextDecoder().decode(chunk))
+    }
+    expect(chunks).toEqual(['first', 'second'])
+    expect(hold.takeResourceStream('public.fonts.embedded')).toBeNull()
+  })
+
+  it('never carries content-encoding or content-length in the captured headers', async () => {
+    const { hold } = await callEmbedded(async () => streamResponse({ status: 200, etag: '"8-100"', compressed: true }))
+    const captured = hold.takeResourceStream('public.fonts.embedded')
+    expect(captured).not.toBeNull()
+    expect(captured!.headers.get('content-encoding')).toBeNull()
+    expect(captured!.headers.get('content-length')).toBeNull()
+    expect(captured!.headers.get('content-type')).toBe('font/woff2')
+    expect(captured!.headers.get('etag')).toBe('"8-100"')
+    const chunks: string[] = []
+    for await (const chunk of captured!.body) {
+      chunks.push(new TextDecoder().decode(chunk))
+    }
+    expect(chunks).toEqual(['first', 'second'])
+  })
+
+  it('cancels the previous capture when the same procedure answers again', async () => {
+    const bodies: ReadableStream<Uint8Array>[] = []
+    const hold = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      fetch: async () => {
+        const response = streamResponse({})
+        bodies.push(response.body!)
+        return response
+      },
+    })
+    await hold.client.public.fonts.embedded({ path: '/fonts/embedded/x' })
+    await hold.client.public.fonts.embedded({ path: '/fonts/embedded/x' })
+    expect(bodies).toHaveLength(2)
+    const captured = hold.takeResourceStream('public.fonts.embedded')
+    expect(captured!.body).toBe(bodies[1])
+    await vi.waitFor(async () => {
+      const reader = bodies[0]!.getReader()
+      const outcome = await reader.read()
+      expect(outcome.done).toBe(true)
+    })
+  })
+
+  it('answers a plain envelope response without touching the capture', async () => {
+    const { hold, output } = await callEmbedded(
+      async () =>
+        new Response(
+          JSON.stringify({
+            json: { kind: 'redirect', location: 'https://assets.example.com/x', cacheControl: 'public, max-age=300' },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+    )
+    expect(output).toEqual({
+      kind: 'redirect',
+      location: 'https://assets.example.com/x',
+      cacheControl: 'public, max-age=300',
+    })
+    expect(hold.takeResourceStream('public.fonts.embedded')).toBeNull()
+  })
+
+  it('keys captures by procedure path so parallel calls do not collide', async () => {
+    const hold = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: inboundRequest(),
+      fetch: async (_request, _init, _options, path) => {
+        const response = streamResponse({ status: 200 })
+        void path
+        return response
+      },
+    })
+    const [fonts, storage] = await Promise.all([
+      hold.client.public.fonts.embedded({ path: '/fonts/embedded/x' }),
+      hold.client.public.storage.object({ path: '/storage/images/x.jpg' }),
+    ])
+    expect(fonts).toBeUndefined()
+    expect(storage).toBeUndefined()
+    expect(hold.takeResourceStream('public.fonts.embedded')).not.toBeNull()
+    expect(hold.takeResourceStream('public.storage.object')).not.toBeNull()
+    expect(hold.takeResourceStream('public.fonts.embedded')).toBeNull()
   })
 })

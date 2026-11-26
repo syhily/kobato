@@ -26,6 +26,13 @@ export interface BootDevServerOptions {
   logPath: string
 }
 
+export interface BootSayakaDevServerOptions {
+  repoRoot: string
+  port: number
+  kobatoRpcUrl: string
+  logPath: string
+}
+
 export async function writeDevConfig(path: string, port: number, dataDir: string): Promise<void> {
   const config = {
     server: { host: '127.0.0.1', port, loggingLevel: 'info' },
@@ -40,51 +47,88 @@ export async function writeDevConfig(path: string, port: number, dataDir: string
   await writeFile(path, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 })
 }
 
-export async function bootDevServer(options: BootDevServerOptions): Promise<DevServer> {
+function spawnDevServer(
+  repoRoot: string,
+  appName: string,
+  port: number,
+  env: Record<string, string>,
+  logPath: string,
+): DevServer {
   const child = spawn(
     'pnpm',
     [
-      'exec',
-      'react-router',
+      '--filter',
+      appName,
+      'run',
       'dev',
       '--host',
       '127.0.0.1',
       '--port',
-      String(options.port),
+      String(port),
       '--strictPort',
       '--logLevel',
       'warn',
     ],
     {
-      cwd: options.repoRoot,
+      cwd: repoRoot,
       env: {
         ...scrubbedParentEnv({ drop: ['VITEST', 'NODE_ENV'] }),
-        KOBATO_CONFIG_FILE: options.configPath,
         CI: '',
+        ...env,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   )
-  const stream = createWriteStream(options.logPath, { flags: 'w' })
+  const stream = createWriteStream(logPath, { flags: 'w' })
   child.stdout?.pipe(stream)
   child.stderr?.pipe(stream)
   const exitState = watchChildExit(child)
+  return { child, exitState, port, logPath }
+}
+
+async function waitForDevServer(server: DevServer, probePath: string): Promise<DevServer> {
   const deadline = Date.now() + BOOT_TIMEOUT_MS
   while (Date.now() < deadline) {
-    if (exitState.exited) {
-      throw new Error(`DEV server exited during boot (code ${exitState.code}); see ${options.logPath}`)
+    if (server.exitState.exited) {
+      throw new Error(`DEV server exited during boot (code ${server.exitState.code}); see ${server.logPath}`)
     }
     try {
-      const res = await fetch(`http://127.0.0.1:${options.port}/health`, {
+      const res = await fetch(`http://127.0.0.1:${server.port}${probePath}`, {
         signal: AbortSignal.timeout(HEALTH_FETCH_TIMEOUT_MS),
       })
-      if (res.ok) {
-        return { child, exitState, port: options.port, logPath: options.logPath }
+      if (res.status === 200 || res.status === 303) {
+        return server
       }
     } catch {}
     await sleep(POLL_INTERVAL_MS)
   }
-  throw new Error(`DEV server did not answer /health within ${BOOT_TIMEOUT_MS / 1000}s; see ${options.logPath}`)
+  throw new Error(`DEV server did not answer ${probePath} within ${BOOT_TIMEOUT_MS / 1000}s; see ${server.logPath}`)
+}
+
+export async function bootDevServer(options: BootDevServerOptions): Promise<DevServer> {
+  const server = spawnDevServer(
+    options.repoRoot,
+    'kobato',
+    options.port,
+    { KOBATO_CONFIG_FILE: options.configPath },
+    options.logPath,
+  )
+  return waitForDevServer(server, '/health')
+}
+
+export async function bootSayakaDevServer(options: BootSayakaDevServerOptions): Promise<DevServer> {
+  const server = spawnDevServer(
+    options.repoRoot,
+    'sayaka',
+    options.port,
+    {
+      SAYAKA_HOST: '127.0.0.1',
+      SAYAKA_PORT: String(options.port),
+      SAYAKA_KOBATO_RPC_URL: options.kobatoRpcUrl,
+    },
+    options.logPath,
+  )
+  return waitForDevServer(server, '/')
 }
 
 export async function stopDevServer(server: DevServer, timeoutMs: number): Promise<'stopped' | 'timeout'> {

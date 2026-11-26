@@ -1,7 +1,7 @@
 import { fail } from '@kobato/pack/process'
 import { writeSeaConfig } from '@kobato/pack/sea/blob'
 import { run, tryRun } from '@kobato/pack/sea/exec'
-import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from '@kobato/pack/sea/paths'
+import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir, type SeaApp } from '@kobato/pack/sea/paths'
 import { mkdir, readFile } from 'node:fs/promises'
 
 async function ensureSentinelFuse() {
@@ -40,12 +40,12 @@ function resignDarwinBinary(out: string) {
   run('codesign', ['--sign', '-', '--force', out])
 }
 
-export async function runInjectStep(assets: Map<string, string>) {
+export async function runInjectStep(assets: Map<string, string>, app: SeaApp = 'kobato') {
   await ensureSentinelFuse()
-  const out = seaBinaryPath()
+  const out = seaBinaryPath(app)
   await mkdir(seaDistDir(), { recursive: true })
-  await writeSeaConfig(assets, out)
-  run(process.execPath, ['--build-sea', seaConfigPath()])
+  await writeSeaConfig(app, assets, out)
+  run(process.execPath, ['--build-sea', seaConfigPath(app)])
   if (process.platform === 'darwin') {
     resignDarwinBinary(out)
   }

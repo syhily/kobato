@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { FontsView } from '@kobato/web-admin/ui/fonts/FontsView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { FontsView } from '@/ui/fonts/FontsView'
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.fonts')
 

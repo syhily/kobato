@@ -1,0 +1,85 @@
+// @vitest-environment happy-dom
+
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { Popup } from '@sayaka/ui/widgets/Popup'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { type ReactNode, useState } from 'react'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('motion/react', () => {
+  const MOTION_ONLY_PROPS = new Set([
+    'initial',
+    'animate',
+    'exit',
+    'transition',
+    'variants',
+    'whileHover',
+    'whileTap',
+    'whileFocus',
+    'whileDrag',
+    'whileInView',
+  ])
+  const MotionStub = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) => {
+    for (const key of MOTION_ONLY_PROPS) {
+      delete rest[key]
+    }
+    return <div {...rest}>{children}</div>
+  }
+  return {
+    AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
+    motion: new Proxy({}, { get: () => MotionStub }),
+  }
+})
+
+function Harness() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setOpen((v) => !v)}>
+        trigger
+      </button>
+      <Popup open={open} onClose={() => setOpen(false)} aria-label="Test popup">
+        <div>Popup body</div>
+      </Popup>
+    </>
+  )
+}
+
+function getBackdrop(): HTMLElement {
+  const wrapper = screen.getByRole('dialog').parentElement
+  const backdrop = Array.from(wrapper?.children ?? []).find((el) => el.getAttribute('aria-hidden') === 'true')
+  if (!(backdrop instanceof HTMLElement)) {
+    throw new TypeError('popup backdrop not found')
+  }
+  return backdrop
+}
+
+describe('Popup — outside-click dismissal', () => {
+  it('closes when the backdrop (outside click) is clicked', () => {
+    render(wrapWithI18n(<Harness />))
+    fireEvent.click(screen.getByRole('button', { name: 'trigger' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.click(getBackdrop())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('toggles closed when the trigger is re-clicked', () => {
+    render(wrapWithI18n(<Harness />))
+    const trigger = screen.getByRole('button', { name: 'trigger' })
+
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.click(trigger)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('stays open when clicking inside the dialog', () => {
+    render(wrapWithI18n(<Harness />))
+    fireEvent.click(screen.getByRole('button', { name: 'trigger' }))
+
+    fireEvent.click(screen.getByText('Popup body'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+})

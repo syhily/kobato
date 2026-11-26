@@ -1,4 +1,4 @@
-import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/account/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/public/notifications'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
@@ -49,7 +49,7 @@ export function NotificationsDrawer({ open, onOpenChange, isAdmin, unreadCount }
   const patchReadState = usePatchNotificationReadState()
 
   const markAllRead = useMutation(
-    orpcQuery.account.notifications.markRead.mutationOptions({
+    orpcQuery.public.notifications.markRead.mutationOptions({
       onSuccess: (data) => {
         patchReadState([], true, data.count)
         void invalidate()

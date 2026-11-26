@@ -1,16 +1,13 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView'
-
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { AuditLogView } from '@/ui/audit/AuditLogView'
 
 import type { Route } from './+types/audit-log'
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  requireRole(rc.viewer ?? undefined, 'admin')
-  const bundle = getBlogSettingsBundleSync()
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
+  const bundle = boot.blogSettings
   return {
     retentionDays: bundle?.limits?.auditLogDbRetentionDays ?? 30,
   }

@@ -1,9 +1,8 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
-
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { CategoriesView } from '@/ui/categories/CategoriesView'
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 export const meta = titleMeta('meta.title.admin.categories')
 

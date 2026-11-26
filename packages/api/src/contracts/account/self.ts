@@ -77,6 +77,7 @@ export interface AccountSessionDto {
   loginAt: Date
   lastActiveAt: Date
   expiresAt: Date
+  isCurrent: boolean
 }
 
 export const accountSessionsOutputSchema = z.custom<AccountSessionDto[]>()

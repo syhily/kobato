@@ -83,7 +83,7 @@ describe('release chain: the draft-release flow stays triggerable', () => {
 
   it('sea:package owns the platform packaging the per-OS shell steps used to do (checksums via node:crypto)', () => {
     expect(packageTs).toMatch(/createHash\('sha256'\)/)
-    expect(packageTs).toMatch(/kobato-\$\{target\}\.tar\.gz/)
+    expect(packageTs).toMatch(/`\$\{app\}-\$\{target\}\.tar\.gz`/)
     expect(packageTs).toMatch(/writeVerifiedChecksum/)
     expect(packageTs).toMatch(/build-deb\.sh/)
   })

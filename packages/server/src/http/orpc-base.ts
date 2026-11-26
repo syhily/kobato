@@ -5,7 +5,7 @@ import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/sessi
 import type { CommentTokenCookie } from '@kobato/server/domains/comments/services/comment-token'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 import type { AppLocalization } from '@kobato/settings/app-localization'
-import type { BlogSettingsBundle, RateLimitBucket } from '@kobato/settings/types'
+import type { BlogSettingsBundle, RateLimitBucket, RateLimitSettings } from '@kobato/settings/types'
 import type { AnyContractRouter } from '@orpc/contract'
 import type { z } from 'zod'
 
@@ -26,6 +26,7 @@ import { descriptorFor, zodIssuesToWire } from '@kobato/server/infra/http/error-
 import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import {
+  readBucket,
   tryCommentPostRateLimit,
   tryKeyedRateLimit,
   tryNotificationReplyRateLimit,
@@ -185,8 +186,9 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   return next({})
 })
 
-export function rateLimitByIp(key: string, bucket: RateLimitBucket) {
+export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof RateLimitSettings) {
   return root.middleware(async ({ context, next }) => {
+    const bucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${context.clientAddress}`, bucket)
     if (exceeded) {
       throw localizedOrpcError(context, 'TOO_MANY_REQUESTS', 'error.api.rateLimited')

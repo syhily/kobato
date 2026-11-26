@@ -13,6 +13,7 @@ const EXPECTED = new Map([
   ['/rpc/admin/backup/uploadRestore', { maxBytes: 500 * 1024 * 1024, messageKey: 'backup.error.uploadTooLarge' }],
   ['/rpc/account/setup/restore', { maxBytes: 500 * 1024 * 1024, messageKey: 'backup.error.uploadTooLarge' }],
   ['/rpc/public/analytics/recordDeviceEnv', { maxBytes: 4 * 1024, messageKey: 'error.api.payloadTooLarge' }],
+  ['/rpc/public/observability/rumIntake', { maxBytes: 2 * 1024 * 1024, messageKey: 'error.api.payloadTooLarge' }],
 ])
 
 describe('requestBodyLimit metadata', () => {

@@ -1,4 +1,4 @@
-import type { NotificationDto } from '@kobato/api/contracts/account/notifications'
+import type { NotificationDto } from '@kobato/api/contracts/public/notifications'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import {
@@ -46,10 +46,10 @@ export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: Notif
   const invalidate = useInvalidateNotifications()
   const patchReadState = usePatchNotificationReadState()
   const threadQuery = useQuery(
-    orpcQuery.account.notifications.thread.queryOptions({ input: { threadId: item.threadId } }),
+    orpcQuery.public.notifications.thread.queryOptions({ input: { threadId: item.threadId } }),
   )
   const { mutate: markRead } = useMutation(
-    orpcQuery.account.notifications.markRead.mutationOptions({
+    orpcQuery.public.notifications.markRead.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], true, data.count),
       onError: onMutationError('admin.toast.markReadFailed', t),
     }),
@@ -187,7 +187,7 @@ function ReplyComposer({ threadId }: { threadId: string }) {
   const [body, setBody] = useState('')
   const invalidate = useInvalidateNotifications()
   const reply = useMutation(
-    orpcQuery.account.notifications.reply.mutationOptions({
+    orpcQuery.public.notifications.reply.mutationOptions({
       onSuccess: (data) => {
         setBody('')
         if (isForkReply(threadId, data.threadId)) {

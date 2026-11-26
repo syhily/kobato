@@ -14,15 +14,21 @@ import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeSession } from '@kobato/server/tests/utils/session'
 import { makeRouteContext } from '@tests/utils/context'
+import { orpcStubCookies } from '@tests/utils/orpc-client-mock'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-reset-csrf-token'
 
-const { action } = await import('@/routes/auth/signin')
+const { clientAction } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
@@ -64,14 +70,14 @@ async function seedUser(overrides: Record<string, unknown> = {}) {
 
 async function callResetAction(body: Record<string, string>): Promise<unknown> {
   const url = new URL('http://localhost/admin/signin?action=resetpassword')
-  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
+  makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
   const request = new Request(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ ...body, csrf_token: CSRF_TOKEN }).toString(),
   })
   try {
-    return await action({ request, context: routeContext, params: {} } as unknown as Parameters<typeof action>[0])
+    return await clientAction({ request } as never)
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -120,9 +126,8 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
     }
     const { token } = issueResetToken(db, admin.id)
 
-    const response = (await callResetAction({ reset_token: token, password: 'LongEnough1' })) as Response
-    expect(response.status).toBe(302)
-    expect(response.headers.get('Set-Cookie')).toMatch(/^__session=/)
+    await callResetAction({ reset_token: token, password: 'LongEnough1' })
+    expect(orpcStubCookies().some((cookie) => cookie.startsWith('__session='))).toBe(true)
 
     const sessions = await sqliteOf(db).select().from(sessionTable)
     expect(sessions).toHaveLength(1)

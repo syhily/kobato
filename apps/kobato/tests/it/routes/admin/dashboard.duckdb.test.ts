@@ -15,16 +15,34 @@ import {
 } from '@kobato/server/tests/utils/analytics-db'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { adminSession, authorSession } from '@kobato/server/tests/utils/session'
-import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
-import { makeLoaderArgs } from '@tests/utils/context'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { stubRouteRequestContext } from '@tests/utils/orpc-client-mock'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { EMPTY_STATE_LINE_IDS } from '@/ui/dashboard/empty-state-lines'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const db = getTestDb()
+
+const CSRF_TOKEN = 'dashboard-duckdb-csrf-token'
+
+function bootstrapSession(session: ReturnType<typeof adminSession>): ReturnType<typeof adminSession> {
+  session.set('csrfToken', CSRF_TOKEN)
+  return session
+}
+
+function clientLoaderArgs(session: ReturnType<typeof adminSession>) {
+  stubRouteRequestContext({ session, db })
+  return { request: new Request('http://localhost/admin') } as never
+}
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { loader } = await import('@/routes/admin/dashboard')
+const { clientLoader } = await import('@/routes/admin/dashboard')
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -101,7 +119,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     await seedComment(1)
     await seedVisits()
 
-    const data = await loader(makeLoaderArgs({ session: adminSession(), db }))
+    const data = await clientLoader(clientLoaderArgs(bootstrapSession(adminSession())))
 
     expect(data.name).toBe('admin')
     expect(data.role).toBe('admin')
@@ -142,7 +160,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     await seedComment(1)
     await seedVisits()
 
-    const data = await loader(makeLoaderArgs({ session: authorSession(), db }))
+    const data = await clientLoader(clientLoaderArgs(bootstrapSession(authorSession())))
 
     expect(data.role).toBe('author')
 
@@ -157,7 +175,9 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     expect(data.recentPublished[0]!.title).toBe('Author Published')
   })
 
-  it('rejects anonymous viewers', async () => {
-    await expect(loader(makeLoaderArgs({ user: null, db }))).rejects.toMatchObject({ status: 403 })
+  it('redirects anonymous viewers to the signin surface', async () => {
+    const anonymous = bootstrapSession(adminSession())
+    anonymous.unset('user')
+    await expect(clientLoader(clientLoaderArgs(anonymous))).rejects.toMatchObject({ status: 302 })
   })
 })

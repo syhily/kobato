@@ -1,21 +1,21 @@
+import { orpc } from '@kobato/api/browser/client'
 import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
 import { computeDateRange } from '@kobato/utils/date-range'
-import { BodyProjectionCard } from '@kobato/web-admin/ui/dashboard/BodyProjectionCard'
-import { pickEmptyStateLineId } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
-import { PendingModerationPanel } from '@kobato/web-admin/ui/dashboard/PendingModerationPanel'
-import { QuickActions } from '@kobato/web-admin/ui/dashboard/QuickActions'
-import { RecentDraftsCard } from '@kobato/web-admin/ui/dashboard/RecentDraftsCard'
-import { RecentPublishedCard } from '@kobato/web-admin/ui/dashboard/RecentPublishedCard'
-import { SearchReindexCard } from '@kobato/web-admin/ui/dashboard/SearchReindexCard'
-import { StatsGrid } from '@kobato/web-admin/ui/dashboard/StatsGrid'
-import { VisitSummaryCard } from '@kobato/web-admin/ui/dashboard/VisitSummaryCard'
 import { Suspense, use, useState } from 'react'
 import { browser } from 'react-dom'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { BodyProjectionCard } from '@/ui/dashboard/BodyProjectionCard'
+import { pickEmptyStateLineId } from '@/ui/dashboard/empty-state-lines'
+import { PendingModerationPanel } from '@/ui/dashboard/PendingModerationPanel'
+import { QuickActions } from '@/ui/dashboard/QuickActions'
+import { RecentDraftsCard } from '@/ui/dashboard/RecentDraftsCard'
+import { RecentPublishedCard } from '@/ui/dashboard/RecentPublishedCard'
+import { SearchReindexCard } from '@/ui/dashboard/SearchReindexCard'
+import { StatsGrid } from '@/ui/dashboard/StatsGrid'
+import { VisitSummaryCard } from '@/ui/dashboard/VisitSummaryCard'
 
 import type { Route } from './+types/dashboard'
 
@@ -23,12 +23,11 @@ export const meta = titleMeta('meta.title.admin.dashboard')
 
 const PENDING_PAGE_SIZE = 3
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  const user = viewer ?? undefined
-  requireRole(user, 'author')
-
-  const admin = user.role === 'admin'
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'author', { pathname: new URL(request.url).pathname })
+  const user = boot.currentUser
+  const admin = user?.role === 'admin'
 
   const now = new Date()
   const nowSec = Math.floor(now.getTime() / 1000)
@@ -36,21 +35,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const weekRange = computeDateRange('last-7d', now)
   const [pendingModeration, visitSummary, weeklyTrend, mySummary, myCommentCounts] = await Promise.all([
     admin
-      ? caller.admin.comments.listPendingDashboard({ kind: 'all', offset: 0, limit: PENDING_PAGE_SIZE })
+      ? orpc.admin.comments.listPendingDashboard({ kind: 'all', offset: 0, limit: PENDING_PAGE_SIZE })
       : Promise.resolve(null),
     admin
-      ? caller.admin.analytics.counters({ startAt: String(dayRange.startAt), endAt: String(dayRange.endAt) })
+      ? orpc.admin.analytics.counters({ startAt: String(dayRange.startAt), endAt: String(dayRange.endAt) })
       : Promise.resolve(null),
     admin
-      ? caller.admin.analytics.views({ startAt: String(weekRange.startAt), endAt: String(weekRange.endAt) })
+      ? orpc.admin.analytics.views({ startAt: String(weekRange.startAt), endAt: String(weekRange.endAt) })
       : Promise.resolve(null),
-    caller.admin.posts.mySummary(),
-    caller.account.comments.myCounts(),
+    orpc.admin.posts.mySummary(),
+    orpc.account.comments.myCounts(),
   ])
 
   return {
-    name: user.name,
-    role: user.role,
+    name: user?.name ?? '',
+    role: user?.role ?? 'visitor',
     pendingModeration,
     visitSummary,
     weeklyTrend,

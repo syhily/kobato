@@ -1,6 +1,7 @@
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
+  contentBootstrapInputSchema,
   contentBootstrapOutputSchema,
   contentCategoriesListInputSchema,
   contentCategoriesListOutputSchema,
@@ -20,9 +21,12 @@ import {
 import { defineProcedure } from '@kobato/api/rpc/define-procedure'
 
 export const contentBootstrapContract = {
-  bootstrap: defineProcedure({ method: 'GET', path: '/content/bootstrap' }, { publicRead: true }).output(
-    contentBootstrapOutputSchema,
-  ),
+  bootstrap: defineProcedure(
+    { method: 'GET', path: '/content/bootstrap' },
+    { publicRead: true, installGateExempt: true },
+  )
+    .input(contentBootstrapInputSchema)
+    .output(contentBootstrapOutputSchema),
 }
 
 export const contentListingsContract = {

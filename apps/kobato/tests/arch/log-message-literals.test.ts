@@ -16,16 +16,22 @@ function scanFixture(source: string): ReturnType<typeof scanSourceForLogMessages
 }
 
 describe('server log messages are static', () => {
-  it('scans packages/server/src/ and the app entry modules and finds no dynamic or marker-bearing message', () => {
+  it("scans the server src and both apps' entry modules and finds no dynamic or marker-bearing message", () => {
     const result = scanLogMessages({
-      roots: ['packages/server/src/', 'apps/kobato/src/server.ts', 'apps/kobato/src/entry.server.tsx'],
+      roots: [
+        'packages/server/src/',
+        'apps/kobato/src/server.ts',
+        'apps/sayaka/src/server.ts',
+        'apps/sayaka/src/entry.server.tsx',
+      ],
       allowlist: ALLOWLIST,
     })
 
     expect(result.violations).toEqual([])
     expect(result.scannedFiles.length).toBeGreaterThan(100)
-    expect(result.scannedFiles).toContain('apps/kobato/src/entry.server.tsx')
     expect(result.scannedFiles).toContain('apps/kobato/src/server.ts')
+    expect(result.scannedFiles).toContain('apps/sayaka/src/entry.server.tsx')
+    expect(result.scannedFiles).toContain('apps/sayaka/src/server.ts')
     expect(result.scannedFiles.some((file) => file.startsWith('packages/server/src/'))).toBe(true)
     expect([...new Set(result.allowlisted.map((violation) => `${violation.file}:${violation.rule}`))]).toEqual([
       'packages/server/src/domains/webmentions/queue-scheduler.ts:dynamic-message',

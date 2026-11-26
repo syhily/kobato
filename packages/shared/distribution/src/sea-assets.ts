@@ -8,6 +8,8 @@ export const SEA_SMOKE_WORKER_BUNDLE_KEY = 'worker/smoke-worker.mjs'
 
 export const SEA_CLIENT_ASSET_PREFIX = 'client/'
 
+export const SEA_SAYAKA_CLIENT_ASSET_PREFIX = 'sayaka-client/'
+
 export const SEA_DRIZZLE_ASSET_PREFIX = 'drizzle/'
 
 export const SEA_NATIVE_ASSET_PREFIX = 'natives/'

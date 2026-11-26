@@ -42,6 +42,11 @@ export type CommentItemWire = z.infer<typeof commentItemDto>
 export const ownCommentMutationDto = z.object({ comment: commentItemDto })
 export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
 
+export const commentUpdateOwnInputSchema = z.object({ commentId: z.string(), body: commentEditorStateSchema })
+export type CommentUpdateOwnInput = z.input<typeof commentUpdateOwnInputSchema>
+export const commentIdInputSchema = z.object({ commentId: z.string() })
+export type CommentIdInput = z.infer<typeof commentIdInputSchema>
+
 const commentHoneypot = honeypotField('subtitle')
 
 export const commentReplySchema = z

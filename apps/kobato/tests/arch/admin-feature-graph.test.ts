@@ -3,9 +3,9 @@ import { join } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
-const ADMIN_UI = join(REPO_ROOT, 'packages/web/admin/src/ui')
-const UI_PREFIX = '@kobato/web-admin/ui/'
-const STYLES_PREFIX = '@kobato/web-admin/styles/'
+const ADMIN_UI = join(REPO_ROOT, 'apps/kobato/src/ui')
+const UI_PREFIX = '@/ui/'
+const STYLES_PREFIX = '@/ui/styles/'
 
 const ALLOWED_FEATURE_IMPORTS: Record<string, readonly string[]> = {
   account: ['auth', 'comments', 'sessions', 'shared'],
@@ -61,11 +61,11 @@ function importSpecifiers(source: string): string[] {
 }
 
 function targetFeatureOf(specifier: string): string | null {
+  if (specifier.startsWith(STYLES_PREFIX)) {
+    return specifier.slice('@/ui/'.length)
+  }
   if (specifier.startsWith(UI_PREFIX)) {
     return specifier.slice(UI_PREFIX.length).split('/')[0]
-  }
-  if (specifier.startsWith(STYLES_PREFIX)) {
-    return specifier.slice('@kobato/web-admin/'.length)
   }
   return null
 }
@@ -85,12 +85,13 @@ const scanned = walk(ADMIN_UI, [])
 describe('admin feature graph', () => {
   it('every ui feature folder carries an allowlist line', () => {
     const folders = readdirSync(ADMIN_UI, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      .filter((entry) => entry.isDirectory() && entry.name !== 'styles')
       .map((entry) => entry.name)
       .sort()
-    expect(folders, 'a new feature folder needs an ALLOWED_FEATURE_IMPORTS row before it may import siblings').toEqual(
-      Object.keys(ALLOWED_FEATURE_IMPORTS).sort(),
-    )
+    expect(
+      folders,
+      'a new feature folder needs an ALLOWED_FEATURE_IMPORTS row before it may import siblings (styles/ is the ui style adapter directory, not a feature)',
+    ).toEqual(Object.keys(ALLOWED_FEATURE_IMPORTS).sort())
   })
 
   it('cross-feature edges equal the audited allowlist exactly', () => {

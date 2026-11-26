@@ -1,10 +1,14 @@
 # Infra conventions
 
 `packages/server/src/infra/` holds technical primitives with zero business knowledge: it imports nothing from
-`domains/`, `http/`, or `render/` and must not name a persistence table, a settings-section field, or a task-domain
-noun. A module belongs here only while domain-agnostic — searchable post text, visibility gates, site-origin derivation,
-and Webmention headers live in `domains/`. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives,
-rollback, self-update gate).
+`domains/`, `http/`, or `render/`, nothing from `react-router` (no infra module ever names a router type), and must not
+name a persistence table, a settings-section field, or a task-domain noun. A module belongs here only while
+domain-agnostic — searchable post text, visibility gates, site-origin derivation, and Webmention headers live in
+`domains/`. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives, rollback, self-update gate). There
+is no `infra/hono/` — the React Router mount, its dev plugin, and the server-build loader are deleted; the workspace SPA
+is served by the app's own Hono app (`apps/kobato/src/server/backend-server.ts`), the shared dev plugin lives in
+`tools/pack/src/vite/react-router-hono-server.ts`, and the generic static-asset cache middleware lives in
+`http/middlewares/cache.ts`.
 
 - `db/paths.ts` resolves validated config into both engines' paths; `data-paths.ts` is its non-database twin (fonts,
   MaxMind, dead-letter). The engines open in `@kobato/db` — infra owns no engine code. `__setEnginePathsForTests` pins

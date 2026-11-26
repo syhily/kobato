@@ -1,0 +1,12 @@
+@source '..';
+
+@layer utilities {
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}

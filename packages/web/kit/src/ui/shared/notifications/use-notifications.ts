@@ -3,7 +3,7 @@ import {
   type NotificationDto,
   type NotificationTab,
   NOTIFICATION_TABS,
-} from '@kobato/api/contracts/account/notifications'
+} from '@kobato/api/contracts/public/notifications'
 import { isRecord } from '@kobato/utils/type-guards'
 import {
   type InfiniteData,
@@ -17,7 +17,7 @@ import { useCallback } from 'react'
 
 export function useUnreadNotificationCount(enabled = true): number | null {
   const query = useQuery(
-    orpcQuery.account.notifications.unreadCount.queryOptions({
+    orpcQuery.public.notifications.unreadCount.queryOptions({
       refetchInterval: 120_000,
       refetchOnWindowFocus: true,
       enabled,
@@ -29,7 +29,7 @@ export function useUnreadNotificationCount(enabled = true): number | null {
 export function useInvalidateNotifications(): () => Promise<void> {
   const queryClient = useQueryClient()
   return async () => {
-    await queryClient.invalidateQueries({ queryKey: orpcQuery.account.notifications.key() })
+    await queryClient.invalidateQueries({ queryKey: orpcQuery.public.notifications.key() })
   }
 }
 
@@ -40,10 +40,10 @@ interface NotificationCacheKeys {
 }
 
 function notificationCacheKeys(): NotificationCacheKeys {
-  const [listPath] = orpcQuery.account.notifications.list.key()
+  const [listPath] = orpcQuery.public.notifications.list.key()
   return {
-    scope: orpcQuery.account.notifications.key(),
-    unreadCount: orpcQuery.account.notifications.unreadCount.queryOptions({}).queryKey,
+    scope: orpcQuery.public.notifications.key(),
+    unreadCount: orpcQuery.public.notifications.unreadCount.queryOptions({}).queryKey,
     listPath: Array.isArray(listPath) ? listPath : [],
   }
 }
@@ -166,7 +166,7 @@ export function patchNotificationReadState(
     }
   } catch {
     try {
-      invalidateNotifications(queryClient, orpcQuery.account.notifications.key())
+      invalidateNotifications(queryClient, orpcQuery.public.notifications.key())
     } catch {}
   }
 }

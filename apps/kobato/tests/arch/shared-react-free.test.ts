@@ -119,7 +119,7 @@ describe('arch: the shared leaf packages and the api SDK are UI-runtime-free out
     const tsxFiles = sourceFiles.filter((filePath) => filePath.endsWith('.tsx'))
     expect(
       tsxFiles.map(relativePath),
-      `React components found in the shared leaf packages or the api SDK (move them to @kobato/web-admin):\n${tsxFiles.map(relativePath).join('\n')}`,
+      `React components found in the shared leaf packages or the api SDK (move them to apps/kobato/src/ui):\n${tsxFiles.map(relativePath).join('\n')}`,
     ).toEqual([])
   })
 

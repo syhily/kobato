@@ -46,6 +46,32 @@ describe('api/client/create-client — public headless client', () => {
     expect(true).toBe(true)
   })
 
+  it('reaches the promoted interaction procedures at the type level (ADR-0009 §2)', () => {
+    const client = createKobatoPublicClient({ url: 'https://headless.example.com/rpc', fetch: makeCapturingFetch([]) })
+
+    expectTypeOf(client.likes.increase).toBeFunction()
+    expectTypeOf(client.likes.decrease).toBeFunction()
+    expectTypeOf(client.likes.validate).toBeFunction()
+    expectTypeOf(client.friends.apply).toBeFunction()
+    expectTypeOf(client.notifications.list).toBeFunction()
+    expectTypeOf(client.notifications.unreadCount).toBeFunction()
+    expectTypeOf(client.notifications.markRead).toBeFunction()
+    expectTypeOf(client.notifications.markUnread).toBeFunction()
+    expectTypeOf(client.notifications.thread).toBeFunction()
+    expectTypeOf(client.notifications.reply).toBeFunction()
+    expectTypeOf(client.newsletter.subscribe).toBeFunction()
+    expectTypeOf(client.newsletter.confirm).toBeFunction()
+    expectTypeOf(client.newsletter.unsubscribe).toBeFunction()
+    expectTypeOf(client.comments.updateOwn).toBeFunction()
+    expectTypeOf(client.comments.requestDeleteOwn).toBeFunction()
+    expectTypeOf(client.comments.cancelDeleteOwn).toBeFunction()
+    // @ts-expect-error the public client exposes no account surface at all
+    void client.account
+    // @ts-expect-error the public client exposes no admin surface at all
+    void client.admin
+    expect(true).toBe(true)
+  })
+
   it('keeps getHeaders on the shared transport — headers reach the outgoing request', async () => {
     const calls: CapturedCall[] = []
     const client = createKobatoPublicClient({

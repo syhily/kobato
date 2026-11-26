@@ -7,12 +7,10 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
-const APP_SRC = join(REPO_ROOT, 'apps/kobato/src')
+const APP_SRC = join(REPO_ROOT, 'apps/sayaka/src')
 
 const PACKAGE_SRC: Record<string, string> = {
-  '@kobato/web-admin': 'packages/web/admin/src',
   '@kobato/web-kit': 'packages/web/kit/src',
-  '@kobato/web-public': 'packages/web/public/src',
   '@kobato/ui': 'packages/ui/src',
   '@kobato/api': 'packages/api/src',
   '@kobato/catalog': 'packages/shared/catalog/src',
@@ -25,7 +23,7 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/test': 'tools/test/src',
 }
 
-const PUBLIC_ENTRY_DIRS = ['apps/kobato/src/routes/public'] as const
+const PUBLIC_ENTRY_DIRS = ['apps/sayaka/src/routes'] as const
 
 const SERVER_ONLY_PREFIXES = ['packages/server/src/'] as const
 
@@ -72,6 +70,8 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
   let base: string
   if (specifier.startsWith('@/')) {
     base = join(APP_SRC, specifier.slice(2))
+  } else if (specifier.startsWith('@sayaka/')) {
+    base = join(APP_SRC, specifier.slice('@sayaka/'.length))
   } else if (specifier === '@kobato/server' || specifier.startsWith('@kobato/server/')) {
     return null
   } else if (specifier === '@kobato/inkling') {
@@ -144,7 +144,7 @@ function referencedMessageKeys(source: string): string[] {
 }
 
 describe('public message namespaces', () => {
-  it('never references a workspace-only message key from the public module graph', () => {
+  it('never references a workspace-only message key from sayaka’s public module graph', () => {
     const offenders: string[] = []
     for (const [file, source] of collectPublicGraph()) {
       const rel = repoRelative(file)

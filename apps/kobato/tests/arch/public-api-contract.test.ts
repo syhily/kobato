@@ -16,8 +16,24 @@ const PUBLIC_ROUTE_MANIFEST: Record<string, string> = {
   'comments.loadComments': 'GET /comments/list',
   'comments.getRaw': 'GET /comments/get-raw',
   'comments.edit': 'POST /comments/edit',
+  'comments.updateOwn': 'POST /comments/update-own',
+  'comments.requestDeleteOwn': 'POST /comments/request-delete-own',
+  'comments.cancelDeleteOwn': 'POST /comments/cancel-delete-own',
   'comments.revokeToken': 'POST /comments/revoke-token',
   'comments.myComments': 'GET /comments/my-comments',
+  'likes.increase': 'POST /likes/increase',
+  'likes.decrease': 'POST /likes/decrease',
+  'likes.validate': 'GET /likes/validate',
+  'friends.apply': 'POST /friends/apply',
+  'notifications.list': 'GET /notifications/list',
+  'notifications.unreadCount': 'GET /notifications/unread-count',
+  'notifications.markRead': 'POST /notifications/mark-read',
+  'notifications.markUnread': 'POST /notifications/mark-unread',
+  'notifications.thread': 'GET /notifications/thread',
+  'notifications.reply': 'POST /notifications/reply',
+  'newsletter.subscribe': 'POST /newsletter/subscribe',
+  'newsletter.confirm': 'POST /newsletter/confirm',
+  'newsletter.unsubscribe': 'POST /newsletter/unsubscribe',
   'webmentions.list': 'GET /webmention/list',
   'avatar.find': 'GET /avatar/find',
   'github.avatar': 'GET /github/avatar',
@@ -26,17 +42,42 @@ const PUBLIC_ROUTE_MANIFEST: Record<string, string> = {
   'music.get': 'GET /music/get',
   'analytics.recordDeviceEnv': 'POST /analytics/env',
   'observability.rumStatus': 'GET /rum/status',
+  'observability.rumIntake': 'POST /api/rum/intake/*',
+  'webmentions.receive': 'POST /webmention',
+  'feeds.rss': 'GET /feeds/rss',
+  'feeds.atom': 'GET /feeds/atom',
+  'sitemap.xml': 'GET /sitemap/xml',
+  'images.og': 'GET /images/og',
+  'images.calendar': 'GET /images/calendar',
+  'avatar.image': 'GET /images/avatar',
+  'branding.asset': 'GET /branding/asset',
+  'fonts.embedded': 'GET /fonts/embedded',
+  'storage.object': 'GET /storage/object',
 }
 
 const PUBLIC_POST_PROCEDURES: readonly string[] = [
   'comments.replyComment',
   'comments.edit',
+  'comments.updateOwn',
+  'comments.requestDeleteOwn',
+  'comments.cancelDeleteOwn',
   'comments.revokeToken',
+  'likes.increase',
+  'likes.decrease',
+  'friends.apply',
+  'notifications.markRead',
+  'notifications.markUnread',
+  'notifications.reply',
+  'newsletter.subscribe',
+  'newsletter.confirm',
+  'newsletter.unsubscribe',
   'analytics.recordDeviceEnv',
+  'webmentions.receive',
+  'observability.rumIntake',
 ]
 
 interface ContractProcedure {
-  '~orpc': { route: { method: string; path: string } }
+  '~orpc': { route: { method: string; path: string }; meta?: Record<string, unknown> }
 }
 
 function isContractProcedure(value: unknown): value is ContractProcedure {
@@ -67,17 +108,26 @@ function routeOf(procedure: ContractProcedure): string {
 describe('public API contract seam', () => {
   const publicProcedures = flatten(publicContract)
 
-  it('exposes exactly the nine public domains', () => {
+  it('exposes exactly the eighteen public domains', () => {
     expect(Object.keys(publicContract)).toEqual([
       'content',
       'comments',
+      'likes',
+      'friends',
+      'notifications',
+      'newsletter',
       'webmentions',
       'avatar',
       'github',
       'images',
       'music',
+      'branding',
+      'fonts',
+      'storage',
       'analytics',
       'observability',
+      'feeds',
+      'sitemap',
     ])
   })
 
@@ -93,12 +143,17 @@ describe('public API contract seam', () => {
     expect(canonicalPaths).toEqual([
       '/rpc/public/analytics/recordDeviceEnv',
       '/rpc/public/avatar/find',
+      '/rpc/public/avatar/image',
+      '/rpc/public/branding/asset',
+      '/rpc/public/comments/cancelDeleteOwn',
       '/rpc/public/comments/edit',
       '/rpc/public/comments/getRaw',
       '/rpc/public/comments/loadComments',
       '/rpc/public/comments/myComments',
       '/rpc/public/comments/replyComment',
+      '/rpc/public/comments/requestDeleteOwn',
       '/rpc/public/comments/revokeToken',
+      '/rpc/public/comments/updateOwn',
       '/rpc/public/content/archives',
       '/rpc/public/content/bootstrap',
       '/rpc/public/content/categories/list',
@@ -108,16 +163,38 @@ describe('public API contract seam', () => {
       '/rpc/public/content/posts/bySlug',
       '/rpc/public/content/posts/list',
       '/rpc/public/content/search',
+      '/rpc/public/feeds/atom',
+      '/rpc/public/feeds/rss',
+      '/rpc/public/fonts/embedded',
+      '/rpc/public/friends/apply',
       '/rpc/public/github/avatar',
       '/rpc/public/github/release',
+      '/rpc/public/images/calendar',
+      '/rpc/public/images/og',
       '/rpc/public/images/resolveThumbhash',
+      '/rpc/public/likes/decrease',
+      '/rpc/public/likes/increase',
+      '/rpc/public/likes/validate',
       '/rpc/public/music/get',
+      '/rpc/public/newsletter/confirm',
+      '/rpc/public/newsletter/subscribe',
+      '/rpc/public/newsletter/unsubscribe',
+      '/rpc/public/notifications/list',
+      '/rpc/public/notifications/markRead',
+      '/rpc/public/notifications/markUnread',
+      '/rpc/public/notifications/reply',
+      '/rpc/public/notifications/thread',
+      '/rpc/public/notifications/unreadCount',
+      '/rpc/public/observability/rumIntake',
       '/rpc/public/observability/rumStatus',
+      '/rpc/public/sitemap/xml',
+      '/rpc/public/storage/object',
       '/rpc/public/webmentions/list',
+      '/rpc/public/webmentions/receive',
     ])
   })
 
-  it('keeps public mutations to the three comment procedures and the anonymous device beacon', () => {
+  it('keeps public mutations to the comment writes, likes, friend apply, the notification writes, newsletter, the anonymous device beacon, and the two inbound protocols', () => {
     const posts = [...publicProcedures]
       .filter(([, procedure]) => routeOf(procedure).startsWith('POST'))
       .map(([key]) => key)
@@ -143,8 +220,17 @@ describe('public API contract seam', () => {
     expect(overlap.map(routeOf), 'account/admin procedures must not repeat a public oc.route').toEqual([])
   })
 
-  it('exposes the webmention receive endpoint only as a Hono resource, never an RPC', () => {
-    expect(publicProcedures.has('webmentions.receive')).toBe(false)
-    expect([...publicProcedures.keys()].filter((key) => key.startsWith('webmentions.'))).toEqual(['webmentions.list'])
+  it('answers the Webmention receive and the RUM intake as contract procedures, and marks neither an anonymous public read', () => {
+    expect(publicProcedures.has('webmentions.receive')).toBe(true)
+    expect(publicProcedures.has('observability.rumIntake')).toBe(true)
+    for (const key of ['webmentions.receive', 'observability.rumIntake']) {
+      const meta = publicProcedures.get(key)?.['~orpc'].meta
+      expect(meta?.publicRead, key).toBeUndefined()
+      expect(meta?.csrfExempt, key).toBe(true)
+    }
+    expect([...publicProcedures.keys()].filter((key) => key.startsWith('webmentions.')).sort()).toEqual([
+      'webmentions.list',
+      'webmentions.receive',
+    ])
   })
 })

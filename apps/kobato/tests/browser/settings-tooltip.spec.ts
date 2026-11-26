@@ -1,8 +1,13 @@
-import { expect, test } from '@tests/browser/support/fixtures'
-import { openSettings } from '@tests/browser/support/journey'
+import { expect, test } from '@kobato/pack/browser/fixtures'
+import { openSettings } from '@kobato/pack/browser/journey'
 
 const HINT_TRIGGER_LABEL = '了解更多'
 const OBSERVABILITY_NAV_LABEL = '可观测性'
+
+test.beforeEach(async ({ settingsApi }) => {
+  await settingsApi.resetGeneral()
+})
+
 interface TooltipProbe {
   hitInsidePopup: boolean
   hitDescription: string

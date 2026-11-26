@@ -1,4 +1,4 @@
-import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/account/notifications'
+import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/public/notifications'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
@@ -32,7 +32,7 @@ const EMPTY_COPY_IDS: Record<NotificationTab, UiMessageId> = {
 export function NotificationListPane({ tab, onOpen, focusItemId, onFocusHandled }: NotificationListPaneProps) {
   const { t } = useI18n()
   const query = useInfiniteQuery(
-    orpcQuery.account.notifications.list.infiniteOptions({
+    orpcQuery.public.notifications.list.infiniteOptions({
       input: (pageParam) => ({ tab, cursor: pageParam === '' ? undefined : pageParam, limit: 20 }),
       initialPageParam: '',
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -132,7 +132,7 @@ function NotificationRow({
   const titleId = `notification-row-title-${item.id}`
   const patchReadState = usePatchNotificationReadState()
   const markUnread = useMutation(
-    orpcQuery.account.notifications.markUnread.mutationOptions({
+    orpcQuery.public.notifications.markUnread.mutationOptions({
       onSuccess: (data) => patchReadState([item.id], false, data.count),
       onError: onMutationError('admin.toast.operationFailed', t),
     }),

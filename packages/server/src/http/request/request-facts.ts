@@ -1,6 +1,14 @@
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
+import { ANALYTICS_EVENT_HEADER } from '@kobato/api/client/analytics-event'
 import { randomUUID } from 'node:crypto'
+
+const ANALYTICS_EVENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function analyticsEventId(headers: Headers): string {
+  const inbound = headers.get(ANALYTICS_EVENT_HEADER)
+  return inbound !== null && ANALYTICS_EVENT_ID_PATTERN.test(inbound) ? inbound : randomUUID()
+}
 
 export function normalizeDocumentUrl(url: URL): URL {
   const normalized = new URL(url.href)
@@ -34,7 +42,7 @@ export function extractRequestFacts(request: Request): RequestFacts {
     formFactors: headers.get('sec-ch-ua-form-factors'),
   }
   return {
-    analyticsEventId: randomUUID(),
+    analyticsEventId: analyticsEventId(headers),
     path: normalizeDocumentUrl(rawUrl).pathname,
     isDataRequest: isDataRequestUrl(rawUrl),
     userAgent: headers.get('user-agent'),

@@ -18,3 +18,20 @@ export const webmentionPublicListSchema = z.object({ page_key: z.string() })
 
 export const webmentionPublicListOutputSchema = z.object({ webmentions: z.array(publicWebmentionDto) })
 export type WebmentionPublicListOutput = z.infer<typeof webmentionPublicListOutputSchema>
+
+export const webmentionReceiveInputSchema = z.object({
+  source: z.string(),
+  target: z.string(),
+})
+export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveInputSchema>
+
+export const webmentionAcceptedSchema = z.object({ kind: z.literal('accepted') })
+export const webmentionInvalidSchema = z.object({ kind: z.literal('invalid'), message: z.string() })
+export const webmentionDisabledSchema = z.object({ kind: z.literal('disabled'), message: z.string() })
+
+export const webmentionReceiveOutputSchema = z.union([
+  webmentionAcceptedSchema,
+  webmentionInvalidSchema,
+  webmentionDisabledSchema,
+])
+export type WebmentionReceiveOutput = z.infer<typeof webmentionReceiveOutputSchema>

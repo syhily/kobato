@@ -2,10 +2,10 @@ import type { EntityTarget } from '@kobato/db/sqlite/target'
 import type { RawAccessEvent } from '@kobato/server/domains/analytics/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
+import { isBot } from '@kobato/api/client/is-bot'
 import { buildDeviceEnvServerRow, enrichEvent } from '@kobato/server/domains/analytics/enrich'
 import { pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher'
 import { bumpPageView } from '@kobato/server/domains/analytics/services/pv-batcher'
-import { isBot } from '@kobato/server/infra/http/is-bot'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 

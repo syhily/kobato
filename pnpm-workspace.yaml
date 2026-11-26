@@ -24,6 +24,7 @@ catalog:
   '@duckdb/node-api': ^2.0.1-r.1
   '@duckdbfan/drizzle-duckdb': ^3.0.0-rc.2
   '@formatjs/icu-messageformat-parser': ^3.5.23
+  '@formatjs/intl': ^6.2.1
   '@hono/node-server': ^2.1.11
   '@hono/vite-dev-server': ^0.26.1
   '@lexical/clipboard': ^0.53.0
@@ -105,6 +106,7 @@ catalog:
   html-minifier-terser: ^7.2.0
   husky: ^9.1.7
   idb: ^8.0.4
+  intl-messageformat: ^12.2.1
   jsdom: ^31.0.1
   katex: ^0.19.1
   lexical: ^0.53.0

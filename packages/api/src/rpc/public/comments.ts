@@ -1,6 +1,7 @@
 import {
   commentEditInputSchema,
   commentGetRawOutputSchema,
+  commentIdInputSchema,
   commentListInputSchema,
   commentListOutputSchema,
   commentMyCommentsInputSchema,
@@ -8,6 +9,7 @@ import {
   commentRevokeTokenInputSchema,
   commentRevokeTokenOutputSchema,
   commentRidSchema,
+  commentUpdateOwnInputSchema,
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
@@ -29,6 +31,18 @@ export const commentsPublicContract = {
     .output(ownCommentMutationDto),
 }
 
+export const commentsOwnContract = {
+  updateOwn: defineProcedure({ method: 'POST', path: '/comments/update-own' })
+    .input(commentUpdateOwnInputSchema)
+    .output(ownCommentMutationDto),
+  requestDeleteOwn: defineProcedure({ method: 'POST', path: '/comments/request-delete-own' })
+    .input(commentIdInputSchema)
+    .output(ownCommentMutationDto),
+  cancelDeleteOwn: defineProcedure({ method: 'POST', path: '/comments/cancel-delete-own' })
+    .input(commentIdInputSchema)
+    .output(ownCommentMutationDto),
+}
+
 export const commentsTokenContract = {
   revokeToken: defineProcedure({ method: 'POST', path: '/comments/revoke-token' })
     .input(commentRevokeTokenInputSchema)
@@ -40,5 +54,6 @@ export const commentsTokenContract = {
 
 export const commentsContract = {
   ...commentsPublicContract,
+  ...commentsOwnContract,
   ...commentsTokenContract,
 }

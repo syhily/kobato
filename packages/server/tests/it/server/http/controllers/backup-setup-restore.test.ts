@@ -1,8 +1,10 @@
 import type { Database } from '@kobato/db/sqlite/database'
+import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { databaseOf, sqliteOf } from '@kobato/db/sqlite/database'
 import { user as userTable } from '@kobato/db/sqlite/schema/user'
+import { setupTokenFingerprint } from '@kobato/server/domains/auth/setup-token'
 import { setupRouter } from '@kobato/server/http/controllers/account/setup.controller'
 import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.controller'
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
@@ -16,6 +18,7 @@ import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockIsSetupTokenActive = vi.fn()
+const mockLiveSetupToken = vi.fn<() => Promise<string | null>>()
 const mockRestoreFromStagedBackup = vi.fn()
 const mockAssertStagedBackupContainsAdmin = vi.fn()
 const mockStageBackup = vi.fn()
@@ -23,9 +26,14 @@ const mockStartRestoreJob = vi.fn()
 const mockWithRestoreClaim = vi.fn()
 const mockRecordAuditEvent = vi.fn()
 
-vi.mock('@kobato/server/domains/auth/setup-token', () => ({
-  isSetupTokenActive: (...args: unknown[]) => mockIsSetupTokenActive(...args),
-}))
+vi.mock(import('@kobato/server/domains/auth/setup-token'), async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/domains/auth/setup-token')>()
+  return {
+    ...actual,
+    isSetupTokenActive: (...args: unknown[]) => mockIsSetupTokenActive(...args),
+    liveSetupToken: () => mockLiveSetupToken(),
+  }
+})
 
 vi.mock('@kobato/server/domains/backup/services/restore', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@kobato/server/domains/backup/services/restore')>()
@@ -54,6 +62,14 @@ vi.mock('@kobato/server/domains/audit/services/record', () => ({
 }))
 
 const db = getTestDb()
+
+function verifiedSession(): BlogSession {
+  return makeSession({
+    setupTokenVerified: true,
+    setupTokenVerifiedFor: setupTokenFingerprint('current-token'),
+    csrfToken: 'valid-csrf',
+  })
+}
 
 function setupContext(session: ReturnType<typeof makeSession>): HandlerContext {
   return { ...makePublicCtx({ db }), session }
@@ -164,15 +180,26 @@ describe('account.setup.restore', () => {
     ).rejects.toMatchObject({ status: 403, data: { descriptor: { messageKey: 'backup.error.setupTokenIncomplete' } } })
   })
 
-  it('returns 403 when setup token has expired', async () => {
-    mockIsSetupTokenActive.mockResolvedValue(false)
+  it('returns 403 when the setup token is no longer live, clearing the stale flag', async () => {
+    mockLiveSetupToken.mockResolvedValue(null)
+    const session = makeSession({ setupTokenVerified: true, setupTokenVerifiedFor: 'stale', csrfToken: 'valid-csrf' })
     await expect(
-      call(
-        setupRouter.restore,
-        { file: new File(['content'], 'test.sql') },
-        { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
-      ),
+      call(setupRouter.restore, { file: new File(['content'], 'test.sql') }, { context: setupContext(session) }),
     ).rejects.toMatchObject({ status: 403, data: { descriptor: { messageKey: 'auth.setup.error.tokenExpired' } } })
+    expect(session.data.setupTokenVerified).toBeUndefined()
+  })
+
+  it('returns 403 when the live token differs from the verified fingerprint', async () => {
+    mockLiveSetupToken.mockResolvedValue('current-token')
+    const session = makeSession({
+      setupTokenVerified: true,
+      setupTokenVerifiedFor: 'stale-fingerprint',
+      csrfToken: 'valid-csrf',
+    })
+    await expect(
+      call(setupRouter.restore, { file: new File(['content'], 'test.sql') }, { context: setupContext(session) }),
+    ).rejects.toMatchObject({ status: 403, data: { descriptor: { messageKey: 'auth.setup.error.tokenExpired' } } })
+    expect(session.data.setupTokenVerified).toBeUndefined()
   })
 
   it('returns 409 when admin already exists', async () => {
@@ -181,7 +208,7 @@ describe('account.setup.restore', () => {
       call(
         setupRouter.restore,
         { file: new File(['content'], 'test.sql') },
-        { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+        { context: setupContext(verifiedSession()) },
       ),
     ).rejects.toMatchObject({ status: 409, data: { descriptor: { messageKey: 'backup.error.siteInstalled' } } })
   })
@@ -189,6 +216,7 @@ describe('account.setup.restore', () => {
   it('accepts restore and applies content only', async () => {
     const restored = createTestDatabaseFile()
     const adminId = await seedAdmin(databaseOf(restored))
+    mockLiveSetupToken.mockResolvedValue('current-token')
     mockStartRestoreJob.mockImplementation(async (fn, afterReopenFn) => {
       await fn()
       await afterReopenFn?.(databaseOf(restored))
@@ -196,7 +224,9 @@ describe('account.setup.restore', () => {
     const result = await call(
       setupRouter.restore,
       { file: new File(['content'], 'test.db.tar.gz') },
-      { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+      {
+        context: setupContext(verifiedSession()),
+      },
     )
     expect(result).toEqual({ accepted: true })
     expect(mockRestoreFromStagedBackup).toHaveBeenCalledWith(
@@ -219,7 +249,7 @@ describe('account.setup.restore', () => {
     const result = await call(
       setupRouter.restore,
       { file: new File(['content'], 'test.db.tar.gz') },
-      { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+      { context: setupContext(verifiedSession()) },
     )
     expect(result).toEqual({ accepted: true })
     expect(mockRecordAuditEvent).not.toHaveBeenCalled()
@@ -231,7 +261,7 @@ describe('account.setup.restore', () => {
       call(
         setupRouter.restore,
         { file: new File(['content'], 'test.sql') },
-        { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+        { context: setupContext(verifiedSession()) },
       ),
     ).rejects.toMatchObject({ status: 409, data: { descriptor: { messageKey: 'backup.error.restoreRunning' } } })
   })
@@ -243,7 +273,7 @@ describe('account.setup.restore', () => {
       call(
         setupRouter.restore,
         { file: new File(['encrypted-bytes'], 'backup.db.tar.gz.enc') },
-        { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+        { context: setupContext(verifiedSession()) },
       ),
     ).rejects.toMatchObject({ status: 400, data: { descriptor: { messageKey: 'backup.error.passwordMissingUpload' } } })
     expect(existsSync(stagedDir)).toBe(false)
@@ -253,7 +283,7 @@ describe('account.setup.restore', () => {
     const result = await call(
       setupRouter.restore,
       { file: new File(['encrypted-bytes'], 'backup.db.tar.gz.enc'), password: 'open-sesame' },
-      { context: setupContext(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' })) },
+      { context: setupContext(verifiedSession()) },
     )
     expect(result).toEqual({ accepted: true })
     expect(mockStageBackup).toHaveBeenCalledWith(

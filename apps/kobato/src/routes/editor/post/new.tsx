@@ -1,10 +1,10 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { PostEditorShell } from '@kobato/web-admin/ui/posts/PostEditorShell'
 import { useNavigate } from 'react-router'
 
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { PostEditorShell } from '@/ui/posts/PostEditorShell'
 
-export const loader = guardOnlyLoader('author')
+export const clientLoader = guardLoader('author')
 
 export const meta = titleMeta('meta.title.editor.postNew')
 

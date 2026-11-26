@@ -1,15 +1,15 @@
-import { guardOnlyLoader } from '@kobato/server/http/request-context'
-import { SettingsWorkspace } from '@kobato/web-admin/ui/settings/shell/SettingsWorkspace'
 import { useCallback } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 
+import { guardLoader } from '@/lib/guard-loader'
 import { titleMeta } from '@/seo/title-meta'
+import { SettingsWorkspace } from '@/ui/settings/shell/SettingsWorkspace'
 
 export const meta = titleMeta('meta.title.admin.settings')
 
-export const loader = guardOnlyLoader('admin')
+export const clientLoader = guardLoader('admin')
 
 export default function SettingsPage() {
   const navigate = useNavigate()

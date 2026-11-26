@@ -5,25 +5,24 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 const SOURCE_ROOTS = [
   { packageRoot: 'apps/kobato', sourceRoot: 'apps/kobato/src' },
+  { packageRoot: 'apps/sayaka', sourceRoot: 'apps/sayaka/src' },
   { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo/src' },
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
-  { packageRoot: 'packages/web/admin', sourceRoot: 'packages/web/admin/src' },
   { packageRoot: 'packages/web/kit', sourceRoot: 'packages/web/kit/src' },
-  { packageRoot: 'packages/web/public', sourceRoot: 'packages/web/public/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
 
 const SOURCE_PARTIALS = [
   { file: 'packages/inkling/src/styles/cards.css', specifier: '@kobato/inkling/styles/cards.css' },
-  { file: 'packages/web/public/src/styles/public.css', specifier: '@kobato/web-public/styles/public.css' },
+  { file: 'apps/sayaka/src/ui/styles/public.css', specifier: '@sayaka/ui/styles/public.css' },
   { file: 'packages/web/kit/src/styles/kit.css', specifier: '@kobato/web-kit/styles/kit.css' },
-  { file: 'packages/web/admin/src/styles/admin.css', specifier: '@kobato/web-admin/styles/admin.css' },
+  { file: 'apps/kobato/src/ui/styles/admin.css', specifier: '../ui/styles/admin.css' },
 ] as const
 
 const WEB_PARTIAL_REQUIRED_SOURCES = {
-  'packages/web/public/src/styles/public.css': ['../ui'],
+  'apps/sayaka/src/ui/styles/public.css': ['..'],
+  'apps/kobato/src/ui/styles/admin.css': ['..'],
   'packages/web/kit/src/styles/kit.css': ['../ui'],
-  'packages/web/admin/src/styles/admin.css': ['../ui'],
 } as const
 
 function collectFiles(root: string, matches: (fileName: string) => boolean): string[] {
@@ -59,13 +58,13 @@ describe('Tailwind source ownership', () => {
 
     expect([...seen]).toEqual(
       expect.arrayContaining([
-        'apps/kobato/src/styles/public.css',
         'apps/kobato/src/styles/admin.css',
+        'apps/sayaka/src/styles/public.css',
+        'apps/sayaka/src/ui/styles/public.css',
         'apps/inkling-demo/src/styles/public.css',
         'packages/ui/src/styles/ui.css',
-        'packages/web/public/src/styles/public.css',
         'packages/web/kit/src/styles/kit.css',
-        'packages/web/admin/src/styles/admin.css',
+        'apps/kobato/src/ui/styles/admin.css',
         'packages/inkling/src/styles/cards.css',
         'packages/inkling/src/styles/index.css',
       ]),
@@ -86,14 +85,16 @@ describe('Tailwind source ownership', () => {
   })
 
   it('keeps UI ui.css on the root route as the single eager document entry', () => {
-    const rootSource = readFileSync('apps/kobato/src/root.tsx', 'utf8')
+    for (const app of ['apps/kobato', 'apps/sayaka'] as const) {
+      const rootSource = readFileSync(`${app}/src/root.tsx`, 'utf8')
 
-    expect(rootSource).toMatch(/^import '@kobato\/ui\/styles\/ui\.css'$/m)
-    expect(rootSource).not.toContain(`import('@kobato/ui/styles/ui.css')`)
-    const files = collectFiles(resolve(REPO_ROOT, 'apps/kobato/src'), (name) => /\.tsx?$/.test(name)).filter((path) =>
-      readFileSync(path, 'utf8').includes(`@kobato/ui/styles/ui.css`),
-    )
-    expect(files.map((file) => relative(REPO_ROOT, file))).toEqual(['apps/kobato/src/root.tsx'])
+      expect(rootSource).toMatch(/^import '@kobato\/ui\/styles\/ui\.css'$/m)
+      expect(rootSource).not.toContain(`import('@kobato/ui/styles/ui.css')`)
+      const files = collectFiles(resolve(REPO_ROOT, `${app}/src`), (name) => /\.tsx?$/.test(name)).filter((path) =>
+        readFileSync(path, 'utf8').includes(`@kobato/ui/styles/ui.css`),
+      )
+      expect(files.map((file) => relative(REPO_ROOT, file))).toEqual([`${app}/src/root.tsx`])
+    }
   })
 
   it('terminates every directive at-rule (an unterminated prelude silently swallows the next directive)', () => {
@@ -115,10 +116,18 @@ describe('Tailwind source ownership', () => {
     }
   })
 
+  it('keeps kobato on exactly one surface entry — the workspace compilation', () => {
+    const entries = readdirSync(resolve(REPO_ROOT, 'apps/kobato/src/styles'), { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
+      .map((entry) => entry.name)
+      .sort()
+    expect(entries).toEqual(['admin.css'])
+  })
+
   it('keeps surface entries on the reference token sheet plus the emitted base default', () => {
     const entries = [
       'apps/kobato/src/styles/admin.css',
-      'apps/kobato/src/styles/public.css',
+      'apps/sayaka/src/styles/public.css',
       'apps/inkling-demo/src/styles/public.css',
     ]
     for (const file of entries) {

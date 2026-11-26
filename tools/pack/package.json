@@ -20,11 +20,13 @@
     "sea:package": "node src/sea/package.ts",
     "sea:probe": "node src/sea/vfs-capabilities.ts",
     "sea:smoke": "node src/sea/smoke.ts",
+    "split:smoke": "node src/instance/split-smoke.ts",
     "test:browser": "node src/sea/browser.ts",
     "version:sync": "node src/release.ts sync-versions"
   },
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
+    "@hono/vite-dev-server": "catalog:",
     "@kobato/distribution": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/settings": "workspace:*",
@@ -32,6 +34,7 @@
     "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",
+    "@react-router/dev": "catalog:",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "oxc-transform-react": "catalog:",

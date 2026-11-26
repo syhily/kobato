@@ -1,17 +1,15 @@
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { getRequestContext } from '@kobato/server/http/request-context'
-import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { projectAssetsForAdmin } from '@kobato/settings/projection'
-import { BrandingView } from '@kobato/web-admin/ui/branding/BrandingView'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { BrandingView } from '@/ui/branding/BrandingView'
 
 import type { Route } from './+types/branding'
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  requireRole(rc.viewer ?? undefined, 'admin')
-  const bundle = getBlogSettingsBundleSync()
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'admin', { pathname: new URL(request.url).pathname })
+  const bundle = boot.blogSettings
   if (!bundle?.assets) {
     return { branding: null }
   }

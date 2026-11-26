@@ -2,11 +2,16 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
+import { upsertOneTimeToken } from '@kobato/db/sqlite/operations/identity/otp'
 import { oneTimeToken } from '@kobato/db/sqlite/schema/one-time-token'
 import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@kobato/server/domains/audit/services/batcher'
-import { __resetSetupTokenForTests, getSetupToken } from '@kobato/server/domains/auth/setup-token'
+import {
+  __resetSetupTokenForTests,
+  getSetupToken,
+  setupTokenFingerprint,
+} from '@kobato/server/domains/auth/setup-token'
 import { setupRouter } from '@kobato/server/http/controllers/account/setup.controller'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { __resetRateLimitsForTests, tryKeyedRateLimit } from '@kobato/server/infra/rate-limit'
@@ -52,8 +57,21 @@ function ctxWithSession(
   }
 }
 
-function verifiedSession(extra: Record<string, unknown> = {}): BlogSession {
-  return makeSession({ csrfToken: 'setup-csrf', setupTokenVerified: true, ...extra })
+function verifiedSessionFor(token: string, extra: Record<string, unknown> = {}): BlogSession {
+  return makeSession({
+    csrfToken: 'setup-csrf',
+    setupTokenVerified: true,
+    setupTokenVerifiedFor: setupTokenFingerprint(token),
+    ...extra,
+  })
+}
+
+async function replaceLiveToken(payload: string): Promise<unknown> {
+  return upsertOneTimeToken(db, {
+    key: 'setup_token',
+    payload,
+    expiresAt: new Date(Date.now() + 60_000),
+  })
 }
 
 async function tokenRows() {
@@ -82,15 +100,31 @@ describe('account setup controller — status', () => {
     expect(await tokenRows()).toHaveLength(1)
   })
 
-  it('projects the verified flag from the session', async () => {
-    const result = await call(setupRouter.status, {}, { context: ctxWithSession(verifiedSession()) })
+  it('reports verified only for a flag bound to the live token fingerprint', async () => {
+    const token = await getSetupToken(db)
+    const session = makeSession({ csrfToken: 'setup-csrf' })
+    await call(setupRouter.verifyToken, { token }, { context: ctxWithSession(session) })
 
-    expect(result).toEqual({ setupTokenVerified: true, csrfToken: 'setup-csrf' })
+    const verified = await call(setupRouter.status, {}, { context: ctxWithSession(session) })
+    expect(verified.setupTokenVerified).toBe(true)
+
+    await replaceLiveToken('re-minted-token')
+    const sessionForStaleToken = verifiedSessionFor(token)
+    const stale = await call(setupRouter.status, {}, { context: ctxWithSession(sessionForStaleToken) })
+    expect(stale.setupTokenVerified).toBe(false)
+  })
+
+  it('reports unverified for a bare session flag without a fingerprint', async () => {
+    const session = makeSession({ csrfToken: 'setup-csrf', setupTokenVerified: true })
+
+    const result = await call(setupRouter.status, {}, { context: ctxWithSession(session) })
+
+    expect(result.setupTokenVerified).toBe(false)
   })
 })
 
 describe('account setup controller — verifyToken', () => {
-  it('verifies a valid token, stores only the boolean flag, and marks the session dirty', async () => {
+  it('verifies a valid token, stores the flag with the token fingerprint, and marks the session dirty', async () => {
     const token = await getSetupToken(db)
     const session = makeSession({ csrfToken: 'setup-csrf' })
     const markSessionDirty = vi.fn()
@@ -103,6 +137,7 @@ describe('account setup controller — verifyToken', () => {
 
     expect(result).toEqual({ kind: 'verified' })
     expect(session.data.setupTokenVerified).toBe(true)
+    expect(session.data.setupTokenVerifiedFor).toBe(setupTokenFingerprint(token))
     expect(session.data).not.toHaveProperty('setupToken')
     expect(markSessionDirty).toHaveBeenCalledTimes(1)
   })
@@ -164,8 +199,8 @@ describe('account setup controller — verifyToken', () => {
 
 describe('account setup controller — install', () => {
   it('installs the first admin, moves the session cookie onto the response headers, and consumes the token', async () => {
-    await getSetupToken(db)
-    const session = verifiedSession()
+    const token = await getSetupToken(db)
+    const session = verifiedSessionFor(token)
     const ctx = ctxWithSession(session)
 
     const result = await call(setupRouter.install, INSTALL_INPUT, { context: ctx })
@@ -193,7 +228,7 @@ describe('account setup controller — install', () => {
     expect(await adminRows()).toHaveLength(0)
   })
 
-  it('answers tokenExpired when the setup token row is no longer live', async () => {
+  it('answers tokenExpired when the setup token row is no longer live and clears the stale flag', async () => {
     await sqliteOf(db)
       .insert(oneTimeToken)
       .values({
@@ -202,24 +237,58 @@ describe('account setup controller — install', () => {
         expiresAt: new Date(Date.now() - 1000),
       })
 
+    const session = verifiedSessionFor('expired-token')
+    const markSessionDirty = vi.fn()
     const result = await call(setupRouter.install, INSTALL_INPUT, {
-      context: ctxWithSession(verifiedSession()),
+      context: ctxWithSession(session, { markSessionDirty }),
     })
 
     expect(result).toMatchObject({
       type: 'error',
       descriptor: { messageKey: 'auth.setup.error.tokenExpired' },
     })
+    expect(session.data.setupTokenVerified).toBeUndefined()
+    expect(session.data.setupTokenVerifiedFor).toBeUndefined()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(await adminRows()).toHaveLength(0)
+  })
+
+  it('answers tokenExpired when a different live token was re-minted after verification', async () => {
+    const staleToken = await getSetupToken(db)
+    const session = verifiedSessionFor(staleToken)
+    await replaceLiveToken('re-minted-token')
+
+    const result = await call(setupRouter.install, INSTALL_INPUT, { context: ctxWithSession(session) })
+
+    expect(result).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.setup.error.tokenExpired' },
+    })
+    expect(session.data.setupTokenVerified).toBeUndefined()
+    expect(await adminRows()).toHaveLength(0)
+  })
+
+  it('rejects a bare session flag without a fingerprint', async () => {
+    await getSetupToken(db)
+    const session = makeSession({ csrfToken: 'setup-csrf', setupTokenVerified: true })
+
+    const result = await call(setupRouter.install, INSTALL_INPUT, { context: ctxWithSession(session) })
+
+    expect(result).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.setup.error.tokenExpired' },
+    })
+    expect(session.data.setupTokenVerified).toBeUndefined()
     expect(await adminRows()).toHaveLength(0)
   })
 
   it('keeps the signUpAdminSchema field copy instead of a wire BAD_REQUEST', async () => {
-    await getSetupToken(db)
+    const token = await getSetupToken(db)
 
     const result = await call(
       setupRouter.install,
       { ...INSTALL_INPUT, email: 'not-an-email', locale: 'fr-FR' },
-      { context: ctxWithSession(verifiedSession()) },
+      { context: ctxWithSession(verifiedSessionFor(token)) },
     )
 
     expect(result).toMatchObject({
@@ -230,7 +299,7 @@ describe('account setup controller — install', () => {
   })
 
   it('answers adminExists without re-installing when an admin already exists', async () => {
-    await getSetupToken(db)
+    const token = await getSetupToken(db)
     await sqliteOf(db).insert(userTable).values({
       name: 'Existing',
       email: 'existing@example.com',
@@ -238,7 +307,9 @@ describe('account setup controller — install', () => {
       role: 'admin',
     })
 
-    const result = await call(setupRouter.install, INSTALL_INPUT, { context: ctxWithSession(verifiedSession()) })
+    const result = await call(setupRouter.install, INSTALL_INPUT, {
+      context: ctxWithSession(verifiedSessionFor(token)),
+    })
 
     expect(result).toMatchObject({
       type: 'error',
@@ -249,5 +320,45 @@ describe('account setup controller — install', () => {
     expect(admins[0]?.email).toBe('existing@example.com')
     expect('setCookie' in result).toBe(false)
     expect(await tokenRows()).toHaveLength(1)
+  })
+})
+
+describe('account setup controller — token lifetime binds the verified session', () => {
+  function expireTokenRow(): void {
+    void upsertOneTimeToken(db, {
+      key: 'setup_token',
+      payload: 'irrelevant',
+      expiresAt: new Date(Date.now() - 1000),
+    })
+  }
+
+  it('expires the verified session when the token lapses, then re-verification with the re-minted token installs', async () => {
+    const firstToken = await getSetupToken(db)
+    const session = makeSession({ csrfToken: 'setup-csrf' })
+    await call(setupRouter.verifyToken, { token: firstToken }, { context: ctxWithSession(session) })
+
+    expireTokenRow()
+
+    const lapsedStatus = await call(setupRouter.status, {}, { context: ctxWithSession(session) })
+    expect(lapsedStatus.setupTokenVerified).toBe(false)
+
+    const rejected = await call(setupRouter.install, INSTALL_INPUT, { context: ctxWithSession(session) })
+    expect(rejected).toMatchObject({
+      type: 'error',
+      descriptor: { messageKey: 'auth.setup.error.tokenExpired' },
+    })
+    expect(await adminRows()).toHaveLength(0)
+
+    const secondToken = 're-minted-token'
+    await replaceLiveToken(secondToken)
+    await call(setupRouter.verifyToken, { token: secondToken }, { context: ctxWithSession(session) })
+
+    const freshStatus = await call(setupRouter.status, {}, { context: ctxWithSession(session) })
+    expect(freshStatus.setupTokenVerified).toBe(true)
+
+    const installed = await call(setupRouter.install, INSTALL_INPUT, { context: ctxWithSession(session) })
+    expect(installed).toEqual({ type: 'redirect', to: '/admin' })
+    expect(await adminRows()).toHaveLength(1)
+    expect(await tokenRows()).toHaveLength(0)
   })
 })

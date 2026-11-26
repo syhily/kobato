@@ -16,9 +16,15 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { makeSession } from '@kobato/server/tests/utils/session'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { makeRouteContext } from '@tests/utils/context'
+import { orpcStubCookies } from '@tests/utils/orpc-client-mock'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const db = getTestDb()
 const mail = await createCaptureMailFixture()
@@ -44,7 +50,7 @@ const OTP_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { action } = await import('@/routes/auth/signin')
+const { clientAction } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
@@ -131,20 +137,19 @@ async function callAction(
   clientAddress = '127.0.0.1',
   locale: AppLocale = 'zh-CN',
 ): Promise<Response & { data?: any }> {
-  const routeContext = setContext(actionName, redirectTo, clientAddress, locale)
-  const url = new URL(`http://localhost/admin/signin`)
-  const request = new Request('http://localhost/admin/signin', {
+  const params = new URLSearchParams()
+  if (actionName) {
+    params.set('action', actionName)
+  }
+  params.set('redirect_to', redirectTo)
+  const routedUrl = new URL(`http://localhost/admin/signin?${params.toString()}`)
+  setContext(actionName, redirectTo, clientAddress, locale)
+  const request = new Request(routedUrl, {
     method: 'POST',
     body: formData,
   })
   try {
-    return (await action({
-      request,
-      url,
-      context: routeContext,
-      params: {},
-      pattern: 'admin/signin',
-    })) as Response
+    return (await clientAction({ request } as never)) as Response
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -171,12 +176,8 @@ function otpFormData(code: string) {
   return withCsrf(fd)
 }
 
-function getSetCookie(result: Response & { data?: any }): string | null {
-  if (result.headers instanceof Headers) {
-    return result.headers.get('Set-Cookie')
-  }
-  const init = (result as { init?: { headers?: Record<string, string> } }).init
-  return init?.headers?.['Set-Cookie'] ?? null
+function getSetCookie(): string | null {
+  return orpcStubCookies()[0] ?? null
 }
 
 async function extractOtpFromMail(): Promise<string> {
@@ -235,7 +236,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toBe('/admin')
 
-    expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
 
     const sessions = await sessionRowsFor(admin.id)
     expect(sessions).toHaveLength(1)
@@ -276,7 +277,7 @@ describe('integration: OTP login flow (real DB)', () => {
 
     expect(testSession.get('otpFailCount')).toBe(1)
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     const row = await getOtpRow(admin.id)
     expect(row).not.toBeNull()
@@ -310,7 +311,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(result.headers.get('Location')).toContain('error=invalid_credentials')
 
     expect(markSessionDirty).not.toHaveBeenCalled()
-    expect(result.headers.get('Set-Cookie')).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     const fails = await auditRowsFor('credential_login_failed')
     expect(fails).toHaveLength(1)
@@ -332,7 +333,7 @@ describe('integration: OTP login flow (real DB)', () => {
     const resendResult = await callAction('resendotp', withCsrf())
     expect(resendResult.data?.message).toBe('验证码已重新发送。')
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(resendResult)).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     const newOtp = await extractOtpFromMail()
     expect(newOtp).not.toBe(oldOtp)
@@ -342,7 +343,7 @@ describe('integration: OTP login flow (real DB)', () => {
 
     const newResult = await callAction('verifyotp', otpFormData(newOtp))
     expect(newResult.status).toBe(302)
-    expect(newResult.headers.get('Set-Cookie')).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
     expect(await sessionRowsFor(admin.id)).toHaveLength(1)
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)
@@ -361,7 +362,7 @@ describe('integration: OTP login flow (real DB)', () => {
     const result = await callAction('verifyotp', otpFormData(otpCode))
     expect(result.data?.error).toBe('验证码无效或已过期。')
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     const row = await getOtpRow(admin.id)
     expect(row).toBeNull()
@@ -386,7 +387,7 @@ describe('integration: OTP login flow (real DB)', () => {
     const result = await callAction(null, loginFormData(), '/admin', uniqueIp)
     expect(result.data?.error).toBe('发送过于频繁，请稍后再试。')
     expect(markSessionDirty).not.toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
   })
 
   it('serves OTP errors and the resend acknowledgment as translated descriptors', async () => {
@@ -425,7 +426,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('/admin/signin')
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(result.headers.get('Set-Cookie')).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
     expect(testSession.get('otpFailCount')).toBeUndefined()

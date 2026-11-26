@@ -6,7 +6,7 @@ on:
     branches: [develop]
     tags: ['*']
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   release:
     types: [created]
 
@@ -29,8 +29,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: linux-x64
-            timeout: 30
-            deep-verify: true
+            timeout: 45
             deb: true
             artifacts: |
               dist-sea/kobato-linux-x64.tar.gz
@@ -38,37 +37,51 @@ jobs:
               dist-sea/kobato-linux-x64.sha256
               dist-sea/kobato_*_amd64.deb
               dist-sea/kobato_*_amd64.deb.sha256
+              dist-sea/sayaka-linux-x64.tar.gz
+              dist-sea/sayaka-linux-x64.tar.gz.sha256
+              dist-sea/sayaka-linux-x64.sha256
           - os: ubuntu-24.04-arm
             target: linux-arm64
-            timeout: 30
-            deep-verify: true
+            timeout: 45
             artifacts: |
               dist-sea/kobato-linux-arm64.tar.gz
               dist-sea/kobato-linux-arm64.tar.gz.sha256
               dist-sea/kobato-linux-arm64.sha256
+              dist-sea/sayaka-linux-arm64.tar.gz
+              dist-sea/sayaka-linux-arm64.tar.gz.sha256
+              dist-sea/sayaka-linux-arm64.sha256
           - os: macos-15
             target: darwin-arm64
-            timeout: 45
+            timeout: 60
             artifacts: |
               dist-sea/kobato-darwin-arm64.tar.gz
               dist-sea/kobato-darwin-arm64.tar.gz.sha256
               dist-sea/kobato-darwin-arm64.sha256
+              dist-sea/sayaka-darwin-arm64.tar.gz
+              dist-sea/sayaka-darwin-arm64.tar.gz.sha256
+              dist-sea/sayaka-darwin-arm64.sha256
           - os: windows-2025
             target: win32-x64
-            timeout: 45
+            timeout: 60
             exe: .exe
             artifacts: |
               dist-sea/kobato-win32-x64.tar.gz
               dist-sea/kobato-win32-x64.tar.gz.sha256
               dist-sea/kobato-win32-x64.sha256
+              dist-sea/sayaka-win32-x64.tar.gz
+              dist-sea/sayaka-win32-x64.tar.gz.sha256
+              dist-sea/sayaka-win32-x64.sha256
           - os: windows-11-arm
             target: win32-arm64
-            timeout: 45
+            timeout: 60
             exe: .exe
             artifacts: |
               dist-sea/kobato-win32-arm64.tar.gz
               dist-sea/kobato-win32-arm64.tar.gz.sha256
               dist-sea/kobato-win32-arm64.sha256
+              dist-sea/sayaka-win32-arm64.tar.gz
+              dist-sea/sayaka-win32-arm64.tar.gz.sha256
+              dist-sea/sayaka-win32-arm64.sha256
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
@@ -82,15 +95,12 @@ jobs:
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
         if: runner.os == 'Linux'
       - run: pnpm run sea:build
-      - name: Rename output to kobato-<target>
+      - name: Rename output to kobato-<target> / sayaka-<target>
         run: pnpm run sea:package rename --target ${{ matrix.target }}
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
-        if: matrix.deep-verify
       - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
-        if: matrix.deep-verify
       - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
-        if: matrix.deep-verify
         env:
           KOBATO_BROWSER_CHANNEL: chromium
       - name: Package tar.gz with checksum
@@ -98,17 +108,26 @@ jobs:
       - name: Package Ubuntu x64 deb with checksum
         run: pnpm run sea:package archive --target ${{ matrix.target }} --deb
         if: matrix.deb
+      - name: Stage per-target artifact set
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp dist-sea/kobato-${{ matrix.target }}.tar.gz* artifact/
+          cp dist-sea/kobato-${{ matrix.target }}.sha256 artifact/
+          cp dist-sea/sayaka-${{ matrix.target }}.tar.gz* artifact/
+          cp dist-sea/sayaka-${{ matrix.target }}.sha256 artifact/
+          if [ "${{ matrix.deb }}" = "true" ]; then cp dist-sea/kobato_*_amd64.deb* artifact/; fi
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
           retention-days: 7
-          path: ${{ matrix.artifacts }}
+          path: artifact/*
 
   build-verification:
     name: build (linux-x64, verification)
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
@@ -147,7 +166,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 --clobber
+        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/sayaka-* dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 --clobber
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

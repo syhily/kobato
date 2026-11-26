@@ -2,13 +2,12 @@ import type { Env } from '@kobato/server/http/hono-env'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { session as sessionTable } from '@kobato/db/sqlite/schema/session'
-import { buildCspHeader, buildLoadContext, configureMiddleware } from '@kobato/server/http/middleware-pipeline'
+import { configureMiddleware } from '@kobato/server/http/middleware-pipeline'
 import { requestTimeout } from '@kobato/server/http/middlewares/request-timeout'
-import { requestContext } from '@kobato/server/http/request-context'
 import { REQUEST_TIMEOUT_OVERRIDES } from '@kobato/server/http/request/rpc-timeout-overrides'
 import { getTestDb } from '@kobato/server/tests/utils/integration-db'
-import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
-import { emptySession } from '@kobato/server/tests/utils/session'
+import { siteUsesHttps } from '@kobato/settings/csp'
+import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import {
   resetBlogSettingsForTests,
   setBlogSettingsBundleForTests,
@@ -16,33 +15,6 @@ import {
 } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-
-describe('buildCspHeader', () => {
-  it('returns a strict nonce-based policy in production', () => {
-    const header = buildCspHeader({ bundle: null, nonce: 'abc123', isDev: false })
-    expect(header).toContain("script-src 'self' 'nonce-abc123'")
-    expect(header).toContain("worker-src 'self'")
-  })
-
-  it('relaxes script-src in development', () => {
-    const header = buildCspHeader({ bundle: null, nonce: 'abc123', isDev: true })
-    expect(header).toContain("script-src 'self' 'unsafe-inline'")
-    expect(header).toContain("worker-src 'self' blob:")
-  })
-
-  it('adds the asset host from the bundle (self-hosted fonts need no per-font origin)', () => {
-    const header = buildCspHeader({
-      bundle: {
-        fonts: { global: [], post: [], code: [] },
-        assets: { asset: { host: 'cdn.example.com' } },
-      } as never,
-      nonce: 'abc123',
-      isDev: false,
-    })
-    expect(header).toContain('https://cdn.example.com')
-    expect(header).not.toContain('fonts.example.com')
-  })
-})
 
 describe('configureMiddleware', () => {
   it('registers health, ready and asset-guard routes', () => {
@@ -60,7 +32,7 @@ describe('RUM status mount', () => {
     vi.unstubAllEnvs()
   })
 
-  it('mounts the resource router in every build (the gate lives in the handler)', () => {
+  it('mounts only the rpc transport beside the probes — no resource routers remain', () => {
     for (const dev of [true, false]) {
       vi.stubEnv('DEV', dev)
       const app = new Hono<Env>()
@@ -68,38 +40,42 @@ describe('RUM status mount', () => {
       const paths = app.routes.map((route) => route.path)
       expect(paths).toContain('/rpc/*')
       expect(paths).not.toContain('/api/rum/status')
-      expect(paths).toContain('/api/rum/intake/*')
+      expect(paths).not.toContain('/api/rum/intake/*')
+      expect(paths).not.toContain('/webmention')
       expect(paths).not.toContain('/api/dev/rum/status')
     }
   })
 })
 
-describe('dynamic CSP middleware', () => {
-  it('keeps the static secureHeaders CSP when the real WP decoy short-circuits before the RequestContext is derived', async () => {
-    const app = new Hono<Env>()
-    configureMiddleware(app)
-    const res = await app.request('/wp-login.php')
-    expect(res.status).toBe(404)
-    const csp = res.headers.get('Content-Security-Policy')
-    expect(csp).toContain("default-src 'self'")
-    expect(csp).not.toContain("base-uri 'self'")
-  })
-
-  it('overwrites with the dynamic policy once the real request-context middleware derived a RequestContext', async () => {
+describe('static CSP middleware', () => {
+  it('answers every response with the static secureHeaders policy — kobato no longer renders documents', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
     const res = await app.request('/health')
     const csp = res.headers.get('Content-Security-Policy')
-    expect(csp).toContain("base-uri 'self'")
+    expect(csp).toContain("default-src 'self'")
+    expect(csp).not.toContain("base-uri 'self'")
+    expect(csp).not.toContain('nonce-')
   })
 
-  it('omits CSP on a 304 so the revalidated cache keeps the nonce that matches its stored body', async () => {
+  it('sets no per-request dynamic CSP, Accept-CH, or Webmention Link header', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    app.get('/favicon-csp-304-probe', (c) => c.body(null, 304))
-    const res = await app.request('/favicon-csp-304-probe')
-    expect(res.status).toBe(304)
-    expect(res.headers.get('Content-Security-Policy')).toBeNull()
+    const res = await app.request('/health')
+    expect(res.headers.get('Accept-CH')).toBeNull()
+    expect(res.headers.get('Link')).toBeNull()
+  })
+
+  it('keeps the conditional HSTS header for an https site', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: 'https://example.com' },
+    } as never)
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    const res = await app.request('/health')
+    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=15552000; includeSubDomains')
+    expect(siteUsesHttps(getBlogSettingsBundleSync())).toBe(true)
   })
 })
 
@@ -177,43 +153,30 @@ describe('trustProxy scheme fix (real pipeline)', () => {
   function probeApp() {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    app.get('/favicon-scheme-probe', (c) => c.text(c.var.requestContext.url.href))
+    app.get('/admin/assets/scheme-probe', (c) => c.text(c.var.requestContext.url.href))
     return app
   }
 
   it('rewrites to the proxy-reported scheme when the site URL is https', async () => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    const res = await probeApp().request('http://yufan.me/favicon-scheme-probe', {
+    const res = await probeApp().request('http://yufan.me/admin/assets/scheme-probe', {
       headers: { 'x-forwarded-proto': 'https' },
     })
-    expect(await res.text()).toBe('https://yufan.me/favicon-scheme-probe')
+    expect(await res.text()).toBe('https://yufan.me/admin/assets/scheme-probe')
   })
 
   it('assumes https for the canonical host even without a proxy header', async () => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    const res = await probeApp().request('http://example.com/favicon-scheme-probe')
-    expect(await res.text()).toBe('https://example.com/favicon-scheme-probe')
+    const res = await probeApp().request('http://example.com/admin/assets/scheme-probe')
+    expect(await res.text()).toBe('https://example.com/admin/assets/scheme-probe')
   })
 
   it('ignores proxy headers when no https site URL is configured', async () => {
     resetBlogSettingsForTests()
-    const res = await probeApp().request('http://yufan.me/favicon-scheme-probe', {
+    const res = await probeApp().request('http://yufan.me/admin/assets/scheme-probe', {
       headers: { 'x-forwarded-proto': 'https' },
     })
-    expect(await res.text()).toBe('http://yufan.me/favicon-scheme-probe')
-  })
-})
-
-describe('buildLoadContext', () => {
-  it('hydrates settings against the real database and returns a RouterContextProvider', async () => {
-    resetBlogSettingsForTests()
-    const rc = makeRequestContext({ session: emptySession(), cspNonce: 'nonce', db: getTestDb() })
-    const context = await buildLoadContext({
-      var: { requestContext: rc } as unknown as Env['Variables'],
-      req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
-    })
-    expect(context).toBeDefined()
-    expect(context.get(requestContext)).toBe(rc)
+    expect(await res.text()).toBe('http://yufan.me/admin/assets/scheme-probe')
   })
 })
 

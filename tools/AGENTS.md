@@ -6,7 +6,8 @@ in the product; `font-split` is the ONE exception.
 - `tsconfig` — configuration-only: `tsconfig.base.json`, the single workspace path table every package extends.
 - `test` — in-process Vitest fixtures/doubles, shared setup, and the multi-package project definitions.
 - `pack` — build and release tooling: the SEA pipeline, the binary-suite entry scripts, the app's build-time Vite
-  plugins (`src/vite/`), the out-of-process instance driver (`src/instance/`), release automation.
+  plugins (`src/vite/`), the out-of-process instance driver (`src/instance/`), the shared Playwright journey support
+  (`src/browser/`), release automation.
 - `trace` — OpenObserve DEV container tooling.
 - `font-split` — a vendored cn-font-split Rust fork compiled into a Node-API addon the production server loads at
   runtime, reached only through `nativeRequire('@kobato/font-split/font-split.node')` (a specifier string, not an

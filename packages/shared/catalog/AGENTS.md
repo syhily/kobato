@@ -11,7 +11,7 @@ the server's feed/OG renderers.
 - `seo/` (a documented layer, the two-module exception to the three-sibling rule): `meta.ts` builds route meta over the
   root loader's `matches` + `i18n` payload, falling back to the hydrated settings bundle and the shared fallback
   messages; `og-image.ts` owns the OG image path grammar (`ogImagePathForSlug`). Consumers: the app's routes and
-  `src/seo/`, plus the server's feed/OG renderers. web-admin, web-kit, and web-public never import it — route title
+  `src/seo/`, plus the server's feed/OG renderers. web-kit, the apps' UI trees, and sayaka never import it — route title
   resolution stays in the app layer.
 - Does not own oRPC inputs, mutation DTOs, database rows, React, or server queries; never depends on the api contracts.
 - Allowed deps: `@kobato/settings`, `@kobato/i18n`, `@kobato/utils` (values); `@kobato/inkling` (headless, TYPE-ONLY)

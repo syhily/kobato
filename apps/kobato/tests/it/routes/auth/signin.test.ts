@@ -16,9 +16,15 @@ import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integratio
 import { adminUser, makeSession } from '@kobato/server/tests/utils/session'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { makeRouteContext } from '@tests/utils/context'
+import { orpcStubCookies } from '@tests/utils/orpc-client-mock'
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/api/browser/client', async () => {
+  const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
+  return createOrpcClientMockModule()
+})
 
 const db = getTestDb()
 const mail = await createCaptureMailFixture()
@@ -60,7 +66,7 @@ function withBucket(
   } as BlogSettingsBundle
 }
 
-const { action, loader } = await import('@/routes/auth/signin')
+const { clientAction, clientLoader } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
@@ -116,7 +122,7 @@ async function seedUser(overrides: Record<string, unknown> = {}) {
   return inserted!
 }
 
-function setContext(action: string | null, redirectTo: string | null = '/admin', clientAddress = '127.0.0.1') {
+function contextUrl(action: string | null, redirectTo: string | null): URL {
   const params = new URLSearchParams()
   if (action) {
     params.set('action', action)
@@ -124,8 +130,18 @@ function setContext(action: string | null, redirectTo: string | null = '/admin',
   if (redirectTo !== null) {
     params.set('redirect_to', redirectTo)
   }
-  const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  return makeRouteContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty })
+  return new URL(`http://localhost/admin/signin?${params.toString()}`)
+}
+
+function setContext(action: string | null, redirectTo: string | null = '/admin', clientAddress = '127.0.0.1') {
+  const url = contextUrl(action, redirectTo)
+  return makeRouteContext({
+    session: testSession,
+    clientAddress,
+    db,
+    request: new Request(url),
+    markSessionDirty,
+  })
 }
 
 async function callAction(
@@ -134,17 +150,11 @@ async function callAction(
   redirectTo: string | null = '/admin',
   clientAddress = '127.0.0.1',
 ): Promise<Response & { data?: any }> {
-  const routeContext = setContext(actionName, redirectTo, clientAddress)
-  const url = new URL('http://localhost/admin/signin')
+  const url = contextUrl(actionName, redirectTo)
+  makeRouteContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty })
   const request = new Request(url, { method: 'POST', body: formData })
   try {
-    return (await action({
-      request,
-      url,
-      context: routeContext,
-      params: {},
-      pattern: 'admin/signin',
-    })) as Response & { data?: any }
+    return (await clientAction({ request } as never)) as Response & { data?: any }
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -155,15 +165,9 @@ async function callAction(
 
 async function callLoader(search: string): Promise<Response & { data?: any }> {
   const url = new URL(`http://localhost/admin/signin${search}`)
-  const routeContext = makeRouteContext({ session: testSession, db, request: new Request(url), markSessionDirty })
+  setContext(null, search.includes('redirect_to=') || search.includes('action=') ? null : '/admin')
   try {
-    return (await loader({
-      request: new Request(url),
-      url,
-      context: routeContext,
-      params: {},
-      pattern: 'admin/signin',
-    })) as unknown as Response & { data?: any }
+    return (await clientLoader({ request: new Request(url) } as never)) as unknown as Response & { data?: any }
   } catch (error) {
     if (error instanceof Response) {
       return error
@@ -196,12 +200,8 @@ function emailFormData(email: string) {
   return withCsrf(fd)
 }
 
-function getSetCookie(result: Response & { data?: any }): string | null {
-  if (result.headers instanceof Headers) {
-    return result.headers.get('Set-Cookie')
-  }
-  const init = (result as { init?: { headers?: Record<string, string> } }).init
-  return init?.headers?.['Set-Cookie'] ?? null
+function getSetCookie(): string | null {
+  return orpcStubCookies()[0] ?? null
 }
 
 function extractData(result: unknown): Record<string, unknown> {
@@ -349,7 +349,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
   it('issues OTP and sends email when mail is ready', async () => {
     const admin = await seedUser()
 
-    const result = await callAction(null, loginFormData())
+    await callAction(null, loginFormData())
 
     const otpCode = await extractOtpFromMail()
     expect(markSessionDirty).toHaveBeenCalled()
@@ -359,7 +359,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(testSession.get('otpFailCount')).toBe(0)
 
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
 
     const row = await getOtpRow(admin.id)
     expect(row).not.toBeNull()
@@ -370,11 +370,11 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     const admin = await seedUser()
 
-    const result = await callAction(null, loginFormData())
+    await callAction(null, loginFormData())
 
     expect(await mail.noMessage()).toBe(true)
 
-    expect(getSetCookie(result)).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
     expect(await sessionRowsFor(admin.id)).toHaveLength(1)
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
@@ -396,18 +396,18 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
     expect(await mail.noMessage()).toBe(true)
     expect(markSessionDirty).not.toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
   })
 
   it('verifies OTP successfully and establishes session', async () => {
     const admin = await seedUser()
     const otpCode = await doLogin()
 
-    const result = await callAction('verifyotp', otpFormData(otpCode))
+    await callAction('verifyotp', otpFormData(otpCode))
 
     const sessions = await sessionRowsFor(admin.id)
     expect(sessions).toHaveLength(1)
-    expect(getSetCookie(result)).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)
     expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
@@ -425,11 +425,11 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const otpCode = await doLogin()
     markSessionDirty.mockClear()
 
-    const result = await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
+    await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
 
     expect(testSession.get('otpFailCount')).toBe(1)
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
     expect(await getOtpRow(admin.id)).not.toBeNull()
   })
 
@@ -456,25 +456,25 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     testSession.set('otpFailCount', 2)
     markSessionDirty.mockClear()
 
-    const result = await callAction('resendotp', withCsrf())
+    await callAction('resendotp', withCsrf())
 
     const newCode = await extractOtpFromMail()
     expect(newCode).not.toBe(oldCode)
     expect(testSession.get('otpFailCount')).toBe(0)
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
   })
 
   it('cancels OTP flow and clears pending state', async () => {
     await seedUser()
     await doLogin()
 
-    const result = await callAction('cancelotp', withCsrf())
+    await callAction('cancelotp', withCsrf())
 
     expect(testSession.get('pendingOtpUser')).toBeUndefined()
     expect(testSession.get('otpFailCount')).toBeUndefined()
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
   })
 
   it('blocks OTP verify when rate limit is exceeded', async () => {
@@ -521,7 +521,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
 
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('error=invalid_credentials')
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
     expect(markSessionDirty).not.toHaveBeenCalled()
     expect(await mail.noMessage()).toBe(true)
     expect(await sqliteOf(db).select().from(verification)).toHaveLength(0)
@@ -558,7 +558,7 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     expect(extractData(result).error).toBe('账户状态异常，无法登录。')
 
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toBeNull()
+    expect(getSetCookie()).toBeNull()
     expect(await sqliteOf(db).select().from(sessionTable)).toHaveLength(0)
   })
 
@@ -567,11 +567,11 @@ describe('routes/signin — OTP (real db + tokens)', () => {
     const otpCode = await doLogin()
     testSession.set('otpFailCount', 2)
 
-    const result = await callAction('verifyotp', otpFormData(otpCode))
+    await callAction('verifyotp', otpFormData(otpCode))
 
     expect(testSession.get('otpFailCount')).toBeUndefined()
     expect(markSessionDirty).toHaveBeenCalled()
-    expect(getSetCookie(result)).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
   })
 
   it('rejects resend when no pendingOtpUser in session', async () => {
@@ -782,7 +782,7 @@ describe('routes/signin — magic-link consume (real db + tokens)', () => {
     const sessions = await sessionRowsFor(admin.id)
     expect(sessions).toHaveLength(1)
     expect(result.status).toBe(302)
-    expect(getSetCookie(result)).toMatch(/^__session=/)
+    expect(getSetCookie()).toMatch(/^__session=/)
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)
     expect(logins[0]!.resourceId).toBe(sessions[0]!.id)

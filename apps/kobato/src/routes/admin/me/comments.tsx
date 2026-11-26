@@ -1,12 +1,12 @@
 import type { MyCommentsStatus } from '@kobato/api/contracts/account/comments'
 
+import { orpc } from '@kobato/api/browser/client'
 import { parseCommentEntity, serializeCommentEntity } from '@kobato/api/contracts/public/comments'
-import { requireRole } from '@kobato/server/domains/auth/rbac'
-import { createSsrCaller } from '@kobato/server/http/ssr-caller'
-import { MyCommentsView } from '@kobato/web-admin/ui/account/MyCommentsView'
 import { data, useOutletContext } from 'react-router'
 
+import { awaitRootBootstrap, requireRoleFromBootstrap } from '@/lib/root-bootstrap'
 import { titleMeta } from '@/seo/title-meta'
+import { MyCommentsView } from '@/ui/account/MyCommentsView'
 
 import type { Route } from './+types/comments'
 
@@ -23,20 +23,20 @@ function parseStatus(raw: string | null): MyCommentsStatus {
   return 'all'
 }
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole(viewer ?? undefined, 'visitor')
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const boot = await awaitRootBootstrap()
+  requireRoleFromBootstrap(boot, 'visitor', { pathname: new URL(request.url).pathname })
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
   const q = (url.searchParams.get('q') ?? '').trim()
   const entity = parseCommentEntity(url.searchParams.get('entity'))
   const entityValue = entity ? serializeCommentEntity(entity) : null
 
-  const { entities } = await caller.account.comments.searchMineEntities({})
+  const { entities } = await orpc.account.comments.searchMineEntities({})
   const entityOptions = [...entities]
 
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
-    const resolved = await caller.account.comments.resolveEntity({ entity: entityValue! })
+    const resolved = await orpc.account.comments.resolveEntity({ entity: entityValue! })
     if (resolved !== null) {
       entityOptions.unshift(resolved)
     }

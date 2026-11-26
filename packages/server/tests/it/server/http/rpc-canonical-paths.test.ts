@@ -107,8 +107,8 @@ describe('canonical-only /rpc/* transport (real HTTP)', () => {
       },
     )
 
-    it.each(['/rpc/account/notifications/list', '/rpc/admin/analytics/overview'])(
-      'keeps the CSRF guard in front of the anonymous account/admin surface %s',
+    it.each(['/rpc/public/notifications/list', '/rpc/admin/analytics/overview'])(
+      'keeps the CSRF guard in front of the viewer-session public surface and the admin surface %s',
       async (path) => {
         const app = makeApiApp()
 
@@ -146,8 +146,8 @@ describe('canonical-only /rpc/* transport (real HTTP)', () => {
       expect(response.status).toBe(400)
     })
 
-    it.each(['/rpc/account/notifications/list', '/rpc/admin/analytics/overview'])(
-      'keeps the auth guard on the canonical account/admin surface %s behind a valid CSRF token',
+    it.each(['/rpc/public/notifications/list', '/rpc/admin/analytics/overview'])(
+      'keeps the auth guard on the canonical viewer-session public surface and the admin surface %s behind a valid CSRF token',
       async (path) => {
         const app = makeApiApp()
 
@@ -156,5 +156,82 @@ describe('canonical-only /rpc/* transport (real HTTP)', () => {
         expect(response.status).toBe(401)
       },
     )
+  })
+
+  describe('promoted interaction procedures (ADR-0009 §2 adoption step 6)', () => {
+    it.each([
+      '/rpc/account/likes/increase',
+      '/rpc/account/likes/validate',
+      '/rpc/account/friends/apply',
+      '/rpc/account/notifications/list',
+      '/rpc/account/notifications/unreadCount',
+      '/rpc/account/newsletter/subscribe',
+      '/rpc/account/comments/updateOwn',
+      '/rpc/account/comments/requestDeleteOwn',
+      '/rpc/account/comments/cancelDeleteOwn',
+    ])('no longer matches the pre-promotion account URL %s (404 behind a valid CSRF token)', async (path) => {
+      const app = makeApiApp()
+
+      const response = await rpc(app, path, { body: JSON.stringify({ json: {} }) })
+
+      expect(response.status).toBe(404)
+    })
+
+    it.each([
+      '/rpc/public/likes/increase',
+      '/rpc/public/likes/decrease',
+      '/rpc/public/friends/apply',
+      '/rpc/public/newsletter/subscribe',
+    ])('answers the anonymous+CSRF procedure %s with schema validation behind a valid CSRF token', async (path) => {
+      const app = makeApiApp()
+
+      const response = await rpc(app, path, { body: JSON.stringify({ json: {} }) })
+
+      expect(response.status).toBe(400)
+    })
+
+    it.each([
+      '/rpc/public/likes/increase',
+      '/rpc/public/likes/decrease',
+      '/rpc/public/friends/apply',
+      '/rpc/public/newsletter/subscribe',
+    ])('still rejects the anonymous+CSRF procedure %s without a CSRF token', async (path) => {
+      const app = makeApiApp()
+
+      const response = await rpcNoCsrf(app, path, JSON.stringify({ json: {} }))
+
+      expect(response.status).toBe(403)
+    })
+
+    it.each([
+      '/rpc/public/notifications/list',
+      '/rpc/public/notifications/unreadCount',
+      '/rpc/public/comments/updateOwn',
+      '/rpc/public/comments/requestDeleteOwn',
+      '/rpc/public/comments/cancelDeleteOwn',
+    ])(
+      'answers the viewer-session procedure %s with the unauthorized error behind a valid CSRF token',
+      async (path) => {
+        const app = makeApiApp()
+
+        const response = await rpc(app, path, { body: JSON.stringify({ json: {} }) })
+
+        expect(response.status).toBe(401)
+      },
+    )
+
+    it.each([
+      '/rpc/public/notifications/list',
+      '/rpc/public/notifications/unreadCount',
+      '/rpc/public/comments/updateOwn',
+      '/rpc/public/comments/requestDeleteOwn',
+      '/rpc/public/comments/cancelDeleteOwn',
+    ])('still rejects the viewer-session procedure %s without a CSRF token', async (path) => {
+      const app = makeApiApp()
+
+      const response = await rpcNoCsrf(app, path, JSON.stringify({ json: {} }))
+
+      expect(response.status).toBe(403)
+    })
   })
 })

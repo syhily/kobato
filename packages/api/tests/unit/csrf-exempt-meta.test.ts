@@ -9,6 +9,8 @@ const EXPECTED_KEYS = [
   'admin.backup.download',
   'admin.music.proxyCover',
   'admin.music.proxyAudio',
+  'public.webmentions.receive',
+  'public.observability.rumIntake',
 ]
 
 function leavesOf(tree: Record<string, unknown>, prefix = ''): Map<string, unknown> {

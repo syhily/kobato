@@ -24,6 +24,15 @@ const PUBLIC_READ_KEYS: readonly string[] = [
   'images.resolveThumbhash',
   'music.get',
   'observability.rumStatus',
+  'feeds.rss',
+  'feeds.atom',
+  'sitemap.xml',
+  'images.og',
+  'images.calendar',
+  'avatar.image',
+  'branding.asset',
+  'fonts.embedded',
+  'storage.object',
 ]
 
 function leavesOf(tree: Record<string, unknown>, prefix = ''): Map<string, unknown> {
@@ -46,7 +55,7 @@ function publicReadMetaOf(leaf: unknown): unknown {
 }
 
 describe('publicRead metadata on the contract tree', () => {
-  it('marks exactly the frozen seventeen public leaves — no more, no fewer', () => {
+  it('marks exactly the frozen twenty-six public leaves — no more, no fewer', () => {
     const marked = [...leavesOf(publicContract).entries()]
       .filter(([, leaf]) => publicReadMetaOf(leaf) === true)
       .map(([key]) => key)

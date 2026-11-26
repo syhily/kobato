@@ -1,8 +1,16 @@
+import { resourceOutputSchema } from '@kobato/api/contracts/primitives'
 import { deviceEnvBeaconOutputSchema, deviceEnvBeaconSchema } from '@kobato/api/contracts/public/analytics'
-import { avatarFindInputSchema, avatarFindOutputSchema } from '@kobato/api/contracts/public/avatar'
+import {
+  avatarFindInputSchema,
+  avatarFindOutputSchema,
+  avatarImageInputSchema,
+  avatarImageOutputSchema,
+} from '@kobato/api/contracts/public/avatar'
+import { brandingAssetInputSchema, brandingAssetOutputSchema } from '@kobato/api/contracts/public/branding'
 import {
   commentEditInputSchema,
   commentGetRawOutputSchema,
+  commentIdInputSchema,
   commentListInputSchema,
   commentListOutputSchema,
   commentMyCommentsInputSchema,
@@ -10,6 +18,7 @@ import {
   commentRevokeTokenInputSchema,
   commentRevokeTokenOutputSchema,
   commentRidSchema,
+  commentUpdateOwnInputSchema,
   myCommentsOutputSchema,
   ownCommentMutationDto,
   replyCommentOutputSchema,
@@ -17,6 +26,7 @@ import {
 import {
   contentArchivesInputSchema,
   contentArchivesOutputSchema,
+  contentBootstrapInputSchema,
   contentBootstrapOutputSchema,
   contentCategoriesListInputSchema,
   contentCategoriesListOutputSchema,
@@ -34,17 +44,67 @@ import {
   contentSearchOutputSchema,
   isContentRedirectSignal,
 } from '@kobato/api/contracts/public/content'
+import { feedOutputSchema, feedScopeInputSchema } from '@kobato/api/contracts/public/feeds'
+import { embeddedFontInputSchema, embeddedFontOutputSchema } from '@kobato/api/contracts/public/fonts'
+import { applyFriendSchema, friendsApplyOutputSchema } from '@kobato/api/contracts/public/friends'
 import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/public/github'
 import {
+  calendarImageInputSchema,
+  calendarImageOutputSchema,
   imageResolveThumbhashInputSchema,
   imageResolveThumbhashOutputSchema,
+  ogImageInputSchema,
+  ogImageOutputSchema,
 } from '@kobato/api/contracts/public/images'
+import {
+  likeDecreaseInput,
+  likeDecreaseOutput,
+  likeIncreaseInput,
+  likeIncreaseOutput,
+  likeValidateInput,
+  likeValidateOutput,
+} from '@kobato/api/contracts/public/likes'
 import { musicGetInputSchema, musicGetOutputSchema } from '@kobato/api/contracts/public/music'
-import { publicRumStatusInputSchema, publicRumStatusOutputSchema } from '@kobato/api/contracts/public/observability'
-import { webmentionPublicListOutputSchema, webmentionPublicListSchema } from '@kobato/api/contracts/public/webmentions'
+import {
+  newsletterConfirmSchema,
+  newsletterOkOutputSchema,
+  newsletterSubscribeSchema,
+  newsletterUnsubscribeSchema,
+} from '@kobato/api/contracts/public/newsletter'
+import {
+  listNotificationsInput,
+  listNotificationsOutput,
+  markNotificationsReadInput,
+  markNotificationsUnreadInput,
+  notificationThreadInput,
+  notificationThreadOutput,
+  replyNotificationInput,
+  replyNotificationOutput,
+  unreadCountOutput,
+} from '@kobato/api/contracts/public/notifications'
+import {
+  publicRumStatusInputSchema,
+  publicRumStatusOutputSchema,
+  rumIntakeInputSchema,
+  rumIntakeOutputSchema,
+} from '@kobato/api/contracts/public/observability'
+import { sitemapInputSchema, sitemapOutputSchema } from '@kobato/api/contracts/public/sitemap'
+import { storageObjectInputSchema, storageObjectOutputSchema } from '@kobato/api/contracts/public/storage'
+import {
+  webmentionPublicListOutputSchema,
+  webmentionPublicListSchema,
+  webmentionReceiveInputSchema,
+  webmentionReceiveOutputSchema,
+} from '@kobato/api/contracts/public/webmentions'
 import { publicAnalyticsContract } from '@kobato/api/rpc/public/analytics'
 import { avatarContract } from '@kobato/api/rpc/public/avatar'
-import { commentsContract, commentsPublicContract, commentsTokenContract } from '@kobato/api/rpc/public/comments'
+import { brandingContract } from '@kobato/api/rpc/public/branding'
+import {
+  commentsContract,
+  commentsOwnContract,
+  commentsPublicContract,
+  commentsTokenContract,
+} from '@kobato/api/rpc/public/comments'
 import {
   contentBootstrapContract,
   contentCommentsContract,
@@ -52,10 +112,18 @@ import {
   contentDetailContract,
   contentListingsContract,
 } from '@kobato/api/rpc/public/content'
+import { feedsContract } from '@kobato/api/rpc/public/feeds'
+import { fontsContract } from '@kobato/api/rpc/public/fonts'
+import { friendsContract } from '@kobato/api/rpc/public/friends'
 import { githubContract } from '@kobato/api/rpc/public/github'
 import { imagesContract } from '@kobato/api/rpc/public/images'
+import { likesContract } from '@kobato/api/rpc/public/likes'
 import { musicContract } from '@kobato/api/rpc/public/music'
+import { newsletterContract } from '@kobato/api/rpc/public/newsletter'
+import { notificationsContract } from '@kobato/api/rpc/public/notifications'
 import { publicObservabilityContract } from '@kobato/api/rpc/public/observability'
+import { sitemapContract } from '@kobato/api/rpc/public/sitemap'
+import { storageContract } from '@kobato/api/rpc/public/storage'
 import { webmentionsContract } from '@kobato/api/rpc/public/webmentions'
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract'
 import { describe, expect, it } from 'vitest'
@@ -93,12 +161,19 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         input: publicRumStatusInputSchema,
         output: publicRumStatusOutputSchema,
       },
+      rumIntake: {
+        method: 'POST',
+        path: '/api/rum/intake/*',
+        input: rumIntakeInputSchema,
+        output: rumIntakeOutputSchema,
+      },
     },
   },
   avatar: {
     contract: avatarContract as unknown as Record<string, unknown>,
     routes: {
       find: { method: 'GET', path: '/avatar/find', input: avatarFindInputSchema, output: avatarFindOutputSchema },
+      image: { method: 'GET', path: '/images/avatar', input: avatarImageInputSchema, output: avatarImageOutputSchema },
     },
   },
   'comments/public': {
@@ -130,6 +205,29 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
       },
     },
   },
+  'comments/own': {
+    contract: commentsOwnContract as unknown as Record<string, unknown>,
+    routes: {
+      updateOwn: {
+        method: 'POST',
+        path: '/comments/update-own',
+        input: commentUpdateOwnInputSchema,
+        output: ownCommentMutationDto,
+      },
+      requestDeleteOwn: {
+        method: 'POST',
+        path: '/comments/request-delete-own',
+        input: commentIdInputSchema,
+        output: ownCommentMutationDto,
+      },
+      cancelDeleteOwn: {
+        method: 'POST',
+        path: '/comments/cancel-delete-own',
+        input: commentIdInputSchema,
+        output: ownCommentMutationDto,
+      },
+    },
+  },
   'comments/token': {
     contract: commentsTokenContract as unknown as Record<string, unknown>,
     routes: {
@@ -147,10 +245,88 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
       },
     },
   },
+  likes: {
+    contract: likesContract as unknown as Record<string, unknown>,
+    routes: {
+      increase: { method: 'POST', path: '/likes/increase', input: likeIncreaseInput, output: likeIncreaseOutput },
+      decrease: { method: 'POST', path: '/likes/decrease', input: likeDecreaseInput, output: likeDecreaseOutput },
+      validate: { method: 'GET', path: '/likes/validate', input: likeValidateInput, output: likeValidateOutput },
+    },
+  },
+  friends: {
+    contract: friendsContract as unknown as Record<string, unknown>,
+    routes: {
+      apply: { method: 'POST', path: '/friends/apply', input: applyFriendSchema, output: friendsApplyOutputSchema },
+    },
+  },
+  notifications: {
+    contract: notificationsContract as unknown as Record<string, unknown>,
+    routes: {
+      list: {
+        method: 'GET',
+        path: '/notifications/list',
+        input: listNotificationsInput,
+        output: listNotificationsOutput,
+      },
+      unreadCount: { method: 'GET', path: '/notifications/unread-count', output: unreadCountOutput },
+      markRead: {
+        method: 'POST',
+        path: '/notifications/mark-read',
+        input: markNotificationsReadInput,
+        output: unreadCountOutput,
+      },
+      markUnread: {
+        method: 'POST',
+        path: '/notifications/mark-unread',
+        input: markNotificationsUnreadInput,
+        output: unreadCountOutput,
+      },
+      thread: {
+        method: 'GET',
+        path: '/notifications/thread',
+        input: notificationThreadInput,
+        output: notificationThreadOutput,
+      },
+      reply: {
+        method: 'POST',
+        path: '/notifications/reply',
+        input: replyNotificationInput,
+        output: replyNotificationOutput,
+      },
+    },
+  },
+  newsletter: {
+    contract: newsletterContract as unknown as Record<string, unknown>,
+    routes: {
+      subscribe: {
+        method: 'POST',
+        path: '/newsletter/subscribe',
+        input: newsletterSubscribeSchema,
+        output: newsletterOkOutputSchema,
+      },
+      confirm: {
+        method: 'POST',
+        path: '/newsletter/confirm',
+        input: newsletterConfirmSchema,
+        output: newsletterOkOutputSchema,
+      },
+      unsubscribe: {
+        method: 'POST',
+        path: '/newsletter/unsubscribe',
+        input: newsletterUnsubscribeSchema,
+        output: newsletterOkOutputSchema,
+      },
+    },
+  },
   'content/bootstrap': {
     contract: contentBootstrapContract as unknown as Record<string, unknown>,
     routes: {
-      bootstrap: { method: 'GET', path: '/content/bootstrap', output: contentBootstrapOutputSchema },
+      bootstrap: {
+        method: 'GET',
+        path: '/content/bootstrap',
+        input: contentBootstrapInputSchema,
+        output: contentBootstrapOutputSchema,
+      },
     },
   },
   'content/listings': {
@@ -227,12 +403,65 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         input: imageResolveThumbhashInputSchema,
         output: imageResolveThumbhashOutputSchema,
       },
+      og: { method: 'GET', path: '/images/og', input: ogImageInputSchema, output: ogImageOutputSchema },
+      calendar: {
+        method: 'GET',
+        path: '/images/calendar',
+        input: calendarImageInputSchema,
+        output: calendarImageOutputSchema,
+      },
+    },
+  },
+  branding: {
+    contract: brandingContract as unknown as Record<string, unknown>,
+    routes: {
+      asset: {
+        method: 'GET',
+        path: '/branding/asset',
+        input: brandingAssetInputSchema,
+        output: brandingAssetOutputSchema,
+      },
+    },
+  },
+  fonts: {
+    contract: fontsContract as unknown as Record<string, unknown>,
+    routes: {
+      embedded: {
+        method: 'GET',
+        path: '/fonts/embedded',
+        input: embeddedFontInputSchema,
+        output: embeddedFontOutputSchema,
+      },
+    },
+  },
+  storage: {
+    contract: storageContract as unknown as Record<string, unknown>,
+    routes: {
+      object: {
+        method: 'GET',
+        path: '/storage/object',
+        input: storageObjectInputSchema,
+        output: storageObjectOutputSchema,
+      },
     },
   },
   music: {
     contract: musicContract as unknown as Record<string, unknown>,
     routes: {
       get: { method: 'GET', path: '/music/get', input: musicGetInputSchema, output: musicGetOutputSchema },
+    },
+  },
+  feeds: {
+    contract: feedsContract as unknown as Record<string, unknown>,
+    routes: {
+      rss: { method: 'GET', path: '/feeds/rss', input: feedScopeInputSchema, output: feedOutputSchema },
+      atom: { method: 'GET', path: '/feeds/atom', input: feedScopeInputSchema, output: feedOutputSchema },
+    },
+  },
+  sitemap: {
+    contract: sitemapContract as unknown as Record<string, unknown>,
+    routes: {
+      xml: { method: 'GET', path: '/sitemap/xml', input: sitemapInputSchema, output: sitemapOutputSchema },
     },
   },
   webmentions: {
@@ -243,6 +472,12 @@ const CONTRACT_SPECS: Record<string, ContractSpec> = {
         path: '/webmention/list',
         input: webmentionPublicListSchema,
         output: webmentionPublicListOutputSchema,
+      },
+      receive: {
+        method: 'POST',
+        path: '/webmention',
+        input: webmentionReceiveInputSchema,
+        output: webmentionReceiveOutputSchema,
       },
     },
   },
@@ -281,12 +516,14 @@ describe('public contract shapes', () => {
 })
 
 describe('composed public domain contracts', () => {
-  it('commentsContract merges the anonymous and token surfaces flat', () => {
+  it('commentsContract merges the anonymous, own-write, and token surfaces flat', () => {
     expect(Object.keys(commentsContract)).toEqual([
       ...Object.keys(commentsPublicContract),
+      ...Object.keys(commentsOwnContract),
       ...Object.keys(commentsTokenContract),
     ])
     expect(commentsContract.replyComment).toBe(commentsPublicContract.replyComment)
+    expect(commentsContract.updateOwn).toBe(commentsOwnContract.updateOwn)
     expect(commentsContract.myComments).toBe(commentsTokenContract.myComments)
   })
 
@@ -333,5 +570,39 @@ describe('public contracts schema sanity (spot checks)', () => {
     expect(isContentRedirectSignal({ kind: 'redirect', to: '/', status: 303 })).toBe(false)
     expect(isContentRedirectSignal({ pageNum: 1, totalPage: 2 })).toBe(false)
     expect(isContentRedirectSignal(null)).toBe(false)
+  })
+
+  it('keeps the feed scope input to category, tag, and ifNoneMatch', () => {
+    expect(feedScopeInputSchema.safeParse({}).success).toBe(true)
+    expect(feedScopeInputSchema.safeParse({ category: 'tech' }).success).toBe(true)
+    expect(feedScopeInputSchema.safeParse({ tag: 'ai', ifNoneMatch: 'W/"x"' }).success).toBe(true)
+    expect(feedScopeInputSchema.safeParse({ category: 'a', tag: 'b' }).success).toBe(true)
+    expect(feedScopeInputSchema.parse({ scope: 'tech', category: 'tech' })).toEqual({ category: 'tech' })
+    expect(feedOutputSchema).toBe(resourceOutputSchema)
+    expect(sitemapOutputSchema).toBe(resourceOutputSchema)
+  })
+
+  it('resourceOutputSchema answers exactly the ok / not-modified cases', () => {
+    expect(
+      resourceOutputSchema.safeParse({
+        kind: 'ok',
+        body: '<rss/>',
+        etag: '"abc"',
+        contentType: 'application/xml; charset=utf-8',
+        cacheControl: 'public, no-cache',
+        contentLanguage: 'zh-CN',
+      }).success,
+    ).toBe(true)
+    expect(
+      resourceOutputSchema.safeParse({
+        kind: 'not-modified',
+        etag: '"abc"',
+        contentType: 'application/xml; charset=utf-8',
+        cacheControl: 'public, no-cache',
+        contentLanguage: null,
+      }).success,
+    ).toBe(true)
+    expect(resourceOutputSchema.safeParse({ kind: 'redirect', to: '/' }).success).toBe(false)
+    expect(resourceOutputSchema.safeParse({ kind: 'ok', body: '<rss/>' }).success).toBe(false)
   })
 })

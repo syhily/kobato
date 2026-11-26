@@ -1,7 +1,6 @@
 import type { AppLocalization } from '@kobato/settings/app-localization'
 
 import { APP_VERSION } from '@kobato/distribution/app'
-import { CACHE_PROFILES } from '@kobato/server/infra/http/headers'
 import { formatLocalDate } from '@kobato/utils/site-date'
 import { createHash } from 'node:crypto'
 
@@ -160,20 +159,4 @@ export function etagHeaderMatches(header: string | null | undefined, etag: strin
 
 function weakComparable(tag: string): string {
   return tag.startsWith('W/') ? tag.slice(2) : tag
-}
-
-export function notModifiedResponse(
-  etag: string,
-  localization: AppLocalization,
-  profile: 'detail' | 'listing' = 'detail',
-): Response {
-  return new Response(null, {
-    status: 304,
-    headers: {
-      ETag: etag,
-      'Content-Language': localization.locale,
-      'Cache-Control': CACHE_PROFILES[profile],
-      Vary: 'Cookie',
-    },
-  })
 }
