@@ -2,7 +2,7 @@ import type { DomainErrorWire } from '@kobato/server/infra/http/errors'
 import type { Metadata, Sharp } from 'sharp'
 
 import { rgbaToThumbHash } from '@kobato/utils/thumbhash'
-import { parentPort, workerData } from 'node:worker_threads'
+import { parentPort } from 'node:worker_threads'
 import sharp from 'sharp'
 
 const THUMBHASH_MAX_DIMENSION = 100
@@ -197,7 +197,6 @@ function fitInside(
 
 if (parentPort !== null) {
   const port = parentPort
-  void workerData
 
   port.on('message', (msg: WorkerRequest) => {
     if (msg?.type !== 'process') {

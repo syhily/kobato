@@ -5,9 +5,7 @@ import { DEFAULT_CONFIG } from '@kobato/inkling-internal/nodes/base'
 import { registerRemoveAtLinkNodesTransform } from '@kobato/inkling-internal/transforms'
 import { createHeadlessEditor } from '@lexical/headless'
 
-export function defaultOnError(error: Error) {
-  void error
-}
+export const defaultOnError = (_error: Error): void => undefined
 
 export type HeadlessEditorSpec =
   | { merge: 'additive'; nodes?: LexicalNodeConfig[]; onError?: (error: Error) => void }

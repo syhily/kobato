@@ -29,8 +29,7 @@ function requireValidZonedDate(source: Date, timeZone: string): TZDate {
   return zoned
 }
 
-export function localDateParts(source: Date, locale: string, timeZone: string): SiteDateParts {
-  void locale
+export function localDateParts(source: Date, _locale: string, timeZone: string): SiteDateParts {
   return siteDateParts(source, timeZone)
 }
 

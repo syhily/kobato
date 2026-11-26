@@ -33,7 +33,7 @@ export abstract class FlushLoop<Pending, Result> {
   ) {
     this.log = getLogger(scope)
     this.shutdownHook = async () => {
-      void (await this.flushForTeardown())
+      await this.flushForTeardown()
     }
     registerShutdownHook(this.shutdownHook, 100)
   }

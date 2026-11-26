@@ -200,7 +200,6 @@ function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (fon
     data: { type: 'library', fontId: font.id } satisfies LibraryDragData,
   })
   const { 'aria-describedby': _removed, ...dragAttributes } = attributes
-  void _removed
   const style = {
     transform: CSS.Transform.toString(transform),
   }

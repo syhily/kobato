@@ -65,7 +65,6 @@ export function useSortableRow(options: {
 }): SortableRowChrome {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable(options)
   const { 'aria-describedby': _removed, ...dragAttributes } = attributes
-  void _removed
   return {
     setNodeRef,
     style: { transform: CSS.Transform.toString(transform), transition },

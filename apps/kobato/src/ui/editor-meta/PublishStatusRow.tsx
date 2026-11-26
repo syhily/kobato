@@ -47,7 +47,7 @@ export function PublishStatusRow({
           {t('admin.editor.publishStatus.publishLabel')}
         </Label>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <PublishBadge status={status} isFuture={isFuture} />
+          <PublishBadge status={status} />
           <RevisionSummaryInline summary={revisionSummary} />
         </div>
       </div>
@@ -117,7 +117,7 @@ function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | 
   return null
 }
 
-function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFuture: boolean }) {
+function PublishBadge({ status }: { status: SidebarPublishStatus }) {
   const { t } = useI18n()
   switch (status) {
     case 'never-saved':
@@ -139,7 +139,6 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
         </Badge>
       )
     case 'live':
-      void isFuture
       return (
         <Badge variant="outline" className="border-status-success-border bg-status-success-bg text-status-success-fg">
           <CheckCircle2Icon /> {t('admin.editor.publishStatus.published')}

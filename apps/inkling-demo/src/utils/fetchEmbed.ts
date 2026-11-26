@@ -5,9 +5,8 @@ const BOOKMARK_THUMBNAIL = BOOKMARK_ICON
 
 export async function fetchEmbed(
   url: string,
-  options: BookmarkEmbedOptions,
+  _options: BookmarkEmbedOptions,
 ): Promise<BookmarkEmbedResponse | undefined> {
-  void options
   await delay(process.env.NODE_ENV === 'test' ? 50 : 1500)
 
   try {

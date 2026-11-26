@@ -116,8 +116,7 @@ export function useFileUpload({ isMultiplayer = false }: UseFileUploadOptions = 
       return validationResult
     }
 
-    async function upload(files: FileList | File[] = [], options: { formData?: Record<string, string> } = {}) {
-      void options
+    async function upload(files: FileList | File[] = [], _options: { formData?: Record<string, string> } = {}) {
       setFilesNumber(files.length)
       setLoading(true)
 
