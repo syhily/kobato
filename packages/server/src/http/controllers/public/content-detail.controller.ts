@@ -1,11 +1,11 @@
 import type { EntityTarget } from '@kobato/db/sqlite/target'
 
+import { isContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import { contentDetailContract } from '@kobato/api/rpc/public/content'
 import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html'
 import { listAllFriends } from '@kobato/server/domains/friends/service'
 import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured'
 import { getTagsByNames, listAllTags } from '@kobato/server/domains/taxonomies/tags/service'
-import { translateThrownResponse } from '@kobato/server/http/content-signals'
 import { loadDetailCritical, trackDetailPageView } from '@kobato/server/http/loaders/detail-critical'
 import { loadPagePreview } from '@kobato/server/http/loaders/page-preview'
 import { loadPostPreview } from '@kobato/server/http/loaders/post-detail'
@@ -20,15 +20,13 @@ const impl = implementPublic(contentDetailContract)
 const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
   const db = context.db
 
-  let preview
-  try {
-    preview = await loadPostPreview({
-      db,
-      slug: input.slug,
-      viewer: context.viewer,
-    })
-  } catch (error) {
-    return translateThrownResponse(error)
+  const preview = await loadPostPreview({
+    db,
+    slug: input.slug,
+    viewer: context.viewer,
+  })
+  if (isContentRedirectSignal(preview)) {
+    return preview
   }
 
   const target: EntityTarget = { type: 'post', ownerId: idFromString(preview.post.id) }
@@ -81,16 +79,14 @@ const postBySlug = impl.postBySlug.handler(async ({ input, context }) => {
 const pageBySlug = impl.pageBySlug.handler(async ({ input, context }) => {
   const db = context.db
 
-  let preview
-  try {
-    preview = await loadPagePreview({
-      db,
-      slug: input.slug,
-      wantsDraftPreview: input.draft === true,
-      viewer: context.viewer,
-    })
-  } catch (error) {
-    return translateThrownResponse(error)
+  const preview = await loadPagePreview({
+    db,
+    slug: input.slug,
+    wantsDraftPreview: input.draft === true,
+    viewer: context.viewer,
+  })
+  if (isContentRedirectSignal(preview)) {
+    return preview
   }
 
   const target: EntityTarget = { type: 'page', ownerId: idFromString(preview.page.id) }

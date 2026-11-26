@@ -4,7 +4,7 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import { validateCsrfForAction } from '@kobato/server/domains/auth/csrf'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared'
-import { ensureNoAdminOrRedirect } from '@kobato/server/domains/settings/install-gate'
+import { getInstallState } from '@kobato/server/domains/settings/install-gate'
 import { getRequestContext } from '@kobato/server/http/request-context'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
@@ -27,7 +27,9 @@ function fail(messageKey: UiMessageId, locale: AppLocale) {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
-  await ensureNoAdminOrRedirect(rc.db)
+  if ((await getInstallState(rc.db)) === 'installed') {
+    throw redirect('/admin/signin', { status: 303 })
+  }
 
   const { caller } = createSsrCaller({ request, context })
   const status = await caller.account.setup.status({})
@@ -39,7 +41,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
-  await ensureNoAdminOrRedirect(rc.db)
+  if ((await getInstallState(rc.db)) === 'installed') {
+    throw redirect('/admin/signin', { status: 303 })
+  }
 
   const { caller, responseHeaders } = createSsrCaller({ request, context })
   const { session } = rc

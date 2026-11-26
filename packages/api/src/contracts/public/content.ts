@@ -35,6 +35,10 @@ export type ContentNotModifiedSignal = z.infer<typeof contentNotModifiedSignalSc
 
 export type ContentSignal = ContentRedirectSignal | ContentNotModifiedSignal
 
+export function isContentRedirectSignal(value: unknown): value is ContentRedirectSignal {
+  return contentRedirectSignalSchema.safeParse(value).success
+}
+
 export const contentBootstrapI18nSchema = z.object({
   locale: z.enum(SUPPORTED_LOCALES),
   revision: z.string(),

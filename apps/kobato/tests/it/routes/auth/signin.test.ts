@@ -349,6 +349,26 @@ describe('routes/signin', () => {
   })
 })
 
+describe('routes/signin — install gate', () => {
+  it('loader redirects to /admin/setup when no admin exists', async () => {
+    await sqliteOf(db).delete(user)
+
+    const response = await callLoader('')
+
+    expect(response.status).toBe(303)
+    expect(response.headers.get('Location')).toBe('/admin/setup')
+  })
+
+  it('action redirects to /admin/setup when no admin exists', async () => {
+    await sqliteOf(db).delete(user)
+
+    const response = await callAction(null, loginFormData())
+
+    expect(response.status).toBe(303)
+    expect(response.headers.get('Location')).toBe('/admin/setup')
+  })
+})
+
 describe('routes/signin — OTP (real db + tokens)', () => {
   beforeEach(() => {
     setBlogSettingsBundleForTests(MAIL_READY_BUNDLE)

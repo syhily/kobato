@@ -45,14 +45,15 @@ pick the area directory, choose a role filename, add the manifest entry — neve
 - Admin/editor loaders compose `account.*` (self keys at the root plus sub-trees), `admin.analytics.*`, and `admin.*`
   via `createSsrCaller`; they keep `requireRole` and map `ORPCError` codes (`NOT_FOUND` → `notFound()`,
   `SERVICE_UNAVAILABLE` → the historical 503 texts). Gate-only loaders collapse to `guardOnlyLoader('<role>')`.
-- `auth/signin` and `auth/setup` are oRPC end to end. The signin loader (after `ensureInstalledOrRedirect`) calls
-  `account.auth.status`; the setup loader (after `ensureNoAdminOrRedirect`, the 303 install gate) calls
-  `account.setup.status`. Both actions keep `validateCsrfForAction` + their install gate, then dispatch the parsed form
-  fields to `account.auth.*` / `account.passkey.authFinish` / `account.setup.*` through `createSsrCaller` — never the
-  auth domain services directly. Flow cookies return on the caller's `responseHeaders` (merged into `redirect`/`data` by
-  the shared `auth/flow-response.ts` adapters), every `redirectTo` is re-sanitized inside the controller, and setup's
-  verify 429 rides the wire error variant. Setup keeps the visible-error priority: the session gate answers before CSRF;
-  the setup-token liveness check stays in the controller.
+- `auth/signin` and `auth/setup` are oRPC end to end. Each loader and action applies its install gate on
+  `getInstallState(rc.db)` itself — signin throws `redirect('/admin/setup', { status: 303 })` while `noAdmin`, setup
+  throws `redirect('/admin/signin', { status: 303 })` once installed — then the signin loader calls
+  `account.auth.status` and the setup loader `account.setup.status`. Both actions keep `validateCsrfForAction` after the
+  gate, then dispatch the parsed form fields to `account.auth.*` / `account.passkey.authFinish` / `account.setup.*`
+  through `createSsrCaller` — never the auth domain services directly. Flow cookies return on the caller's
+  `responseHeaders` (merged into `redirect`/`data` by the shared `auth/flow-response.ts` adapters), every `redirectTo`
+  is re-sanitized inside the controller, and setup's verify 429 rides the wire error variant. Setup keeps the
+  visible-error priority: the session gate answers before CSRF; the setup-token liveness check stays in the controller.
 - Server-boundary whitelists — public+root: `ssr-caller`, `route-cache-headers`, `infra/http/*` (+ `render/warmup/*`,
   `infra/trace/react-router`, `infra/trace/config`); admin/editor: `ssr-caller`, `request-context`, `domains/auth/rbac`,
   `infra/http/*`; auth (direct): `domains/auth/csrf`, `domains/auth/services/shared` (message formatting only),

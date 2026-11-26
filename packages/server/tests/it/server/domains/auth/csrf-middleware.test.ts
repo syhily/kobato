@@ -1,13 +1,8 @@
-import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 import type { Env } from '@kobato/server/http/hono-env'
 
+import { makeSession } from '@kobato/server/tests/utils/session'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
-import { createSession } from 'react-router'
 import { describe, expect, it } from 'vitest'
-
-function makeSession(data: Partial<BlogSessionData> = {}) {
-  return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
-}
 
 const PROCEDURE_ROUTES: readonly string[] = [
   '/rpc/public/content/bootstrap',

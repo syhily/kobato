@@ -51,8 +51,8 @@ feature files. Once a subdirectory exists (`services/`, `repos/`), the root file
 ## http/
 
 HTTP perimeter only: `orpc-base.ts`, `contract-implementation.ts`, `request-context.ts`, `hono-env.ts`, `api-router.ts`,
-`errors.ts`, `app.ts`, `orpc-trace.ts`, `middlewares/`, `controllers/` (`public/`, `account/`, `admin/`), `resources/`,
-`loaders/`, `route-cache-headers.ts`, `request/`, `ssr-caller.ts`.
+`errors.ts`, `app.ts`, `orpc-trace.ts`, `content-not-found.ts`, `middlewares/`, `controllers/` (`public/`, `account/`,
+`admin/`), `resources/`, `loaders/`, `route-cache-headers.ts`, `request/`, `ssr-caller.ts`.
 
 - Controllers and loaders **orchestrate only** — logic stays in `domains/<x>/service.ts`. `controllers/**` mirrors the
   `apiRouter` groups one-to-one (`apiRouter.public.comments` ⇔ `controllers/public/comments-*.controller.ts`); only the
@@ -68,10 +68,12 @@ HTTP perimeter only: `orpc-base.ts`, `contract-implementation.ts`, `request-cont
 - Public content API (`public.content.*`, Ghost-Content-API style): implemented by
   `controllers/public/content-*.controller.ts`; schemas in `@kobato/api/contracts/public/content.ts`. `loaders/*`
   (`listing`, `search`, `sidebar`, `comments`, `detail-critical` + the `page-preview` / `post-detail` / `home`
-  pipelines) are the orchestration layer; pipelines signal 301/302/404 by throwing `Response`s mapped by
-  `http/content-signals.ts`. Detail/listing ETags fingerprint their payloads (`postEtag`/`pageEtag`/`listingEtag`); a
-  served document records exactly one page view, a 304 never; sidebar "random" widgets are DETERMINISTIC per
-  representation (a per-request CSPRNG would break the ETag).
+  pipelines) are the orchestration layer; pipelines RETURN the wire signal union (`ContentRedirectSignal` for 301/302)
+  and throw `ORPCError('NOT_FOUND')` via `http/content-not-found.ts` (`contentNotFound()`, the single definition) for a
+  missing entity — nothing under `domains/**`, `http/loaders/**`, or `http/controllers/**` imports `react-router` or
+  throws a `Response` for control flow (pinned by `apps/kobato/tests/arch/server-layers.test.ts`). Detail/listing ETags
+  fingerprint their payloads (`postEtag`/`pageEtag`/`listingEtag`); a served document records exactly one page view, a
+  304 never; sidebar "random" widgets are DETERMINISTIC per representation (a per-request CSPRNG would break the ETag).
 - `buildCspHeader` is the single dynamic-CSP owner and NEVER widens `connect-src`; the OpenObserve origin appears in no
   policy, document, or CORS entry (browser RUM relays through the same-origin `/api/rum/intake`).
 
@@ -138,7 +140,10 @@ nonce, pinned settings + localization); both getters share ONE lazy capture, and
 mount hydrate settings before first read. Same-session mutations call `markSessionDirty()`; the middleware commits
 `Set-Cookie` after the response — the only commit point. `HandlerContext` carries the same `markSessionDirty` plus a
 per-request `responseHeaders` for out-of-band headers, merged into the response by the `/rpc/*` mount and
-`createSsrCaller`.
+`createSsrCaller`. The session container and DB-backed storage are Kobato-owned (`domains/auth/session-storage.ts`) over
+`infra/http/signed-cookie.ts`; the cookie wire format is byte-compatible with the historical React Router one in both
+directions (pinned by the oracle suites in `tests/unit/server/domains/auth/session-storage.test.ts`), and a signed sid
+with no live row starts a FRESH session (no stale-id resurrection).
 
 ## Databases
 

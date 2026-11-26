@@ -231,6 +231,20 @@ describe('requestContextMiddleware', () => {
     expect(session.get('csrfToken')).toBe(deriveStatelessCsrfToken(minted!))
   })
 
+  it('anonymous GET with an empty __session cookie value: treated as no session cookie', async () => {
+    const { app, session } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { headers: { Cookie: '__session=' } })
+    expect(res.status).toBe(200)
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
+    expect(setCookies).toHaveLength(1)
+    const minted = /^__csrf=([a-f0-9]{64}); Path=\/; HttpOnly; SameSite=Lax$/.exec(setCookies[0]!)?.[1]
+    expect(minted).toBeDefined()
+    expect(session.get('csrfToken')).toBe(deriveStatelessCsrfToken(minted!))
+  })
+
   it('anonymous GET on a cookie-exempt path (feed/sitemap/assets): mints nothing', async () => {
     const { app, session } = await buildApp({}, { presetCsrfToken: false })
     app.get('/feed', (c) => c.json({ ok: true }))

@@ -1,4 +1,4 @@
-import type { HomeExtra } from '@kobato/api/contracts/public/content'
+import type { ContentRedirectSignal, HomeExtra } from '@kobato/api/contracts/public/content'
 import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { ClientPost, ListingPostCard } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
@@ -50,7 +50,7 @@ export async function loadHomeData({
   locale: AppLocale
   settings: BlogSettingsBundle | null
   revision: string
-}): Promise<ListingPageLoaderData<HomeExtra>> {
+}): Promise<ListingPageLoaderData<HomeExtra> | ContentRedirectSignal> {
   const homePageSize = requireBlogSettingsSection('content', settings).pagination.posts
 
   const filters = {

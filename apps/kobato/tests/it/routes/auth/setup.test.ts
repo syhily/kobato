@@ -129,6 +129,32 @@ describe('routes/setup', () => {
     })
   })
 
+  describe('action gate', () => {
+    it('redirects to /admin/signin when installed', async () => {
+      await seedAdminRow()
+
+      const formData = new FormData()
+      formData.set('intent', 'verify-token')
+      formData.set('setup_token', 'any-token')
+
+      const response = await catchResponse(
+        action({
+          request: new Request('http://localhost/admin/setup', {
+            method: 'POST',
+            body: withCsrf(formData),
+          }),
+          url: new URL('http://localhost/admin/setup'),
+          context: makeRouteContext({ session: csrfSession() }),
+          params: {},
+          pattern: 'admin/setup',
+        }),
+      )
+
+      expect(response.status).toBe(303)
+      expect(response.headers.get('Location')).toBe('/admin/signin')
+    })
+  })
+
   describe('action: verify-token', () => {
     it('returns setupTokenVerified: true for valid token', async () => {
       const token = await mintSetupToken()

@@ -15,7 +15,6 @@ import { orpcInputValidationInterceptor, type HandlerContext } from '@kobato/ser
 import { createOrpcTraceInterceptor } from '@kobato/server/http/orpc-trace'
 import { getRequestContext } from '@kobato/server/http/request-context'
 import { notModifiedResponse } from '@kobato/server/infra/http/etag'
-import { redirectPermanent } from '@kobato/server/infra/http/redirects'
 import { notFound } from '@kobato/server/infra/http/status'
 import { createRouterClient, ORPCError, type RouterClient } from '@orpc/server'
 import { redirect } from 'react-router'
@@ -134,7 +133,7 @@ export async function unwrapDetail<T, ETag extends string | null>(
     throw notModifiedResponse(result.etag, localization)
   }
   if (result.kind === 'redirect') {
-    redirectPermanent(result.to)
+    throw redirect(result.to, { status: result.status })
   }
   return { etag: result.etag, payload: result.payload }
 }

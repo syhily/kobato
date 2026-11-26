@@ -5,6 +5,7 @@ import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { isContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import { contentListingsContract } from '@kobato/api/rpc/public/content'
 import { toListingPostCard } from '@kobato/catalog/projection'
 import { trackPageView } from '@kobato/server/domains/analytics/track'
@@ -16,7 +17,7 @@ import {
 } from '@kobato/server/domains/posts/services/public-query'
 import { findCategoryBySlug, listAllCategories } from '@kobato/server/domains/taxonomies/categories/services/query'
 import { findTagBySlug } from '@kobato/server/domains/taxonomies/tags/service'
-import { translateThrownResponse } from '@kobato/server/http/content-signals'
+import { contentNotFound } from '@kobato/server/http/content-not-found'
 import { loadHomeData } from '@kobato/server/http/loaders/home'
 import { listingLoader } from '@kobato/server/http/loaders/listing'
 import { searchLoader } from '@kobato/server/http/loaders/search'
@@ -27,7 +28,6 @@ import {
   listingEtag,
   listingRepresentation,
 } from '@kobato/server/infra/http/etag'
-import { ORPCError } from '@orpc/server'
 
 const impl = implementPublic(contentListingsContract)
 
@@ -53,13 +53,11 @@ function trackListingPageView(context: HandlerContext): void {
 async function runListing<T>(
   context: HandlerContext,
   ifNoneMatch: string | undefined,
-  load: () => Promise<T>,
+  load: () => Promise<T | ContentRedirectSignal>,
 ): Promise<ListingOutput<T>> {
-  let listing: T
-  try {
-    listing = await load()
-  } catch (error) {
-    return translateThrownResponse(error, 'redirect-only')
+  const listing = await load()
+  if (isContentRedirectSignal(listing)) {
+    return listing
   }
 
   const etag = listingEtagFor(context, listing)
@@ -141,7 +139,7 @@ const postsList = impl.postsList.handler(async ({ input, context }) => {
   if (input.scope.type === 'tag') {
     const tag = await findTagBySlug(db, input.scope.slug)
     if (!tag) {
-      throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
+      contentNotFound()
     }
 
     return runListing(context, input.ifNoneMatch, () =>
@@ -160,7 +158,7 @@ const postsList = impl.postsList.handler(async ({ input, context }) => {
 
   const category = await findCategoryBySlug(db, input.scope.slug)
   if (!category) {
-    throw new ORPCError('NOT_FOUND', { message: 'Not Found' })
+    contentNotFound()
   }
 
   return runListing(context, input.ifNoneMatch, () =>

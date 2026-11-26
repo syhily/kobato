@@ -16,6 +16,7 @@ import { getClientAddress } from '@kobato/server/http/request/client-address'
 import { isExempt as isCookieExemptPath } from '@kobato/server/http/request/cookie-exempt'
 import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
 import { serverConfig } from '@kobato/server/infra/config'
+import { parseCookieValue } from '@kobato/server/infra/http/cookie'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createMiddleware } from 'hono/factory'
@@ -41,21 +42,6 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
 export interface DerivedRequest {
   requestContext: RequestContext
   isSessionDirty(): boolean
-}
-
-function readCookieValue(header: string | null, name: string): string | null {
-  if (!header) {
-    return null
-  }
-  const m = new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(header)
-  if (!m) {
-    return null
-  }
-  try {
-    return decodeURIComponent(m[1]!)
-  } catch {
-    return null
-  }
 }
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
@@ -105,14 +91,15 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
 
   const cookieHeader = c.req.raw.headers.get('cookie')
   let csrfCookieToSet: string | null = null
-  if (readCookieValue(cookieHeader, SESSION_COOKIE_NAME) !== null) {
+  const sessionCookieValue = parseCookieValue(cookieHeader ?? '', SESSION_COOKIE_NAME)
+  if (sessionCookieValue) {
     const tokenBefore = requestContext.session.get('csrfToken')
     ensureCsrfToken(requestContext.session)
     if (requestContext.session.get('csrfToken') !== tokenBefore) {
       requestContext.markSessionDirty()
     }
   } else {
-    const csrfCookie = readCookieValue(cookieHeader, CSRF_COOKIE_NAME)
+    const csrfCookie = parseCookieValue(cookieHeader ?? '', CSRF_COOKIE_NAME)
     if (csrfCookie !== null && isCsrfCookieValue(csrfCookie)) {
       requestContext.session.set('csrfToken', deriveStatelessCsrfToken(csrfCookie))
     } else if (SAFE_METHODS.has(c.req.method) && !isCookieExemptPath(c.req.path)) {

@@ -775,6 +775,14 @@ describe('content.search', () => {
     expect(json).toEqual({ kind: 'redirect', to: '/search/react/page/2', status: 302 })
   })
 
+  it('answers a numbered page with zero results as a redirect union member (302 to /)', async () => {
+    const res = await callRpc('/public/content/search', { keyword: 'react', num: '2' }, makePublicCtx({ db }))
+    expect(res.status).toBe(200)
+    const json = await parseRpcJson<{ kind: string; to: string; status: number }>(res)
+
+    expect(json).toEqual({ kind: 'redirect', to: '/', status: 302 })
+  })
+
   it('rejects a keyword over the contract cap before any scan', async () => {
     const res = await callRpc('/public/content/search', { keyword: 'x'.repeat(201) }, makePublicCtx({ db }))
     expect(res.status).toBe(400)

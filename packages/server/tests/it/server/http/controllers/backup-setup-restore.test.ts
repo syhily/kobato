@@ -1,5 +1,4 @@
 import type { Database } from '@kobato/db/sqlite/database'
-import type { BlogSessionData } from '@kobato/server/domains/auth/session-storage'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { databaseOf, sqliteOf } from '@kobato/db/sqlite/database'
@@ -9,11 +8,11 @@ import { adminBackupRouter } from '@kobato/server/http/controllers/admin/backup.
 import { __resetRateLimitsForTests } from '@kobato/server/infra/rate-limit'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
+import { makeSession } from '@kobato/server/tests/utils/session'
 import { call } from '@orpc/server'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createSession } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockIsSetupTokenActive = vi.fn()
@@ -55,10 +54,6 @@ vi.mock('@kobato/server/domains/audit/services/record', () => ({
 }))
 
 const db = getTestDb()
-
-function makeSession(data: Partial<BlogSessionData> = {}) {
-  return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
-}
 
 function setupContext(session: ReturnType<typeof makeSession>): HandlerContext {
   return { ...makePublicCtx({ db }), session }

@@ -225,4 +225,49 @@ describe('server layers', () => {
     }
     expect(missing, 'drop the stale allowlist row').toEqual([])
   })
+
+  it('domains, loaders, and controllers know no frontend framework and throw no Response control flow', () => {
+    const inScope = (path: string) =>
+      path.startsWith('domains/') || path.startsWith('http/loaders/') || path.startsWith('http/controllers/')
+    const bannedSpecifiers = new Set(['react-router', '@kobato/server/infra/http/status'])
+    const bannedImports = offendersOf(
+      scanned.filter((entry) => inScope(entry.path) && bannedSpecifiers.has(entry.specifier)),
+    )
+    expect(
+      bannedImports,
+      'domains, http/loaders, and http/controllers are framework-free (ADR-0009 §11) — loaders return the content signal union instead of throwing Response control flow',
+    ).toEqual([])
+
+    const bannedPatterns = [/throw\s+redirect\(/, /throw\s+new\s+Response\(/, /\bnotFound\(/, /\bredirectPermanent\(/]
+    const probeSnippets = [
+      "throw redirect('/admin/setup', { status: 303 })",
+      "throw new Response('Not Found', { status: 404 })",
+      'notFound()',
+      "redirectPermanent('/posts/x')",
+    ]
+    for (const snippet of probeSnippets) {
+      expect(
+        bannedPatterns.some((pattern) => pattern.test(snippet)),
+        `the control-flow pin must catch: ${snippet}`,
+      ).toBe(true)
+    }
+
+    const controlFlow: string[] = []
+    for (const file of walk(SERVER_SRC, [])) {
+      const path = relative(SERVER_SRC, file)
+      if (!inScope(path)) {
+        continue
+      }
+      const source = stripComments(readFileSync(file, 'utf8'))
+      for (const pattern of bannedPatterns) {
+        if (pattern.test(source)) {
+          controlFlow.push(`packages/server/src/${path}: matches ${pattern.source}`)
+        }
+      }
+    }
+    expect(
+      controlFlow,
+      'procedure control flow is wire-shaped: return a ContentRedirectSignal or throw ORPCError — never a Response (ADR-0009 §11)',
+    ).toEqual([])
+  })
 })

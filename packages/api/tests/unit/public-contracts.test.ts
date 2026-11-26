@@ -32,6 +32,7 @@ import {
   contentPostsListOutputSchema,
   contentSearchInputSchema,
   contentSearchOutputSchema,
+  isContentRedirectSignal,
 } from '@kobato/api/contracts/public/content'
 import { githubAvatarOutputSchema, githubReleaseOutputSchema } from '@kobato/api/contracts/public/github'
 import {
@@ -323,5 +324,14 @@ describe('public contracts schema sanity (spot checks)', () => {
   it('keeps the music player id grammar', () => {
     expect(musicGetInputSchema.safeParse({ id: 'a1b2c3d4e5f6g7h8' }).success).toBe(true)
     expect(musicGetInputSchema.safeParse({ id: 'UPPER' }).success).toBe(false)
+  })
+
+  it('isContentRedirectSignal accepts exactly the redirect signal shape', () => {
+    expect(isContentRedirectSignal({ kind: 'redirect', to: '/', status: 302 })).toBe(true)
+    expect(isContentRedirectSignal({ kind: 'redirect', to: '/posts/x', status: 301 })).toBe(true)
+    expect(isContentRedirectSignal({ kind: 'not-modified', etag: 'W/"x"' })).toBe(false)
+    expect(isContentRedirectSignal({ kind: 'redirect', to: '/', status: 303 })).toBe(false)
+    expect(isContentRedirectSignal({ pageNum: 1, totalPage: 2 })).toBe(false)
+    expect(isContentRedirectSignal(null)).toBe(false)
   })
 })

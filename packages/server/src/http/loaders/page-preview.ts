@@ -1,3 +1,4 @@
+import type { ContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import type { DetailPageShell, DraftMarker, Page } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
@@ -7,8 +8,7 @@ import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
 import { findPageBySlug } from '@kobato/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@kobato/server/domains/posts/services/single'
-import { redirectPermanent } from '@kobato/server/infra/http/redirects'
-import { notFound } from '@kobato/server/infra/http/status'
+import { contentNotFound } from '@kobato/server/http/content-not-found'
 
 export interface PagePreviewResult {
   page: DetailPageShell
@@ -27,11 +27,11 @@ export async function loadPagePreview({
   slug: string
   wantsDraftPreview: boolean
   viewer: ViewerIdentity | null | undefined
-}): Promise<PagePreviewResult> {
+}): Promise<PagePreviewResult | ContentRedirectSignal> {
   const postMeta = findPublicPostMetaBySlug(db, slug)
 
   if (postMeta !== null && isLive(postMeta)) {
-    redirectPermanent(`/posts/${slug}`)
+    return { kind: 'redirect', to: `/posts/${slug}`, status: 301 }
   }
 
   const page = await findPageBySlug(db, slug)
@@ -60,7 +60,7 @@ export async function loadPagePreview({
   }
 
   if (sourcePage === undefined) {
-    notFound()
+    contentNotFound()
   }
 
   const pageProjection: DetailPageShell = {

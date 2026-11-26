@@ -1,33 +1,35 @@
+import type { ContentRedirectSignal } from '@kobato/api/contracts/public/content'
+
 import { pagePath } from '@kobato/server/domains/content/urls'
-import { notFound } from '@kobato/server/infra/http/status'
-import { redirect } from 'react-router'
+import { contentNotFound } from '@kobato/server/http/content-not-found'
 
 export function parsePageNum(raw: string | undefined): number {
   if (raw === undefined || raw === '' || !/^\d+$/.test(raw)) {
-    notFound()
+    contentNotFound()
   }
   return Number.parseInt(raw, 10)
 }
 
-export function parseListingPage(raw: string | undefined, rootPath: string): number {
+export function parseListingPage(raw: string | undefined, rootPath: string): number | ContentRedirectSignal {
   const pageNum = raw === undefined ? 1 : parsePageNum(raw)
   if (raw !== undefined && pageNum <= 1) {
-    throw redirect(rootPath)
+    return { kind: 'redirect', to: rootPath, status: 302 }
   }
   return pageNum
 }
 
-export function redirectListingOverflow(
+export function listingOverflowSignal(
   raw: string | undefined,
   pageNum: number,
   totalPage: number,
   rootPath: string,
   allowEmpty = false,
-): void {
+): ContentRedirectSignal | null {
   if (raw !== undefined && pageNum > totalPage && totalPage > 0) {
-    throw redirect(pagePath(rootPath, totalPage))
+    return { kind: 'redirect', to: pagePath(rootPath, totalPage), status: 302 }
   }
   if (totalPage === 0 && !allowEmpty) {
-    notFound()
+    contentNotFound()
   }
+  return null
 }

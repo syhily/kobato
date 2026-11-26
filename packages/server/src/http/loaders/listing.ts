@@ -1,3 +1,4 @@
+import type { ContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import type { ListingExtraArgs, ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { ListingPostCard } from '@kobato/catalog/model'
 import type { FeedLinkOptions } from '@kobato/catalog/seo/meta'
@@ -5,8 +6,9 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { isContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import { getClientPostsWithMetadata } from '@kobato/server/domains/posts/services/public-query'
-import { parseListingPage, redirectListingOverflow } from '@kobato/server/http/loaders/pagination'
+import { listingOverflowSignal, parseListingPage } from '@kobato/server/http/loaders/pagination'
 import { listingSeo } from '@kobato/server/render/seo/listing-seo'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 
@@ -83,13 +85,20 @@ export async function listingLoader<TExtra = undefined>(
     extra?: TExtra
     allowEmpty?: boolean
   },
-): Promise<ListingPageLoaderData<TExtra>> {
+): Promise<ListingPageLoaderData<TExtra> | ContentRedirectSignal> {
   const listingNowIso = new Date().toISOString()
-  const pageNum = parseListingPage(rawNum, rootPath)
+  const parsedPage = parseListingPage(rawNum, rootPath)
+  if (isContentRedirectSignal(parsedPage)) {
+    return parsedPage
+  }
+  const pageNum = parsedPage
   const effectivePageSize = pageSize ?? requireBlogSettingsSection('content', settings).pagination.posts
   const totalPage = calculateTotalPages(totalPosts, effectivePageSize, mergeTailWhenLessThan ?? 0)
 
-  redirectListingOverflow(rawNum, pageNum, totalPage, rootPath, allowEmpty)
+  const overflow = listingOverflowSignal(rawNum, pageNum, totalPage, rootPath, allowEmpty)
+  if (overflow !== null) {
+    return overflow
+  }
 
   const currentPosts =
     totalPage === 0 || pageNum > totalPage

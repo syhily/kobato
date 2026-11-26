@@ -1,3 +1,4 @@
+import type { ContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import type { DetailPostShell, DraftMarker, Post } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
@@ -7,8 +8,7 @@ import { loadDraftPreviewBySlug } from '@kobato/server/domains/content/lifecycle
 import { canonicalPostPath } from '@kobato/server/domains/content/urls'
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
 import { findPostBySlug } from '@kobato/server/domains/posts/services/single'
-import { redirectPermanent } from '@kobato/server/infra/http/redirects'
-import { notFound } from '@kobato/server/infra/http/status'
+import { contentNotFound } from '@kobato/server/http/content-not-found'
 
 export interface PostPreviewResult {
   sourcePost: Post
@@ -24,7 +24,7 @@ export async function loadPostPreview({
   db: Database
   slug: string
   viewer: ViewerIdentity | null | undefined
-}): Promise<PostPreviewResult> {
+}): Promise<PostPreviewResult | ContentRedirectSignal> {
   let sourcePost = (await findPostBySlug(db, slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
@@ -37,13 +37,13 @@ export async function loadPostPreview({
   }
 
   if (sourcePost === undefined) {
-    notFound()
+    contentNotFound()
   }
 
   const clientPost = toClientPost(sourcePost)
   const canonical = canonicalPostPath(slug, clientPost.slug)
   if (canonical !== undefined) {
-    redirectPermanent(canonical)
+    return { kind: 'redirect', to: canonical, status: 301 }
   }
 
   return { sourcePost, post: toDetailPostShell(clientPost), draftMarker }

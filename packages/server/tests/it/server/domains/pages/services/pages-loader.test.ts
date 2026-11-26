@@ -1,6 +1,7 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
+import { isContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { page as pageTable } from '@kobato/db/sqlite/schema/page'
@@ -107,41 +108,41 @@ function makeArgs(slug: string, viewer: SessionUser | null = null) {
 const { loadPagePreview } = await import('@kobato/server/http/loaders/page-preview')
 
 describe('loadPagePreview — slug redirect logic', () => {
-  it('redirects to /posts/slug when a published post matches', async () => {
+  it('returns a 301 redirect signal to /posts/slug when a published post matches', async () => {
     await seedPost({ slug: 'hello' })
 
-    try {
-      await loadPagePreview(makeArgs('hello'))
-      expect.unreachable('should have thrown')
-    } catch (err) {
-      expect(err).toMatchObject({ status: 301 })
-    }
+    await expect(loadPagePreview(makeArgs('hello'))).resolves.toEqual({
+      kind: 'redirect',
+      to: '/posts/hello',
+      status: 301,
+    })
   })
 
-  it('does not redirect for an unpublished post (status=draft)', async () => {
+  it('answers NOT_FOUND for an unpublished post (status=draft)', async () => {
     await seedPost({ slug: 'draft-post', published: false, withRevision: false })
 
-    await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ status: 404 })
+    await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
-  it('does not redirect for a deleted post (deletedAt set)', async () => {
+  it('answers NOT_FOUND for a deleted post (deletedAt set)', async () => {
     await seedPost({ slug: 'deleted-post', deletedAt: new Date() })
 
-    await expect(loadPagePreview(makeArgs('deleted-post'))).rejects.toMatchObject({ status: 404 })
+    await expect(loadPagePreview(makeArgs('deleted-post'))).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
-  it('does not redirect for a scheduled post (publishedAt in future)', async () => {
+  it('answers NOT_FOUND for a scheduled post (publishedAt in future)', async () => {
     await seedPost({ slug: 'scheduled-post', publishedAt: new Date('2099-01-01') })
 
-    await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({
-      status: 404,
-    })
+    await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('returns page data when slug matches a published page', async () => {
     await seedPage({ slug: 'about', title: 'About', body: pageBody })
 
     const result = await loadPagePreview(makeArgs('about'))
+    if (isContentRedirectSignal(result)) {
+      expect.unreachable('expected a page result, got a redirect signal')
+    }
 
     expect(result.page.title).toBe('About')
     expect(result.page.slug).toBe('about')
@@ -149,29 +150,31 @@ describe('loadPagePreview — slug redirect logic', () => {
     expect(result.draftMarker).toBeNull()
   })
 
-  it('redirects when both published post and page match (post wins)', async () => {
+  it('returns a 301 redirect signal when both published post and page match (post wins)', async () => {
     await seedPost({ slug: 'collision' })
     await seedPage({ slug: 'collision', title: 'Collision Page' })
 
-    try {
-      await loadPagePreview(makeArgs('collision'))
-      expect.unreachable('should have thrown')
-    } catch (err) {
-      expect(err).toMatchObject({ status: 301 })
-    }
+    await expect(loadPagePreview(makeArgs('collision'))).resolves.toEqual({
+      kind: 'redirect',
+      to: '/posts/collision',
+      status: 301,
+    })
   })
 
   it('shows draft to admin when slug has no published page', async () => {
     await seedPage({ slug: 'new-page', title: 'New Page Draft', published: false, draftBody: pageBody })
 
     const result = await loadPagePreview(makeArgs('new-page', adminUser()))
+    if (isContentRedirectSignal(result)) {
+      expect.unreachable('expected a page result, got a redirect signal')
+    }
 
     expect(result.draftMarker).toBe('draft')
     expect(result.page.title).toBe('New Page Draft')
     expect(result.sourcePage.bodyState).toEqual(pageBody)
   })
 
-  it('returns 404 when slug matches nothing and no admin session', async () => {
-    await expect(loadPagePreview(makeArgs('nonexistent'))).rejects.toMatchObject({ status: 404 })
+  it('answers NOT_FOUND when slug matches nothing and no admin session', async () => {
+    await expect(loadPagePreview(makeArgs('nonexistent'))).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })

@@ -1,5 +1,3 @@
-import type { BlogSession, BlogSessionData } from '@kobato/server/domains/auth/session-storage'
-
 import {
   buildCsrfCookieHeader,
   deriveStatelessCsrfToken,
@@ -11,13 +9,9 @@ import {
   validateCsrfToken,
   CSRF_HEADER,
 } from '@kobato/server/domains/auth/csrf'
+import { makeSession } from '@kobato/server/tests/utils/session'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
-import { createSession } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-function makeSession(data: Partial<BlogSessionData> = {}): BlogSession {
-  return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
-}
 
 function seedCsrfSettings(csrf: { enabled: boolean; exemptPaths: string[] }): void {
   setBlogSettingsBundleForTests({

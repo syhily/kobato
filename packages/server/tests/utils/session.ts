@@ -1,9 +1,9 @@
 import type { BlogSession, BlogSessionData, SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { createSession } from 'react-router'
+import { buildSessionWithSid } from '@kobato/server/domains/auth/session-storage'
 
 export function makeSession(data: Partial<BlogSessionData> = {}): BlogSession {
-  return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
+  return buildSessionWithSid('test-session', data)
 }
 
 export function adminUser(overrides: Partial<SessionUser> = {}): SessionUser {
