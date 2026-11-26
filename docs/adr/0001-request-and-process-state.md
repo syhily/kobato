@@ -3,6 +3,10 @@
 - Status: accepted
 - Date: 2026-11-10
 - Supersedes: the former separate process-memo and request-context ADRs
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): `RequestContext` keeps TWO projections in
+  `kobato` — the Hono variable and the oRPC `HandlerContext`; the React Router projection left with the split (the
+  workspace is a SPA behind its Hono app), and sayaka derives its own per-request context from the inbound request and
+  `content.bootstrap`. The Decision below records the single-process design it was written against.
 
 ## Context
 

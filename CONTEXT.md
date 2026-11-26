@@ -133,14 +133,15 @@ called directly from mutation sites
 ## Request pipeline
 
 **RequestContext**: the per-request fact base (`packages/server/src/http/request-context.ts`), derived once by
-`requestContextMiddleware` and projected — never re-derived — onto Hono `c.var.requestContext`, the oRPC
-`HandlerContext` copy, and the React Router `RouterContextProvider` key. It carries the session, viewer, proxy-aware
-client address, normalized document URL (`.data`/`_routes`/`index` stripped), request facts, db/pool handles, CSP nonce,
-and the PINNED settings bundle plus the `localization` projection (`locale`, site `timeZone`, `timeFormat`, snapshot
-`revision`). Both come from ONE lazy snapshot capture (`createLazyAppSnapshot`), so rendered bytes belong to the
-revision in their cache key. Same-session mutations call `markSessionDirty()` and the middleware commits — the only
-Set-Cookie commit point; sid-changing flows keep their explicit Set-Cookie channel. _Avoid_: re-deriving session / URL /
-client address in a loader, resource, or controller, hand-built audit literals (use `recordAuditEventFromContext`)
+`requestContextMiddleware` and projected — never re-derived — onto TWO surfaces in kobato: the Hono
+`c.var.requestContext` and the oRPC `HandlerContext` copy (ADR-0009 removed the React Router projection; sayaka derives
+its own per-request context). It carries the session, viewer, proxy-aware client address, request URL and facts, db
+handle, CSP nonce, and the PINNED settings bundle plus the `localization` projection (`locale`, site `timeZone`,
+`timeFormat`, snapshot `revision`). Both come from ONE lazy snapshot capture (`createLazyAppSnapshot`), so rendered
+bytes belong to the revision in their cache key. Same-session mutations call `markSessionDirty()` and the middleware
+commits — the only Set-Cookie commit point; sid-changing flows keep their explicit Set-Cookie channel. _Avoid_:
+re-deriving session / URL / client address in a controller, hand-built audit literals (use
+`recordAuditEventFromContext`)
 
 **Viewer**: the session's identity projection — the full `SessionUser` on `RequestContext.viewer` (`null` when
 anonymous). Permission predicates in `packages/server/src/domains/auth/rbac.ts` take `ViewerIdentity { id, role }`,
@@ -172,10 +173,11 @@ the never-restart-into-a-dead-handle invariant — lives in `domains/backup/rest
 `createRestoreCompletion`. _Avoid_: restore orchestrator
 
 **Public contract**: the stability-guaranteed `public` groups of the `@kobato/api` contract tree — `content`,
-`comments`, `likes`, `notifications`, `friends`, `newsletter`, `webmentions`, `avatar`, `github`, `images`, `music`,
-`analytics`, `observability`, and the resource procedures behind every URL the public origin serves — the wire any
-public frontend, sayaka included, builds against. Everything else (`admin.*`, the rest of `account`) is workspace
-surface that may churn with any release. _Avoid_: Public Content API, SDK, `/api/content/v1`
+`comments`, `likes`, `friends`, `notifications`, `newsletter`, `webmentions`, `avatar`, `github`, `images`, `music`,
+`branding`, `fonts`, `storage`, `analytics`, `observability`, `feeds`, and `sitemap` (the resource procedures behind
+every URL the public origin serves) — the wire any public frontend, sayaka included, builds against. Everything else
+(`admin.*`, the rest of `account`) is workspace surface that may churn with any release. _Avoid_: Public Content API,
+SDK, `/api/content/v1`
 
 **Headless**: the delivery form in which the public site is a frontend deployed apart from the backend and reaching it
 only through the public contract — sayaka is the first-party one. _Avoid_: headless-only, `headless.enabled`

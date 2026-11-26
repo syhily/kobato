@@ -2,6 +2,10 @@
 
 - Status: accepted (adopted for SEA assets; Node 26 `useVfs`)
 - Date: 2026-07-27
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): the SEA pipeline now builds TWO executables —
+  `dist-sea/kobato` and `dist-sea/sayaka` — on the same `useVfs` mount design, and the build tooling moved from
+  `scripts/sea/` into `tools/pack` (`src/sea/`). The Decision below records the single-binary layout it was written
+  against.
 
 ## Context
 

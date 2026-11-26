@@ -5,20 +5,22 @@
 > _"A little bird carrying hope, one letter at a time."_
 
 **Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily) — the engine behind
-[且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC, with a built-in `/admin` console for
-everything. Content is stored as **Lexical** editor state and authored through the built-in **inkling** editor; saved
-server-side HTML projections power SSR, feeds, and search.
+[且听书吟](https://yufan.me). It runs on React Router 8, Hono, and oRPC, split into two deliverables: `kobato`, the
+backend with the built-in `/admin` console (a SPA), and `sayaka`, the server-rendered public site. Content is stored as
+**Lexical** editor state and authored through the built-in **inkling** editor; saved server-side HTML projections power
+SSR, feeds, and search.
 
-This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database
-migrations. The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an
-embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
+This repository is the complete product: backend, public site, admin SPA, API, install gate, and database migrations.
+`kobato` runs as one process with an embedded **SQLite** database and an embedded **DuckDB** analytics sidecar; `sayaka`
+is a stateless server that talks to it over oRPC. There is no database server to run, back up, or upgrade.
 
 > **Contributors:** start at [AGENTS.md](AGENTS.md) — it maps the workspace (every package, its responsibility, and the
 > dependency rules) plus the folder-scoped docs covering the import boundaries, the six-root `packages/server/src/`
 > graph, the install contract, and the API permission matrix; each package documents itself further in its own
 > `AGENTS.md`.
 
-Manuals: [Configuration](docs/manual/Configuration.md) · [Deployment](docs/manual/Deployment.md)
+Manuals: [Configuration](docs/manual/Configuration.md) · [Deployment](docs/manual/Deployment.md) ·
+[Headless](docs/manual/Headless.md)
 
 ## Features
 

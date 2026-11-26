@@ -1,39 +1,39 @@
 # ADR-0009: One contract tree for every caller — `kobato` and `sayaka` as two deliverables, contract-first JSON, and the canonical-only oRPC transport
 
-- Status: accepted. Decided 2026-11-25 and **not yet implemented** — the repository still builds one process and one
-  binary, so until "Adoption" has landed the tree is what the previous revision described. Every statement below is the
-  destination; each section names what moves.
+- Status: accepted and **implemented** — the seven Adoption steps landed and the repository builds the two binaries; see
+  "Implementation notes (2026-11-26)" for where the tree refined the Decision.
 - Date: 2026-11-22; consolidated 2026-11-23 with ADR-0010 (first-party JSON over oRPC, Hono resources) and ADR-0011
   (branded contract procedures, canonical-only transport), whose files are removed. Rewritten 2026-11-25 for the
   `kobato`/`sayaka` split: §1, §2, §3, and §6–§11 are decided anew, and §4, §5, and the type guarantees carry over (§7
-  in wording only).
-- Related: [ADR-0001](0001-request-and-process-state.md) (its "one request context, three projections" loses the React
-  Router projection when sayaka leaves), the consumer guide ([../manual/Headless.md](../manual/Headless.md) — it
-  describes the current tree until the adoption lands).
+  in wording only). Implemented 2026-11-26.
+- Related: [ADR-0001](0001-request-and-process-state.md) (amended 2026-11-26: `RequestContext` keeps two projections in
+  `kobato` — the Hono variable and the oRPC `HandlerContext`; sayaka derives its own per-request context), the consumer
+  guide ([../manual/Headless.md](../manual/Headless.md) — the guide for an external frontend author building against a
+  deployed `kobato`).
 
 ## Context
 
-Kobato ships today as one process and one SEA binary: the public site server-rendered by React Router, the admin,
-editor, and auth screens, the oRPC APIs, the resources, and analytics — the frontend mounted inside the Hono app. The
-product goal is **headless as a delivery form**: the backend and the public frontend are two independently deployed
-deliverables that share one wire. The backend never executes frontend code, business logic is not duplicated, and no
-second wire surface exists beside the first.
+Kobato shipped as one process and one SEA binary: the public site was server-rendered by React Router inside the Hono
+app, which carried the admin, editor, and auth screens, the oRPC APIs, the resources, and analytics. The product goal is
+**headless as a delivery form**: the backend and the public frontend are two independently deployed deliverables that
+share one wire. The backend never executes frontend code, business logic is not duplicated, and no second wire surface
+exists beside the first.
 
-The seams already exist. `@kobato/api` owns the wire Zod schemas (`src/contracts/`) and the contract tree,
+The seams already existed. `@kobato/api` owns the wire Zod schemas (`src/contracts/`) and the contract tree,
 `@kobato/server` implements through the `implement{Public,Authed,Author,Admin}` bases, `@kobato/catalog` owns the public
 content read model, and `@kobato/inkling` publishes its document model React-free under `/headless`. What kept headless
-a label rather than a delivery form is that no frontend had ever lived on the contract alone:
+a label rather than a delivery form was that no frontend had ever lived on the contract alone:
 
 - The first-party frontend called the router **in process** (`createSsrCaller`), so every perimeter rule had a second,
   faster path to stay consistent with.
 - The public origin's resources — feeds, sitemap, images, media — were served by the backend, so a frontend standing at
   the public origin only worked behind a reverse-proxy table.
-- The backend carried the frontend framework: sixteen server source files import `react-router`, the public content
-  procedures signal a redirect by throwing a `Response`, a domain service throws `redirect('/admin/…')`, and the Hono
-  perimeter decides document behavior (trailing slashes, CSP, the install redirect).
+- The backend carried the frontend framework: sixteen server source files imported `react-router`, the public content
+  procedures signalled a redirect by throwing a `Response`, a domain service threw `redirect('/admin/…')`, and the Hono
+  perimeter decided document behavior (trailing slashes, CSP, the install redirect).
 - The public site's interactive features — likes, friend apply, notifications, newsletter, in-place comment moderation —
   sat on `account`/`admin` surface, which no external consumer may depend on.
-- Sessions knew one origin: sign-in, sign-out, the authentication emails, and passkeys all assume the workspace and the
+- Sessions knew one origin: sign-in, sign-out, the authentication emails, and passkeys all assumed the workspace and the
   public site share `siteIdentity.website`.
 
 The previous revision settled that state as "a consumption mode, not a delivery form" plus a proxy table. This revision
@@ -64,7 +64,7 @@ serves it gets by calling a procedure. The one thing it passes through is what w
 browser's own procedure calls and the workspace (§9). **Headless is this delivery form**: the public frontend is
 deployed apart from the backend and reaches it only through the public contract.
 
-Where the code lives:
+Where the code lives (final locations are in the Implementation notes):
 
 - `apps/sayaka` absorbs `packages/web/public` and the public half of today's app — the public routes, the document
   runtime, the RUM client, the route warmup, and the public styles. `packages/web/public` does not survive as the public
@@ -72,8 +72,8 @@ Where the code lives:
 - `apps/kobato` absorbs `packages/web/admin` and the workspace routes (`admin/`, `editor/`, `auth/`).
 - One part of the public tree cannot sink: the modules both deliverables render. The root settings contexts and locale
   sync (`ui/lib`), the editor platform, the notifications, and the logout (`ui/shared`), and the audited admin-reuse set
-  stay a workspace package under `packages/web/` — this ADR calls it the cross-surface kit — because `kobato` never
-  imports sayaka. sayaka consumes it like any other package.
+  stay a workspace package under `packages/web/` — this ADR calls it the cross-surface kit, shipped as `@kobato/web-kit`
+  (`packages/web/kit`) — because `kobato` never imports sayaka. sayaka consumes it like any other package.
 
 ### 2. The public contract is `publicContract` — the stable surface, and it now includes the public site's interactions
 
@@ -136,7 +136,8 @@ and ambient-free, like `createKobatoClient`:
   sayaka's code.
 
 The rule reaches the browser too. The one call the public site makes today without oRPC — sign-out posts a form to
-`/admin/signin` (`use-logout.ts`) — becomes `account.auth.logout`.
+`/admin/signin` (`use-logout.ts`) — becomes `account.auth.logout` (shipped 2026-11-26 — `use-logout.ts` now calls the
+procedure; see Implementation notes).
 
 Operational endpoints that happen to answer JSON — `/health` and `/ready` — are not application API surface and set no
 precedent for JSON business operations on Hono. After §8 they are, with the workspace, all that `kobato`'s Hono app
@@ -229,12 +230,13 @@ content invisible), `visible` orthogonality, ETag fingerprinting with `not-modif
 view recorded for a served document, comment-token cookies, and the stateless `__csrf` double-submit — which guards
 every `/rpc/*` call except the anonymous public-read procedures: the seventeen canonical paths (all nine `content.*`
 reads plus `comments.loadComments`, `webmentions.list`, `avatar.find`, `github.avatar`, `github.release`,
-`images.resolveThumbhash`, `music.get`, `observability.rumStatus`). The resource procedures of §8 — feeds, sitemap,
-images, media, and fonts — are anonymous reads and join that set by the same opt-in. The comment-token reads
-(`getRaw`/`myComments`), every mutation, and every viewer-session procedure — the promoted `likes`, `friends`,
-`newsletter`, and `notifications` domains and the own-comment writes included — keep the full guard, as does the whole
-`account`/`admin` surface; an external frontend therefore reads bare while interactive flows remain same-origin cookie +
-CSRF. A served document counts a page view no matter who rendered it.
+`images.resolveThumbhash`, `music.get`, `observability.rumStatus`; twenty-six once the resource procedures of §8 join —
+see Implementation notes). The resource procedures of §8 — feeds, sitemap, images, media, and fonts — are anonymous
+reads and join that set by the same opt-in. The comment-token reads (`getRaw`/`myComments`), every mutation, and every
+viewer-session procedure — the promoted `likes`, `friends`, `newsletter`, and `notifications` domains and the
+own-comment writes included — keep the full guard, as does the whole `account`/`admin` surface; an external frontend
+therefore reads bare while interactive flows remain same-origin cookie + CSRF. A served document counts a page view no
+matter who rendered it.
 
 Eligibility for that exemption is declared where the procedure itself is declared:
 `defineProcedure(route, { publicRead: true })` writes `publicRead: true` onto the procedure's `~orpc.meta` through
@@ -248,10 +250,10 @@ account/admin; the match stays exact and fail-closed, so a removed alias earns n
 nothing automatically. Opting a procedure in is a deliberate, security-sensitive API-side change, made loud by freezing
 the set in tests on both sides independently of the production derivation:
 `packages/api/tests/unit/public-read-meta.test.ts` freezes the exact marked key set (seventeen leaves until the resource
-procedures join, and none under `account`/`admin`), and the server's `public-read-rpc-path.test.ts` freezes the same
-paths and proves the derived set equals them exactly, tracks the markers leaf-by-leaf, and grants account/admin nothing.
-A separate frozen `csrfExempt` set covers only the anonymous device beacon, backup download, and two author music media
-GETs; it does not bypass authentication or role guards.
+procedures join — twenty-six since this adoption, and none under `account`/`admin`), and the server's
+`public-read-rpc-path.test.ts` freezes the same paths and proves the derived set equals them exactly, tracks the markers
+leaf-by-leaf, and grants account/admin nothing. A separate frozen `csrfExempt` set covers only the anonymous device
+beacon, backup download, and two author music media GETs; it does not bypass authentication or role guards.
 
 Framework coupling already present in the wire is accepted: listing DTOs carry `seo: MetaDescriptor[]` (React Router
 meta descriptors). Consumers not on React Router map them; neutralizing the SEO projection is neither required nor
@@ -263,8 +265,9 @@ Every public URL reaches sayaka. Each one it serves itself is implemented by an 
 forwards belong to `kobato` (§9). A document-like resource — a feed, the sitemap, an image — becomes a pair: a `public`
 procedure that produces the body and its ETag and answers the same signal union as the content reads (`ok`,
 `not-modified`, `redirect`), and a sayaka **resource route** — a route whose loader returns the `Response` — that relays
-it. Rendering stays in `kobato`; sayaka owns the HTTP header profile of what it relays and re-emits the content type and
-language the procedure names.
+it (the two POST protocols of the table below turned out to be perimeter handlers in sayaka instead — see Implementation
+notes). Rendering stays in `kobato`; sayaka owns the HTTP header profile of what it relays and re-emits the content type
+and language the procedure names.
 
 | Public URL                                                                    | sayaka serves it through            |
 | ----------------------------------------------------------------------------- | ----------------------------------- |
@@ -284,8 +287,9 @@ multipart, binary, or streamed. oRPC handles File/Blob multipart bodies, `Readab
 SSE, so those application operations belong in the contract tree. Three of the moved URLs deserve their own line:
 
 - **Media and fonts stream through a procedure.** The request carries the range and the validators; the answer is the
-  byte stream with its status and headers. An object on S3-primary storage answers with the `redirect` signal, as the
-  302 does today.
+  byte stream with its status and headers (the shipped transport — a top-level `ReadableStream` with its metadata on RPC
+  response headers — is in the Implementation notes). An object on S3-primary storage answers with the `redirect`
+  signal, as the 302 does today.
 - **`POST /webmention` is answered by sayaka**, which hands the form to a receive procedure. The earlier exception that
   kept the W3C receive endpoint a Hono resource is withdrawn.
 - **The RUM intake is the one foreign protocol sayaka speaks.** It answers the OpenObserve SDK's
@@ -520,3 +524,97 @@ The order below keeps every step green on its own. Steps 3 and 5 are independent
 7. **Two binaries, and the documents.** A second SEA pipeline builds `sayaka` (`tools/pack`); the live-instance suites
    drive two processes behind one sayaka listener; `packages/server/src` imports no `react-router` and a pin keeps it
    so. The companions follow — the consumer guide, the `AGENTS.md` tree, and an amendment to ADR-0001.
+
+## Implementation notes (2026-11-26)
+
+The adoption landed as decided. This section records what the tree added on top of the Decision and where it refined it;
+every claim is pinned by the suites named beside it.
+
+**Wire additions the split required.**
+
+- `content.bootstrap` grew: it carries the frontend RUM bootstrap (`rum`, null while the relay gate is inactive), the
+  install state (`installState: 'noAdmin' | 'installed'`), the viewer's `email` on `currentUser`, and takes
+  `{ scope: 'public' | 'workspace' }` — the i18n catalog scope of the calling document; the workspace SPA asks for
+  `workspace` (`apps/kobato/src/lib/root-bootstrap`). It is the one public read that is also `installGateExempt`, so
+  sayaka renders the install redirect and the home document from one call before an admin exists.
+- Session listings (`account.sessions`, `admin.users.listSessions`) carry server-derived `isCurrent` — the session
+  cookie is httpOnly, so the client cannot know which row is its own.
+- The analytics event id travels on the request header `x-kobato-analytics-event` (`ANALYTICS_EVENT_HEADER`,
+  `packages/api/src/client/analytics-event.ts`); sayaka mints one UUID per document request so kobato's server-side page
+  view and the browser beacon share one join key (ADR-0004).
+- The §8 resource answer unions live in `@kobato/api/contracts/primitives`: the text pair (`resourceOutputSchema`), the
+  buffered-binary pair (`resourceBinaryOkSchema`), and the media union (`mediaResourceOutputSchema`).
+- `public.webmentions.receive` and `public.observability.rumIntake` are `csrfExempt` and `installGateExempt`: their
+  senders (external Webmention senders, the browser RUM beacon) never carried a CSRF token, and both must answer before
+  an admin exists. The exemptions never imply authentication; `rumIntake` adds `telemetryExcluded` and a 2 MiB
+  `requestBodyLimit` backstop behind sayaka's own 1 MiB cap.
+- The whole `account.setup` surface (`status`, `verifyToken`, `install`, `restore`) is `installGateExempt` — it IS the
+  pre-install flow, so a fresh instance's setup SPA can call it while kobato's perimeter still 303s everything else; the
+  CSRF guard and the controller-side install-state re-checks stay. Without it the setup page could not hydrate its token
+  form (the status call answered the install-gate 303), and a fresh instance was uninstallable through the UI.
+
+**Streaming media transport.** `public.fonts.embedded` and `public.storage.object` answer a top-level
+`ReadableStream<Uint8Array>`; their status and headers — Range validators included — travel on the RPC response, marked
+by `x-kobato-resource-stream` and captured by `createKobatoServerClient` (`takeResourceStream(procedure)`). An envelope
+with a nested stream is not serializable in oRPC 1.16.5 (the JSON serializer silently drops it), and the standard
+RPCLink buffers every non-event-stream body — the top-level stream plus the header capture is the only unbuffered shape
+(`packages/api/tests/unit/client/create-server-client.test.ts`). External consumers therefore do not call these
+procedures; they fetch such resources from the public origin URL.
+
+**Inbound protocols are perimeter handlers.** `POST /webmention` and `POST /api/rum/intake/*` are answered by Hono
+handlers in sayaka's perimeter (`apps/sayaka/src/server/webmention-receive.ts`, `rum-intake.ts`) — not React Router
+resource routes, as §8 imagined. Raw-body POSTs keep their size caps and status semantics without the document
+pipeline's root-loader bootstrap, both handlers key kobato's rate limits on the forwarded visitor address, and they
+re-emit kobato's JSON envelope shapes byte-identically (the OpenObserve SDK expects `{error:{message}}`). An oversized
+request answers the size error before sayaka contacts kobato at all.
+
+**Tree refinements.** The six deployed feed URLs collapsed into `feeds.rss` / `feeds.atom` with the scope in the input;
+the sitemap is `sitemap.xml` (the tree key mirrors the public URL); the branding assets are one `branding.asset`
+procedure behind sayaka's fourteen registered exact paths; the Open Graph, calendar, and avatar images are `images.og` /
+`images.calendar` / `avatar.image` binary answers. The anonymous-read set the §7 wording counted at seventeen is
+twenty-six leaves (`packages/api/tests/unit/public-read-meta.test.ts`).
+
+**Packages.** `packages/web/` holds exactly one package, the cross-surface kit `@kobato/web-kit` (`packages/web/kit`).
+The admin UI is `apps/kobato/src/ui` (the former `@kobato/web-admin` tree); the public UI is `apps/sayaka/src/ui` (the
+former `@kobato/web-public`). `@kobato/i18n/format-message` formats UI messages without React;
+`packages/ui/src/lib/use-music-players.tsx` is the projected-body music-player hook; visitor-address derivation is
+`@kobato/api/client/client-address` over `@kobato/auth/trusted-proxy`, and `isBot` is `@kobato/api/client/is-bot`.
+
+**Builds.** kobato builds in two steps: `react-router build` produces the SPA client build (assets under `build/client`,
+Vite `base: '/admin/'`) plus a prerender-only server build, and `vite build --config vite.backend.config.ts` overwrites
+`build/server/index.js` with the backend bundle (`apps/kobato/src/server/backend-server.ts` serves the shell with a
+per-request nonce CSP). `pnpm run sea:build` turns the two apps' outputs into `dist-sea/kobato` + `dist-sea/sayaka`;
+sayaka's runtime configuration is environment variables only (`SAYAKA_HOST`, `SAYAKA_PORT`, `SAYAKA_KOBATO_RPC_URL`,
+`SAYAKA_TRUSTED_PROXIES` in `apps/sayaka/src/server/config.ts`). Verification suites: `pnpm run split:smoke [--sea]` (54
+checks against the node builds or the binaries, including real-browser hydration checks through headless Chrome when it
+is installed), `sea:smoke`, `sea:e2e`, `sea:browser` (local runs: `KOBATO_BROWSER_CHANNEL=chrome`), and
+`sea:package rename|archive` for both binaries.
+
+**Accepted behavior changes.**
+
+- An unknown feed scope answers 404 (`feeds.rss`/`feeds.atom` resolve the category/tag before generating); kobato
+  rendered an empty feed.
+- On an uninstalled instance sayaka 303s every public NAVIGATION to `/admin/setup` — including `/robots.txt` and
+  `/sitemap.xml`, which kobato's install gate used to exempt — because every sayaka-served request also runs the root
+  loader's bootstrap call. The 303 is a navigation gate (`isNavigationRequest`): a request without a `Sec-Fetch-Dest`
+  header (non-browser clients) or with `document` redirects; sub-resource destinations (`image`, `style`, `empty`, …)
+  continue to their resource route. Kobato's `branding.asset` procedure carries `installGateExempt` — the reachability
+  the old gate gave the `/favicon*` / `/logo*` / `/apple-touch-icon` / `/images/*` branding prefixes — so the setup
+  shell's logo and favicon answer 200 pre-install; the gated font/storage families answer an error status, not a
+  redirect, when a sub-resource fetch races an uninstalled instance. A Webmention receive answers 404 (the receive
+  handler finds no settings row, hence no target) where the old gate answered 303.
+- Public resources answered by sayaka carry sayaka's document-header profile (nonce CSP, `Accept-CH`, the Webmention
+  `Link`) and never `Set-Cookie` — the cookie relay fires on `text/html` only.
+- Resource-family `429` / `503` answers carry plain-text bodies, and both inbound protocols answer a plain-text
+  `502 Bad Gateway` when kobato is unreachable; every other protocol answer keeps kobato's JSON error shape.
+- kobato's media answers (fonts, storage) carry `no-transform` in their `Cache-Control`, so a plain 200 font answer is
+  no longer gzip-compressed on the kobato hop (kobato's perimeter compressed them before the split); a CDN honoring
+  `no-transform` must deliver them as is, and the public hop stays sayaka's one `compress()` decision.
+- The setup install is bound to the verified token's fingerprint in the server (`setupTokenVerifiedFor` versus
+  `setupTokenFingerprint(live)` in `packages/server/src/http/controllers/account/setup.controller.ts`): an expired or
+  re-minted token blocks install regardless of what the client calls.
+- kobato's workspace is a SPA — no server-rendered admin pages.
+
+**Known gaps.** sayaka has no server-side OpenTelemetry route tracing — the instrumentation that lived in the React
+Router glue (the `rr.*` / `ssr.*` spans of ADR-0007) does not exist there; sayaka logs with pino only. sayaka has no
+self-update surface: kobato self-updates from the admin console, sayaka is updated by replacing its binary.

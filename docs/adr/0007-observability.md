@@ -3,6 +3,11 @@
 - Status: accepted
 - Date: 2026-11-10
 - Supersedes: the former separate release-capability and browser-RUM-relay ADRs
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): the React Router server glue left `kobato` (the
+  workspace is a SPA), so the `createSsrCaller` interceptor seam, the `rr.*`/`ssr.*` document spans, and
+  `http/resources/rum-intake.ts` are gone — oRPC is instrumented at the HTTP transport only, and the RUM intake relay is
+  sayaka's perimeter handler (`apps/sayaka/src/server/rum-intake.ts`) calling `public.observability.rumIntake`. sayaka
+  logs with pino and carries no server-side tracing — a known gap recorded in ADR-0009's implementation notes.
 
 ## Context
 

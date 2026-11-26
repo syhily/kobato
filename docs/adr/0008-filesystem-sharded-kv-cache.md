@@ -2,6 +2,9 @@
 
 - Status: accepted
 - Date: 2026-11-09
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): the deployment is two processes, and the cache
+  stays process-local to `kobato` — the backend that owns the data; sayaka renders from the contract and keeps no cache
+  of its own. The Decision below records the single-process premise it was written against.
 
 ## Context
 

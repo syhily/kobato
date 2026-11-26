@@ -2,6 +2,10 @@
 
 - Status: accepted
 - Date: 2026-08-01
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): the SEA deployment is two binaries, so the third
+  trigger reads "the SEA self-hosted deployment model is abandoned"; the integration glue it names is pinned today by
+  the full-tree parity test (`packages/server/tests/unit/server/http/api-contract.test.ts`), the HTTP mount suites
+  beside it, and the arch suites (`apps/kobato/tests/arch/`) — the former `glue-contract.test.ts` was split apart.
 
 ## Context
 

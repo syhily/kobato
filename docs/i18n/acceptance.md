@@ -7,6 +7,11 @@ human review / real-browser verification**. It is both a template and a snapshot
 > filled in on 2026-11-08 20:58 and re-run for the last time at 21:03 (§7 / §8). That worktree is being modified by
 > several slices in parallel; the "current state" in this document is a snapshot, not a permanent conclusion. Every
 > acceptance run **appends** a record at the end — never overwrite an older record.
+>
+> 2026-11-26: the `kobato`/`sayaka` split ([ADR-0009](../adr/0009-optional-headless-frontends.md)) moved the public HTTP
+> surfaces and their tests — the feed and calendar resource suites this matrix cites now live under
+> `apps/sayaka/tests/unit/routes/` and `packages/server/tests/unit/server/render/`. The recorded rows are evidence of
+> the round they ran in; follow the current trees when re-running.
 
 ## 1. Bottom line
 
@@ -64,7 +69,7 @@ pnpm test packages/shared/i18n/tests/unit
 pnpm test packages/server/tests/unit/server/infra/email
 
 # Language switch / cross-tab
-pnpm test packages/web/admin/tests/unit/ui/settings packages/web/public/tests/unit/ui/lib/locale-sync.test.ts
+pnpm test apps/kobato/tests/unit/ui/settings packages/web/kit/tests/unit/ui/lib/locale-sync.test.ts
 
 # Feed / calendar / settings snapshots
 pnpm test packages/server/tests/it/server/http packages/server/tests/it/server/domains/settings

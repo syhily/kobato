@@ -2,6 +2,9 @@
 
 - Status: accepted
 - Date: 2026-11-07
+- Amended 2026-11-26 ([ADR-0009](0009-optional-headless-frontends.md)): loaders now publish `eid` through the
+  request-scoped server client (`createKobatoServerClient`), which sends it as `x-kobato-analytics-event` on every call
+  — sayaka mints one per document request; the in-process `createSsrCaller` seam is gone.
 
 ## Context
 
