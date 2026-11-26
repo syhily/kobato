@@ -8,6 +8,7 @@ use super::PreSubsetContext;
 pub mod cmap;
 pub mod gpos;
 pub mod gsub;
+pub mod opentype;
 #[expect(clippy::ptr_arg, reason = "uniform plugin signature; auto_chunk requires Vec::clear/push")]
 pub fn features_plugin(
     subsets: &mut Vec<IndexSet<u32>>,
@@ -16,11 +17,11 @@ pub fn features_plugin(
 ) {
     let cmap = analyze_cmap(ctx.font, ctx.font_file);
     let sub_map = analyze_gsub(ctx.font, ctx.font_file);
-    let sub_map = turn_indics_to_unicode_set(sub_map, &cmap);
+    let sub_map = turn_indices_to_unicode_set(sub_map, &cmap);
     move_feature_set_to_front(&sub_map, subsets);
 
     let pos_map = analyze_gpos(ctx.font, ctx.font_file);
-    let pos_map = turn_indics_to_unicode_set(pos_map, &cmap);
+    let pos_map = turn_indices_to_unicode_set(pos_map, &cmap);
     move_feature_set_to_front(&pos_map, subsets);
 }
 
@@ -49,7 +50,7 @@ fn has_intersection(a: &IndexSet<u32>, b: &IndexSet<u32>) -> bool {
     false
 }
 
-pub fn turn_indics_to_unicode_set(
+pub fn turn_indices_to_unicode_set(
     all_maybe_relative_glyph: Vec<Vec<u16>>,
     cmap: &HashMap<u16, u32>,
 ) -> Vec<IndexSet<u32>> {

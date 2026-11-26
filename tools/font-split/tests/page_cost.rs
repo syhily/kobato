@@ -22,30 +22,30 @@ struct Baseline {
 
 const HANS_BASELINE: Baseline = Baseline {
     chunk_count: 77,
-    total_bytes: 1_515_080,
-    mean_bytes_per_page: 926_149.0,
-    p90_bytes_per_page: 1_144_896.0,
+    total_bytes: 1_518_908,
+    mean_bytes_per_page: 930_063.0,
+    p90_bytes_per_page: 1_148_724.0,
     mean_chunks_per_page: 34.9,
-    mean_session_bytes: 1_298_882.0,
-    mean_incremental_bytes: 158_931.0,
+    mean_session_bytes: 1_302_725.0,
+    mean_incremental_bytes: 158_876.0,
 };
 const HANT_BASELINE: Baseline = Baseline {
     chunk_count: 77,
-    total_bytes: 1_515_080,
-    mean_bytes_per_page: 863_018.0,
-    p90_bytes_per_page: 1_044_896.0,
+    total_bytes: 1_518_908,
+    mean_bytes_per_page: 866_944.0,
+    p90_bytes_per_page: 1_048_724.0,
     mean_chunks_per_page: 30.2,
-    mean_session_bytes: 1_216_947.0,
-    mean_incremental_bytes: 140_673.0,
+    mean_session_bytes: 1_220_791.0,
+    mean_incremental_bytes: 140_616.0,
 };
 const BLOG_BASELINE: Baseline = Baseline {
     chunk_count: 77,
-    total_bytes: 1_515_080,
-    mean_bytes_per_page: 1_024_863.0,
-    p90_bytes_per_page: 1_220_148.0,
+    total_bytes: 1_518_908,
+    mean_bytes_per_page: 1_028_731.0,
+    p90_bytes_per_page: 1_223_976.0,
     mean_chunks_per_page: 40.7,
-    mean_session_bytes: 1_425_980.0,
-    mean_incremental_bytes: 187_167.0,
+    mean_session_bytes: 1_429_808.0,
+    mean_incremental_bytes: 187_144.0,
 };
 const COUNT_TOLERANCE: usize = 2;
 const BYTES_TOLERANCE: f64 = 0.02;

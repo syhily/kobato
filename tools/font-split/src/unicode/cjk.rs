@@ -41,7 +41,7 @@ pub fn char_touch_probability(cp: u32) -> f64 {
     (df as f64 / cjk_tables::FREQ_CORPUS_DOCS as f64).min(1.0)
 }
 
-pub const ALGORITHM_SCHEMA: u32 = 2;
+pub const ALGORITHM_SCHEMA: u32 = 3;
 
 pub fn algorithm_fingerprint() -> &'static str {
     use std::fmt::Write as _;
