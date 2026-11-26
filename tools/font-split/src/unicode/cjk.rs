@@ -49,11 +49,14 @@ pub fn algorithm_fingerprint() -> &'static str {
         let mut material = String::new();
         let _ = write!(
             material,
-            "schema={ALGORITHM_SCHEMA};docs={};lambda={};mu={};woff2q={};cap={};deps={};",
+            "schema={ALGORITHM_SCHEMA};docs={};lambda={};mu={};woff2q={};probeq={};probe={}/{};cap={};deps={};",
             cjk_tables::FREQ_CORPUS_DOCS,
             crate::pre_subset::auto_chunk::DP_LAMBDA_BYTES,
             crate::pre_subset::auto_chunk::DP_MU_BYTES,
             crate::run_subset::WOFF2_QUALITY,
+            crate::pre_subset::auto_chunk::PROBE_QUALITY,
+            crate::pre_subset::auto_chunk::SAMPLE_CHARS,
+            crate::pre_subset::auto_chunk::REFERENCE_CHARS,
             crate::pre_subset::DEFAULT_PREDICT_BYTES_PER_SUBSET,
             env!("OUTPUT_DEP_VERSIONS"),
         );

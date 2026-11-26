@@ -13,25 +13,30 @@ use harfbuzz_rs_now::{Face, Owned};
 use indexmap::IndexSet;
 use opentype::tables::FontVariations;
 use plugins::{add_remain_chars_plugin, language_area_plugin, reduce_min_plugin};
-use std::{
-    collections::{BTreeSet, HashMap},
-    io::Cursor,
-};
+use std::{collections::BTreeSet, io::Cursor};
 
 pub struct PreSubsetContext<'a, 'b, 'c>
 where
     'b: 'a,
     'c: 'a,
 {
-    all_unicodes: BTreeSet<u32>,
     face: &'a mut Owned<Face<'b>>,
     predict_bytes_pre_subset: u32,
     font: &'a opentype::Font,
     font_file: &'a mut Cursor<&'c [u8]>,
-    used_languages: HashMap<usize, String>,
+    subset_languages: Vec<Option<String>>,
 }
 
 pub const DEFAULT_PREDICT_BYTES_PER_SUBSET: u32 = 1024 * 70;
+
+pub fn predict_bytes(chunk_size: Option<i32>) -> u32 {
+    chunk_size.map_or(DEFAULT_PREDICT_BYTES_PER_SUBSET, |bytes| {
+        u32::try_from(bytes)
+            .ok()
+            .filter(|bytes| *bytes > 0)
+            .expect("cn-font-split | pre_subset | chunk_size must be a positive number of bytes")
+    })
+}
 
 pub fn pre_subset(ctx: &mut Context) {
     let file_binary = ctx.binary;
@@ -45,13 +50,11 @@ pub fn pre_subset(ctx: &mut Context) {
 
     let mut subsets: Vec<IndexSet<u32>> = vec![];
     let mut context = PreSubsetContext {
-        all_unicodes: all_unicodes.clone(),
         face: ctx.face,
-
-        predict_bytes_pre_subset: ctx.input.chunk_size.unwrap_or(DEFAULT_PREDICT_BYTES_PER_SUBSET as i32) as u32,
+        predict_bytes_pre_subset: predict_bytes(ctx.input.chunk_size),
         font: &font,
         font_file: &mut font_file,
-        used_languages: HashMap::new(),
+        subset_languages: Vec::new(),
     };
 
     type ProcessFn = fn(&mut Vec<IndexSet<u32>>, &mut BTreeSet<u32>, &mut PreSubsetContext<'_, '_, '_>);
@@ -78,8 +81,12 @@ pub fn pre_subset(ctx: &mut Context) {
         p(&mut subsets, &mut all_unicodes, &mut context);
     }
 
-    ctx.pre_subset_result =
-        subsets.iter().filter(|v| !v.is_empty()).map(|v| v.iter().copied().collect::<Vec<u32>>()).collect();
+    for (subset, language) in subsets.into_iter().zip(context.subset_languages) {
+        if !subset.is_empty() {
+            ctx.pre_subset_result.push(subset.iter().copied().collect());
+            ctx.pre_subset_languages.push(language);
+        }
+    }
 
     ctx.name_table = name_table::analyze_name_table(&font, &mut font_file);
 }

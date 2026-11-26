@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use kobato_font_split::unicode::LATIN;
 use kobato_font_split::unicode::cjk::{
     HANGUL_JAMO, HANGUL_SYL, HIRAGANA_AND_KATAKANA, ZH_HK, ZH_JA, ZH_SC_1, ZH_SC_2, ZH_SC_3, ZH_TW,
     algorithm_fingerprint, char_touch_probability,
 };
 use kobato_font_split::unicode::cjk_tables;
+use kobato_font_split::unicode::{LATIN, LISU, VA, create_default_unicode_area, create_default_unicode_area_tag};
 
 #[test]
 fn fingerprint_is_stable_and_short() {
@@ -86,4 +86,25 @@ fn spot_check_membership() {
 #[test]
 fn latin_range() {
     assert_eq!(LATIN.len(), 127)
+}
+
+#[test]
+fn areas_and_tags_stay_aligned() {
+    let areas = create_default_unicode_area();
+    let tags = create_default_unicode_area_tag();
+
+    assert_eq!(areas.len(), 32);
+    assert_eq!(tags.len(), areas.len());
+    let unique: HashSet<&str> = tags.iter().copied().collect();
+    assert_eq!(unique.len(), tags.len(), "area tags are unique");
+}
+
+#[test]
+fn script_areas_point_at_their_unicode_blocks() {
+    assert!(LISU.contains(&0xA4D0));
+    assert!(LISU.contains(&0xA4FF));
+    assert!(!LISU.contains(&0x10C00));
+    assert!(VA.contains(&0xA500));
+    assert!(VA.contains(&0xA63F));
+    assert!(!VA.contains(&0x10A00));
 }

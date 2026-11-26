@@ -81,16 +81,12 @@ lazy_vec!(TAI_LE, &[(0x1950, 0x197F)]);
 lazy_vec!(TAI_LUE, &[(0x1980, 0x19DF)]);
 lazy_vec!(YI, &[(0xA000, 0xA48F), (0xA490, 0xA4C6)]);
 lazy_vec!(PHAGS_PA, &[(0xA840, 0xA87F)]);
-lazy_vec!(LISU, &[(0x10C00, 0x10C4F)]);
+lazy_vec!(LISU, &[(0xA4D0, 0xA4FF)]);
 lazy_vec!(BUHID, &[(0x1740, 0x175F)]);
 lazy_vec!(MIAO, &[(0x16F00, 0x16F9F)]);
-lazy_vec!(HANI, &[(0x13A0, 0x13F5)]);
-lazy_vec!(LAHU, &[(0x10900, 0x1091F)]);
-lazy_vec!(VA, &[(0x10A00, 0x10A5F)]);
-lazy_vec!(ZHUANG, &[(0x10D30, 0x10D7F)]);
-lazy_vec!(NAXI_DONGBA, &[(0x10FB0, 0x10FDF)]);
+lazy_vec!(VA, &[(0xA500, 0xA63F)]);
 
-pub fn create_default_unicode_area() -> [Vec<u32>; 36] {
+pub fn create_default_unicode_area() -> [Vec<u32>; 32] {
     [
         LATIN.to_vec(),
         LATIN_1.to_vec(),
@@ -122,15 +118,11 @@ pub fn create_default_unicode_area() -> [Vec<u32>; 36] {
         LISU.to_vec(),
         BUHID.to_vec(),
         MIAO.to_vec(),
-        HANI.to_vec(),
-        LAHU.to_vec(),
         VA.to_vec(),
-        ZHUANG.to_vec(),
-        NAXI_DONGBA.to_vec(),
         HALFWIDTH_FULLWIDTH.to_vec(),
     ]
 }
-pub fn create_default_unicode_area_tag() -> [&'static str; 36] {
+pub fn create_default_unicode_area_tag() -> [&'static str; 32] {
     [
         "LATIN",
         "LATIN_1",
@@ -162,11 +154,7 @@ pub fn create_default_unicode_area_tag() -> [&'static str; 36] {
         "LISU",
         "BUHID",
         "MIAO",
-        "HANI",
-        "LAHU",
         "VA",
-        "ZHUANG",
-        "NAXI_DONGBA",
         "HALFWIDTH_FULLWIDTH",
     ]
 }

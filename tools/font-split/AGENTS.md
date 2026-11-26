@@ -1,12 +1,14 @@
 # @kobato/font-split
 
 Vendored fork of [KonghaYao/cn-font-split](https://github.com/KonghaYao/cn-font-split) (Apache-2.0, `release` branch @
-`1650af13`, released as 7.6.8) rebuilt as a Node-API native addon. The product consumes it ONLY through
-`nativeRequire('@kobato/font-split/font-split.node')` (`packages/server/src/infra/sea/native-require.ts`) — product src
-never statically imports this package, so the tools boundary in `package-dag.test.ts` is untouched. The root
-`package.json` declares it as a production dependency per the "native-dynamic-library at runtime lives in ROOT
-dependencies" convention. Measured results — the λ retune, the page-cost frontier, loading time, build-profile and
-encoder evaluations — live in `BENCHMARK.md`.
+`1650af13`, released as 7.6.8) rebuilt as a Node-API native addon, with two upstream 8.0 fixes ported by hand: the
+shaping-relation collection rewrite (`7cb5fcc`) and the order-stable cmap reverse lookup (`7e6d720`). The product
+consumes it ONLY through `nativeRequire('@kobato/font-split/font-split.node')`
+(`packages/server/src/infra/sea/native-require.ts`) — product src never statically imports this package, so the tools
+boundary in `package-dag.test.ts` is untouched. The root `package.json` declares it as a production dependency per the
+"native-dynamic-library at runtime lives in ROOT dependencies" convention. Measured results — the λ retune, the
+page-cost frontier, loading time, build-profile and encoder evaluations — live in `BENCHMARK.md`; the design rationale
+and its revisions live in [ADR-0010](../../docs/adr/0010-frequency-ordered-byte-aware-font-slicing.md).
 
 ## Layout
 
@@ -17,6 +19,28 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   `range.rs` = UnicodeRange, `mod.rs` = script areas, `cjk.rs` = tables + touch probabilities + algorithm fingerprint).
   Protobuf fully removed: `src/config.rs` (`FontSplitConfig`/`CssProperties`) replaces `InputTemplate`, `src/output.rs`
   (`OutputFile`) replaces `EventMessage`; `font_split(config, callback)` is the only entry.
+- `src/pre_subset/` — the partition pipeline, one plugin per stage in a fixed order:
+  - `plugins.rs` — language-area packs, then the remainder pack. A pack's language tag is pushed next to it
+    (`PreSubsetContext::subset_languages`, position-aligned with the subsets) and every plugin keeps the two aligned;
+    the tag selects the DP byte cap (`auto_chunk::cap_bytes`), never a position lookup.
+  - `auto_chunk.rs` — the DP chunker, run per pack. Each pack is probed with a strided sample of ≈100 characters
+    (`sample_of`), compressed at woff2 quality 9 (`PROBE_QUALITY`, ≈27× cheaper than the shipped quality on the same
+    faces). The probes are rescaled to shipped bytes with one quality-9/quality-11 pair on a pooled sample of ≈120
+    characters drawn from every pack (`reference_share` / `take_share`, `probe_scale`): the q11/q9 ratio is a font-level
+    constant (within ±1% for 80% of faces), so it replaces a quality-11 probe per pack, which cost +25% slicing time,
+    and costs no more than the old font-wide quality-11 sample. On the fixture font this reproduces the per-pack
+    quality-11 output byte for byte. `dp_split_by_prob` minimizes `Σ P(touched)·(bytes+λ)+μ` under the pack's cap
+    (`tests/auto_chunk.rs`). One global bytes/char must not come back: it overstated Latin, symbol and punctuation packs
+    ≈5× and cut them into more faces than their bytes justify (28 → 17 non-Han faces on the production font; ADR-0010,
+    2026-11-26 revision). `pre_subset::predict_bytes` rejects `chunk_size <= 0` instead of slicing one character per
+    face.
+  - `features.rs` — the shaping closure, run AFTER chunking: every GSUB/GPOS relation is hoisted whole into the first
+    intersecting subset. `features/opentype.rs` holds the shared reading primitives — Extension lookups (GSUB type 7 /
+    GPOS type 9) are expanded up to `MAX_EXTENSION_DEPTH`, pair adjustments contribute both sides, ligatures their first
+    component — and `cmap.rs` injects the glyph → codepoint reverse lookup in descending codepoint order, so a glyph
+    mapped from several codepoints resolves deterministically. Combining marks are deliberately NOT copied into every
+    subset (upstream 8.0 `5cdc0ae`): +14% package bytes on the production font for no page-cost gain, and it breaks the
+    exactly-once coverage invariant of `chunk_integrity.rs` / `page_cost.rs`.
 - `src/unicode/cjk_tables.rs` — @generated CJK priority tables (Kobato-owned, replacing the upstream OpenCC-derived
   data; each vendored list's provenance lives in `scripts/cjk-tables/`). Regenerate with `pnpm run corpus:generate` from
   the official character lists plus the committed corpus frequency TSVs `freq-zhwiki-20261101-{hans,hant}.tsv` (produced
@@ -57,8 +81,10 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
   system tools (`sqlite3 -readonly`, `date`) instead of taking a dependency. Never runs in CI: `download`/`build` need
   the 3.4 GB local dump. Its tests run via `pnpm run corpus:test`.
 - `tests/` — ALL Rust tests live here (`src/` carries no `#[cfg(test)]`): one file per covered module running in CI via
-  `cargo test`, plus the end-to-end gate `chunk_integrity.rs` (slices the fixture font and checks every chunk against
-  its CSS contract) and two local-only baseline/benchmark suites:
+  `cargo test`, the end-to-end gate `chunk_integrity.rs` (slices the fixture font and checks every chunk against its CSS
+  contract), the failure gate `failure_paths.rs` (a font built from the fixture: empty or arbitrary input and a
+  truncated woff2 fail fast, a font without GSUB or GPOS still slices, an unreadable cmap and `chunk_size <= 0` are
+  rejected) and two local-only baseline/benchmark suites:
   - `tests/page_cost.rs` — the page-cost harness: three `#[ignore]`d tests serialized on one mutex (the sweep mutates
     process-global DP parameters), run with `cargo test --release -- --ignored --nocapture page_cost`. The pinned
     baseline moves in the SAME commit as an algorithm change; the per-font report (`FONT_SPLIT_BENCH_FONT` /
@@ -124,5 +150,9 @@ Re-vendor the upstream `release` branch's core `src/` and the helper crates (`cn
 flat layout above, then re-apply the transformations: no `cn_font_proto`/`prost` imports, config/output types from
 `src/config.rs`/`src/output.rs`, no reporter/gen_svg/test_html/subsets call sites, helper imports rewritten to
 `crate::{utils,unicode}`. The CJK tables are NOT synced anymore: they are Kobato-owned (`unicode/cjk_tables.rs` +
-`unicode/cjk.rs` + `src/corpus/`); only the range-based script areas in `unicode/mod.rs` mirror upstream. `cargo test`
-plus the server-side real-TTF `slice.test.ts` are the drift guards.
+`unicode/cjk.rs` + `src/corpus/`). The script areas in `unicode/mod.rs` mirror upstream except six corrections: Lisu and
+Vai point at their real Unicode blocks, and HANI, LAHU, ZHUANG and NAXI_DONGBA are gone (their ranges named unrelated
+blocks, and three of the scripts have no Unicode block at all), so `create_default_unicode_area()` has 32 areas.
+`src/pre_subset/` is Kobato-owned as a whole — re-vendoring it would drop the DP chunker, the per-pack probes and the
+shaping closure; take upstream fixes from that directory by hand. `cargo test` plus the server-side real-TTF
+`slice.test.ts` are the drift guards.

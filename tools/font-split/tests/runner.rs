@@ -12,6 +12,7 @@ fn test_create_context() {
     let ctx = create_context(&input, &binary, &mut face, &callback);
 
     assert!(ctx.pre_subset_result.is_empty());
+    assert!(ctx.pre_subset_languages.is_empty());
     assert!(ctx.run_subset_result.is_empty());
     assert!(ctx.name_table.table.is_empty());
     assert!(ctx.fvar_table.is_none());

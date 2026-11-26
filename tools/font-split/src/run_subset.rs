@@ -13,6 +13,10 @@ use woff::version2::compress;
 pub const WOFF2_QUALITY: usize = 11;
 
 pub fn build_single_subset(face: &Owned<Face>, subset: &[u32]) -> Vec<u8> {
+    build_subset(face, subset, WOFF2_QUALITY)
+}
+
+pub fn build_subset(face: &Owned<Face>, subset: &[u32], quality: usize) -> Vec<u8> {
     let subset_runner = Subset::new();
     subset_runner.clear_drop_table();
     subset_runner.adjust_layout();
@@ -20,7 +24,7 @@ pub fn build_single_subset(face: &Owned<Face>, subset: &[u32]) -> Vec<u8> {
     let new_face = subset_runner.run_subset(face).face_data();
     let ttf_binary = new_face.get_data();
 
-    compress(ttf_binary, String::from(""), WOFF2_QUALITY, true).expect("Failed to compress subset")
+    compress(ttf_binary, String::from(""), quality, true).expect("Failed to compress subset")
 }
 
 struct ThreadResult {
