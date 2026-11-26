@@ -2,7 +2,7 @@ import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

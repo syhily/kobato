@@ -6,7 +6,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@kobato/web-public/ui/shared/auth/use-logout', () => ({
+vi.mock('@kobato/web-kit/ui/shared/auth/use-logout', () => ({
   useLogout: () => vi.fn(),
 }))
 

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { CategoriesView } from '@kobato/web-admin/ui/categories/CategoriesView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

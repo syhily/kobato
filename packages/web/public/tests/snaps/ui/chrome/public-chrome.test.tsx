@@ -1,4 +1,4 @@
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { BaseLayout } from '@kobato/web-public/ui/chrome/BaseLayout'
 import { describe, expect, it } from 'vitest'
 

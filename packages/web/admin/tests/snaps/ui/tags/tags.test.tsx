@@ -5,7 +5,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditTagDialog } from '@kobato/web-admin/ui/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@kobato/web-admin/ui/tags/TagRows'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

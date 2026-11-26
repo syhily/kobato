@@ -4,7 +4,7 @@ import type { ActiveImageFilter } from '@kobato/web-admin/ui/images/use-images-r
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { ImagesView } from '@kobato/web-admin/ui/images/ImagesView'
 import { ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

@@ -2,7 +2,7 @@ import { QuickActions } from '@kobato/web-admin/ui/dashboard/QuickActions'
 import { RecentDraftsCard } from '@kobato/web-admin/ui/dashboard/RecentDraftsCard'
 import { RecentPublishedCard } from '@kobato/web-admin/ui/dashboard/RecentPublishedCard'
 import { StatsGrid } from '@kobato/web-admin/ui/dashboard/StatsGrid'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: QuickActions', () => {

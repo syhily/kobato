@@ -4,7 +4,7 @@ import type { UsersFilters } from '@kobato/web-admin/ui/users/use-users-filters'
 import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const controller = vi.hoisted((): { filters: UsersFilters } => ({

@@ -5,7 +5,7 @@ import { MagicLinkConfirmForm } from '@kobato/web-admin/ui/auth/MagicLinkConfirm
 import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm'
 import { ResetPasswordForm } from '@kobato/web-admin/ui/auth/ResetPasswordForm'
 import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@simplewebauthn/browser', () => ({

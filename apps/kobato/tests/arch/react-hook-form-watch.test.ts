@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 const SCANNED_ROOTS = [
   'packages/web/admin/src/ui/',
   'apps/kobato/src/routes/',
-  'packages/web/public/src/ui/shared/editor/',
+  'packages/web/kit/src/ui/shared/editor/',
+  'packages/web/kit/src/ui/comments/',
   'packages/web/public/src/ui/comments/',
 ]
 const SOURCE_FILE = /\.[tj]sx?$/

@@ -39,7 +39,7 @@ import {
   useSortableRow,
   useSortableSensors,
 } from '@kobato/web-admin/ui/shared/sortable'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVerticalIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'

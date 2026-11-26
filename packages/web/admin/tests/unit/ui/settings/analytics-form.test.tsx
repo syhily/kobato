@@ -13,7 +13,7 @@ import type { AnalyticsSettings } from '@kobato/settings/types'
 import type { UseFileUploadOptions } from '@kobato/web-admin/ui/shared/use-file-upload'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
-import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()

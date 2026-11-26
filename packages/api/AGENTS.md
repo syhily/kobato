@@ -62,11 +62,15 @@ their own.
   header set from the inbound `Request` (`cookie`, `user-agent`, `accept-language`, `referer`, `purpose`, `sec-purpose`,
   `traceparent`, `tracestate`, `sec-ch-ua` and every `sec-ch-ua-*` — never `x-csrf-token`, `host`, or the inbound
   `cf-connecting-ip` / `x-real-ip` / `x-forwarded-for`), sends `X-Forwarded-For` only from the caller-derived
-  `clientAddress`, wires the inbound `request.signal`, and accumulates every `Set-Cookie` from every response into
-  `responseHeaders` in order. `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey`
-  read the ERROR payload, while `isApiAccepted` is a RESPONSE-payload guard — keep the two sides distinct.
-  `rpc-serialization.ts` owns RPC input/query/multipart encoding and response/error decoding for `sendBeacon` and the
-  backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.
+  `clientAddress`, composes the fetch abort signal from the inbound `request.signal` and the per-call client-options
+  signal (`AbortSignal.any` when both exist, the single present signal unchanged otherwise), and accumulates every
+  `Set-Cookie` from every response into `responseHeaders` in order. `error.ts` decodes wire payloads:
+  `extractApiErrorMessage` and `apiErrorDescriptorKey` read the ERROR payload, while `isApiAccepted` is a
+  RESPONSE-payload guard — keep the two sides distinct. `rpc-serialization.ts` owns RPC input/query/multipart encoding
+  and response/error decoding for `sendBeacon` and the backup progress XHR; `rum-intake.ts` owns the external
+  OpenObserve intake proxy URL. `client-address.ts` is the visitor-address derivation both perimeters share — a pure
+  function over the web `Request` (loopback/trusted-proxy-gated proxy-header resolution), with the IP/CIDR grammar from
+  `@kobato/auth/trusted-proxy`.
 - `src/browser/` — the built-in frontend's browser assembly, and the ONLY UI-bound, ambient part of the package:
   `client.ts` is the browser singleton (`orpc` + `setCsrfToken` — the CSRF token store and the same-origin `/rpc` URL
   default, delegating to `createKobatoClient`), `orpc-query.ts` the TanStack Query binding (`orpcQuery`),

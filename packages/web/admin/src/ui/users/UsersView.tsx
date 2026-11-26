@@ -11,7 +11,7 @@ import { type UsersFilters, useUsersFilters } from '@kobato/web-admin/ui/users/u
 import { invalidateUsersCache } from '@kobato/web-admin/ui/users/users-cache'
 import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
 import { UsersToolbar } from '@kobato/web-admin/ui/users/UsersToolbar'
-import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { useQueryClient } from '@tanstack/react-query'
 import { MailIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'

@@ -12,7 +12,7 @@ const EXISTING_CSRF_COOKIE = 'a'.repeat(64)
 
 const sessionContextModule = await import('@kobato/server/domains/auth/primitives')
 const sessionStorageModule = await import('@kobato/server/domains/auth/session-storage')
-const clientAddressModule = await import('@kobato/server/http/request/client-address')
+const clientAddressModule = await import('@kobato/api/client/client-address')
 
 describe('requestContextMiddleware', () => {
   const fakeDb = databaseOf(getDatabaseHandle())

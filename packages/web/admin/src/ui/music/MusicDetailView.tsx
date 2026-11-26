@@ -16,9 +16,9 @@ import {
   useMusicPlayerTime,
 } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { ConfirmDialog, type ConfirmState } from '@kobato/web-admin/ui/shared/ConfirmDialog'
-import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { type InfiniteData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
 import { useCallback, useState } from 'react'

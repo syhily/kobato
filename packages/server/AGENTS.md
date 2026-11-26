@@ -138,14 +138,14 @@ critical preloads + idle tiers via inline script.
 One perimeter middleware derives the canonical `RequestContext` (session, viewer, address, normalized URL, db, CSP
 nonce, pinned settings + localization); both getters share ONE lazy capture, and `buildLoadContext` and the `/rpc/*`
 mount hydrate settings before first read. Anonymous requests get the stateless `__csrf` double-submit cookie minted on
-safe methods (cookie-exempt prefixes aside) and on every public-read RPC path — the RPC transport POSTs reads, so mint
-eligibility is path-derived, never method-derived. Same-session mutations call `markSessionDirty()`; the middleware
-commits `Set-Cookie` after the response — the only commit point. `HandlerContext` carries the same `markSessionDirty`
-plus a per-request `responseHeaders` for out-of-band headers, merged into the response by the `/rpc/*` mount and
-`createSsrCaller`. The session container and DB-backed storage are Kobato-owned (`domains/auth/session-storage.ts`) over
-`infra/http/signed-cookie.ts`; the cookie wire format is byte-compatible with the historical React Router one in both
-directions (pinned by the oracle suites in `tests/unit/server/domains/auth/session-storage.test.ts`), and a signed sid
-with no live row starts a FRESH session (no stale-id resurrection).
+safe methods (cookie-exempt prefixes aside) and, regardless of method, on every public-read RPC path (the RPC transport
+POSTs reads). Same-session mutations call `markSessionDirty()`; the middleware commits `Set-Cookie` after the response —
+the only commit point. `HandlerContext` carries the same `markSessionDirty` plus a per-request `responseHeaders` for
+out-of-band headers, merged into the response by the `/rpc/*` mount and `createSsrCaller`. The session container and
+DB-backed storage are Kobato-owned (`domains/auth/session-storage.ts`) over `infra/http/signed-cookie.ts`; the cookie
+wire format is byte-compatible with the historical React Router one in both directions (pinned by the oracle suites in
+`tests/unit/server/domains/auth/session-storage.test.ts`), and a signed sid with no live row starts a FRESH session (no
+stale-id resurrection).
 
 ## Databases
 

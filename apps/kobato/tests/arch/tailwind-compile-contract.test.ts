@@ -21,13 +21,14 @@ const SOURCE_ROOTS = [
   'apps/inkling-demo/src',
   'packages/ui/src',
   'packages/web/admin/src',
+  'packages/web/kit/src',
   'packages/web/public/src',
   'packages/inkling/src',
 ] as const
 
 const BRIDGE_SHEETS = {
   admin: ['packages/web/admin/src/styles/inkling-editor.css'],
-  public: ['packages/web/public/src/styles/inkling-comment-editor.css'],
+  public: ['packages/web/kit/src/styles/inkling-comment-editor.css'],
   demo: [],
 } as const
 
@@ -146,24 +147,21 @@ describe('Tailwind compile contract', () => {
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/admin/src/ui',
-        'packages/web/public/src/ui/Search.tsx',
-        'packages/web/public/src/ui/chrome',
-        'packages/web/public/src/ui/comments/*.{ts,tsx}',
-        'packages/web/public/src/ui/lib',
-        'packages/web/public/src/ui/shared',
-        'packages/web/public/src/ui/widgets',
+        'packages/web/kit/src/ui',
       ],
       public: [
         'apps/kobato/src/root.tsx',
         'apps/kobato/src/routes/public',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
+        'packages/web/kit/src/ui',
         'packages/web/public/src/ui',
       ],
       demo: [
         'apps/inkling-demo/src/**/*.{ts,tsx}',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
+        'packages/web/kit/src/ui',
         'packages/web/public/src/ui',
       ],
       inkling: ['packages/inkling/src'],

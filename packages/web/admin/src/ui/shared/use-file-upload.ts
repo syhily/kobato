@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
-import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
+import type { ToastTranslator } from '@kobato/web-kit/ui/lib/toast-api-error'
 
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 

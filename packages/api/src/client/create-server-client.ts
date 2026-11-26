@@ -46,13 +46,19 @@ function forwardedHeaders(request: Request, clientAddress: string | undefined): 
   return headers
 }
 
+function composeSignals(inbound: AbortSignal, perCall: AbortSignal | undefined): AbortSignal {
+  return perCall === undefined ? inbound : AbortSignal.any([inbound, perCall])
+}
+
 export function createKobatoServerClient(options: KobatoServerClientOptions): KobatoServerClient {
   const responseHeaders = new Headers()
   const requestHeaders = forwardedHeaders(options.request, options.clientAddress)
   const client = createKobatoClient({
     url: options.url,
     fetch: async (request, init, fetchOptions, path, input) => {
-      const initWithSignal = Object.assign({}, init, { signal: options.request.signal })
+      const initWithSignal = Object.assign({}, init, {
+        signal: composeSignals(options.request.signal, fetchOptions.signal),
+      })
       const response =
         options.fetch !== undefined
           ? await options.fetch(request, initWithSignal, fetchOptions, path, input)

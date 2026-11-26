@@ -4,8 +4,8 @@ import { Sidebar } from '@kobato/ui/components/sidebar'
 import { AppSidebarContent } from '@kobato/web-admin/ui/shell/AppSidebarContent'
 import { AppSidebarFooter } from '@kobato/web-admin/ui/shell/AppSidebarFooter'
 import { AppSidebarHeader } from '@kobato/web-admin/ui/shell/AppSidebarHeader'
-import { LazyNotificationsDrawer } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer'
-import { useUnreadNotificationCount } from '@kobato/web-public/ui/shared/notifications/use-notifications'
+import { LazyNotificationsDrawer } from '@kobato/web-kit/ui/shared/notifications/LazyNotificationsDrawer'
+import { useUnreadNotificationCount } from '@kobato/web-kit/ui/shared/notifications/use-notifications'
 import { useState } from 'react'
 
 interface AppSidebarProps {

@@ -75,7 +75,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-admin': [
-    '@kobato/web-public',
+    '@kobato/web-kit',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -91,7 +91,20 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
   ],
 
+  '@kobato/web-kit': [
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/api',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/sanitize',
+    '@kobato/test',
+  ],
+
   '@kobato/web-public': [
+    '@kobato/web-kit',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -132,7 +145,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
 
   '@kobato/web-admin': [
     '@kobato/web-admin',
-    '@kobato/web-public',
+    '@kobato/web-kit',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -146,8 +159,21 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/sanitize',
   ],
 
+  '@kobato/web-kit': [
+    '@kobato/web-kit',
+    '@kobato/ui',
+    '@kobato/inkling',
+    '@kobato/api',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/settings',
+    '@kobato/assets',
+    '@kobato/sanitize',
+  ],
+
   '@kobato/web-public': [
     '@kobato/web-public',
+    '@kobato/web-kit',
     '@kobato/ui',
     '@kobato/inkling',
     '@kobato/api',
@@ -173,6 +199,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/ui',
     '@kobato/utils',
     '@kobato/web-admin',
+    '@kobato/web-kit',
     '@kobato/web-public',
   ],
 
@@ -586,6 +613,7 @@ describe('package DAG', () => {
       'packages/ui',
       'packages/web/public',
       'packages/web/admin',
+      'packages/web/kit',
       'packages/inkling',
     ]) {
       const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as {
@@ -604,6 +632,7 @@ describe('package DAG', () => {
       '@kobato/server',
       '@kobato/ui',
       '@kobato/web-admin',
+      '@kobato/web-kit',
       '@kobato/web-public',
       '@kobato/inkling',
       '@kobato/test',

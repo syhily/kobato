@@ -1,0 +1,243 @@
+import type { NotificationDto } from '@kobato/api/contracts/account/notifications'
+
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@kobato/ui/components/alert-dialog'
+import { Button, buttonVariants } from '@kobato/ui/components/button'
+import { Textarea } from '@kobato/ui/components/textarea'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
+import { formatNotificationTime, notificationMeta } from '@kobato/web-kit/ui/shared/notifications/notification-meta'
+import {
+  useInvalidateNotifications,
+  usePatchNotificationReadState,
+} from '@kobato/web-kit/ui/shared/notifications/use-notifications'
+import { useNow } from '@kobato/web-kit/ui/shared/notifications/use-now'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
+import { toast } from 'sonner'
+
+interface NotificationDetailPaneProps {
+  item: NotificationDto
+  isAdmin: boolean
+  onBack: () => void
+  onClose: () => void
+}
+
+export function isForkReply(currentThreadId: string, resultThreadId: string): boolean {
+  return resultThreadId !== currentThreadId
+}
+
+export function NotificationDetailPane({ item, isAdmin, onBack, onClose }: NotificationDetailPaneProps) {
+  const { locale, t } = useI18n()
+  const { timeZone } = useSiteIdentity()
+  const invalidate = useInvalidateNotifications()
+  const patchReadState = usePatchNotificationReadState()
+  const threadQuery = useQuery(
+    orpcQuery.account.notifications.thread.queryOptions({ input: { threadId: item.threadId } }),
+  )
+  const { mutate: markRead } = useMutation(
+    orpcQuery.account.notifications.markRead.mutationOptions({
+      onSuccess: (data) => patchReadState([item.id], true, data.count),
+      onError: onMutationError('admin.toast.markReadFailed', t),
+    }),
+  )
+  const recall = useMutation(
+    orpcQuery.admin.notifications.recall.mutationOptions({
+      onSuccess: () => {
+        void invalidate()
+        onBack()
+      },
+      onError: onMutationError('admin.toast.recallFailed', t),
+    }),
+  )
+
+  const [recallConfirmOpen, setRecallConfirmOpen] = useState(false)
+  const backRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    backRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    if (!item.read) {
+      markRead({ ids: [item.id] })
+    }
+  }, [item.id, item.read, markRead])
+
+  const meta = notificationMeta(item)
+  const thread = threadQuery.data
+  const now = useNow()
+
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex items-center gap-2 border-b px-3 py-2 pr-12">
+        <Button
+          ref={backRef}
+          variant="ghost"
+          size="iconSm"
+          onClick={onBack}
+          aria-label={t('notifications.detail.back')}
+        >
+          <ArrowLeftIcon className="size-4" />
+        </Button>
+        <span className="text-xs text-muted-foreground">{t(meta.kindLabelId)}</span>
+        {isAdmin && item.kind !== 'direct' ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setRecallConfirmOpen(true)}
+            disabled={recall.isPending}
+          >
+            {recall.isPending ? <Loader2Icon className="size-3.5 animate-spin" /> : <Undo2Icon className="size-3.5" />}
+            {t('notifications.detail.recall')}
+          </Button>
+        ) : null}
+      </div>
+      <AlertDialog open={recallConfirmOpen} onOpenChange={setRecallConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('notifications.detail.recallTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('notifications.detail.recallBody', { title: item.title })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.action.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              disabled={recall.isPending}
+              onClick={() => recall.mutate({ id: item.id })}
+            >
+              {t('notifications.detail.recall')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-base font-semibold">{item.title}</h3>
+          <p className="text-xs text-muted-foreground">
+            {item.sender === null ? t('notifications.detail.system') : item.sender.name} ·{' '}
+            {formatNotificationTime(item.createdAt, { locale, timeZone, now })}
+          </p>
+        </div>
+        {item.actionUrl !== null ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-fit"
+            onClick={onClose}
+            render={<Link to={item.actionUrl} />}
+          >
+            <ExternalLinkIcon className="size-3.5" /> {t('notifications.detail.openAction')}
+          </Button>
+        ) : null}
+        {threadQuery.isPending ? (
+          <div className="flex justify-center py-10">
+            <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : threadQuery.isError || thread === undefined ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">{t('notifications.detail.loadFailed')}</p>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3">
+            {thread.messages.map((message) => (
+              <div key={message.id} className={cn('flex flex-col gap-1', message.mine ? 'items-end' : 'items-start')}>
+                <div
+                  className={cn(
+                    'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm break-words whitespace-pre-wrap',
+                    message.mine ? 'rounded-br-sm bg-primary text-primary-foreground' : 'rounded-bl-sm bg-muted',
+                  )}
+                >
+                  {message.body}
+                </div>
+                <span className="px-1 text-[11px] text-muted-foreground/80">
+                  {message.mine
+                    ? t('notifications.detail.me')
+                    : (message.sender?.name ?? t('notifications.detail.system'))}{' '}
+                  · {formatNotificationTime(message.createdAt, { locale, timeZone, now })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {thread?.canReply ? <ReplyComposer threadId={item.threadId} /> : null}
+    </div>
+  )
+}
+
+const REPLY_HINT_ID = 'notification-reply-shortcut-hint'
+
+function ReplyComposer({ threadId }: { threadId: string }) {
+  const { t } = useI18n()
+  const [body, setBody] = useState('')
+  const invalidate = useInvalidateNotifications()
+  const reply = useMutation(
+    orpcQuery.account.notifications.reply.mutationOptions({
+      onSuccess: (data) => {
+        setBody('')
+        if (isForkReply(threadId, data.threadId)) {
+          toast.success(t('notifications.detail.replyForked'))
+        }
+        void invalidate()
+      },
+      onError: onMutationError('admin.toast.replySendFailed', t),
+    }),
+  )
+
+  const submit = () => {
+    const trimmed = body.trim()
+    if (trimmed === '' || reply.isPending) {
+      return
+    }
+    reply.mutate({ threadId, body: trimmed })
+  }
+
+  return (
+    <div className="border-t p-3">
+      <div className="flex items-end gap-2">
+        <Textarea
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          placeholder={t('notifications.detail.replyPlaceholder')}
+          aria-label={t('notifications.detail.replyAria')}
+          aria-describedby={REPLY_HINT_ID}
+          rows={2}
+          maxLength={5000}
+          className="min-h-10 flex-1 resize-none"
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+              event.preventDefault()
+              submit()
+            }
+          }}
+        />
+        <Button
+          size="icon"
+          onClick={submit}
+          disabled={body.trim() === '' || reply.isPending}
+          aria-label={t('notifications.detail.sendReply')}
+        >
+          {reply.isPending ? <Loader2Icon className="size-4 animate-spin" /> : <SendIcon className="size-4" />}
+        </Button>
+      </div>
+      <p id={REPLY_HINT_ID} className="mt-1 px-1 text-[11px] text-muted-foreground/70">
+        {t('notifications.detail.replyHint')}
+      </p>
+    </div>
+  )
+}

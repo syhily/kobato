@@ -12,7 +12,7 @@ import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategory
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { resolveSortableMove, useSortableSensors } from '@kobato/web-admin/ui/shared/sortable'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'

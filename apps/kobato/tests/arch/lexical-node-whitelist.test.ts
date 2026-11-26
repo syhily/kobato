@@ -2,7 +2,7 @@ import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schem
 import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { PAGE_EDITOR_NODES } from '@kobato/web-admin/ui/editor/page-editor-nodes'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-public/ui/comments/editor/comment-editor-nodes'
+import { COMMENT_EDITOR_NODES } from '@kobato/web-kit/ui/comments/editor/comment-editor-nodes'
 import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@tests/arch/composer-nodes'
 import { describe, expect, it } from 'vitest'
 

@@ -2,15 +2,15 @@ import type { DetailPageComments } from '@kobato/api/contracts/public/comments'
 import type { CommentFormUser, DetailPageShell, DraftMarker } from '@kobato/catalog/model'
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Footer } from '@kobato/web-public/ui/chrome/Footer'
-import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
 import { DetailBodyChrome } from '@kobato/web-public/ui/post/DetailBodyChrome'
 import { useCodeCopyButtons } from '@kobato/web-public/ui/post/use-code-copy-buttons'
 import { useFootnotePreviews } from '@kobato/web-public/ui/post/use-footnote-previews'
 import { useMediumZoom } from '@kobato/web-public/ui/post/use-medium-zoom'
 import { useMusicPlayers } from '@kobato/web-public/ui/post/use-music-players'
 import { useThumbhashHydration } from '@kobato/web-public/ui/post/use-thumbhash-hydration'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
 import { type ReactNode, useRef } from 'react'
 
 export interface PageDetailBodyProps {

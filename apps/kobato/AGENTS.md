@@ -47,10 +47,10 @@ alone — nothing outside `apps/kobato` imports it.
   `/rpc/public/analytics/recordDeviceEnv`, DNT honored. `device-env` reads every browser API defensively —
   absent/non-finite values are omitted, never sent as null.
 - iOS auto-zoom: iOS Safari zooms when focusing a control with `font-size < 16px`; rewriting the viewport `<meta>` from
-  `focusin` is too late. The lock is refcounted in `@kobato/web-public/ui/comments/viewport-zoom-lock` (iOS/iPadOS
-  WebKit only): every focus-ending activation holds the lock BEFORE focus lands. `useIosNoZoomOnFocus()` is mounted once
-  at the top of the root `App`; the comment composer's activation handoff holds the same lock. Do NOT re-install the
-  hook per-form and do NOT rewrite the viewport `<meta>` anywhere else.
+  `focusin` is too late. The lock is refcounted in `@kobato/web-kit/ui/comments/viewport-zoom-lock` (iOS/iPadOS WebKit
+  only): every focus-ending activation holds the lock BEFORE focus lands. `useIosNoZoomOnFocus()` is mounted once at the
+  top of the root `App`; the comment composer's activation handoff holds the same lock. Do NOT re-install the hook
+  per-form and do NOT rewrite the viewport `<meta>` anywhere else.
 - Chunk-error recovery: `use-chunk-error-recovery` and `useReloadOnChunkError` call `triggerChunkReload` from
   `@kobato/web-public/ui/chrome/chunk-reload`, the reload store `ChunkReloadOverlay` subscribes to.
 - `RouteWarmupScript` imports the virtual module `virtual:kobato-route-warmup`, declared in

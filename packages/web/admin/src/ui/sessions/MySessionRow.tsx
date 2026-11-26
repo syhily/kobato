@@ -6,7 +6,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
 import { maskIp } from '@kobato/web-admin/ui/shared/mask'
-import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { LogOutIcon, MonitorIcon } from 'lucide-react'
 
 interface MySessionRowProps {

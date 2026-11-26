@@ -1,3 +1,5 @@
+@import '@kobato/web-kit/styles/kit.css';
+
 @source '../ui';
 
 .medium-zoom-overlay,

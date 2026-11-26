@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { MetaSidebar } from '@kobato/web-admin/ui/pages/MetaSidebar'
 import { PageEditorRoute } from '@kobato/web-admin/ui/pages/PageEditorRoute'
 import { PageEditorShell } from '@kobato/web-admin/ui/pages/PageEditorShell'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@kobato/web-admin/ui/editor/PageBodyEditor', () => ({

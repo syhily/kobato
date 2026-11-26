@@ -3,7 +3,7 @@ import type { AdminWebmentionWire } from '@kobato/api/contracts/admin/webmention
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { WebmentionInboxView } from '@kobato/web-admin/ui/webmentions/WebmentionInboxView'
 import { WebmentionsView } from '@kobato/web-admin/ui/webmentions/WebmentionsView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

@@ -5,7 +5,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditFriendDialog } from '@kobato/web-admin/ui/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@kobato/web-admin/ui/friends/FriendRow'
 import { FriendsView } from '@kobato/web-admin/ui/friends/FriendsView'
-import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { invalidateUsersCache } from '@kobato/web-admin/ui/users/users-cache'
-import { onMutationError, toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError, toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   CheckCheckIcon,

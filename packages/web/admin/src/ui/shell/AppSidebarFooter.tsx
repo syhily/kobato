@@ -11,7 +11,7 @@ import {
 import { SidebarFooter, SidebarMenu, SidebarMenuItem } from '@kobato/ui/components/sidebar'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { VersionDialog } from '@kobato/web-admin/ui/shell/VersionDialog'
-import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout'
+import { useLogout } from '@kobato/web-kit/ui/shared/auth/use-logout'
 import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'

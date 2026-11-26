@@ -2,6 +2,7 @@ import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/p
 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { CommentContentHtml } from '@kobato/web-kit/ui/comments/CommentContentHtml'
 import { commentFlags } from '@kobato/web-public/ui/comments/comment-item/comment-flags'
 import {
   getCommentFlashServerSnapshot,
@@ -21,7 +22,6 @@ import {
   nestedCommentLiClass,
   rootCommentLiClass,
 } from '@kobato/web-public/ui/comments/comment-item/presentation'
-import { CommentContentHtml } from '@kobato/web-public/ui/comments/CommentContentHtml'
 import { useCommentsActions, useCommentsIdentity } from '@kobato/web-public/ui/comments/comments-context'
 import { XIcon } from 'lucide-react'
 import { useState, type ReactNode, useSyncExternalStore } from 'react'

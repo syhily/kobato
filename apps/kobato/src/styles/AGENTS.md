@@ -5,10 +5,10 @@ partial; a surface runs exactly one Tailwind compile composing those partials vi
 is forbidden by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts` (which also pins: partials carry no
 `@import 'tailwindcss'`, and no module imports them directly).
 
-- `admin.css` composes `@kobato/inkling/styles/cards.css` + `@kobato/web-public/styles/admin-subset.css` +
+- `admin.css` composes `@kobato/inkling/styles/cards.css` + `@kobato/web-kit/styles/kit.css` +
   `@kobato/web-admin/styles/admin.css`, scanning `routes/admin`, `routes/auth`, `routes/editor`, `root.tsx`.
-  `public.css` composes cards + `@kobato/web-public/styles/public.css` + local `cursors.css`, scanning `routes/public` +
-  `root.tsx`.
+  `public.css` composes cards + `@kobato/web-public/styles/public.css` (which composes the kit partial) + local
+  `cursors.css`, scanning `routes/public` + `root.tsx`.
 - Both entries take `@kobato/ui/styles/tailwind.css` as a `reference` compile contract (tokens and the UI-owned `dark`
   variant affect the compile, nothing emits) and import `@kobato/ui/styles/base-defaults.css` non-reference — every
   sheet carries the base-layer border default after its own preflight. Product utilities use named theme tokens

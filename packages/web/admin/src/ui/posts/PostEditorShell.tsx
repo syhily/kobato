@@ -14,7 +14,7 @@ import { type EditorAdapterConfig, makeEditorAdapter } from '@kobato/web-admin/u
 import { buildPostUpsertPayload } from '@kobato/web-admin/ui/posts/build-post-upsert-payload'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar'
-import { useContentSettings } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { useContentSettings } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { useQueryClient } from '@tanstack/react-query'
 
 export interface PostEditorShellProps {

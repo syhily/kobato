@@ -48,6 +48,7 @@
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@kobato/web-admin": "workspace:*",
+    "@kobato/web-kit": "workspace:*",
     "@kobato/web-public": "workspace:*",
     "@napi-rs/canvas": "catalog:",
     "@openobserve/browser-rum-slim": "catalog:",

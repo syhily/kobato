@@ -2,7 +2,7 @@
 
 import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const track: AdminMusicDto = {

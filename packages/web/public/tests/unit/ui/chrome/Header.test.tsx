@@ -1,6 +1,6 @@
 import type { NavigationItem } from '@kobato/settings/types'
 
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { Header } from '@kobato/web-public/ui/chrome/Header'
 import { describe, expect, it } from 'vitest'
 

@@ -2,7 +2,7 @@ import type { BackupLoaderShape } from '@kobato/settings/projection'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { BackupView } from '@kobato/web-admin/ui/settings/backup/BackupView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

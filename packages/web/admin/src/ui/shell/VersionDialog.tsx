@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/com
 import { GithubIcon } from '@kobato/ui/icons/brand'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertCircleIcon,

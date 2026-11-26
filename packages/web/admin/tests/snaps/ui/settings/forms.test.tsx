@@ -13,7 +13,7 @@ import { CacheView } from '@kobato/web-admin/ui/settings/cache/CacheView'
 import { FontsForm } from '@kobato/web-admin/ui/settings/FontsForm'
 import { NavigationEditor } from '@kobato/web-admin/ui/settings/navigation/NavigationEditor'
 import { SecurityForm } from '@kobato/web-admin/ui/settings/security/SecurityForm'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const cacheQueryMocks = mockTanstackQuery()

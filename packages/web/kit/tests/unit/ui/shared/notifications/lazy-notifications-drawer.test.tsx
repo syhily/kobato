@@ -1,0 +1,56 @@
+// @vitest-environment happy-dom
+
+import type { ReactElement, ReactNode } from 'react'
+
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
+import { act, render as rtlRender, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+const control = mockTanstackQuery()
+
+function render(ui: ReactElement) {
+  return rtlRender(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => wrapWithI18n(children),
+  })
+}
+
+const { LazyNotificationsDrawer } = await import('@kobato/web-kit/ui/shared/notifications/LazyNotificationsDrawer')
+
+beforeEach(() => {
+  control.query.data = { count: 0 }
+  control.query.isPending = false
+  control.query.isError = false
+  control.infinite.data = { pages: [] }
+  control.infinite.isPending = false
+  control.infinite.isError = false
+  control.infinite.hasNextPage = false
+  control.infinite.isFetchingNextPage = false
+})
+
+describe('ui/shared/notifications/LazyNotificationsDrawer', () => {
+  it('renders nothing until the first open (SSR-stable)', () => {
+    const { container } = render(
+      <LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />,
+    )
+    expect(container.innerHTML).toBe('')
+  })
+
+  it('mounts the drawer on first open and keeps it mounted after close', async () => {
+    await import('@kobato/web-kit/ui/shared/notifications/NotificationsDrawer')
+
+    const { rerender } = render(
+      <LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />,
+    )
+    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    })
+    expect(await screen.findByText('消息通知')).toBeTruthy()
+
+    rerender(<LazyNotificationsDrawer open={false} onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+    rerender(<LazyNotificationsDrawer open onOpenChange={() => {}} isAdmin={false} unreadCount={0} />)
+    expect(screen.getByText('消息通知')).toBeTruthy()
+  }, 15_000)
+})

@@ -1,0 +1,38 @@
+{
+  "name": "@kobato/web-kit",
+  "version": "8.2.2-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tests/*": "./tests/*",
+    "./*.css": "./src/*.css",
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "devDependencies": {
+    "@kobato/api": "workspace:*",
+    "@kobato/assets": "workspace:*",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/inkling": "workspace:*",
+    "@kobato/sanitize": "workspace:*",
+    "@kobato/settings": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@kobato/utils": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "sonner": "catalog:",
+    "vitest": "catalog:"
+  }
+}

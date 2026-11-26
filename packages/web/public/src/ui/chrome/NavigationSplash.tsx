@@ -1,6 +1,6 @@
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
+import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigation } from 'react-router'
 

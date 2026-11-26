@@ -1,6 +1,0 @@
-@source '../ui/shared';
-@source '../ui/lib';
-@source '../ui/chrome';
-@source '../ui/comments/*.{ts,tsx}';
-@source '../ui/widgets';
-@source '../ui/Search.tsx';

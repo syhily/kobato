@@ -9,7 +9,7 @@ import {
   useMusicPlayerTime,
 } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { ProgressSlider } from '@kobato/web-admin/ui/music/player/ProgressSlider'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
 import {
   type MouseEvent as ReactMouseEvent,

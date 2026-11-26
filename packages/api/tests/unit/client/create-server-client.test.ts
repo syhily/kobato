@@ -165,3 +165,71 @@ describe('api/client/create-server-client — transport', () => {
     expectTypeOf(client.admin.users.list).toBeFunction()
   })
 })
+
+describe('api/client/create-server-client — abort signal composition', () => {
+  function makeSignalCapture() {
+    const signals: (AbortSignal | undefined)[] = []
+    const fetch = async (
+      _request: Request,
+      init: { redirect?: RequestRedirect | undefined; signal?: AbortSignal },
+    ): Promise<Response> => {
+      signals.push(init.signal)
+      return new Response(JSON.stringify({ json: null }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    return { signals, fetch }
+  }
+
+  it('aborts the fetch signal when the inbound document request aborts', async () => {
+    const inbound = new AbortController()
+    const perCall = new AbortController()
+    const { signals, fetch } = makeSignalCapture()
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: new Request('https://sayaka.example/', { signal: inbound.signal }),
+      fetch,
+    })
+
+    await client.public.content.bootstrap(undefined, { signal: perCall.signal })
+    const signal = signals[0]
+    expect(signal?.aborted).toBe(false)
+    inbound.abort()
+    expect(signal?.aborted).toBe(true)
+  })
+
+  it('aborts the fetch signal when the per-call signal aborts', async () => {
+    const inbound = new AbortController()
+    const perCall = new AbortController()
+    const { signals, fetch } = makeSignalCapture()
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request: new Request('https://sayaka.example/', { signal: inbound.signal }),
+      fetch,
+    })
+
+    await client.public.content.bootstrap(undefined, { signal: perCall.signal })
+    const signal = signals[0]
+    expect(signal?.aborted).toBe(false)
+    perCall.abort()
+    expect(signal?.aborted).toBe(true)
+  })
+
+  it('passes the inbound signal through unchanged when the call has no per-call signal', async () => {
+    const inbound = new AbortController()
+    const request = new Request('https://sayaka.example/', { signal: inbound.signal })
+    const { signals, fetch } = makeSignalCapture()
+    const { client } = createKobatoServerClient({
+      url: 'https://kobato.internal/rpc',
+      request,
+      fetch,
+    })
+
+    await client.public.content.bootstrap()
+
+    expect(signals[0]).toBe(request.signal)
+    inbound.abort()
+    expect(signals[0]?.aborted).toBe(true)
+  })
+})

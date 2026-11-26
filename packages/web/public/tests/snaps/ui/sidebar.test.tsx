@@ -1,7 +1,7 @@
 import type { LatestComment } from '@kobato/api/contracts/public/comments'
 
 import { makePostList, makeTag } from '@kobato/api/tests/utils/catalog'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { Sidebar } from '@kobato/web-public/ui/Sidebar'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

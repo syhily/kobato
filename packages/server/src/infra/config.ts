@@ -1,5 +1,5 @@
+import { isValidTrustedProxyEntry } from '@kobato/auth/trusted-proxy'
 import { parseConfigArg } from '@kobato/server/infra/config-arg'
-import { isValidTrustedProxyEntry } from '@kobato/server/infra/ip-match'
 import { isSea } from '@kobato/server/infra/sea/sea'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'

@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@kobato/ui/components/dropdown-menu'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useLogout } from '@kobato/web-public/ui/shared/auth/use-logout'
-import { warmNotificationsDrawerChunk } from '@kobato/web-public/ui/shared/notifications/LazyNotificationsDrawer'
-import { NotificationBadge } from '@kobato/web-public/ui/shared/notifications/NotificationBadge'
+import { useLogout } from '@kobato/web-kit/ui/shared/auth/use-logout'
+import { warmNotificationsDrawerChunk } from '@kobato/web-kit/ui/shared/notifications/LazyNotificationsDrawer'
+import { NotificationBadge } from '@kobato/web-kit/ui/shared/notifications/NotificationBadge'
 import { BellIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, SettingsIcon, UserIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

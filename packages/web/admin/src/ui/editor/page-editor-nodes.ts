@@ -11,7 +11,7 @@ import {
   MathNode,
 } from '@kobato/inkling'
 import { KobatoImageNode } from '@kobato/inkling/host-cards'
-import { excludeBaseNodes } from '@kobato/web-public/ui/shared/editor/base-node-filter'
+import { excludeBaseNodes } from '@kobato/web-kit/ui/shared/editor/base-node-filter'
 
 const EDITOR_BASE_WITHOUT_ASIDE = excludeBaseNodes(EDITOR_BASE_NODES, new Set(['aside']))
 

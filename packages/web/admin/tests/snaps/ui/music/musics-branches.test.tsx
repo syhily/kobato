@@ -7,7 +7,7 @@ import { LyricsDisplay } from '@kobato/web-admin/ui/music/LyricsDisplay'
 import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
 import { MusicsView, SortIcon } from '@kobato/web-admin/ui/music/MusicsView'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

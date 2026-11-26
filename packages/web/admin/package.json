@@ -29,7 +29,7 @@
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
-    "@kobato/web-public": "workspace:*",
+    "@kobato/web-kit": "workspace:*",
     "@lexical/react": "catalog:",
     "@number-flow/react": "catalog:",
     "@simplewebauthn/browser": "catalog:",

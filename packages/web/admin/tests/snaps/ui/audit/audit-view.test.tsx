@@ -9,7 +9,7 @@ import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView'
 import { buildAuditFilterFields } from '@kobato/web-admin/ui/audit/filter-fields'
 import { FilterAddButton } from '@kobato/web-admin/ui/shared/filter-bar/add-button'
 import { FilterPill } from '@kobato/web-admin/ui/shared/filter-bar/pill'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

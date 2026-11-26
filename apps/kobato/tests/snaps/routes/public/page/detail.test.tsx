@@ -1,7 +1,7 @@
 import { makePage } from '@kobato/api/tests/utils/catalog'
 import { toDetailPageShell } from '@kobato/catalog/projection'
 import { asRoute } from '@kobato/test/route-test-utils'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import PageDetailRoute from '@/routes/public/page/detail'

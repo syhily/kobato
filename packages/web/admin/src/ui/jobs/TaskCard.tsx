@@ -17,7 +17,7 @@ import {
   type TaskStatus,
 } from '@kobato/web-admin/ui/jobs/meta'
 import { RunHistorySheet } from '@kobato/web-admin/ui/jobs/RunHistorySheet'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon } from 'lucide-react'
 import { Link } from 'react-router'

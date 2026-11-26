@@ -8,6 +8,7 @@ const SOURCE_ROOTS = [
   { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo/src' },
   { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
   { packageRoot: 'packages/web/admin', sourceRoot: 'packages/web/admin/src' },
+  { packageRoot: 'packages/web/kit', sourceRoot: 'packages/web/kit/src' },
   { packageRoot: 'packages/web/public', sourceRoot: 'packages/web/public/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
@@ -15,20 +16,13 @@ const SOURCE_ROOTS = [
 const SOURCE_PARTIALS = [
   { file: 'packages/inkling/src/styles/cards.css', specifier: '@kobato/inkling/styles/cards.css' },
   { file: 'packages/web/public/src/styles/public.css', specifier: '@kobato/web-public/styles/public.css' },
-  { file: 'packages/web/public/src/styles/admin-subset.css', specifier: '@kobato/web-public/styles/admin-subset.css' },
+  { file: 'packages/web/kit/src/styles/kit.css', specifier: '@kobato/web-kit/styles/kit.css' },
   { file: 'packages/web/admin/src/styles/admin.css', specifier: '@kobato/web-admin/styles/admin.css' },
 ] as const
 
 const WEB_PARTIAL_REQUIRED_SOURCES = {
   'packages/web/public/src/styles/public.css': ['../ui'],
-  'packages/web/public/src/styles/admin-subset.css': [
-    '../ui/shared',
-    '../ui/lib',
-    '../ui/chrome',
-    '../ui/comments/*.{ts,tsx}',
-    '../ui/widgets',
-    '../ui/Search.tsx',
-  ],
+  'packages/web/kit/src/styles/kit.css': ['../ui'],
   'packages/web/admin/src/styles/admin.css': ['../ui'],
 } as const
 
@@ -70,7 +64,7 @@ describe('Tailwind source ownership', () => {
         'apps/inkling-demo/src/styles/public.css',
         'packages/ui/src/styles/ui.css',
         'packages/web/public/src/styles/public.css',
-        'packages/web/public/src/styles/admin-subset.css',
+        'packages/web/kit/src/styles/kit.css',
         'packages/web/admin/src/styles/admin.css',
         'packages/inkling/src/styles/cards.css',
         'packages/inkling/src/styles/index.css',

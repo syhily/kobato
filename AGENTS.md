@@ -8,8 +8,8 @@ runtime state):
 - `apps/` — deployable apps: `kobato` (React Router 8 Framework Mode, SSR, React 19, `appDirectory: 'src'`) and
   `inkling-demo` (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/ui`, `@kobato/inkling`
-  (Lexical editor with a React-free `/headless/` document model), `packages/web/*` (`web-public`, `web-admin`), and
-  eight isomorphic React-free leaves under `packages/shared/*`.
+  (Lexical editor with a React-free `/headless/` document model), `packages/web/*` (`web-admin`, `web-kit`,
+  `web-public`), and eight isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 - `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
@@ -80,8 +80,8 @@ section pins the direction graph only — package composition rules live in each
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
-- Web direction is one-way: `web-admin` → `web-public`. Web leaves never import `@kobato/server` (admin allows it
-  tests-only). The browser oRPC client is typed exclusively through `@kobato/api`.
+- Web direction: `web-admin` → `web-kit` ← `web-public`; the kit imports neither leaf. Web packages never import
+  `@kobato/server` (admin allows it tests-only). The browser oRPC client is typed exclusively through `@kobato/api`.
 - `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
 - Refactor from architectural correctness, not minimal diff size.
@@ -125,8 +125,8 @@ Tests live next to the covered package — no root-level test tree.
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative. `any`,
   `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks.
 - Coverage measures the backend/app runtime surface — `apps/kobato/src`, `api`, `db`, `server`, and `shared/*`. The
-  product UI trees — `web-admin`/`web-public`, `@kobato/ui`, and `@kobato/inkling` — sit outside the workspace coverage
-  thresholds by design.
+  product UI trees — `web-admin`/`web-kit`/`web-public`, `@kobato/ui`, and `@kobato/inkling` — sit outside the workspace
+  coverage thresholds by design.
 
 ## Git
 

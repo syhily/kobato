@@ -6,7 +6,7 @@ import { localInputValueToIso } from '@kobato/web-admin/ui/editor-shell/editor-d
 import { EditorMetaPanel } from '@kobato/web-admin/ui/editor-shell/EditorMetaPanel'
 import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@kobato/web-admin/ui/posts/post-meta'
 import { metaDraftFromPost, PostMetaSidebar } from '@kobato/web-admin/ui/posts/PostMetaSidebar'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 const noop = () => undefined

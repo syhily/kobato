@@ -4,7 +4,7 @@ import type { MouseEvent } from 'react'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Equalizer } from '@kobato/web-admin/ui/music/Equalizer'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Loader2, Pause, Play, Plus } from 'lucide-react'
 
 export interface SearchAlbumCardProps {

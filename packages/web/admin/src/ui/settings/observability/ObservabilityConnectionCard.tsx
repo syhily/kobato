@@ -19,7 +19,7 @@ import {
   secretFieldStrings,
 } from '@kobato/web-admin/ui/settings/shell/SettingsSecretInput'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { PlugZapIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'

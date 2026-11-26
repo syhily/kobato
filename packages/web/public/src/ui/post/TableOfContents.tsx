@@ -5,7 +5,7 @@ import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv, LazyMotionSpan } 
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { transitions } from '@kobato/ui/lib/motion'
-import { useSeoSettingsOptional } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { useSeoSettingsOptional } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { TocItems } from '@kobato/web-public/ui/post/TocItems'
 import { ChevronLeftIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'

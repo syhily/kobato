@@ -15,7 +15,7 @@ import { projectMailForAdmin } from '@kobato/settings/projection'
 import { mailDefaults } from '@kobato/settings/sections/mail'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm'
-import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const commit = vi.hoisted(() => vi.fn())

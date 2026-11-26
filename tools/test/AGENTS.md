@@ -6,7 +6,7 @@ canonical owner package's `tests/utils/`, imported cross-package as `@kobato/<ow
 sanctioned cross-package `tests/` edge (`apps/kobato/tests/arch/package-dag.test.ts`). Product-coupled fixtures must not
 move back here. Canonical fixture owners: `@kobato/settings/tests/utils/blog-settings.ts`,
 `@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/catalog.ts`, `@kobato/inkling/tests/utils/lexical.ts`,
-`@kobato/web-public/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`,
+`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`,
 `@kobato/web-admin/tests/utils/settings-mutation-mock.ts`, and the server harnesses under `@kobato/server/tests/utils/`
 (session, mail capture, integration DBs, request context).
 

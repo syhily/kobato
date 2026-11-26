@@ -2,7 +2,7 @@ import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/p
 import type { CommentFormUser } from '@kobato/catalog/model'
 
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
 import { Comments } from '@kobato/web-public/ui/comments/Comments'
 import { describe, expect, it } from 'vitest'

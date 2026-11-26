@@ -1,6 +1,7 @@
 import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'
 
+import { getClientAddress } from '@kobato/api/client/client-address'
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   buildCsrfCookieHeader,
@@ -12,7 +13,6 @@ import {
 } from '@kobato/server/domains/auth/csrf'
 import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
 import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@kobato/server/domains/auth/session-storage'
-import { getClientAddress } from '@kobato/server/http/request/client-address'
 import { isExempt as isCookieExemptPath } from '@kobato/server/http/request/cookie-exempt'
 import { isPublicReadRpcPath } from '@kobato/server/http/request/public-read-rpc-path'
 import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'

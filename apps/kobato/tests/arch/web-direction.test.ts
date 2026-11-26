@@ -3,15 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
+const KIT_ROOT = 'packages/web/kit/src'
 const PUBLIC_ROOT = 'packages/web/public/src'
 const ADMIN_ROOTS = ['packages/web/admin/src/ui', 'packages/web/admin/src/styles']
-const ADMIN_PUBLIC_IMPORTS = [
-  '@kobato/web-public/ui/chrome/use-chrome-clock',
-  '@kobato/web-public/ui/comments/CommentContentHtml',
-  '@kobato/web-public/ui/comments/LazyCommentBodyEditor',
-  '@kobato/web-public/ui/comments/comment-body-helpers',
-  '@kobato/web-public/ui/widgets/Image',
-] as const
 
 function walk(root: string, out: string[]): void {
   if (!existsSync(root)) {
@@ -40,81 +34,52 @@ function importSpecifiers(source: string): string[] {
   return specifiers
 }
 
-describe('web direction', () => {
-  const ADMIN_SPECIFIERS = ['@kobato/web', '@kobato/web-admin'] as const
-
-  function isAdminSpecifier(specifier: string): boolean {
-    return ADMIN_SPECIFIERS.some((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+function offendersImporting(roots: string[], banned: readonly string[]): string[] {
+  const files: string[] = []
+  for (const root of roots) {
+    walk(`${REPO_ROOT}/${root}`, files)
   }
 
-  it('keeps packages/web at exactly the two product leaves — no shared web package between them', () => {
+  expect(files.length).toBeGreaterThan(0)
+
+  const offenders: string[] = []
+  for (const file of files.sort()) {
+    for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+      if (banned.some((scope) => specifier === scope || specifier.startsWith(`${scope}/`))) {
+        offenders.push(`${file}: ${specifier}`)
+      }
+    }
+  }
+  return offenders
+}
+
+describe('web direction', () => {
+  it('keeps packages/web at exactly the two product leaves plus the cross-surface kit', () => {
     const leaves = readdirSync(`${REPO_ROOT}/packages/web`, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
 
-    expect(
-      leaves,
-      'cross-leaf modules live in @kobato/web-public/ui/{shared,lib}; app-only runtime lives in apps/kobato',
-    ).toEqual(['admin', 'public'])
+    expect(leaves, 'cross-leaf modules live in @kobato/web-kit; app-only runtime lives in apps/kobato').toEqual([
+      'admin',
+      'kit',
+      'public',
+    ])
+  })
+
+  it('keeps the kit below both leaves: no kit module imports @kobato/web-admin, @kobato/web-public, or @kobato/server', () => {
+    expect(offendersImporting([KIT_ROOT], ['@kobato/web-admin', '@kobato/web-public', '@kobato/server'])).toEqual([])
   })
 
   it('keeps the public leaf below admin: no public module imports @kobato/web-admin or @kobato/server', () => {
-    const files: string[] = []
-    walk(`${REPO_ROOT}/${PUBLIC_ROOT}`, files)
-
-    expect(files.length).toBeGreaterThan(0)
-
-    const offenders: string[] = []
-    for (const file of files.sort()) {
-      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (isAdminSpecifier(specifier) || specifier === '@kobato/server' || specifier.startsWith('@kobato/server/')) {
-          offenders.push(`${file}: ${specifier}`)
-        }
-      }
-    }
-
-    expect(offenders).toEqual([])
+    expect(offendersImporting([PUBLIC_ROOT], ['@kobato/web-admin', '@kobato/server'])).toEqual([])
   })
 
-  it('keeps admin reuse of public components on the audited module set', () => {
-    const files: string[] = []
-    for (const root of ADMIN_ROOTS) {
-      walk(`${REPO_ROOT}/${root}`, files)
-    }
-
-    const actual = new Set<string>()
-    for (const file of files.sort()) {
-      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (
-          specifier.startsWith('@kobato/web-public/ui/') &&
-          !specifier.startsWith('@kobato/web-public/ui/shared/') &&
-          !specifier.startsWith('@kobato/web-public/ui/lib/')
-        ) {
-          actual.add(specifier)
-        }
-      }
-    }
-
-    expect([...actual].sort()).toEqual([...ADMIN_PUBLIC_IMPORTS].sort())
+  it('keeps the admin leaf off the public leaf: no admin module imports @kobato/web-public', () => {
+    expect(offendersImporting(ADMIN_ROOTS, ['@kobato/web-public'])).toEqual([])
   })
 
-  it('keeps route title/meta resolution in the app layer: no web leaf imports @kobato/catalog/seo', () => {
-    const files: string[] = []
-    walk(`${REPO_ROOT}/${PUBLIC_ROOT}`, files)
-    for (const root of ADMIN_ROOTS) {
-      walk(`${REPO_ROOT}/${root}`, files)
-    }
-
-    const offenders: string[] = []
-    for (const file of files.sort()) {
-      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (specifier === '@kobato/catalog/seo' || specifier.startsWith('@kobato/catalog/seo/')) {
-          offenders.push(`${file}: ${specifier}`)
-        }
-      }
-    }
-
-    expect(offenders).toEqual([])
+  it('keeps route title/meta resolution in the app layer: no web package imports @kobato/catalog/seo', () => {
+    expect(offendersImporting([KIT_ROOT, PUBLIC_ROOT, ...ADMIN_ROOTS], ['@kobato/catalog/seo'])).toEqual([])
   })
 })

@@ -2,7 +2,7 @@ import type { AdminTagDto } from '@kobato/api/contracts/admin/tags'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { TagsView } from '@kobato/web-admin/ui/tags/TagsView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

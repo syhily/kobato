@@ -2,7 +2,7 @@ import type { MailLoaderShape } from '@kobato/settings/projection'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { MailForm } from '@kobato/web-admin/ui/settings/mail/MailForm'
-import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

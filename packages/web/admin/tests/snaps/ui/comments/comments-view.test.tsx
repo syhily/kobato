@@ -6,7 +6,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { AdminCommentRow } from '@kobato/web-admin/ui/comments/AdminCommentRow'
 import { CommentsView } from '@kobato/web-admin/ui/comments/CommentsView'
 import { EditUserDialog } from '@kobato/web-admin/ui/comments/EditUserDialog'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 const css = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/styles/inkling-editor.css'), 'utf8')
 const commentCss = readFileSync(
-  resolve(process.cwd(), 'packages/web/public/src/styles/inkling-comment-editor.css'),
+  resolve(process.cwd(), 'packages/web/kit/src/styles/inkling-comment-editor.css'),
   'utf8',
 )
 

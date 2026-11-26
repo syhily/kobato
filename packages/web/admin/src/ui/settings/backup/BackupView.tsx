@@ -17,7 +17,7 @@ import {
   waitForRestartAndReport,
 } from '@kobato/web-admin/ui/settings/backup/use-backup-restore'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
-import { onMutationError, toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError, toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'

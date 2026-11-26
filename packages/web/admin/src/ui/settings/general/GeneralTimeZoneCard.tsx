@@ -23,7 +23,7 @@ import { SettingsInput } from '@kobato/web-admin/ui/settings/shell/SettingsInput
 import { SettingsSelect } from '@kobato/web-admin/ui/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@kobato/web-admin/ui/settings/shell/use-settings-card'
 import { useLocaleSwitch } from '@kobato/web-admin/ui/settings/use-locale-switch'
-import { useLocaleSyncPublish } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
+import { useLocaleSyncPublish } from '@kobato/web-kit/ui/lib/LocaleSyncProvider'
 import { useEffect, useMemo, useRef } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
 

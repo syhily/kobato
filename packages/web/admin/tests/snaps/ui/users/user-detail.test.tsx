@@ -3,7 +3,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { UserDetailView } from '@kobato/web-admin/ui/users/UserDetailView'
 import { UserEditForm } from '@kobato/web-admin/ui/users/UserEditForm'
 import { UserOperationsCard } from '@kobato/web-admin/ui/users/UserOperationsCard'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

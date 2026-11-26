@@ -47,7 +47,7 @@ const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 const COPY_STORE_PREFIXES = [
   'packages/shared/i18n/src/messages/',
   'packages/shared/i18n/src/inkling-labels/',
-  'packages/web/public/src/ui/shared/editor/inkling-labels/',
+  'packages/web/kit/src/ui/shared/editor/inkling-labels/',
 ]
 
 const COPY_STORE_FILES = new Set(['packages/shared/i18n/src/fallback-messages.ts'])

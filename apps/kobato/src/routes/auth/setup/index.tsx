@@ -11,7 +11,7 @@ import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { AdminInstallForm } from '@kobato/web-admin/ui/auth/AdminInstallForm'
 import { SetupLocaleSelect } from '@kobato/web-admin/ui/auth/SetupLocaleSelect'
 import { SetupTokenVerifyForm } from '@kobato/web-admin/ui/auth/SetupTokenVerifyForm'
-import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
+import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 

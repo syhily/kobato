@@ -8,7 +8,7 @@ import { RadioGroup } from '@kobato/ui/components/radio-group'
 import { Switch } from '@kobato/ui/components/switch'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { LabelledRadio } from '@kobato/web-admin/ui/shared/form/LabelledRadio'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 

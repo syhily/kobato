@@ -10,7 +10,7 @@ import { ObservabilityProvisionSummaryLines } from '@kobato/web-admin/ui/setting
 import { SettingsRow } from '@kobato/web-admin/ui/settings/SettingsSection'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@kobato/web-admin/ui/settings/shell/SettingGroupContent'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'

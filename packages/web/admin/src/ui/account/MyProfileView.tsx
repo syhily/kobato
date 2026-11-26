@@ -18,7 +18,7 @@ import { PasskeyManagementCard } from '@kobato/web-admin/ui/account/PasskeyManag
 import { PasswordChangeForm } from '@kobato/web-admin/ui/account/PasswordChangeForm'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { maskIp, maskUa } from '@kobato/web-admin/ui/shared/mask'
-import { useSiteIdentity } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'

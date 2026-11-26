@@ -1,4 +1,4 @@
-import { renderInRouterWithOutlet } from '@kobato/web-public/tests/utils/render'
+import { renderInRouterWithOutlet } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import CommentsRoute from '@/routes/admin/comments'

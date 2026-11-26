@@ -5,7 +5,7 @@ import type { AuditLogItemDto } from '@kobato/api/contracts/admin/audit'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { AuditLogRow } from '@kobato/web-admin/ui/audit/AuditLogRow'
-import { BlogSettingsProvider } from '@kobato/web-public/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 

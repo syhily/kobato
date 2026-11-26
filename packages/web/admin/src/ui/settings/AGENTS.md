@@ -43,11 +43,11 @@ no-provider use.
 
 ## Cross-tab locale sync
 
-Settings-side half only — the root loop lives in the public leaf (`ui/lib/LocaleSyncProvider`, mounted by
-`apps/kobato/src/root.tsx`); cards use `useLocaleSyncPublish()`. The sender publishes once after the server acknowledged
-the locale, immediately before this tab's single reload; the receiver runs the SAME transaction shape as a local switch,
-then reloads only after the flush succeeded — it never commits the locale and never re-publishes. A failure keeps the
-dirty input and offers Retry + explicit Reload; announcements are deduped by the bootstrap `revision`.
+Settings-side half only — the root loop lives in the cross-surface kit (`@kobato/web-kit/ui/lib/LocaleSyncProvider`,
+mounted by `apps/kobato/src/root.tsx`); cards use `useLocaleSyncPublish()`. The sender publishes once after the server
+acknowledged the locale, immediately before this tab's single reload; the receiver runs the SAME transaction shape as a
+local switch, then reloads only after the flush succeeded — it never commits the locale and never re-publishes. A
+failure keeps the dirty input and offers Retry + explicit Reload; announcements are deduped by the bootstrap `revision`.
 
 ## Adding a settings card
 

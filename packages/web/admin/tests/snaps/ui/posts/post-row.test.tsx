@@ -1,6 +1,6 @@
 import { makeAdminPost } from '@kobato/api/tests/utils/catalog'
 import { PostRow } from '@kobato/web-admin/ui/posts/PostRow'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('snapshot: PostRow', () => {

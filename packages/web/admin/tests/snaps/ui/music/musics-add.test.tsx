@@ -9,7 +9,7 @@ import { MusicDetailView } from '@kobato/web-admin/ui/music/MusicDetailView'
 import { MusicPlayerProvider } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { SearchAlbumCard } from '@kobato/web-admin/ui/music/SearchAlbumCard'
 import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

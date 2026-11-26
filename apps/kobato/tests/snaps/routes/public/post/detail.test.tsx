@@ -1,7 +1,7 @@
 import { makePost, makeTag } from '@kobato/api/tests/utils/catalog'
 import { toDetailPostShell } from '@kobato/catalog/projection'
 import { asRoute } from '@kobato/test/route-test-utils'
-import { prerenderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { prerenderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import PostDetailRoute from '@/routes/public/post/detail'

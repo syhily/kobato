@@ -1,6 +1,6 @@
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { CategoryField } from '@kobato/web-admin/ui/posts/meta/CategoryField'
-import { renderToHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml } from '@kobato/web-kit/tests/utils/render'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const queryMocks = mockTanstackQuery()

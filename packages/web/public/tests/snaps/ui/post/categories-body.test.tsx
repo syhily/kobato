@@ -1,5 +1,5 @@
 import { makeCategory } from '@kobato/api/tests/utils/catalog'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { CategoriesBody } from '@kobato/web-public/ui/post/CategoriesBody'
 import { describe, expect, it } from 'vitest'
 

@@ -1,7 +1,7 @@
 import { orpc } from '@kobato/api/browser/client'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 

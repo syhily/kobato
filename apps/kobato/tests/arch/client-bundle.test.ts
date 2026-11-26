@@ -9,6 +9,7 @@ const CLIENT_LAYERS = [
   'apps/kobato/src/document',
   'apps/kobato/src/route-warmup',
   'apps/kobato/src/rum',
+  'packages/web/kit/src',
   'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
@@ -245,6 +246,7 @@ const I18N_SCANNED_ROOTS = [
   'apps/kobato/src/document',
   'apps/kobato/src/route-warmup',
   'apps/kobato/src/rum',
+  'packages/web/kit/src',
   'packages/web/public/src',
   'packages/ui/src',
   'apps/kobato/src/routes',
@@ -340,11 +342,11 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
   owners: [
     'packages/shared/i18n/src/inkling-labels.ts',
 
-    'packages/web/public/src/ui/shared/editor/inkling-labels.ts',
+    'packages/web/kit/src/ui/shared/editor/inkling-labels.ts',
   ],
 }
 
-const INKLING_LABEL_RESOLVER = 'packages/web/public/src/ui/shared/editor/inkling-labels.ts'
+const INKLING_LABEL_RESOLVER = 'packages/web/kit/src/ui/shared/editor/inkling-labels.ts'
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {
     expect(collectServerOnlyImportViolations(collectScannedFiles(), INKLING_LABEL_RULE)).toEqual([])

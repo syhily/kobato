@@ -1,5 +1,5 @@
 import { ActionBanner } from '@kobato/web-admin/ui/editor-shell/ActionBanner'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 describe('ActionBanner', () => {

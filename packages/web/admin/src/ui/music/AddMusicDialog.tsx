@@ -21,7 +21,7 @@ import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@kobato/web-admi
 import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
 import { SearchResultItem } from '@kobato/web-admin/ui/music/SearchResultItem'
 import { useMetingMusicSearch } from '@kobato/web-admin/ui/music/use-meting-music-search'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'

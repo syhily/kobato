@@ -13,6 +13,7 @@ providers, and generic presentation hooks. Production sources depend only on `@k
 - `icons/` holds static icon exports; named imports only, never runtime name lookups.
 - `lib/` is flat and role-prefixed: `use-*.ts` is a hook, `*Provider.tsx` a provider, `*.ts` a pure helper —
   `lib/motion.ts` holds the motion presets consumers pass to the `lazy-motion` facade. Browser product state, routes,
-  and editor glue belong in `@kobato/web-public` / `@kobato/web-admin`; the oRPC binding is `@kobato/api/browser`.
+  and editor glue belong in `@kobato/web-kit` / `@kobato/web-public` / `@kobato/web-admin`; the oRPC binding is
+  `@kobato/api/browser`.
 - Consumers import directly from `@kobato/ui/<path>`; there is no barrel.
 - Preserve SSR/hydration parity and the lazy-motion facade rules.

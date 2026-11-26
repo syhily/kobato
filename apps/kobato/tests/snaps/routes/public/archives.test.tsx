@@ -1,5 +1,5 @@
 import { asRoute } from '@kobato/test/route-test-utils'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 import ArchivesRoute from '@/routes/public/archives'

@@ -1,5 +1,5 @@
 import { getLogger } from '@kobato/ui/lib/logger'
-import { useLocaleSyncHostRegistration } from '@kobato/web-public/ui/lib/LocaleSyncProvider'
+import { useLocaleSyncHostRegistration } from '@kobato/web-kit/ui/lib/LocaleSyncProvider'
 import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const log = getLogger('settings.flush')

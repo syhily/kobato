@@ -1,4 +1,4 @@
-import { renderToHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml } from '@kobato/web-kit/tests/utils/render'
 import { ErrorView } from '@kobato/web-public/ui/chrome/ErrorView'
 import { describe, expect, it } from 'vitest'
 

@@ -5,7 +5,7 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { Equalizer } from '@kobato/web-admin/ui/music/Equalizer'
 import { useMusicPlayerActions, useMusicPlayerState } from '@kobato/web-admin/ui/music/player/music-player-context'
-import { Image } from '@kobato/web-public/ui/widgets/Image'
+import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Play, Pause } from 'lucide-react'
 
 export interface AlbumCardProps {

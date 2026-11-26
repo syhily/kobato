@@ -3,7 +3,7 @@ import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 import { makeAdminCategory } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { EditCategoryDialog } from '@kobato/web-admin/ui/categories/EditCategoryDialog'
-import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 

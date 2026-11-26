@@ -5,7 +5,7 @@ import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { AuditLogView } from '@kobato/web-admin/ui/audit/AuditLogView'
-import { renderInRouter, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = mockTanstackQuery()

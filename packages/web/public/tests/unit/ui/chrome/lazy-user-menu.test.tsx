@@ -8,8 +8,8 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-const { useLogout: realUseLogout } = await import('@kobato/web-public/ui/shared/auth/use-logout')
-const useLogoutSpy = vi.spyOn(await import('@kobato/web-public/ui/shared/auth/use-logout'), 'useLogout')
+const { useLogout: realUseLogout } = await import('@kobato/web-kit/ui/shared/auth/use-logout')
+const useLogoutSpy = vi.spyOn(await import('@kobato/web-kit/ui/shared/auth/use-logout'), 'useLogout')
 void realUseLogout
 useLogoutSpy.mockImplementation((() => vi.fn()) as never)
 

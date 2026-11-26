@@ -11,7 +11,7 @@ import { MetricList } from '@kobato/web-admin/ui/analytics/MetricList'
 import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName'
 import { MetricsGroup } from '@kobato/web-admin/ui/analytics/MetricsGroup'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it } from 'vitest'
 
 function withAnalyticsState(node: ReactNode): ReactNode {

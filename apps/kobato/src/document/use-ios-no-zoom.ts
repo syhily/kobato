@@ -2,7 +2,7 @@ import {
   acquireViewportZoomLock,
   isIosWebKit,
   releaseViewportZoomLock,
-} from '@kobato/web-public/ui/comments/viewport-zoom-lock'
+} from '@kobato/web-kit/ui/comments/viewport-zoom-lock'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect

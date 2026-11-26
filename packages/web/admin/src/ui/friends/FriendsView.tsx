@@ -15,7 +15,7 @@ import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/Co
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'
-import { onMutationError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Fragment, useCallback, useState } from 'react'

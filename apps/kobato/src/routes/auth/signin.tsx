@@ -14,7 +14,7 @@ import { LostPasswordForm } from '@kobato/web-admin/ui/auth/LostPasswordForm'
 import { MagicLinkConfirmForm } from '@kobato/web-admin/ui/auth/MagicLinkConfirmForm'
 import { OtpForm } from '@kobato/web-admin/ui/auth/OtpForm'
 import { ResetPasswordForm } from '@kobato/web-admin/ui/auth/ResetPasswordForm'
-import { BrandLogo } from '@kobato/web-public/ui/chrome/BrandLogo'
+import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { data, redirect, useNavigation } from 'react-router'
 
 import {

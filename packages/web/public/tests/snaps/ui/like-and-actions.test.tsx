@@ -2,8 +2,8 @@ import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/p
 
 import { makeComment, makeCommentBody } from '@kobato/api/tests/utils/catalog'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { makeLeafContext } from '@kobato/web-public/tests/utils/comments-leaf'
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
 import { CommentActions } from '@kobato/web-public/ui/comments/comment-item/CommentActions'
 import { CommentReplyForm } from '@kobato/web-public/ui/comments/CommentReplyForm'
 import { LikeButton, LikeShare } from '@kobato/web-public/ui/LikeActions'
@@ -21,7 +21,7 @@ vi.mock('@kobato/web-public/ui/comments/use-comment-guest', () => ({
   }),
 }))
 
-vi.mock('@kobato/web-public/ui/comments/LazyCommentBodyEditor', () => ({
+vi.mock('@kobato/web-kit/ui/comments/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),

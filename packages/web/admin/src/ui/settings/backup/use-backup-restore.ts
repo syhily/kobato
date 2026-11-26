@@ -1,12 +1,12 @@
 import type { RestoreProgressDto } from '@kobato/api/contracts/admin/backup'
 import type { RestoreStep } from '@kobato/web-admin/ui/settings/backup/RestoreProgressPanel'
-import type { ToastTranslator } from '@kobato/web-public/ui/lib/toast-api-error'
+import type { ToastTranslator } from '@kobato/web-kit/ui/lib/toast-api-error'
 
 import { orpc } from '@kobato/api/browser/client'
 import { extractApiErrorMessage } from '@kobato/api/client/error'
 import { decodeKobatoRpcResponse, serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { toastApiError } from '@kobato/web-public/ui/lib/toast-api-error'
+import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 

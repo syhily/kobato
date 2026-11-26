@@ -8,7 +8,7 @@ vi.mock('@simplewebauthn/browser', () => ({
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { asRoute } from '@kobato/test/route-test-utils'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 
 import LoginRouteRaw from '@/routes/auth/signin'
 

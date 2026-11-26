@@ -24,6 +24,7 @@
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
     "@kobato/utils": "workspace:*",
+    "@kobato/web-kit": "workspace:*",
     "@number-flow/react": "catalog:",
     "@orpc/client": "catalog:",
     "@tanstack/react-query": "catalog:",

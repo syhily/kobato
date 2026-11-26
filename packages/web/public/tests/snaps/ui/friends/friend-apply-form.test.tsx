@@ -1,4 +1,4 @@
-import { renderToHtml, stableHtml } from '@kobato/web-public/tests/utils/render'
+import { renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { FriendApplyForm } from '@kobato/web-public/ui/friends/FriendApplyForm'
 import { describe, expect, it } from 'vitest'
 

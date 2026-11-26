@@ -23,6 +23,7 @@ const SCAN_ROOTS = [
   'packages/shared/sanitize/src',
   'packages/ui/src',
   'packages/web/admin/src',
+  'packages/web/kit/src',
   'packages/web/public/src',
 ] as const
 
@@ -107,7 +108,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/web/admin/src/ui/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'packages/web/admin/src/ui/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
   { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
-  { path: 'packages/web/public/src/ui/shared/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/web/kit/src/ui/shared/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'packages/web/admin/src/ui/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/server/src/domains/posts/services/mutate.ts', rules: ['domain-error'] },
@@ -211,7 +212,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/users/UserEditForm.tsx',
 
         'packages/shared/i18n/src/inkling-labels.ts',
-        'packages/web/public/src/ui/shared/editor/inkling-labels.ts',
+        'packages/web/kit/src/ui/shared/editor/inkling-labels.ts',
         'packages/web/admin/src/ui/editor-shell/RevisionsDrawer.tsx',
         'packages/web/admin/src/ui/editor/pickers/ImageLibraryPicker.tsx',
         'packages/server/src/domains/posts/services/mutate.ts',
@@ -271,7 +272,7 @@ describe('production sources', () => {
         'packages/web/admin/src/ui/editor-shell/wall-clock.ts',
         'packages/web/admin/src/ui/settings/cache/cache-formatters.ts',
         'packages/web/admin/src/ui/jobs/meta.ts',
-        'packages/web/public/src/ui/shared/notifications/notification-meta.ts',
+        'packages/web/kit/src/ui/shared/notifications/notification-meta.ts',
 
         'packages/web/admin/src/ui/shell/AdminShell.tsx',
         'packages/web/admin/src/ui/settings/storage/StorageCards.tsx',

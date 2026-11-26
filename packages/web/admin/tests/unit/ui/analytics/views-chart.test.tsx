@@ -2,7 +2,7 @@ import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { AnalyticsStateProvider } from '@kobato/web-admin/ui/analytics/analytics-state-context'
 import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { ViewsChart } from '@kobato/web-admin/ui/analytics/ViewsChart'
-import { renderInRouter } from '@kobato/web-public/tests/utils/render'
+import { renderInRouter } from '@kobato/web-kit/tests/utils/render'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const control = mockTanstackQuery()
