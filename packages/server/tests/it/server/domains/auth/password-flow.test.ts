@@ -139,7 +139,7 @@ afterAll(async () => {
 describe('auth/password-flow — requestPasswordReset (real db + tokens)', () => {
   it('short-circuits with the generic success when the per-IP limit trips (no token, no email, no audit)', async () => {
     setBlogSettingsBundleForTests(withResetBucket(1))
-    const userId = await seedUser({ email: 'a@example.com' })
+    await seedUser({ email: 'a@example.com' })
 
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
 
@@ -149,7 +149,6 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     expect(await mail.noMessage()).toBe(true)
     expect(await sqliteOf(db).select().from(verification)).toHaveLength(1)
     expect(await auditRowsFor('password_reset_requested')).toHaveLength(1)
-    void userId
   })
 
   it('short-circuits with the generic success when the per-email limit trips', async () => {

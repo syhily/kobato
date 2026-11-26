@@ -40,9 +40,9 @@ describe('api/client/create-client — public headless client', () => {
 
     expectTypeOf(client).toEqualTypeOf<ContractRouterClient<typeof publicContract>>()
     // @ts-expect-error the public client exposes no account surface
-    void client.account.profile
+    const _accountProfile = client.account.profile
     // @ts-expect-error the public client exposes no admin surface
-    void client.admin.users.count
+    const _adminUsersCount = client.admin.users.count
     expect(true).toBe(true)
   })
 
@@ -66,9 +66,9 @@ describe('api/client/create-client — public headless client', () => {
     expectTypeOf(client.comments.requestDeleteOwn).toBeFunction()
     expectTypeOf(client.comments.cancelDeleteOwn).toBeFunction()
     // @ts-expect-error the public client exposes no account surface at all
-    void client.account
+    const _account = client.account
     // @ts-expect-error the public client exposes no admin surface at all
-    void client.admin
+    const _admin = client.admin
     expect(true).toBe(true)
   })
 

@@ -9,7 +9,7 @@ import { makeRequestContext } from '@kobato/server/tests/utils/request-context'
 import { makeSession } from '@kobato/server/tests/utils/session'
 import { PRE_INSTALL_TIME_ZONE, resolveAppLocalization } from '@kobato/settings/app-localization'
 import { getBlogSettingsBundleSync, getBlogSettingsSnapshotSync } from '@kobato/settings/getters'
-import { TEST_BLOG_SETTINGS_BUNDLE, resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
+import { resetBlogSettingsForTests } from '@kobato/settings/tests/utils/blog-settings'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -183,5 +183,3 @@ describe('cold /rpc/public/content/bootstrap', () => {
     expect(payload.blogSettings).toMatchObject({ siteIdentity: { locale: 'zh-TW' } })
   })
 })
-
-void TEST_BLOG_SETTINGS_BUNDLE

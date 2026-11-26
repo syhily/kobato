@@ -6,14 +6,14 @@ import {
   BASIC_TRANSFORMERS,
   type CardConfig,
   // @ts-expect-error - DesignSandbox is not exported from the public barrel
-  DesignSandbox,
+  DesignSandbox as _DesignSandbox,
   DefaultFeaturePlugins,
   type ExternalControlAPI,
   type FileUploader,
   type FileUploaderInput,
   type GifSettings,
   // @ts-expect-error - InklingCardWrapper is not exported from the public barrel
-  InklingCardWrapper,
+  InklingCardWrapper as _InklingCardWrapper,
   InklingComposableEditor,
   type InklingComposableEditorProps,
   InklingComposer,
@@ -41,38 +41,31 @@ declare const handleApi: (api: ExternalControlAPI | null) => void
 
 const customTransformers: readonly Transformer[] = [ORDERED_LIST, ...BASIC_TRANSFORMERS]
 
-const stateFromString: InklingInitialEditorState =
+const _stateFromString: InklingInitialEditorState =
   '{"root":{"children":[],"direction":null,"format":"","indent":0,"type":"root","version":1}}'
-const stateFromObject: InklingInitialEditorState = serializedState
-const stateFromNull: InklingInitialEditorState = null
-const stateFromInitializer: InklingInitialEditorState = () => {}
-void stateFromString
-void stateFromObject
-void stateFromNull
-void stateFromInitializer
+const _stateFromObject: InklingInitialEditorState = serializedState
+const _stateFromNull: InklingInitialEditorState = null
+const _stateFromInitializer: InklingInitialEditorState = () => {}
 
-const composerProps: InklingComposerProps = {
+const _composerProps: InklingComposerProps = {
   darkMode: true,
   fileUploader: { fileTypes: { image: { mimeTypes: ['image/png'] } } },
   initialEditorState: serializedState,
 }
-void composerProps
 
-const composer = (
-  <InklingComposer initialEditorState={serializedState} nodes={BASIC_NODES} onError={(error) => void error}>
+const _composer = (
+  <InklingComposer initialEditorState={serializedState} nodes={BASIC_NODES} onError={(_error) => {}}>
     {null}
   </InklingComposer>
 )
-void composer
 
-const composableEditorProps: InklingComposableEditorProps = {
+const _composableEditorProps: InklingComposableEditorProps = {
   markdownTransformers: customTransformers,
   onChange: handleChange,
   registerAPI: handleApi,
 }
-void composableEditorProps
 
-const composableEditor = (
+const _composableEditor = (
   <InklingComposableEditor
     markdownTransformers={customTransformers}
     onChange={handleChange}
@@ -80,55 +73,44 @@ const composableEditor = (
     registerAPI={handleApi}
   />
 )
-void composableEditor
 
-const editorProps: InklingEditorProps = { onChange: handleChange, readOnly: true }
-void editorProps
+const _editorProps: InklingEditorProps = { onChange: handleChange, readOnly: true }
 
-const editor = <InklingEditor onChange={handleChange} registerAPI={handleApi} />
-void editor
+const _editor = <InklingEditor onChange={handleChange} registerAPI={handleApi} />
 
-const nestedComposerProps: InklingNestedComposerProps = {
+const _nestedComposerProps: InklingNestedComposerProps = {
   initialEditor: nestedEditor,
   initialNodes: BASIC_NODES,
   skipEditableListener: true,
 }
-void nestedComposerProps
 
-const nestedComposer = (
+const _nestedComposer = (
   <InklingNestedComposer initialEditor={nestedEditor} initialNodes={BASIC_NODES} skipEditableListener={true}>
     {null}
   </InklingNestedComposer>
 )
-void nestedComposer
 
-const surfaceProps: InklingSurfaceProps = { onChange: handleChange, readOnly: true }
-void surfaceProps
+const _surfaceProps: InklingSurfaceProps = { onChange: handleChange, readOnly: true }
 
-const customSurface = (
-  <InklingComposer initialEditorState={serializedState} nodes={BASIC_NODES} onError={(error) => void error}>
+const _customSurface = (
+  <InklingComposer initialEditorState={serializedState} nodes={BASIC_NODES} onError={(_error) => {}}>
     <InklingSurface onChange={handleChange} placeholderText="Start writing">
       <DefaultFeaturePlugins />
     </InklingSurface>
   </InklingComposer>
 )
-void customSurface
 
 // @ts-expect-error - node lists must contain Lexical node classes or replacements
-const invalidNodes = <InklingComposer nodes={[42]} />
-void invalidNodes
+const _invalidNodes = <InklingComposer nodes={[42]} />
 
 // @ts-expect-error - markdown transformers must be Lexical Transformers
-const invalidTransformer = <InklingComposableEditor markdownTransformers={[{ notATransformer: true }]} />
-void invalidTransformer
+const _invalidTransformer = <InklingComposableEditor markdownTransformers={[{ notATransformer: true }]} />
 
 // @ts-expect-error - onChange receives a SerializedEditorState, not a string
-const wrongCallback = <InklingEditor onChange={(state: string) => void state} />
-void wrongCallback
+const _wrongCallback = <InklingEditor onChange={(_state: string) => {}} />
 
 // @ts-expect-error - InklingSurface onChange receives a SerializedEditorState, not a string
-const wrongSurfaceCallback = <InklingSurface onChange={(state: string) => void state} />
-void wrongSurfaceCallback
+const _wrongSurfaceCallback = <InklingSurface onChange={(_state: string) => {}} />
 
 const gifSettings: GifSettings = {
   klipy: { apiKey: 'key', contentFilter: 'high' },
@@ -137,8 +119,8 @@ const gifSettings: GifSettings = {
 const snippetItems: SnippetItem[] = [{ name: 'welcome', value: '{"root":{}}' }]
 const snippetSettings: SnippetSettings = {
   snippets: snippetItems,
-  createSnippet: ({ name, value }) => void (name + value),
-  deleteSnippet: ({ name }) => Promise.resolve(void name),
+  createSnippet: ({ name: _name, value: _value }) => {},
+  deleteSnippet: async ({ name: _name }) => {},
 }
 const linkingSettings: LinkingSettings = {
   fetchAutocompleteLinks: () => Promise.resolve(undefined),
@@ -152,8 +134,8 @@ const linkingSettings: LinkingSettings = {
 }
 const uploadSettings: UploadSettings = { image: { allowedWidths: ['regular'] }, pinturaConfig: {} }
 
-const searchResult: SearchResult = { label: 'Pages', items: [{ title: 'Home', url: 'https://example.com' }] }
-const listOption: ListOptionItem = {
+const _searchResult: SearchResult = { label: 'Pages', items: [{ title: 'Home', url: 'https://example.com' }] }
+const _listOption: ListOptionItem = {
   label: 'Home',
   value: 'https://example.com',
   Icon: () => null,
@@ -165,7 +147,7 @@ const fileUploader: FileUploader = {
   useFileUpload: () => ({ upload: () => Promise.resolve(undefined) }),
   fileTypes: { image: { mimeTypes: ['image/png'] } },
 }
-const fileUploaderInput: FileUploaderInput = { fileTypes: { image: { mimeTypes: ['image/png'] } } }
+const _fileUploaderInput: FileUploaderInput = { fileTypes: { image: { mimeTypes: ['image/png'] } } }
 
 const cardConfig: CardConfig = {
   ...gifSettings,
@@ -173,18 +155,11 @@ const cardConfig: CardConfig = {
   ...snippetSettings,
   ...uploadSettings,
 }
-const composerWithConfig = (
+const _composerWithConfig = (
   <InklingComposer cardConfig={cardConfig} fileUploader={fileUploader}>
     {null}
   </InklingComposer>
 )
-void composerWithConfig
-void searchResult
-void listOption
-void fileUploaderInput
-void DesignSandbox
-void InklingCardWrapper
 
 // @ts-expect-error - unknown cardConfig keys are rejected by the closed type
-const composerWithUnknownKey = <InklingComposer cardConfig={{ membersEnabled: true }} />
-void composerWithUnknownKey
+const _composerWithUnknownKey = <InklingComposer cardConfig={{ membersEnabled: true }} />

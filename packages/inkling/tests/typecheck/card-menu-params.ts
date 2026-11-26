@@ -69,7 +69,7 @@ type _NoOpenMenuDatasets = Expect<Equal<OpenMenuDeclaration<(typeof CARD_DECLARA
 type _NoBadInsertKeys = Expect<Equal<BadInsertKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 type _NoBadQueryKeys = Expect<Equal<BadQueryKeys<(typeof CARD_DECLARATIONS)[number]>, never>>
 
-const openFallbackProbe = {
+const _openFallbackProbe = {
   nodeType: 'openFallbackProbe',
   baseNode: BaseImageNode,
   toolbarLabel: 'open-fallback-probe',
@@ -84,9 +84,8 @@ const openFallbackProbe = {
     },
   ],
 } satisfies CardDeclaration<'openFallbackProbe'>
-void openFallbackProbe
 
-const queryOnlyFallbackProbe = {
+const _queryOnlyFallbackProbe = {
   nodeType: 'queryOnlyFallbackProbe',
   baseNode: BaseImageNode,
   toolbarLabel: 'query-only-fallback-probe',
@@ -101,28 +100,25 @@ const queryOnlyFallbackProbe = {
     },
   ],
 } satisfies CardDeclaration<'queryOnlyFallbackProbe'>
-void queryOnlyFallbackProbe
 
 type CheckedEntryMenu = CardMenuEntryCheck<
   [{ label: string; insertParams: { src: string }; queryParams: ['src'] }],
   { src: string }
 >
-const checkedEntryMenu: CheckedEntryMenu = [{ label: 'x', insertParams: { src: 'y' }, queryParams: ['src'] }]
-void checkedEntryMenu
+const _checkedEntryMenu: CheckedEntryMenu = [{ label: 'x', insertParams: { src: 'y' }, queryParams: ['src'] }]
+
 // @ts-expect-error - the helper rejects an unknown insertParams key
-const checkedBadKey: CheckedEntryMenu = [{ label: 'x', insertParams: { srcTypo: 'y' }, queryParams: ['src'] }]
-void checkedBadKey
+const _checkedBadKey: CheckedEntryMenu = [{ label: 'x', insertParams: { srcTypo: 'y' }, queryParams: ['src'] }]
+
 // @ts-expect-error - the helper rejects a non-string query key
-const checkedBadQuery: CheckedEntryMenu = [{ label: 'x', insertParams: { src: 'y' }, queryParams: ['srcTypo'] }]
-void checkedBadQuery
+const _checkedBadQuery: CheckedEntryMenu = [{ label: 'x', insertParams: { src: 'y' }, queryParams: ['srcTypo'] }]
 
 type NoInsertMenu = CardMenuEntryCheck<[{ label: string }], { src: string }>
 type _NoInsertKey = Expect<Equal<'insertParams' extends keyof NoInsertMenu[0] ? true : false, false>>
-const noInsertEntry: NoInsertMenu = [{ label: 'x' }]
-void noInsertEntry
+const _noInsertEntry: NoInsertMenu = [{ label: 'x' }]
+
 // @ts-expect-error - an entry without insertParams does not acquire the property
-const noInsertExtra: NoInsertMenu = [{ label: 'x', insertParams: {} }]
-void noInsertExtra
+const _noInsertExtra: NoInsertMenu = [{ label: 'x', insertParams: {} }]
 
 declare const broadTransientProps: readonly TransientPropSpec[]
 const broadArgsProbe = {
@@ -132,7 +128,6 @@ const broadArgsProbe = {
   toolbarLabel: 'broad-args-probe',
   menu: [{ label: 'Probe', labelKey: 'broad.probe', icon: 'image', command: 'insert' }],
 } satisfies CardDeclaration<'broadArgsProbe', typeof BaseImageNode, typeof broadTransientProps, readonly []>
-void broadArgsProbe
 
 // @ts-expect-error - the guard reports the open dataset (proves it is not vacuous)
 type _BroadArgsCaught = Expect<Equal<OpenMenuDeclaration<typeof broadArgsProbe>, never>>
@@ -155,7 +150,6 @@ const rawFnTypoProbe = {
     },
   ],
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>
-void rawFnTypoProbe
 
 type _RawFnTypoReported = Expect<Equal<BadInsertKeys<typeof rawFnTypoProbe>, 'versionTypo'>>
 // @ts-expect-error - the family predicate rejects the omitted-wrapper typo
@@ -178,7 +172,7 @@ type _FenceUnion = Expect<
   >
 >
 
-const validImageDeclaration = checkedCardDeclaration({
+const _validImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
   baseNode: BaseImageNode,
   nestedEditors: imageNestedEditors,
@@ -195,9 +189,8 @@ const validImageDeclaration = checkedCardDeclaration({
     },
   ],
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
-void validImageDeclaration
 
-const invalidImageDeclaration = checkedCardDeclaration({
+const _invalidImageDeclaration = checkedCardDeclaration({
   nodeType: 'image',
   baseNode: BaseImageNode,
   nestedEditors: imageNestedEditors,
@@ -236,9 +229,8 @@ const invalidImageDeclaration = checkedCardDeclaration({
     },
   ],
 } satisfies CardDeclaration<'image', typeof BaseImageNode, typeof imageTransientProps, typeof imageNestedEditors>)
-void invalidImageDeclaration
 
-const validHeaderDeclaration = checkedCardDeclaration({
+const _validHeaderDeclaration = checkedCardDeclaration({
   nodeType: 'header',
   baseNode: BaseHeaderNode,
   nestedEditors: headerNestedEditors,
@@ -253,9 +245,8 @@ const validHeaderDeclaration = checkedCardDeclaration({
     },
   ],
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)
-void validHeaderDeclaration
 
-const invalidHeaderFnKeyDeclaration = checkedCardDeclaration({
+const _invalidHeaderFnKeyDeclaration = checkedCardDeclaration({
   nodeType: 'header',
   baseNode: BaseHeaderNode,
   nestedEditors: headerNestedEditors,
@@ -274,9 +265,8 @@ const invalidHeaderFnKeyDeclaration = checkedCardDeclaration({
     },
   ],
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)
-void invalidHeaderFnKeyDeclaration
 
-const invalidHeaderFnValueDeclaration = checkedCardDeclaration({
+const _invalidHeaderFnValueDeclaration = checkedCardDeclaration({
   nodeType: 'header',
   baseNode: BaseHeaderNode,
   nestedEditors: headerNestedEditors,
@@ -294,7 +284,6 @@ const invalidHeaderFnValueDeclaration = checkedCardDeclaration({
     },
   ],
 } satisfies CardDeclaration<'header', typeof BaseHeaderNode, readonly [], typeof headerNestedEditors>)
-void invalidHeaderFnValueDeclaration
 
 const HostIcon: ComponentType<SVGProps<SVGSVGElement>> = () => null
 
@@ -327,7 +316,7 @@ function hostProbeSpec(nodeType: string) {
   }
 }
 
-const hostMenuProbe = defineCard({
+const _hostMenuProbe = defineCard({
   ...hostProbeSpec('hostMenuProbe'),
   menu: [
     {
@@ -347,17 +336,15 @@ const hostMenuProbe = defineCard({
     },
   ],
 })
-void hostMenuProbe
 
-const bareHost = defineCard({
+const _bareHost = defineCard({
   nodeType: 'bareHostProbe',
   baseNode: generateDecoratorNode({ nodeType: 'bareHostProbe' }),
   toolbarLabel: 'bare-host-probe',
   render: () => null,
 })
-void bareHost
 
-const hostUnknownKey = defineCard({
+const _hostUnknownKey = defineCard({
   ...hostProbeSpec('hostUnknownKeyProbe'),
   menu: [
     {
@@ -370,9 +357,8 @@ const hostUnknownKey = defineCard({
     },
   ],
 })
-void hostUnknownKey
 
-const hostWrongTransientValue = defineCard({
+const _hostWrongTransientValue = defineCard({
   ...hostProbeSpec('hostWrongTransientValueProbe'),
   // @ts-expect-error - a const-asserted host transient prop keeps its value type
   menu: [
@@ -385,9 +371,8 @@ const hostWrongTransientValue = defineCard({
     },
   ],
 })
-void hostWrongTransientValue
 
-const hostWrongBaseValue = defineCard({
+const _hostWrongBaseValue = defineCard({
   ...hostProbeSpec('hostWrongBaseValueProbe'),
   // @ts-expect-error - a base-class dataset property keeps its own value type
   menu: [
@@ -400,9 +385,8 @@ const hostWrongBaseValue = defineCard({
     },
   ],
 })
-void hostWrongBaseValue
 
-const hostNonStringQuery = defineCard({
+const _hostNonStringQuery = defineCard({
   ...hostProbeSpec('hostNonStringQueryProbe'),
   menu: [
     {
@@ -415,9 +399,8 @@ const hostNonStringQuery = defineCard({
     },
   ],
 })
-void hostNonStringQuery
 
-const hostUnknownQueryKey = defineCard({
+const _hostUnknownQueryKey = defineCard({
   ...hostProbeSpec('hostUnknownQueryKeyProbe'),
   menu: [
     {
@@ -430,10 +413,9 @@ const hostUnknownQueryKey = defineCard({
     },
   ],
 })
-void hostUnknownQueryKey
 
 const preWidenedQueryParams: readonly string[] = ['srcTypo']
-const preWidenedHost = defineCard({
+const _preWidenedHost = defineCard({
   ...hostProbeSpec('preWidenedHostProbe'),
   menu: [
     {
@@ -445,9 +427,8 @@ const preWidenedHost = defineCard({
     },
   ],
 })
-void preWidenedHost
 
-const hostFnUnknownKey = defineCard({
+const _hostFnUnknownKey = defineCard({
   ...hostProbeSpec('hostFnUnknownKeyProbe'),
   menu: [
     {
@@ -460,9 +441,8 @@ const hostFnUnknownKey = defineCard({
     },
   ],
 })
-void hostFnUnknownKey
 
-const hostFnWrongValue = defineCard({
+const _hostFnWrongValue = defineCard({
   ...hostProbeSpec('hostFnWrongValueProbe'),
   // @ts-expect-error - the function form's values are checked like the object form's (the array-level error lands here)
   menu: [
@@ -475,7 +455,6 @@ const hostFnWrongValue = defineCard({
     },
   ],
 })
-void hostFnWrongValue
 
 const satisfiedHostSpec = {
   nodeType: 'satisfiedHostProbe',
@@ -510,8 +489,7 @@ const satisfiedValidHostSpec = {
   ],
   render: () => null,
 } satisfies HostCardSpec<'satisfiedValidHostProbe'>
-const satisfiedValidHost = defineCard(satisfiedValidHostSpec)
-void satisfiedValidHost
+const _satisfiedValidHost = defineCard(satisfiedValidHostSpec)
 
 const satisfiedQuerySpec = {
   nodeType: 'satisfiedQueryProbe',
@@ -529,8 +507,7 @@ const satisfiedQuerySpec = {
   render: () => null,
 } satisfies HostCardSpec<'satisfiedQueryProbe'>
 
-const satisfiedQueryCard = defineCard(satisfiedQuerySpec)
-void satisfiedQueryCard
+const _satisfiedQueryCard = defineCard(satisfiedQuerySpec)
 
 // @ts-expect-error - `satisfies` preserves the literal menu shape, so defineCard's exact-key check still runs
 defineCard(satisfiedHostSpec)
@@ -552,8 +529,7 @@ const wideHostSpec: HostCardSpec<'wideHostProbe'> = {
   ],
   render: () => null,
 }
-const wideHostCard = defineCard(wideHostSpec)
-void wideHostCard
+const _wideHostCard = defineCard(wideHostSpec)
 
 type _DeadMenuFieldsStayOut = Expect<
   Equal<Extract<keyof ResolvedMenuItem, 'name' | 'icon' | 'customContent' | 'hidden' | 'disabled'>, never>

@@ -2,7 +2,7 @@ import { sqliteOf } from '@kobato/db/sqlite/database'
 import { page as pageMetaTable } from '@kobato/db/sqlite/schema/page'
 import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { saveBody } from '@kobato/server/domains/content/lifecycle'
-import { warmContentRenderCaches } from '@kobato/server/domains/content/render-warmup'
+import '@kobato/server/domains/content/render-warmup'
 import { pageLifecycleAdapter } from '@kobato/server/domains/pages/services/lifecycle-adapter'
 import { createPage } from '@kobato/server/domains/pages/services/mutate'
 import { postLifecycleAdapter } from '@kobato/server/domains/posts/services/lifecycle-adapter'
@@ -16,7 +16,6 @@ import sharp from 'sharp'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const warmMock = vi.spyOn(await import('@kobato/server/domains/content/render-warmup'), 'warmContentRenderCaches')
-void warmContentRenderCaches
 
 import '@kobato/server/render/warmup/content-cache'
 

@@ -4,12 +4,10 @@ import { $insertSelectedEmoji } from '@kobato/inkling-internal/plugins/behaviour
 
 const taco: EmojiSearchResult = { unified: '1f32e', emoji: '🌮', names: ['mexican', 'taco'], addedIn: '1' }
 
-const native: string = taco.emoji
-void native
+const _native: string = taco.emoji
 
 // @ts-expect-error - names is required: an entry without search names is not a valid result
-const noNamesResult: EmojiSearchResult = { unified: '1f32e', emoji: '🌮', addedIn: '1' }
-void noNamesResult
+const _noNamesResult: EmojiSearchResult = { unified: '1f32e', emoji: '🌮', addedIn: '1' }
 
 // @ts-expect-error - the emoji-mart shape is gone: entries carry unified, not id/skins
 $insertSelectedEmoji({ id: 'taco', skins: [{ native: '🌮' }], names: ['taco'], addedIn: '1' }, null)

@@ -17,22 +17,19 @@ type _CardKeyIsRequired = Expect<Equal<CardBranch['nodeKey'], string>>
 type _ImageHasNoSourceKey = Expect<Equal<Extract<keyof ImageBranch, 'nodeKey'>, never>>
 type _ImageHasNoCardName = Expect<Equal<Extract<keyof ImageBranch, 'cardName' | 'Icon'>, never>>
 
-declare const info: DraggableInfo
-const imageDatasetFor = (value: DraggableInfo): ImageNodeDataset | null =>
+declare const _info: DraggableInfo
+const _imageDatasetFor = (value: DraggableInfo): ImageNodeDataset | null =>
   value.type === 'image' ? value.dataset : null
-void imageDatasetFor
-void info
 
-const imagePayload: DraggableInfo = {
+const _imagePayload: DraggableInfo = {
   type: 'image',
   element: null,
   target: null,
   mousePosition: { x: 0, y: 0 },
   dataset: { src: '/a.png', width: 320, height: 180 },
 }
-void imagePayload
 
-const cardPayload: DraggableInfo = {
+const _cardPayload: DraggableInfo = {
   type: 'card',
   cardName: 'gallery',
   nodeKey: 'drag-key',
@@ -41,10 +38,9 @@ const cardPayload: DraggableInfo = {
   mousePosition: { x: 0, y: 0 },
   dataset: { images: [] },
 }
-void cardPayload
 
 // @ts-expect-error - a card drag carries the source node key
-const cardWithoutKey: DraggableInfo = {
+const _cardWithoutKey: DraggableInfo = {
   type: 'card',
   cardName: 'image',
   element: null,
@@ -52,9 +48,8 @@ const cardWithoutKey: DraggableInfo = {
   mousePosition: { x: 0, y: 0 },
   dataset: {},
 }
-void cardWithoutKey
 
-const foreignType: DraggableInfo = {
+const _foreignType: DraggableInfo = {
   // @ts-expect-error - built-in drags are card or image only; the discriminant is closed
   type: 'file',
   element: null,
@@ -62,9 +57,8 @@ const foreignType: DraggableInfo = {
   mousePosition: { x: 0, y: 0 },
   dataset: {},
 }
-void foreignType
 
-const imageWithCardName: ImageDraggableInfo = {
+const _imageWithCardName: ImageDraggableInfo = {
   type: 'image',
   element: null,
   target: null,
@@ -73,9 +67,8 @@ const imageWithCardName: ImageDraggableInfo = {
   // @ts-expect-error - the image payload carries no card identity
   cardName: 'image',
 }
-void imageWithCardName
 
-const imageWithNodeKey: ImageDraggableInfo = {
+const _imageWithNodeKey: ImageDraggableInfo = {
   // @ts-expect-error - the image payload carries no source node key
   nodeKey: 'image-key',
   type: 'image',
@@ -84,9 +77,8 @@ const imageWithNodeKey: ImageDraggableInfo = {
   mousePosition: { x: 0, y: 0 },
   dataset: {},
 }
-void imageWithNodeKey
 
-const imageWithIcon: ImageDraggableInfo = {
+const _imageWithIcon: ImageDraggableInfo = {
   // @ts-expect-error - the drag-preview icon is card-only
   Icon: () => null,
   type: 'image',
@@ -95,4 +87,3 @@ const imageWithIcon: ImageDraggableInfo = {
   mousePosition: { x: 0, y: 0 },
   dataset: {},
 }
-void imageWithIcon

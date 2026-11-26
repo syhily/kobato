@@ -76,11 +76,9 @@ describe('defineProcedure types', () => {
     expectTypeOf(noop['~orpc'].route.path).toEqualTypeOf<'/likes/noop'>()
     expectTypeOf<ProcedureRouteOf<typeof increase>>().toEqualTypeOf<{ method: 'POST'; path: '/likes/increase' }>()
     // @ts-expect-error — the method literal is part of the brand
-    const wrongMethod: 'GET' = increase['~orpc'].route.method
+    const _wrongMethod: 'GET' = increase['~orpc'].route.method
     // @ts-expect-error — the path literal is part of the brand
-    const wrongPath: '/likes/decrease' = increase['~orpc'].route.path
-    void wrongMethod
-    void wrongPath
+    const _wrongPath: '/likes/decrease' = increase['~orpc'].route.path
   })
 
   it('keeps the input and output schema types flowing into oRPC inference', () => {

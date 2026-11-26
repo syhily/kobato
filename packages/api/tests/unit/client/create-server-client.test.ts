@@ -464,9 +464,8 @@ describe('api/client/create-server-client — resource stream capture', () => {
     const hold = createKobatoServerClient({
       url: 'https://kobato.internal/rpc',
       request: inboundRequest(),
-      fetch: async (_request, _init, _options, path) => {
+      fetch: async (_request, _init, _options, _path) => {
         const response = streamResponse({ status: 200 })
-        void path
         return response
       },
     })

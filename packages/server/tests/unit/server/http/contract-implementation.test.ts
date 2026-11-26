@@ -130,55 +130,45 @@ describe('router composition against the contract', () => {
         .output(likeDecreaseOutput),
     })
 
-    const methodDrift: LikesShape = {
+    const _methodDrift: LikesShape = {
       ...likesRouter,
       // @ts-expect-error — increase is declared POST /likes/increase
       increase: wrongMethod.increase.handler(({ input }) => ({ key: input.key, likes: 0 })),
     }
-    const pathDrift: LikesShape = {
+    const _pathDrift: LikesShape = {
       ...likesRouter,
       // @ts-expect-error — increase is declared POST /likes/increase
       increase: wrongPath.increase.handler(({ input }) => ({ key: input.key, likes: 0 })),
     }
-    const schemaDrift: LikesShape = {
+    const _schemaDrift: LikesShape = {
       ...likesRouter,
       // @ts-expect-error — validate takes { key: string; token: string }
       validate: wrongSchema.validate.handler(() => ({ key: 'post:1', valid: true })),
     }
-    const brandless: LikesShape = {
+    const _brandless: LikesShape = {
       ...likesRouter,
       // @ts-expect-error — a plain oc.route procedure carries no route brand
       decrease: unbranded.decrease.handler(({ input }) => ({ key: input.key, likes: 0 })),
     }
     // @ts-expect-error — validate is missing
-    const missingKey: LikesShape = { increase: likesRouter.increase, decrease: likesRouter.decrease }
+    const _missingKey: LikesShape = { increase: likesRouter.increase, decrease: likesRouter.decrease }
     // @ts-expect-error — the contract declares no `extra` procedure
-    const extraKey: LikesShape = { ...likesRouter, extra: likesRouter.validate }
+    const _extraKey: LikesShape = { ...likesRouter, extra: likesRouter.validate }
     // @ts-expect-error — impl.router enforces the same shape before composition
-    const atRouter = () => impl.router({ increase: likesRouter.increase, decrease: likesRouter.decrease })
-    void methodDrift
-    void pathDrift
-    void schemaDrift
-    void brandless
-    void missingKey
-    void extraKey
-    void atRouter
+    const _atRouter = () => impl.router({ increase: likesRouter.increase, decrease: likesRouter.decrease })
   })
 
   it('rejects implementations of unbranded oc.route contracts (fail closed)', () => {
     expectTypeOf<ProcedureRouteOf<typeof plainPing>>().toEqualTypeOf<unknown>()
     expect(plainPing['~orpc'].route).toEqual({ method: 'POST', path: '/ping' })
     // @ts-expect-error — a plain oc.route procedure carries no route brand, so the leaf shape is unsatisfiable
-    const plainShape: ContractImplementation<typeof plainContract, HandlerContext> = { ping: plainPing }
+    const _plainShape: ContractImplementation<typeof plainContract, HandlerContext> = { ping: plainPing }
     // @ts-expect-error — impl.router applies the same fail-closed shape before composition
-    const atRouter = () => plainImpl.router({ ping: plainPing })
-    const inTree: ContractImplementation<{ nested: { ping: typeof plainPing } }, HandlerContext> = {
+    const _atRouter = () => plainImpl.router({ ping: plainPing })
+    const _inTree: ContractImplementation<{ nested: { ping: typeof plainPing } }, HandlerContext> = {
       // @ts-expect-error — mounting it anywhere in apiRouter would fail the satisfies the same way
       nested: { ping: plainPing },
     }
-    void plainShape
-    void atRouter
-    void inTree
   })
 
   it('carries the declared publicRead meta through implementation and mounting', () => {
@@ -211,8 +201,8 @@ describe('template-path contracts (revision factory)', () => {
   type RevisionMethod = (typeof adminPostsRouter.saveDraft)['~orpc']['route']['method']
 
   it('brands the posts and pages revision routers with their exact base paths', () => {
-    const posts: PostsShape = adminPostsRouter
-    const pages: PagesShape = adminPagesRouter
+    const _posts: PostsShape = adminPostsRouter
+    const _pages: PagesShape = adminPagesRouter
     const mounted: PostsShape = apiRouter.admin.posts
     expectTypeOf<RevisionMethod>().toEqualTypeOf<'POST'>()
     expectTypeOf<PostsDraftPath>().toEqualTypeOf<'/admin/posts/save-draft'>()
@@ -234,18 +224,15 @@ describe('template-path contracts (revision factory)', () => {
     }
     expect(mounted.saveDraft['~orpc'].route).toEqual(adminPostsContract.saveDraft['~orpc'].route)
     expect(mounted.publishLatest['~orpc'].route).toEqual(adminPostsContract.publishLatest['~orpc'].route)
-    void posts
-    void pages
   })
 
   it('refuses revision procedures from the sibling family', () => {
-    const pagesIntoPosts: PostsShape = {
+    const _pagesIntoPosts: PostsShape = {
       ...adminPostsRouter,
       // @ts-expect-error — saveDraft is declared POST /admin/posts/save-draft
       saveDraft: adminPagesRouter.saveDraft,
       // @ts-expect-error — publishLatest is declared POST /admin/posts/publish-latest
       publishLatest: adminPagesRouter.publishLatest,
     }
-    void pagesIntoPosts
   })
 })

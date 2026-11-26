@@ -35,8 +35,7 @@ function routeContext(options: Record<string, unknown> = {}) {
   return makeRouteContext({ db, session: csrfSession(), ...options })
 }
 
-async function loader(args: Record<string, unknown> & { request: Request }): Promise<unknown> {
-  void args
+async function loader(_args: Record<string, unknown> & { request: Request }): Promise<unknown> {
   return route.clientLoader()
 }
 

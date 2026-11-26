@@ -69,7 +69,7 @@ const musicPlayer = defineCard({
     const src: string = node.src
     expect(typeof src).toBe('string')
     // @ts-expect-error …and undeclared properties are a compile error (negative pin)
-    void node.bpm
+    const _bpm = node.bpm
     return null
   },
 })
@@ -195,10 +195,9 @@ describe('defineCard', () => {
       expect(node.__triggerFileDialog).toBe(true)
 
       // @ts-expect-error — no spec entry named 'missing'
-      void node.__missing
+      const _missing = node.__missing
       // @ts-expect-error — the entry is nullable: true, so the field is LexicalEditor | null
-      const nonNull: LexicalEditor = node.__bodyEditor
-      void nonNull
+      const _nonNull: LexicalEditor = node.__bodyEditor
       // @ts-expect-error — the accessor value type is boolean
       node.triggerFileDialog = 'yes'
     })

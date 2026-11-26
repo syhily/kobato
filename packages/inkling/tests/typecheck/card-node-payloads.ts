@@ -26,12 +26,10 @@ editor.dispatchCommand(INSERT_HTML_COMMAND, plainDataPayload)
 editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)
 
 // @ts-expect-error - wrong primitive field type
-const wrongPrimitive = { src: 123 } satisfies AudioNodeDataset
-void wrongPrimitive
+const _wrongPrimitive = { src: 123 } satisfies AudioNodeDataset
 
 // @ts-expect-error - wrong editor field type
-const wrongEditorField = { captionEditor: 'not-an-editor' } satisfies CodeBlockNodeDataset
-void wrongEditorField
+const _wrongEditorField = { captionEditor: 'not-an-editor' } satisfies CodeBlockNodeDataset
 
 // @ts-expect-error - the horizontal rule command takes no payload
 editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, { html: '<hr>' })

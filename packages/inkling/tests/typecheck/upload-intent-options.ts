@@ -272,8 +272,7 @@ runUploadIntent({
   emptyResult: { kind: 'patch' },
   patch: (_node, { meta }) => {
     // @ts-expect-error - no metadata policy means meta is undefined
-    const inferred: { width: number; height: number } = meta
-    void inferred
+    const _inferred: { width: number; height: number } = meta
   },
 })
 

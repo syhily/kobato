@@ -775,11 +775,9 @@ describe('revisionContract factory', () => {
     // @ts-expect-error — the brand is the exact literal, not `/${string}/save-draft`
     expectTypeOf(adminPagesContract.saveDraft['~orpc'].route.path).toEqualTypeOf<`/${string}/save-draft`>()
     // @ts-expect-error — publish-latest is a different path than save-draft
-    const crossProcedure: '/admin/pages/save-draft' = adminPagesContract.publishLatest['~orpc'].route.path
+    const _crossProcedure: '/admin/pages/save-draft' = adminPagesContract.publishLatest['~orpc'].route.path
     // @ts-expect-error — the method stays pinned to POST
-    const crossMethod: 'GET' = adminPostsContract.saveDraft['~orpc'].route.method
-    void crossProcedure
-    void crossMethod
+    const _crossMethod: 'GET' = adminPostsContract.saveDraft['~orpc'].route.method
   })
 
   it('propagates the base path literal through a generic caller', () => {

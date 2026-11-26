@@ -2,7 +2,7 @@ import { sqliteOf } from '@kobato/db/sqlite/database'
 import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { page as pageTable } from '@kobato/db/sqlite/schema/page'
 import { post as postTable } from '@kobato/db/sqlite/schema/post'
-import { drawOpenGraph } from '@kobato/server/render/og/render'
+import '@kobato/server/render/og/render'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makePublicCtx } from '@kobato/server/tests/utils/mock-ctx'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '@kobato/settings/tests/utils/blog-settings'
@@ -14,7 +14,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const db = getTestDb()
 
 const drawSpy = vi.spyOn(await import('@kobato/server/render/og/render'), 'drawOpenGraph')
-void drawOpenGraph
 
 const coverDataUri = `data:image/png;base64,${(
   await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 32, g: 64, b: 128 } } })
