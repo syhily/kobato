@@ -171,10 +171,15 @@ or phase names. The `complete` recovery policy — rollback → reopen → resch
 the never-restart-into-a-dead-handle invariant — lives in `domains/backup/restore-completion.ts`, built by
 `createRestoreCompletion`. _Avoid_: restore orchestrator
 
-**Public contract**: the stability-guaranteed public groups of the `@kobato/api` contract tree — `content`, `comments`,
-`likes`, `notifications`, `friends`, `webmentions`, `avatar`, `newsletter` — the wire an external headless frontend
-builds against. Everything else (`admin.*`, `account`/`passkey`, the `music`/`images`/`github` helpers) is workspace
+**Public contract**: the stability-guaranteed `public` groups of the `@kobato/api` contract tree — `content`,
+`comments`, `likes`, `notifications`, `friends`, `newsletter`, `webmentions`, `avatar`, `github`, `images`, `music`,
+`analytics`, `observability`, and the resource procedures behind every URL the public origin serves — the wire any
+public frontend, sayaka included, builds against. Everything else (`admin.*`, the rest of `account`) is workspace
 surface that may churn with any release. _Avoid_: Public Content API, SDK, `/api/content/v1`
 
-**Headless**: an externally deployed frontend rendering the public site through the public contract — a consumption mode
-of the same binary, never a runtime mode, build target, or product cutover. _Avoid_: headless-only, `headless.enabled`
+**Headless**: the delivery form in which the public site is a frontend deployed apart from the backend and reaching it
+only through the public contract — sayaka is the first-party one. _Avoid_: headless-only, `headless.enabled`
+
+**sayaka**: the public-site deliverable of Kobato — the frontend that renders the public site through the public
+contract and is deployed beside `kobato`, the backend deliverable. _Avoid_: web app, public app, `apps/web`, frontend
+binary
