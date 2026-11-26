@@ -30,13 +30,10 @@ jobs:
           - os: ubuntu-24.04
             target: linux-x64
             timeout: 45
-            deb: true
             artifacts: |
               dist-sea/kobato-linux-x64.tar.gz
               dist-sea/kobato-linux-x64.tar.gz.sha256
               dist-sea/kobato-linux-x64.sha256
-              dist-sea/kobato_*_amd64.deb
-              dist-sea/kobato_*_amd64.deb.sha256
               dist-sea/sayaka-linux-x64.tar.gz
               dist-sea/sayaka-linux-x64.tar.gz.sha256
               dist-sea/sayaka-linux-x64.sha256
@@ -105,9 +102,6 @@ jobs:
           KOBATO_BROWSER_CHANNEL: chromium
       - name: Package tar.gz with checksum
         run: pnpm run sea:package archive --target ${{ matrix.target }}
-      - name: Package Ubuntu x64 deb with checksum
-        run: pnpm run sea:package archive --target ${{ matrix.target }} --deb
-        if: matrix.deb
       - name: Stage per-target artifact set
         shell: bash
         run: |
@@ -116,7 +110,6 @@ jobs:
           cp dist-sea/kobato-${{ matrix.target }}.sha256 artifact/
           cp dist-sea/sayaka-${{ matrix.target }}.tar.gz* artifact/
           cp dist-sea/sayaka-${{ matrix.target }}.sha256 artifact/
-          if [ "${{ matrix.deb }}" = "true" ]; then cp dist-sea/kobato_*_amd64.deb* artifact/; fi
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -166,7 +159,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/sayaka-* dist-sea/kobato_*_amd64.deb dist-sea/kobato_*_amd64.deb.sha256 --clobber
+        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* dist-sea/sayaka-* --clobber
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

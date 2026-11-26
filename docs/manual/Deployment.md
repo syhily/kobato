@@ -25,9 +25,6 @@ kobato --version          # prints the baked-in version
 sayaka --version
 ```
 
-The linux-x64 release additionally ships a Debian package (`kobato_<version>_amd64.deb` + `.sha256`) for the backend
-alone; install `sayaka` beside it as a bare binary or run it under its own service.
-
 ## Topology
 
 Browsers talk to **sayaka only**: it serves every public document, feed, sitemap, image, and storage object, and proxies

@@ -494,7 +494,7 @@ describe('package DAG', () => {
 
   it('the @/ app alias appears only inside the app package', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
       if (file.startsWith(`${APP_PACKAGE_DIR}/`)) {
         continue
       }
@@ -509,7 +509,7 @@ describe('package DAG', () => {
 
   it('the @sayaka/ app alias appears only inside the sayaka package', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
       if (file.startsWith('apps/sayaka/')) {
         continue
       }
@@ -524,7 +524,7 @@ describe('package DAG', () => {
 
   it('the @tests alias appears only inside the app test tree', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
       if (file.startsWith(`${APP_PACKAGE_DIR}/tests/`)) {
         continue
       }
@@ -718,7 +718,7 @@ describe('package DAG', () => {
 
   it('inkling is reached only through its barrel, headless, styles entries, or test-tree helper imports', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'scripts', 'tools')) {
+    for (const file of sourceFiles('apps', 'packages', 'tools')) {
       if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {
         continue
       }

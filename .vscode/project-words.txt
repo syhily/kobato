@@ -41,7 +41,6 @@ collisively
 colour
 columnstore
 commentform
-conffile
 cravatar
 csslintrc
 csvg
@@ -57,7 +56,6 @@ dichen
 dinesh
 dompurify
 dotum
-dpkg
 duckdb
 duoshuo
 eliostruyf

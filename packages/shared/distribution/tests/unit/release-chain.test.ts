@@ -69,23 +69,20 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(sea).toMatch(/gh release upload "\$\{\{ github\.ref_name \}\}"/)
   })
 
-  it('ships the tested Ubuntu x64 deb and its checksum as release assets', () => {
+  it('ships no Debian packages — release assets are tar.gz archives and bare binaries only', () => {
     const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
     const releaseUpload = jobBlocks.find((block) => block.startsWith('release-upload:'))
 
-    expect(buildBlock()).toMatch(/sea:package archive --target \$\{\{ matrix\.target \}\} --deb[\s\S]*?if: matrix\.deb/)
-    expect(buildBlock()).toMatch(/dist-sea\/kobato_\*_amd64\.deb\n/)
-    expect(buildBlock()).toMatch(/dist-sea\/kobato_\*_amd64\.deb\.sha256\n/)
-    expect(releaseUpload).toMatch(
-      /gh release upload "\$\{\{ github\.ref_name \}\}"[^\n]*dist-sea\/kobato-\*[^\n]*dist-sea\/kobato_\*_amd64\.deb[^\n]*dist-sea\/kobato_\*_amd64\.deb\.sha256[^\n]*--clobber/,
-    )
+    expect(buildBlock()).not.toMatch(/--deb/)
+    expect(buildBlock()).not.toMatch(/amd64\.deb/)
+    expect(releaseUpload).not.toMatch(/amd64\.deb/)
+    expect(packageTs).not.toMatch(/build-deb/)
   })
 
   it('sea:package owns the platform packaging the per-OS shell steps used to do (checksums via node:crypto)', () => {
     expect(packageTs).toMatch(/createHash\('sha256'\)/)
     expect(packageTs).toMatch(/`\$\{app\}-\$\{target\}\.tar\.gz`/)
     expect(packageTs).toMatch(/writeVerifiedChecksum/)
-    expect(packageTs).toMatch(/build-deb\.sh/)
   })
 
   it('sea.yml release-upload deletes the workflow artifacts after the release is published', () => {

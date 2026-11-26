@@ -2,7 +2,7 @@
 
 ## Workspace
 
-pnpm monorepo with four top-level code roots — no new roots are created (`docs/` holds prose, gitignored `data/` holds
+pnpm monorepo with three top-level code roots — no new roots are created (`docs/` holds prose, gitignored `data/` holds
 runtime state):
 
 - `apps/` — deployable apps: `kobato` (the backend: a React Router 8 **SPA** workspace — `ssr: false`, React 19,
@@ -17,8 +17,6 @@ runtime state):
   `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
-- `scripts/` — standalone ops scripts (shell / Node builtins only); anything needing project modules belongs in
-  `tools/`.
 
 Package shape: `package.json`, `AGENTS.md` (required), `src/` (runtime source only), `tests/` mirroring `src/`, plus
 `drizzle/` (db) or `assets|styles/` when owned; config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`,
@@ -119,9 +117,9 @@ Router's `.data` requests) stay on React Router's dev middleware; `pnpm dev:saya
 `./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and TypeScript compiler
 diagnostics in a single pass. There is no separate type-check command and `tsc` is never run (`oxlint.config.ts` sets
 `typeAware`/`typeCheck`). Each file type-checks through its nearest `tsconfig.json`, so a new package or config file
-needs no root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files and `scripts/`.
-oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the generated
-`apps/*/.react-router/types/`) is never type-checked.
+needs no root-level registration. The root `tsconfig.json` covers only the root `*.config.ts` files. oxlint skips
+`.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the generated `apps/*/.react-router/types/`) is
+never type-checked.
 
 ## Tests
 

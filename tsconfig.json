@@ -1,5 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "extends": "@kobato/tsconfig/tsconfig.base.json",
-  "include": ["*.config.ts", "scripts/**/*.ts"]
+  "include": ["*.config.ts"]
 }

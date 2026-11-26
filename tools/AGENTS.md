@@ -23,4 +23,3 @@ in the product; `font-split` is the ONE exception.
 - Tools packages declare every import in their own package.json, self-import through `@kobato/<name>/...`, and expose
   source wildcard exports with `.ts`/`.tsx` fallback targets so packages run directly by `node` resolve without a
   bundler.
-- `scripts/` stays shell/node-builtin-only; anything needing project modules belongs here.

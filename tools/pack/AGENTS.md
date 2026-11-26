@@ -194,11 +194,10 @@ build-time plugins (`vite/`). Cross-package asset-key pins live in `apps/kobato/
   `dist-sea/sayaka` when no argument is given.
 - `pnpm run sea:probe [node-binary]` — systematic VFS capability verification; needs an official Node dist (Homebrew
   lacks the SEA fuse).
-- `pnpm run sea:package rename|archive --target <target> [--deb]` — the CI release-artifact packaging for BOTH binaries.
+- `pnpm run sea:package rename|archive --target <target>` — the CI release-artifact packaging for BOTH binaries.
   `rename` verifies both build checksums and renames to `kobato-<target>[.exe]` + `sayaka-<target>[.exe]` (run before
   smoke); `archive` tars each binary and writes + re-verifies the `.tar.gz.sha256` and bare-binary `.sha256` sidecars
-  for both; `--deb` (linux-x64) also runs `scripts/build-deb.sh` for the KOBATO binary only — the deb ships kobato alone
-  (sayaka installs as a bare binary next to it).
+  for both.
 - `pnpm run sea:e2e [kobato-binary]` / `sea:browser [kobato-binary]` — the two binary suites over the booted pair
   (coverage in `apps/kobato/tests/AGENTS.md` and `apps/sayaka/AGENTS.md`). `pnpm run test:browser` runs the same
   journeys against `KOBATO_BROWSER_BASE_URL` when it is set, and otherwise boots the pair exactly like `sea:browser`.
@@ -206,10 +205,9 @@ build-time plugins (`vite/`). Cross-package asset-key pins live in `apps/kobato/
 ## Delivery targets
 
 linux-x64 / linux-arm64 / darwin-arm64 / win32-x64 / win32-arm64 via `.github/workflows/sea.yml`: every leg runs the
-full managed smoke, e2e, and the browser journeys over the PAIR, and linux-x64 also packages
-`kobato_<version>_amd64.deb` (kobato-only; platform detail lives in `sea:package`). Every leg's release artifacts carry
-both binaries and both checksum sets. develop pushes and PRs run only `build-verification`; `ci.yml` additionally gates
-PRs with `sea:build` + `sea:browser`. On Windows the binaries are `kobato.exe`/`sayaka.exe` (and
+full managed smoke, e2e, and the browser journeys over the PAIR. Every leg's release artifacts carry both binaries and
+both checksum sets. develop pushes and PRs run only `build-verification`; `ci.yml` additionally gates PRs with
+`sea:build` + `sea:browser`. On Windows the binaries are `kobato.exe`/`sayaka.exe` (and
 `kobato-<target>.exe`/`sayaka-<target>.exe`), the natives cache defaults to `%LOCALAPPDATA%\kobato`, and there is no
 SIGTERM (service deployments wrap with WinSW/NSSM). `sea:smoke` / `sea:e2e` / `sea:browser` default to (and document)
 the `dist-sea` pair.
