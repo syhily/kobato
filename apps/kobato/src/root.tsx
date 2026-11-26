@@ -10,7 +10,6 @@ import { fallbackMessages } from '@kobato/i18n/fallback-messages'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import { createSsrCaller } from '@kobato/server/http/ssr-caller'
 import { documentHeaders } from '@kobato/server/infra/http/headers'
-import { activeFrontendRum } from '@kobato/server/infra/trace/config'
 import { traceRouteMiddleware } from '@kobato/server/infra/trace/react-router'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@kobato/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@kobato/settings/getters'
@@ -93,8 +92,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const boot = await caller.public.content.bootstrap()
 
-  const rum = activeFrontendRum()
-
   const warmupManifest = getWarmupManifest()
   const pathname = new URL(request.url).pathname
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
@@ -109,12 +106,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     fonts: boot.fonts,
     theme: boot.theme,
     csrfToken: boot.csrfToken,
+    installState: boot.installState,
     i18n: boot.i18n,
     criticalLinks,
     tier2Chunks,
     cspNonce,
     nowIso,
-    ...(rum === null ? {} : { rum }),
+    ...(boot.rum === null ? {} : { rum: boot.rum }),
   }
 }
 

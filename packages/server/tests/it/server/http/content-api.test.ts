@@ -6,6 +6,7 @@ import { page as pageTable } from '@kobato/db/sqlite/schema/page'
 import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { postTag } from '@kobato/db/sqlite/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
+import { user as userTable } from '@kobato/db/sqlite/schema/user'
 import { isPublicMessageKey } from '@kobato/i18n/catalog-scope'
 import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
 import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'
@@ -150,6 +151,8 @@ describe('content.bootstrap', () => {
       fonts: { global: unknown[]; post: unknown[]; code: unknown[] } | null
       theme: string | null
       csrfToken: string
+      rum: unknown
+      installState: string
     }>(res)
 
     expect(json.admin).toBe(false)
@@ -157,6 +160,56 @@ describe('content.bootstrap', () => {
     expect(json.blogSettings?.siteIdentity.title).toBe('且听书吟')
     expect(json.fonts).toEqual({ global: [], post: [], code: [] })
     expect(json.csrfToken).toBe('test-csrf-token')
+    expect(json.rum).toBeNull()
+    expect(json.installState).toBe('noAdmin')
+  })
+
+  it('reports installState installed once an admin exists', async () => {
+    await sqliteOf(db).insert(userTable).values({
+      name: 'Admin',
+      email: 'admin@example.com',
+      password: 'not-a-real-hash',
+      role: 'admin',
+    })
+    const res = await callRpc(
+      '/public/content/bootstrap',
+      undefined,
+      makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+    )
+    const json = await parseRpcJson<{ installState: string }>(res)
+
+    expect(json.installState).toBe('installed')
+  })
+
+  it('carries the active frontend RUM bootstrap and null when the gate is inactive', async () => {
+    const gateToken = {}
+    const { activateFrontendGate, __resetFrontendGateForTests } =
+      await import('@kobato/server/infra/trace/frontend-gate')
+    const bootstrap = {
+      applicationId: 'kobato-web',
+      service: 'kobato',
+      environment: 'production' as const,
+      sessionSampleRate: 50,
+      clientIdentity: 'forward' as const,
+    }
+    activateFrontendGate(gateToken, bootstrap, {
+      endpoint: 'https://obs.example.com',
+      organization: 'my-site',
+      clientToken: 'relay-token',
+      clientIdentity: 'forward',
+    })
+    try {
+      const res = await callRpc(
+        '/public/content/bootstrap',
+        undefined,
+        makePublicCtx({ db, csrfToken: 'test-csrf-token' }),
+      )
+      const json = await parseRpcJson<{ rum: unknown }>(res)
+      expect(json.rum).toEqual(bootstrap)
+      expect(JSON.stringify(json.rum)).not.toContain('relay-token')
+    } finally {
+      __resetFrontendGateForTests()
+    }
   })
 
   it('never ships the admin-only observability section to a document payload', async () => {

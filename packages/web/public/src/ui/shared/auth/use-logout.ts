@@ -1,3 +1,4 @@
+import { orpc, setCsrfToken } from '@kobato/api/browser/client'
 import { useCallback } from 'react'
 import { useRouteLoaderData } from 'react-router'
 
@@ -6,12 +7,11 @@ export function useLogout(): (redirectTo: string) => Promise<void> {
   const csrfToken = rootData?.csrfToken
   return useCallback(
     async (redirectTo: string) => {
-      const query = new URLSearchParams({ action: 'logout', redirect_to: redirectTo })
-      await fetch(`/admin/signin?${query.toString()}`, {
-        method: 'POST',
-        body: csrfToken ? new URLSearchParams({ csrf_token: csrfToken }) : null,
-      })
-      window.location.assign(redirectTo)
+      if (csrfToken) {
+        setCsrfToken(csrfToken)
+      }
+      const result = await orpc.account.auth.logout({ redirectTo })
+      window.location.assign(result.type === 'redirect' ? result.to : redirectTo)
     },
     [csrfToken],
   )

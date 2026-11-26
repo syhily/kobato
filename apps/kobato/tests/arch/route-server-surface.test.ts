@@ -11,7 +11,6 @@ const ROUTE_GROUPS = {
       '@kobato/server/http/ssr-caller',
       '@kobato/server/infra/http/headers',
       '@kobato/server/infra/http/status',
-      '@kobato/server/infra/trace/config',
       '@kobato/server/infra/trace/react-router',
       '@kobato/server/render/warmup/manifest',
     ],

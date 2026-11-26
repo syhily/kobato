@@ -53,7 +53,6 @@ const SERVER_PUBLIC_SURFACE: readonly string[] = [
   '@kobato/server/infra/http/headers',
   '@kobato/server/infra/http/is-bot',
   '@kobato/server/infra/http/status',
-  '@kobato/server/infra/trace/config',
   '@kobato/server/infra/trace/facade',
   '@kobato/server/infra/trace/metrics',
   '@kobato/server/infra/trace/react-router',

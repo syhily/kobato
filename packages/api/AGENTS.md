@@ -48,7 +48,7 @@ their own.
   declare, forward, or re-export procedures. The account group carries the authentication + install surface on the wire
   (`account.auth.*`, `account.setup.*`): the app's signin and setup routes drive it in-process through
   `createSsrCaller`; `createKobatoPublicClient` exposes none of it. `public.content.bootstrap` carries the public
-  `currentUser` state for the headless seam.
+  `currentUser` state, the frontend RUM bootstrap (null while the gate is inactive), and the install state.
 - `src/contract.ts` — the composition root (`@kobato/api/contract`): `apiContract = { public, account, admin }`,
   mirroring the server's `apiRouter` nesting exactly. Adding or removing a domain means updating its group root, this
   tree, and the full server parity test.
@@ -57,7 +57,13 @@ their own.
   factory is ambient-free — no singleton, no CSRF store, no `location`; ambient assembly is the consumer's job
   (`src/browser/` is the built-in frontend's). `createKobatoPublicClient` is the headless public seam — the same
   transport narrowed to `ContractRouterClient<typeof publicContract>`, a type-level guarantee that external consumers
-  reach only `/rpc/public/*`. `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey`
+  reach only `/rpc/public/*`. `createKobatoServerClient({ url, request, clientAddress?, fetch? })` is the
+  request-scoped, ambient-free server assembly: it returns `{ client, responseHeaders }`, forwards only an allowlisted
+  header set from the inbound `Request` (`cookie`, `user-agent`, `accept-language`, `referer`, `purpose`, `sec-purpose`,
+  `traceparent`, `tracestate`, `sec-ch-ua` and every `sec-ch-ua-*` — never `x-csrf-token`, `host`, or the inbound
+  `cf-connecting-ip` / `x-real-ip` / `x-forwarded-for`), sends `X-Forwarded-For` only from the caller-derived
+  `clientAddress`, wires the inbound `request.signal`, and accumulates every `Set-Cookie` from every response into
+  `responseHeaders` in order. `error.ts` decodes wire payloads: `extractApiErrorMessage` and `apiErrorDescriptorKey`
   read the ERROR payload, while `isApiAccepted` is a RESPONSE-payload guard — keep the two sides distinct.
   `rpc-serialization.ts` owns RPC input/query/multipart encoding and response/error decoding for `sendBeacon` and the
   backup progress XHR; `rum-intake.ts` owns the external OpenObserve intake proxy URL.

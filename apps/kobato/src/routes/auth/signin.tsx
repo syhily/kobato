@@ -93,10 +93,6 @@ export async function action({ request, context }: Route.ActionArgs) {
     return toActionResult(authFlowError('error.api.csrfFailed'), locale, responseHeaders)
   }
 
-  if (action === 'logout') {
-    return toActionResult(await caller.account.auth.logout({ redirectTo }), locale, responseHeaders)
-  }
-
   if (action === 'lostpassword') {
     return toActionResult(
       await caller.account.auth.passwordResetRequest({ email: formField(formData, 'email') }),

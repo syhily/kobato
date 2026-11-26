@@ -5,8 +5,10 @@ import { uiMessagesForScope } from '@kobato/i18n/catalog'
 import { catalogScopeForPathname } from '@kobato/i18n/catalog-scope'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
 import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render'
+import { getInstallState } from '@kobato/server/domains/settings/install-gate'
 import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks'
 import { implementPublic } from '@kobato/server/http/orpc-base'
+import { activeFrontendRum } from '@kobato/server/infra/trace/config'
 import { parseThemeCookie } from '@kobato/utils/theme-cookie'
 
 function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBundle {
@@ -37,5 +39,15 @@ export const contentBootstrap = implementPublic(contentBootstrapContract).bootst
     ...(scope === 'workspace' && context.viewer !== null ? { inklingLabels: inklingLabelsFor(locale) } : {}),
   }
 
-  return { admin: role === 'admin', currentUser, blogSettings, fonts, theme, csrfToken, i18n }
+  return {
+    admin: role === 'admin',
+    currentUser,
+    blogSettings,
+    fonts,
+    theme,
+    csrfToken,
+    rum: activeFrontendRum(),
+    installState: await getInstallState(context.db),
+    i18n,
+  }
 })

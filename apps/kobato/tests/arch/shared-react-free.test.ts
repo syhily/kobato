@@ -11,7 +11,10 @@ const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'packages/shared'), { wi
 
 const API_SRC_ROOT = join(PROJECT_ROOT, 'packages/api/src')
 const API_BROWSER_ASSEMBLY_ROOT = join(API_SRC_ROOT, 'browser')
-const DEFAULT_FETCH_ADAPTER = 'packages/api/src/client/create-client.ts'
+const DEFAULT_FETCH_ADAPTERS = new Set([
+  'packages/api/src/client/create-client.ts',
+  'packages/api/src/client/create-server-client.ts',
+])
 const WORKSPACE_SRC_ROOTS = REPO_PACKAGES.map((pkg) => join(PROJECT_ROOT, pkg.dir, 'src')).filter((srcDir) =>
   existsSync(srcDir),
 )
@@ -146,7 +149,7 @@ function ambientViolations(files: readonly string[]): string[] {
     const rel = relativePath(filePath)
     const source = readFileSync(filePath, 'utf8')
     for (const match of source.matchAll(GLOBAL_THIS_ACCESS)) {
-      if (rel === DEFAULT_FETCH_ADAPTER && match[1] === 'fetch') {
+      if (DEFAULT_FETCH_ADAPTERS.has(rel) && match[1] === 'fetch') {
         continue
       }
       violations.push(`${rel} -> globalThis.${match[1]}`)

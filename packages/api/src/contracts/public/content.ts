@@ -18,6 +18,7 @@ import type { KobatoInklingLabelTable } from '@kobato/i18n/inkling-labels/en-US'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
+import { frontendRumBootstrapSchema } from '@kobato/settings/telemetry/rum'
 import { z } from 'zod'
 
 export const contentRedirectSignalSchema = z.object({
@@ -54,6 +55,8 @@ export const contentBootstrapOutputSchema = z.object({
   fonts: z.custom<ResolvedFonts>().nullable(),
   theme: z.enum(['dark', 'light']).nullable(),
   csrfToken: z.string(),
+  rum: frontendRumBootstrapSchema.nullable(),
+  installState: z.enum(['noAdmin', 'installed']),
   i18n: contentBootstrapI18nSchema,
 })
 export type ContentBootstrapOutput = z.infer<typeof contentBootstrapOutputSchema>

@@ -40,8 +40,9 @@ pick the area directory, choose a role filename, add the manifest entry — neve
   off `commentKey` so they stream via `<Await>` — never speculatively.
 - The root loader calls `public.content.bootstrap()` with no args; `shouldRevalidate` refreshes it on public ↔ workspace
   navigation and every form action. Root middleware `[traceRouteMiddleware]` stays in the root module.
-- The root loader projects `activeFrontendRum()` as `rum`; withheld responses omit the key entirely (no null
-  placeholder, endpoint, or token). `App` mounts `useRum(loaderData.rum ?? null)` once.
+- The bootstrap carries the frontend RUM bootstrap (`rum`) and the install state (`installState`); the root loader
+  relays `boot.rum`, omitting the key entirely when null (no null placeholder, endpoint, or token). `App` mounts
+  `useRum(loaderData.rum ?? null)` once.
 - Admin/editor loaders compose `account.*` (self keys at the root plus sub-trees), `admin.analytics.*`, and `admin.*`
   via `createSsrCaller`; they keep `requireRole` and map `ORPCError` codes (`NOT_FOUND` → `notFound()`,
   `SERVICE_UNAVAILABLE` → the historical 503 texts). Gate-only loaders collapse to `guardOnlyLoader('<role>')`.
@@ -55,8 +56,8 @@ pick the area directory, choose a role filename, add the manifest entry — neve
   is re-sanitized inside the controller, and setup's verify 429 rides the wire error variant. Setup keeps the
   visible-error priority: the session gate answers before CSRF; the setup-token liveness check stays in the controller.
 - Server-boundary whitelists — public+root: `ssr-caller`, `route-cache-headers`, `infra/http/*` (+ `render/warmup/*`,
-  `infra/trace/react-router`, `infra/trace/config`); admin/editor: `ssr-caller`, `request-context`, `domains/auth/rbac`,
-  `infra/http/*`; auth (direct): `domains/auth/csrf`, `domains/auth/services/shared` (message formatting only),
+  `infra/trace/react-router`); admin/editor: `ssr-caller`, `request-context`, `domains/auth/rbac`, `infra/http/*`; auth
+  (direct): `domains/auth/csrf`, `domains/auth/services/shared` (message formatting only),
   `domains/settings/install-gate`, `http/request-context`, `http/ssr-caller`.
 
 ## Content patterns

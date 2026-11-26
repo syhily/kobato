@@ -14,6 +14,7 @@ import { resolveSessionContext } from '@kobato/server/domains/auth/primitives'
 import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@kobato/server/domains/auth/session-storage'
 import { getClientAddress } from '@kobato/server/http/request/client-address'
 import { isExempt as isCookieExemptPath } from '@kobato/server/http/request/cookie-exempt'
+import { isPublicReadRpcPath } from '@kobato/server/http/request/public-read-rpc-path'
 import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/request/request-facts'
 import { serverConfig } from '@kobato/server/infra/config'
 import { parseCookieValue } from '@kobato/server/infra/http/cookie'
@@ -102,7 +103,7 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
     const csrfCookie = parseCookieValue(cookieHeader ?? '', CSRF_COOKIE_NAME)
     if (csrfCookie !== null && isCsrfCookieValue(csrfCookie)) {
       requestContext.session.set('csrfToken', deriveStatelessCsrfToken(csrfCookie))
-    } else if (SAFE_METHODS.has(c.req.method) && !isCookieExemptPath(c.req.path)) {
+    } else if ((SAFE_METHODS.has(c.req.method) && !isCookieExemptPath(c.req.path)) || isPublicReadRpcPath(c.req.path)) {
       const fresh = mintCsrfCookieValue()
       requestContext.session.set('csrfToken', deriveStatelessCsrfToken(fresh))
       csrfCookieToSet = buildCsrfCookieHeader(fresh)

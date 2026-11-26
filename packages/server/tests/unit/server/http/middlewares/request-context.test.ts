@@ -208,6 +208,60 @@ describe('requestContextMiddleware', () => {
     expect(session.get('csrfToken')).toBeUndefined()
   })
 
+  it('anonymous POST to a public-read RPC path mints exactly what a safe document GET mints', async () => {
+    const { app, session } = await buildApp({}, { presetCsrfToken: false })
+    app.post('/rpc/public/content/bootstrap', (c) => c.json({ ok: true }))
+    const res = await app.request('/rpc/public/content/bootstrap', { method: 'POST' })
+    expect(res.status).toBe(200)
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
+    expect(setCookies).toHaveLength(1)
+    const minted = /^__csrf=([a-f0-9]{64}); Path=\/; HttpOnly; SameSite=Lax$/.exec(setCookies[0]!)?.[1]
+    expect(minted).toBeDefined()
+    expect(session.get('csrfToken')).toBe(deriveStatelessCsrfToken(minted!))
+  })
+
+  it('anonymous POST to a public-read RPC path with a valid __csrf cookie reuses it and mints nothing', async () => {
+    const { app, session } = await buildApp({}, { presetCsrfToken: false })
+    app.post('/rpc/public/content/home', (c) => c.json({ ok: true }))
+    const res = await app.request('/rpc/public/content/home', {
+      method: 'POST',
+      headers: { Cookie: `__csrf=${EXISTING_CSRF_COOKIE}` },
+    })
+    expect(res.status).toBe(200)
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    expect(res.headers.getSetCookie()).toEqual([])
+    expect(session.get('csrfToken')).toBe(deriveStatelessCsrfToken(EXISTING_CSRF_COOKIE))
+  })
+
+  it('anonymous POST to a non-public-read RPC path mints nothing', async () => {
+    const { app, session } = await buildApp({}, { presetCsrfToken: false })
+    app.post('/rpc/account/auth/login', (c) => c.json({ ok: true }))
+    app.post('/rpc/public/comments/replyComment', (c) => c.json({ ok: true }))
+    for (const path of ['/rpc/account/auth/login', '/rpc/public/comments/replyComment']) {
+      const res = await app.request(path, { method: 'POST' })
+      expect(res.status).toBe(200)
+      expect(res.headers.getSetCookie(), path).toEqual([])
+    }
+    expect(session.get('csrfToken')).toBeUndefined()
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+  })
+
+  it('anonymous request with a session cookie on a public-read RPC path ensures the session token instead of minting', async () => {
+    const { app, session } = await buildApp({}, { presetCsrfToken: false })
+    app.post('/rpc/public/content/bootstrap', (c) => c.json({ ok: true }))
+    const res = await app.request('/rpc/public/content/bootstrap', {
+      method: 'POST',
+      headers: sessionCookie,
+    })
+    expect(res.status).toBe(200)
+    expect(session.get('csrfToken')).toBeDefined()
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(false)
+    expect(commitSessionWithMaxAge).toHaveBeenCalled()
+  })
+
   it('anonymous GET with an invalid __csrf cookie value: remints instead of trusting it', async () => {
     const { app, session } = await buildApp()
     app.get('/', (c) => c.json({ ok: true }))

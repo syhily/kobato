@@ -43,6 +43,7 @@ describe('root loader', () => {
       session,
       user: undefined,
       clientAddress: '127.0.0.1',
+      db,
       cspNonce: 'test-nonce-abc123',
     })
 
@@ -60,6 +61,7 @@ describe('root loader', () => {
       session,
       user: undefined,
       clientAddress: '127.0.0.1',
+      db,
       cspNonce: 'test-nonce-abc123',
     })
 
@@ -77,6 +79,7 @@ describe('root loader', () => {
         session,
         user: undefined,
         clientAddress: '127.0.0.1',
+        db,
         cspNonce: 'test-nonce-abc123',
       })
 
