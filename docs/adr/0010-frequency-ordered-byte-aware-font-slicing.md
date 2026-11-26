@@ -1,8 +1,9 @@
 # ADR-0010: Data-driven font slicing — frequency-ordered tables and byte-aware DP chunking
 
 - Status: accepted
-- Date: 2026-11-24; revised 2026-11-25 (λ retuned on production content — see "Re-validation on production content").
-  Single source of truth for the font-slicing design and its measurements.
+- Date: 2026-11-24; revised 2026-11-25 (λ retuned on production content — see "Re-validation on production content");
+  revised 2026-11-26 (complete shaping closure, per-pack byte model, reproducible output — see "Revision: shaping
+  closure and per-pack byte model"). Single source of truth for the font-slicing design and its measurements.
 
 ## Context
 
@@ -76,9 +77,9 @@ Adopt the two measured wins inside our existing Rust pipeline.
    candidates against 1,563,340 counted documents; the shipped rule is `id % 2003 == 7` with a 1200-char floor.)
 2. **Byte-aware DP chunk boundaries** in `pre_subset/auto_chunk.rs`, replacing the cube-root ramp. Chunks are contiguous
    segments of the frequency-ordered sequence; minimize `Σ P(chunk touched)×(bytes+λ)+μ` under a byte cap; P from the
-   frequency table, bytes from the existing 1% sampling estimate. **λ=55 KB, μ=0.5 KB** — λ was 30 KB when this ADR was
-   accepted and was retuned on production content (see "Re-validation on production content"). Later λ/μ changes are
-   arbitrated by the harness (decision 3).
+   frequency table, bytes from a per-pack size probe (one font-wide 1% sampling estimate until the 2026-11-26 revision).
+   **λ=55 KB, μ=0.5 KB** — λ was 30 KB when this ADR was accepted and was retuned on production content (see
+   "Re-validation on production content"). Later λ/μ changes are arbitrated by the harness (decision 3).
 3. **Evaluation harness as the gate — landed at `tools/font-split/tests/page_cost.rs`.** Runs the real `font_split`
    pipeline on a committed OFL fixture font (ASCII + `ZH_SYMBOL` + 通用规范汉字表 一级字表) against 64 held-out pages
    **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`) plus the
@@ -91,24 +92,27 @@ Adopt the two measured wins inside our existing Rust pipeline.
    metrics, unpinned, for one real font (`FONT_SPLIT_BENCH_FONT`, default `data/fonts/calendar.ttf`), and
    `page_cost_lambda_sweep` (Cargo feature `bench`) re-slices per λ/μ through a `#[doc(hidden)]` seam that never reaches
    the addon. Fast unit tests live in the same `tests/` tree (one file per covered module) and do run in CI. Pinned
-   baseline for the accepted algorithm (frequency-ordered tables + DP λ=55/μ=0.5 + WOFF2 q11, on the fixture font): 77
-   chunks / 1,515,080 B total; hans — mean 926,149 B/page, p90 1,144,896, 34.9 chunks/page, session(5) 1,298,882 B,
-   incremental 158,931 B/page; hant — mean 863,018 B/page, p90 1,044,896, 30.2 chunks/page, session(5) 1,216,947 B,
-   incremental 140,673 B/page; blog — mean 1,024,863 B/page, p90 1,220,148, 40.7 chunks/page, session(5) 1,425,980 B,
-   incremental 187,167 B/page. The fixture font (≈0.3 KB per glyph) trades bytes for requests under the retune; the
-   production-font report is the decision evidence.
+   baseline for the accepted algorithm (frequency-ordered tables + DP λ=55/μ=0.5 + WOFF2 q11, on the fixture font): 69
+   chunks / 1,501,972 B total; hans — mean 935,266 B/page, p90 1,147,088, 29.1 chunks/page, session(5) 1,278,362 B,
+   incremental 145,219 B/page; hant — mean 875,031 B/page, p90 1,053,664, 24.7 chunks/page, session(5) 1,198,706 B,
+   incremental 127,330 B/page; blog — mean 1,030,865 B/page, p90 1,212,728, 34.6 chunks/page, session(5) 1,418,430 B,
+   incremental 179,328 B/page. (Before the 2026-11-26 revision: 77 chunks / 1,515,080 B; 34.9 / 30.2 / 40.7
+   chunks/page.) The fixture font (≈0.3 KB per glyph) trades bytes for requests under the retune; the production-font
+   report is the decision evidence.
 4. **`features_plugin` hoisting under the new order — measured, no change needed.** It runs AFTER the DP chunker, so a
    GSUB/GPOS closure is hoisted whole into the first intersecting chunk. Re-measured on both production fonts with the
    accepted pipeline (2026-11-24): the largest chunk is 75.9 KiB (38 MB font) / 77.8 KiB (22 MB font, 138 codepoints —
    the closure-promoted block); no chunk exceeds 128 KiB and the feared ≈212 KiB blob does not materialize, because the
    DP's byte budget keeps the hoisting target itself small. Splitting a closure remains a non-option (a substituted
-   glyph must ship in the same face as its base character).
+   glyph must ship in the same face as its base character). Superseded on 2026-11-26: the closure measured here was
+   incomplete (Extension lookups were skipped); the complete closure does move bytes — see the revision.
 5. **Algorithm-fingerprinted output identity** (from cjk-font-split-native) — implemented: `algorithm_fingerprint()` in
-   `unicode/cjk.rs` = md5(schema version, corpus doc count, DP λ/μ, WOFF2 quality, default byte cap, all table
-   contents + DF arrays, the `Cargo.lock` versions of `harfbuzz_rs_now` and `woff`)[:12], exposed to the server as
-   `fontSplitAlgorithmVersion()`. Sliced packages store at `fonts/<hash>/<fingerprint>/`; upload re-slices when the
-   stored row's `cssKey` predates the current fingerprint and removes the stale package best-effort. Font source bytes
-   are not stored, so an already-uploaded font keeps serving its old slices until it is re-uploaded.
+   `unicode/cjk.rs` = md5(schema version, corpus doc count, DP λ/μ, WOFF2 quality, probe quality and sample sizes,
+   default byte cap, all table contents + DF arrays, the `Cargo.lock` versions of `harfbuzz_rs_now` and `woff`)[:12],
+   exposed to the server as `fontSplitAlgorithmVersion()`. Sliced packages store at `fonts/<hash>/<fingerprint>/`;
+   upload re-slices when the stored row's `cssKey` predates the current fingerprint and removes the stale package
+   best-effort. Font source bytes are not stored, so an already-uploaded font keeps serving its old slices until it is
+   re-uploaded.
 6. **Storage hardening audit** (against cjk-font-split-native's `src/lib.rs`) — done: the local backend already writes
    temp-file + atomic rename, and slice files are already content-named by the addon; the one real gap was concurrent
    uploads of identical bytes, now coalesced process-locally by sha256 in `services/upload.ts` (single-instance
@@ -189,6 +193,122 @@ production font and the production blog — the fixture swap this ADR asked for 
   Chinese/English paragraphs are no longer pixel-identical. The render-blocking `result.css` is 278 KB (deployed: 238
   KB; λ=30: 293 KB). Slicing the 38 MiB font takes ≈6 s at upload.
 
+## Revision: shaping closure and per-pack byte model (2026-11-26)
+
+Trigger: a comparison against upstream cn-font-split 8.0 (`release` @ `4212f71`, 111 commits after this fork's base).
+Most of upstream's 8.0 is engineering hygiene and output-equivalent refactoring; what reached this fork were the
+findings it forced. Four of them were measured on the production fonts:
+
+- **The shaping closure was incomplete.** `features_plugin` was semantically the fork point's: GSUB type 7 / GPOS type 9
+  Extension lookups were skipped, pair adjustments contributed only their coverage side, and ligature relations missed
+  the first component. OPPOSerif keeps all 14 pair-positioning and all 5 mark-to-base subtables inside Extension
+  lookups, so not one kerning or mark relation was collected.
+- **Output was not reproducible** for a font where one glyph maps from several codepoints: the cmap reverse lookup was
+  written in `HashMap` iteration order. NotoSerifSC (488 such glyphs) produced 4 distinct packages in 8 runs.
+- **One font-wide bytes/char** (≈906 B, a Han-dominated sample) priced Latin (≈163 B), symbol (≈127 B) and CJK
+  punctuation packs (≈168 B) about 5× too high, so the DP split them into more faces than their bytes justify.
+- Upstream's positional language-tag lookup (`b061b06`, kept there for byte equivalence) is here too; on the production
+  fonts it only mis-priced the 83-character fullwidth pack.
+
+### Decisions
+
+1. **Complete shaping closure** (port of `7cb5fcc`, `pre_subset/features/opentype.rs`). Every GSUB/GPOS relation is
+   still hoisted whole into the first intersecting subset — the relation sets are now complete.
+2. **Order-stable cmap reverse lookup** (port of `7e6d720`): the smallest codepoint of a shared glyph wins.
+3. **Per-pack byte model.** Each pack is probed with a strided sample of ≈100 characters compressed at woff2 quality 9,
+   rescaled to shipped bytes by the q11/q9 ratio of one pooled ≈120-character sample drawn from every pack.
+   - A quality-11 probe per pack came first: byte-identical output, but +25–32% slicing time — q11 is ≈27× slower than
+     q9 and superlinear in face size.
+   - Pricing from the uncompressed subset with one font-wide woff2/TTF ratio was rejected: that ratio is a property of
+     the glyph class (Han 0.64, Latin 0.41, symbols 0.44 on OPPOSerif) and overstates Latin by 35–55%.
+   - The q11/q9 ratio, by contrast, is a font-level constant (within ±1% for 80% of faces), and the 120-character pooled
+     reference reproduces the per-pack quality-11 output byte-for-byte on the fixture font.
+4. **The language tag travels with its pack** (`PreSubsetContext::subset_languages`) instead of a positional lookup.
+5. **Script areas corrected**: Lisu → U+A4D0..A4FF, Vai → U+A500..A63F; `HANI`, `LAHU`, `ZHUANG` and `NAXI_DONGBA`
+   removed — they named unrelated blocks (Cherokee, Phoenician, Kharoshthi, Hanifi Rohingya, Chorasmian), and three of
+   the four scripts have no Unicode block at all.
+6. **Rejected: combining marks in every subset** (upstream `5cdc0ae`). It adds the marks to all ≈700 faces — +14%
+   package bytes and +25% cold-page bytes on pages that contain no mark — and it breaks the exactly-once coverage
+   invariant every gate in this crate relies on. After decision 1 the font's mark-to-base pairs are 100% co-located;
+   what stays uncovered is a base + mark pair the font itself has no GPOS relation for.
+7. **Failure contract.** `chunk_size <= 0` is rejected instead of slicing one character per face; the server turns an
+   addon rejection into `fonts.error.unreadable` (`BAD_REQUEST`) instead of an internal error, and asks for a
+   `result.css` without the generation timestamp so that re-slicing is byte-reproducible.
+8. **Fingerprint** schema 3; the material also names the probe quality and sample sizes.
+
+### Measurements on production content
+
+`calendar.ttf` (OPPOSerif, 38.3 MiB), λ=55 KB, μ=0.5 KB, WOFF2 q11, same harness and corpora as above:
+
+| Blog corpus, mean per page | 2026-11-25 | 2026-11-26 |     Δ |
+| -------------------------- | ---------: | ---------: | ----: |
+| Cold page                  |   1,586 KB |   1,736 KB | +9.5% |
+| Cold page p90              |   2,096 KB |   2,266 KB | +8.1% |
+| Cold requests              |       70.5 |       61.3 |  −13% |
+| Cold requests p90 / max    |   98 / 182 |   88 / 154 |       |
+| Session of 5 pages         |   2,976 KB |   3,088 KB | +3.8% |
+| Next page, new bytes       |     498 KB |     492 KB | −1.2% |
+| Next page, new requests    |       34.8 |       29.5 |  −15% |
+| Package (chunks + CSS)     |   25.72 MB |   25.64 MB | −0.3% |
+| Faces                      |        731 |        707 |       |
+
+| Corpus    | 2026-11-25 cold KB / req | 2026-11-26 cold KB / req |
+| --------- | -----------------------: | -----------------------: |
+| wiki hans |             1,577 / 72.1 |             1,702 / 61.0 |
+| wiki hant |             2,212 / 93.4 |             2,323 / 87.9 |
+| blog      |             1,586 / 70.5 |             1,736 / 61.3 |
+
+The bytes have one cause and the requests another. The Latin closure — every glyph that kerns with Latin, 856 characters
+— is now a single 115.9 KB face instead of two ≈25 KB ASCII faces, and every page with Latin text or digits downloads
+it. The requests drop because non-Han packs are finally priced by their real bytes (28 → 17 non-Han faces).
+
+Shaping co-location — relations whose glyphs ship in the same `@font-face`, old and new packages measured with one
+script:
+
+| Relations                                 | OPPOSerif 11-25 | OPPOSerif 11-26 | og 11-25 | og 11-26 |
+| ----------------------------------------- | --------------: | --------------: | -------: | -------: |
+| Kern pairs, ASCII–ASCII (1,397 / 770)     |           54.4% |            100% |     100% |     100% |
+| Kern pairs, all mapped (123,791 / 53,008) |            6.8% |            100% |    94.6% |     100% |
+| Mark-to-base pairs (14,328 / 14,590)      |            4.6% |            100% |     100% |     100% |
+| Ligature component sets (36 / 33)         |           91.7% |            100% |    93.9% |     100% |
+
+This supersedes decision 4 and the "Latin kerning only works inside one face" side finding: the 68.3% kerning retention
+measured then was an accident of the DP boundaries, not of the closure. The largest face grows from 75.9 KB to 115.9 KB
+(OPPOSerif) and from 77.7 KB to 80.4 KB (og).
+
+Confirmed in a real browser — Chrome via Playwright, element screenshots of seven strings served from the original TTF,
+from the 2026-11-25 package and from the 2026-11-26 package, kerning and common ligatures enabled. The 2026-11-26
+package is pixel-identical to the original font on all seven: Latin kerning pairs, `fi`/`fl`, combining marks,
+precomposed accents, CJK with punctuation, digits. The 2026-11-25 package differs on every Latin string ("To Tale Av Way
+WA LT P. T, V" renders 37 px — 6% — wider at 48 px) and matches only on CJK. `og.ttf` was already pixel-identical and
+stays so.
+
+`og.ttf` (22 MB; its GPOS is not Extension-wrapped, so it gains the pair second sides and the byte model only): blog
+cold page 1,154 KB / 50.9 requests → 1,215 KB / 41.5, next page +321 KB / +23.4 requests → +304 KB / +18.4; 449 → 439
+faces.
+
+λ re-swept on the revised algorithm (`pagecost:sweep`, blog corpus):
+
+| λ KB               |         20 |         25 |         30 |       37.5 |         45 |     **55** |         60 |         80 |        120 |
+| ------------------ | ---------: | ---------: | ---------: | ---------: | ---------: | ---------: | ---------: | ---------: | ---------: |
+| Faces              |        832 |        802 |        776 |        750 |        729 |        707 |        702 |        671 |        636 |
+| Cold KB            |      1,556 |      1,592 |      1,619 |       1656 |      1,696 |      1,736 |      1,743 |      1,825 |      1,918 |
+| Requests           |       91.0 |       83.6 |       76.1 |       70.2 |       65.6 |       61.3 |       61.1 |       55.0 |       49.4 |
+| Requests p90 / max |  126 / 225 |  119 / 210 |  106 / 192 |  101 / 181 |   94 / 163 |   88 / 154 |   88 / 150 |   77 / 131 |   70 / 112 |
+| Next page KB / req | 571 / 47.2 | 555 / 43.0 | 539 / 39.2 | 522 / 35.6 | 506 / 32.5 | 492 / 29.5 | 492 / 29.0 | 463 / 24.5 | 445 / 20.1 |
+
+The knee is where it was: up to λ=55 a request saved costs 6–9 KB, 55 → 60 changes nothing, beyond 60 it costs 13–17 KB.
+**λ=55 KB, μ=0.5 KB stand.**
+
+Costs of the revision:
+
+- Slicing time +13% (13.8 s → 15.5 s for the 38 MiB font, 6.8 s → 7.7 s for og, 8 threads, interleaved runs). The probes
+  cost 0.15 s more than the old global sample; the rest is the compression phase, because the faces are fewer but larger
+  and q11 is superlinear in face size (0.31 s for a 73 KB face, 1.08 s for 118 KB).
+- The fingerprint moves from `99475c9dd394` to `1dca6e172640`, so every already-uploaded font is re-sliced on its next
+  upload.
+- The throttled-browser loading-time table above was not re-run; the byte/request exchange it models is unchanged.
+
 ## Rejected alternatives
 
 - **Per-page exact subsetting (cjk-font-split-native's model)**: one WOFF2 per built page, injected at Vite
@@ -209,7 +329,8 @@ production font and the production blog — the fixture swap this ADR asked for 
   invariants (3500/3000/1605, …) keep guarding the generator.
 - Both script dimensions now come from the same document set via OpenCC conversion, so Traditional-heavy sites are
   covered by the HK/TW packs' hant ordering rather than a Simplified-trained leftover.
-- The feature-closure interaction (decision 4) measured benign: ≤ 78 KiB worst chunk on both production fonts.
+- The feature-closure interaction (decision 4) measured benign — ≤ 78 KiB worst chunk on both production fonts — until
+  the 2026-11-26 revision completed the closure; its cost is recorded there (one 115.9 KB Latin face on OPPOSerif).
 - PGO builds for `font-split.node` (cjk-font-split-native's `build:pgo`) remain a possible follow-up, out of scope:
   slicing runs at upload time and is latency-tolerant.
 
@@ -221,3 +342,5 @@ production font and the production blog — the fixture swap this ADR asked for 
   hop in front of every stored chunk and HTTP/3 are not modelled, and both would favour fewer requests.
 - The co-occurrence arm (`S2`) uses k-means over the sub-5% tail; it is an experimental comparison, not part of the
   shipped pipeline.
+- The 2026-11-26 revision's browser check (seven strings, one Chrome version, no committed gate) is a spot check, not a
+  rendering regression test; the throttled-browser loading-time table was not re-run.
