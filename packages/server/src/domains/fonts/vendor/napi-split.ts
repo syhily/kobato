@@ -6,6 +6,7 @@ export interface FontSplitCssProps {
   fontWeight?: string | number
   fontStyle?: string
   fontDisplay?: string
+  commentBase?: boolean
 }
 
 export interface FontSplitProps {
@@ -16,6 +17,13 @@ export interface FontSplitProps {
 export interface FontSplitOutputFile {
   name: string
   data: Uint8Array
+}
+
+export class FontSplitRejectedError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super('font-split rejected the font', options)
+    this.name = 'FontSplitRejectedError'
+  }
 }
 
 interface NativeFontSplitOptions {
@@ -55,7 +63,12 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
         }
       : undefined,
   }
-  const outputs = await native.fontSplit(Buffer.from(input), options)
+  let outputs: FontSplitOutputFile[]
+  try {
+    outputs = await native.fontSplit(Buffer.from(input), options)
+  } catch (error) {
+    throw new FontSplitRejectedError({ cause: error })
+  }
   return outputs.map((file) => ({ name: file.name, data: new Uint8Array(file.data) }))
 }
 

@@ -2942,6 +2942,7 @@ export const uiMessagesZhCN = {
   'fonts.error.nameRequired': '字体名称不能为空',
   'fonts.error.tooLarge': '字体体积超过上限（{max} 字节）',
   'fonts.error.wrongFormat': '仅支持 .ttf 或 .otf 字体文件',
+  'fonts.error.unreadable': '字体文件无法解析：文件已损坏或不是有效的字体，请使用完整的字体文件',
   'fonts.error.unknownSlot': '未知的字体槽位',
   'fonts.error.packageTooLarge': '上传文件过大（上限 {max}）',
   'fonts.error.packageMissing': '请上传字体文件',

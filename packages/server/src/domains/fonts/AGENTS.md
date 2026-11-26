@@ -8,16 +8,23 @@ addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`. Product src never statical
 (`package-dag.test.ts`): dev resolves the workspace package's `./font-split.node` export, SEA the extracted
 `natives/font-split.node` (asset key owned by `@kobato/distribution/sea-assets`).
 
+A rejection by the addon is rethrown by the seam as `FontSplitRejectedError`; `sliceFont` turns it into
+`DomainError('BAD_REQUEST', 'fonts.error.unreadable')` and logs the native reason. A font that passes the magic and
+table-bounds pre-validation but cannot be read is the uploader's problem, while an unavailable addon or a missing
+`result.css` stays an internal error. `sliceFont` also asks for a reproducible stylesheet (`commentBase: false` drops
+the generation timestamp), so re-slicing the same font yields byte-identical CSS and a stable ETag.
+
 ## Sliced-package storage
 
 - Packages live at `fonts/<sha256>/<algorithmVersion>/` (`storage.ts`); the fingerprint comes from the addon
-  (`algorithm_fingerprint()` — tables, frequencies, DP λ/μ, WOFF2 quality), so an algorithm change derives new keys and
-  never mixes with stale slices. The row's `cssKey` embeds the version — no schema column.
+  (`algorithm_fingerprint()` — schema version, tables, frequencies, DP λ/μ, WOFF2 quality, probe quality and sample
+  size), so an algorithm change derives new keys and never mixes with stale slices. The row's `cssKey` embeds the
+  version — no schema column.
 - Re-uploading the same bytes under a new algorithm version re-slices, repoints the row, and removes the stale package
   best-effort. Font source bytes are not stored. Concurrent uploads of identical bytes coalesce process-locally on the
   sha256 (`inFlightUploads` in `services/upload.ts`).
 - The addon is compiled, not vendored as a binary: `pnpm --filter @kobato/font-split run build` must run once per
   machine before `pnpm dev` or any test touching `sliceFont`, and in CI before `sea:build` — `vendor/napi-split.ts`
-  throws an actionable error when it is missing. Updating: re-vendor the upstream `release` branch into
-  `tools/font-split/` following its AGENTS.md; `cargo test` plus the real-TTF `sliceFont` unit test are the drift
-  guards.
+  throws an actionable error when it is missing. Updating: take upstream fixes into `tools/font-split/` by hand
+  following its AGENTS.md — the partition pipeline there is Kobato-owned, a re-vendor would drop it; `cargo test` plus
+  the real-TTF `sliceFont` unit test are the drift guards.

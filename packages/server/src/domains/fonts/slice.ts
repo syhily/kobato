@@ -1,4 +1,10 @@
-import { fontSplit, type FontSplitOutputFile } from '@kobato/server/domains/fonts/vendor/napi-split'
+import {
+  FontSplitRejectedError,
+  fontSplit,
+  type FontSplitOutputFile,
+} from '@kobato/server/domains/fonts/vendor/napi-split'
+import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
+import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('fonts.slice')
@@ -15,10 +21,7 @@ export interface SliceResult {
 }
 
 export async function sliceFont(sourceBuffer: Uint8Array, options: SliceOptions = {}): Promise<SliceResult> {
-  const outputs = await fontSplit({
-    input: sourceBuffer,
-    css: options.fontFamily ? { fontFamily: options.fontFamily } : {},
-  })
+  const outputs = await split(sourceBuffer, options)
 
   log.info('fontSplit returned', { outputCount: outputs.length, names: outputs.map((f) => f.name) })
 
@@ -34,6 +37,25 @@ export async function sliceFont(sourceBuffer: Uint8Array, options: SliceOptions 
   }
 
   return { css: css.data, chunks, chunkCount: chunks.length, totalBytes }
+}
+
+async function split(sourceBuffer: Uint8Array, options: SliceOptions): Promise<FontSplitOutputFile[]> {
+  try {
+    return await fontSplit({
+      input: sourceBuffer,
+      css: { commentBase: false, ...(options.fontFamily ? { fontFamily: options.fontFamily } : {}) },
+    })
+  } catch (error) {
+    if (!(error instanceof FontSplitRejectedError)) {
+      throw error
+    }
+    log.warn('fontSplit rejected the font', { reason: rejectionReason(error.cause) })
+    throw new DomainError('BAD_REQUEST', descriptorFor('fonts.error.unreadable'))
+  }
+}
+
+function rejectionReason(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause)
 }
 
 function findOutput(outputs: FontSplitOutputFile[], name: string): FontSplitOutputFile | undefined {

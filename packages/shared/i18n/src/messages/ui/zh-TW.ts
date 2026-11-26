@@ -2944,6 +2944,7 @@ export const uiMessagesZhTW = {
   'fonts.error.nameRequired': '字型名稱不能為空',
   'fonts.error.tooLarge': '字型大小超過上限（{max} 位元組）',
   'fonts.error.wrongFormat': '僅支援 .ttf 或 .otf 字型檔案',
+  'fonts.error.unreadable': '字型檔案無法解析：檔案已損壞或不是有效的字型，請使用完整的字型檔案',
   'fonts.error.unknownSlot': '未知的字型槽位',
   'fonts.error.packageTooLarge': '上傳檔案過大（上限 {max}）',
   'fonts.error.packageMissing': '請上傳字型檔案',

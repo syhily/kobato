@@ -3096,6 +3096,8 @@ export const uiMessagesEnUS = {
   'fonts.error.nameRequired': 'The font name cannot be empty',
   'fonts.error.tooLarge': 'The font exceeds the size limit ({max} bytes)',
   'fonts.error.wrongFormat': 'Only .ttf or .otf font files are supported',
+  'fonts.error.unreadable':
+    'The font file cannot be read — it is damaged or not a valid font; use a complete font file',
   'fonts.error.unknownSlot': 'Unknown font slot',
   'fonts.error.packageTooLarge': 'The uploaded file is too large (limit {max})',
   'fonts.error.packageMissing': 'Upload a font file',

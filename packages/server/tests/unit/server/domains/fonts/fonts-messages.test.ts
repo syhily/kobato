@@ -71,6 +71,7 @@ const PARAM_CASES: Case[] = [
 const PLAIN_KEYS: UiMessageId[] = [
   'fonts.error.notFound',
   'fonts.error.wrongFormat',
+  'fonts.error.unreadable',
   'fonts.error.unknownSlot',
   'fonts.error.packageMissing',
   'fonts.error.nameRequired',
