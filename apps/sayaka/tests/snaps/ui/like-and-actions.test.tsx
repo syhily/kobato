@@ -21,7 +21,7 @@ vi.mock('@sayaka/ui/comments/use-comment-guest', () => ({
   }),
 }))
 
-vi.mock('@kobato/web-kit/ui/comments/LazyCommentBodyEditor', () => ({
+vi.mock('@kobato/inkling/comment/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),

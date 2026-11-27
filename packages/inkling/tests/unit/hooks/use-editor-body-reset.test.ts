@@ -1,10 +1,8 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { createHeadlessEditor, type SerializedEditorState } from '@kobato/inkling'
+import { createHeadlessEditor, type SerializedEditorState, useEditorBodyReset } from '@kobato/inkling'
+import { COMMENT_EDITOR_NODES } from '@kobato/inkling/comment/editor/comment-editor-nodes'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-kit/ui/comments/editor/comment-editor-nodes'
-import { useEditorBodyReset } from '@kobato/web-kit/ui/shared/editor/use-editor-body-reset'
-// @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

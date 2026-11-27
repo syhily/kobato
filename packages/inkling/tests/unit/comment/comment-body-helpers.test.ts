@@ -1,7 +1,7 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
+import { commentBodyPlainText } from '@kobato/inkling/comment/comment-body-helpers'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
-import { commentBodyPlainText } from '@kobato/web-kit/ui/comments/comment-body-helpers'
 import { describe, expect, it } from 'vitest'
 
 function text(textValue: string) {
@@ -18,7 +18,7 @@ function commentState(children: unknown[]): CommentEditorState {
   } as CommentEditorState
 }
 
-describe('ui/public/comments/comment-body-helpers', () => {
+describe('comment/comment-body-helpers', () => {
   it('exports an empty editor-state constant that parses as a valid comment state', () => {
     expect(isCommentEditorStateBlank(EMPTY_COMMENT_EDITOR_STATE)).toBe(true)
   })

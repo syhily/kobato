@@ -1,4 +1,6 @@
 import { createHeadlessEditor } from '@kobato/inkling'
+import { COMMENT_EDITOR_NODES } from '@kobato/inkling/comment/editor/comment-editor-nodes'
+import { downgradeLegacyCommentMath } from '@kobato/inkling/comment/editor/comment-legacy-math'
 import {
   commentEditorStateSchema,
   EMPTY_COMMENT_EDITOR_STATE,
@@ -6,9 +8,6 @@ import {
 } from '@kobato/inkling/headless/comment-schema'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-kit/ui/comments/editor/comment-editor-nodes'
-import { downgradeLegacyCommentMath } from '@kobato/web-kit/ui/comments/editor/comment-legacy-math'
-// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 
 const RICH_COMMENT = unsafeCast<CommentEditorState>({

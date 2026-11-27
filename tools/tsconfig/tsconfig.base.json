@@ -24,6 +24,7 @@
       "@kobato/inkling/headless": ["../../packages/inkling/src/headless/index.ts"],
       "@kobato/inkling/headless/*": ["../../packages/inkling/src/headless/*"],
       "@kobato/inkling/host-cards": ["../../packages/inkling/src/host-cards/index.ts"],
+      "@kobato/inkling/comment/*": ["../../packages/inkling/src/comment/*"],
       "@kobato/inkling/styles/*": ["../../packages/inkling/src/styles/*"],
       "@kobato/inkling/assets/*": ["../../packages/inkling/src/assets/*"],
       "@kobato/inkling-internal/*": ["../../packages/inkling/src/*"],

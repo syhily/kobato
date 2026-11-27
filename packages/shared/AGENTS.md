@@ -27,7 +27,9 @@ RUM client identity, `telemetry/`), `assets` (asset-URL grammar, image kinds, av
 contract). Wire vocabulary (per-domain Zod schemas + DTOs) lives in `@kobato/api/contracts`.
 
 Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings + i18n + utils + inkling headless (type-only);
-`settings` → i18n + assets + utils (never `@kobato/api`). Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
+`settings` → i18n + assets + utils (never `@kobato/api`). Outside the umbrella, Inkling (`@kobato/inkling`) → ui +
+i18n + distribution + assets + `sanitize` (the comment surface's stored-body renderer) + utils. Pinned by
+`apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage
 

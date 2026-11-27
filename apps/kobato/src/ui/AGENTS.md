@@ -10,15 +10,18 @@ components are explicit-props — no reads from sessions, route params, request 
 - **`@kobato/ui/components`** — external design-system primitives, flat so `npx shadcn@latest add/diff` works;
   `components.json` points there. `@kobato/ui/lib` owns `cn`, `code-languages`, `I18nProvider`, `ThemeProvider`, and
   generic presentation hooks.
-- **`@kobato/web-kit`** — the cross-surface package (`ui/shared` + `ui/lib` tiers, the comment composer, `Image`); new
-  cross-surface modules go THERE, never into this package.
+- **`@kobato/web-kit`** — the cross-surface package (`ui/shared` + `ui/lib` tiers, `Image`); new cross-surface modules
+  go THERE, never into this package. The comment composer is Inkling's (`@kobato/inkling/comment/*`).
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
-  modules stay at the root. `useFileUpload` owns file/field guards, typed-oRPC submission, error unwrap, and toast
-  choreography — never hand-roll a fetch upload. `sortable.tsx` is the one dnd-list adapter (`useSortableRow` —
-  destructure its result; member access trips the react-compiler ref heuristic).
-- `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import), `pickers/`,
-  and the platform consumers (page-editor nodes/upload/picker/card-config, `music-card-picker.tsx` registering the
-  picker dialog at module scope). Decorate chrome and `exportDOM` markup share the spec's constants (parity pinned by
+  modules stay at the root — `use-inkling-labels.ts` (`useKobatoInklingLabels`, the one reader of the root loader's
+  `i18n.inklingLabels`; the page composer and the comment dialogs all reach it through here). `useFileUpload` owns
+  file/field guards, typed-oRPC submission, error unwrap, and toast choreography — never hand-roll a fetch upload.
+  `sortable.tsx` is the one dnd-list adapter (`useSortableRow` — destructure its result; member access trips the
+  react-compiler ref heuristic).
+- `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import, mounting
+  Inkling's public `InklingHostComposer` with the root-loader label table), `pickers/`, and the platform consumers
+  (page-editor nodes/upload/picker/card-config, `music-card-picker.tsx` registering the picker dialog at module scope).
+  Decorate chrome and `exportDOM` markup share the spec's constants (parity pinned by
   `apps/kobato/tests/unit/ui/editor/cards/`); spec `menu[].label`/`desc` are English fallbacks, the slash menu localizes
   through `labelKey`, card chrome reads `admin.editor.cards.*`.
 - `editor-shell/` — draft/publish orchestration: `useEditorShellState` orchestrates both shells (extend it, never add
@@ -57,13 +60,16 @@ Token rules (merge groups, dark tiers) live in `packages/web/ui/src/styles/AGENT
 
 - Storage: Lexical states (`@kobato/inkling/headless/schema` posts/pages, `comment-schema` comments). The friends grid
   is the `page.show_friends` toggle, not a body block.
-- `PageBodyEditor` wraps the inkling composer through the skeleton shared with comments
-  (`@kobato/web-kit/ui/shared/editor/editor-surface`); kobato glue (host cards, `KobatoImageNode`, upload/picker wiring)
-  lives in `ui/editor/`. Host hooks sit under `.kobato-page-editor` in `apps/kobato/src/ui/styles/inkling-editor.css`.
-  The locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), imported by no UI module.
+- `PageBodyEditor` mounts Inkling's public `InklingHostComposer` (the `@kobato/ui` locale/theme binding) over
+  `useEditorSurface`, `blockQuoteAsideCycle`, and `excludeBaseNodes`, handing it the root-loader table through
+  `labels={useKobatoInklingLabels()}`; kobato glue (host cards, `KobatoImageNode`, upload/picker wiring) lives in
+  `ui/editor/`. Host hooks sit under `.kobato-page-editor` in `apps/kobato/src/ui/styles/inkling-editor.css`. The
+  locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), read only through
+  `ui/shared/use-inkling-labels` — never by a shared or Inkling module.
 - Editor copy lives in `admin.editor.*`. The entity noun never crosses a shared boundary as text: configs carry
-  `entityLabelId` (`UiMessageId`) resolved via ICU `select`. The comment composer lives in the public leaf; admin
-  dialogs mount it through `LazyCommentBodyEditor` with `eager` + `focusOnMount`.
+  `entityLabelId` (`UiMessageId`) resolved via ICU `select`. The comment composer is `@kobato/inkling/comment`
+  (`LazyCommentBodyEditor`, `CommentContentHtml`, `comment-body-helpers`); admin dialogs mount it with `eager` and hand
+  it the root-loader table through the `labels` prop, read with `useKobatoInklingLabels` at the top of the component.
 
 ## Page meta toggles
 

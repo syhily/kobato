@@ -2,6 +2,7 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -15,12 +16,13 @@ import {
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { idStr } from '@kobato/utils/id'
-import { LazyCommentBodyEditor } from '@kobato/web-kit/ui/comments/LazyCommentBodyEditor'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+import { useKobatoInklingLabels } from '@/ui/shared/use-inkling-labels'
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -32,6 +34,7 @@ export interface ReplyCommentDialogProps {
 
 export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentDialogProps) {
   const { t } = useI18n()
+  const inklingLabels = useKobatoInklingLabels()
   const mutation = useMutation({
     ...orpcQuery.public.comments.replyComment.mutationOptions(),
     onSuccess: () => {
@@ -93,6 +96,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
             <Label htmlFor="reply-comment-content">{t('admin.comments.reply.content')}</Label>
             <LazyCommentBodyEditor
               eager
+              labels={inklingLabels}
               initialBody={EMPTY_COMMENT_EDITOR_STATE}
               bodyKey={`admin-reply-${dialogKey}-${bodyKey}`}
               onBodyChange={setBody}

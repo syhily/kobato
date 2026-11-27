@@ -12,8 +12,8 @@ export function registerCardDecorate(impl: CardDecorateImpl): void {
 export function decorateCardNode(node: LexicalNode): ReactNode {
   if (!cardDecorateImpl) {
     throw new Error(
-      `[decorateCardNode] no decorate adapter registered — card nodes render only through the ` +
-        `'../index' barrel (it calls registerCardDecorateAdapter() at module top level); ` +
+      `[decorateCardNode] no decorate adapter registered — card nodes render only behind an entry that calls ` +
+        `registerCardDecorateAdapter() at module top level (the React barrel and the comment composer do); ` +
         `node type "${node.getType()}" reached decorate() without that wiring`,
     )
   }

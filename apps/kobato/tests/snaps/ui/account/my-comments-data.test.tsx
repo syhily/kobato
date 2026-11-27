@@ -34,7 +34,7 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-vi.mock('@kobato/web-kit/ui/comments/LazyCommentBodyEditor', () => ({
+vi.mock('@kobato/inkling/comment/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 

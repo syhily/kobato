@@ -1,17 +1,22 @@
 import '@kobato/inkling/styles/index.css'
-import '@kobato/web-kit/styles/inkling-comment-editor.css'
-import type { InklingLabelsInput } from '@kobato/inkling'
+import '@kobato/inkling/styles/comment-editor.css'
+import type { InklingLabelsInput } from '@kobato/inkling-internal/labels/inkling-labels'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { InklingSurface, ListPlugin } from '@kobato/inkling'
+import { COMMENT_EDITOR_NODES } from '@kobato/inkling-internal/comment/editor/comment-editor-nodes'
+import { downgradeLegacyCommentMath } from '@kobato/inkling-internal/comment/editor/comment-legacy-math'
+import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/inkling-internal/comment/editor/comment-markdown-transformers'
+import InklingHostComposer from '@kobato/inkling-internal/components/InklingHostComposer'
+import InklingSurface from '@kobato/inkling-internal/components/InklingSurface'
+import { blockQuoteAsideCycle } from '@kobato/inkling-internal/hooks/block-quote-aside-cycle'
+import { useEditorSurface } from '@kobato/inkling-internal/hooks/use-editor-surface'
+import { registerCardDecorateAdapter } from '@kobato/inkling-internal/nodes/decorate-card'
 import { EMPTY_COMMENT_EDITOR_STATE, safeValidateCommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import { cn } from '@kobato/ui/lib/cn'
-import { COMMENT_EDITOR_NODES } from '@kobato/web-kit/ui/comments/editor/comment-editor-nodes'
-import { downgradeLegacyCommentMath } from '@kobato/web-kit/ui/comments/editor/comment-legacy-math'
-import { COMMENT_MARKDOWN_TRANSFORMERS } from '@kobato/web-kit/ui/comments/editor/comment-markdown-transformers'
-import { blockQuoteAsideCycle } from '@kobato/web-kit/ui/shared/editor/block-quote-aside-cycle'
-import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-kit/ui/shared/editor/editor-surface'
+import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import { useCallback } from 'react'
+
+registerCardDecorateAdapter()
 
 export interface CommentBodyEditorProps {
   initialBody: CommentEditorState
@@ -63,7 +68,7 @@ export function CommentBodyEditor({
       onClick={focusEditor}
       onKeyDownCapture={blockQuoteAsideCycle}
     >
-      <EditorSurfaceComposer
+      <InklingHostComposer
         nodes={COMMENT_EDITOR_NODES}
         initialEditorState={mountedInitialState}
         labels={labels}
@@ -82,7 +87,7 @@ export function CommentBodyEditor({
         >
           <ListPlugin />
         </InklingSurface>
-      </EditorSurfaceComposer>
+      </InklingHostComposer>
     </div>
   )
 }

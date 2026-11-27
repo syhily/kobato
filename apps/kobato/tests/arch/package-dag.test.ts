@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 const CONFIG_PACKAGE = '@kobato/tsconfig'
+const PATH_TABLE = 'tools/tsconfig/tsconfig.base.json'
 
 const IGNORE_DIRS = new Set([
   'node_modules',
@@ -58,6 +59,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/assets',
     '@kobato/utils',
     '@kobato/ui',
+    '@kobato/sanitize',
     '@kobato/test',
   ],
 
@@ -79,13 +81,11 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 
   '@kobato/web-kit': [
     '@kobato/ui',
-    '@kobato/inkling',
     '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/sanitize',
     '@kobato/test',
   ],
   '@kobato/test': [],
@@ -114,7 +114,15 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/distribution', '@kobato/assets', '@kobato/utils'],
+  '@kobato/inkling': [
+    '@kobato/inkling',
+    '@kobato/ui',
+    '@kobato/i18n',
+    '@kobato/sanitize',
+    '@kobato/distribution',
+    '@kobato/assets',
+    '@kobato/utils',
+  ],
   '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-kit'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
@@ -133,13 +141,11 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/web-kit': [
     '@kobato/web-kit',
     '@kobato/ui',
-    '@kobato/inkling',
     '@kobato/api',
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/settings',
     '@kobato/assets',
-    '@kobato/sanitize',
   ],
   '@kobato/test': ['@kobato/test'],
   kobato: [
@@ -538,12 +544,11 @@ describe('package DAG', () => {
   })
 
   it('has exactly one shared import-path table', () => {
-    const baseConfigPath = 'tools/tsconfig/tsconfig.base.json'
-    const base = JSON.parse(readFileSync(`${REPO_ROOT}/${baseConfigPath}`, 'utf8')) as {
+    const base = JSON.parse(readFileSync(`${REPO_ROOT}/${PATH_TABLE}`, 'utf8')) as {
       compilerOptions: { paths?: Record<string, string[]> }
     }
     const paths = base.compilerOptions.paths
-    expect(paths, `${baseConfigPath} owns the workspace path table`).toBeDefined()
+    expect(paths, `${PATH_TABLE} owns the workspace path table`).toBeDefined()
 
     const required: Record<string, string[]> = {
       '@/*': ['../../apps/kobato/src/*'],
@@ -555,7 +560,7 @@ describe('package DAG', () => {
       '@kobato/inkling/tests/*': ['../../packages/inkling/tests/*'],
     }
     for (const [alias, targets] of Object.entries(required)) {
-      expect(paths![alias], `${baseConfigPath} must define ${alias}`).toEqual(targets)
+      expect(paths![alias], `${PATH_TABLE} must define ${alias}`).toEqual(targets)
     }
 
     for (const [alias, targets] of Object.entries(paths!)) {
@@ -568,7 +573,40 @@ describe('package DAG', () => {
     const tsconfigs: string[] = []
     collectTsconfigs(REPO_ROOT, tsconfigs)
     const pathOwners = tsconfigs.filter((file) => /"paths"\s*:/.test(readFileSync(file, 'utf8')))
-    expect(pathOwners.map((file) => file.slice(REPO_ROOT.length + 1))).toEqual([baseConfigPath])
+    expect(pathOwners.map((file) => file.slice(REPO_ROOT.length + 1))).toEqual([PATH_TABLE])
+  })
+
+  it('every per-file inkling entry resolves to the same file as the private alias', () => {
+    const paths = (
+      JSON.parse(readFileSync(`${REPO_ROOT}/${PATH_TABLE}`, 'utf8')) as {
+        compilerOptions: { paths: Record<string, string[]> }
+      }
+    ).compilerOptions.paths
+    const privateRow = paths['@kobato/inkling-internal/*']
+    expect(privateRow, 'the private inkling alias is one wildcard row over packages/inkling/src').toHaveLength(1)
+
+    const offenders: string[] = []
+    const checked: string[] = []
+    for (const [alias, targets] of Object.entries(paths)) {
+      const entry = /^@kobato\/inkling\/([^/]+)\/\*$/.exec(alias)
+      if (entry === null || targets.length !== 1 || !targets[0]!.startsWith('../../packages/inkling/src/')) {
+        continue
+      }
+      checked.push(alias)
+      const throughPrivateAlias = privateRow[0]!.replace('*', `${entry[1]}/*`)
+      if (targets[0] !== throughPrivateAlias) {
+        offenders.push(`${alias} -> ${targets[0]} (the private alias resolves to ${throughPrivateAlias})`)
+      }
+    }
+    expect(checked, 'the comment entry row must be among the checked per-file entries').toContain(
+      '@kobato/inkling/comment/*',
+    )
+    expect(
+      offenders,
+      '@kobato/inkling/<entry>/* and @kobato/inkling-internal/<entry>/* must resolve to the same file: tests mock a ' +
+        'module through the public specifier while production imports it through the private one, and that interception ' +
+        'only works when both resolve to one file id',
+    ).toEqual([])
   })
 
   it('source and test trees contain no unregistered relative module imports', () => {
@@ -716,7 +754,7 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
-  it('inkling is reached only through its barrel, headless, styles entries, or test-tree helper imports', () => {
+  it('inkling is reached only through its barrel, headless, comment, styles entries, or test-tree helper imports', () => {
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
       if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {
@@ -733,6 +771,7 @@ describe('package DAG', () => {
           specifier !== '@kobato/inkling/headless' &&
           !specifier.startsWith('@kobato/inkling/headless/') &&
           specifier !== '@kobato/inkling/host-cards' &&
+          !specifier.startsWith('@kobato/inkling/comment/') &&
           !specifier.startsWith('@kobato/inkling/styles/')
         ) {
           if (specifier.startsWith('@kobato/inkling/tests/utils/') && file.includes('/tests/')) {

@@ -2,10 +2,11 @@
 
 import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
 import { kobatoInklingLabelsZhTW } from '@kobato/i18n/inkling-labels/zh-TW'
-import { useKobatoInklingLabels } from '@kobato/web-kit/ui/shared/editor/inkling-labels'
 import { render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
+
+import { useKobatoInklingLabels } from '@/ui/shared/use-inkling-labels'
 
 function readLabels(rootLoaderData: unknown) {
   let labels: ReturnType<typeof useKobatoInklingLabels> = undefined
@@ -22,7 +23,7 @@ function readLabels(rootLoaderData: unknown) {
   return labels
 }
 
-describe('client/editor/inkling-labels — payload resolver', () => {
+describe('ui/shared/use-inkling-labels — root payload resolver', () => {
   it('returns the loader payload table for the active locale', () => {
     const labels = readLabels({ i18n: { locale: 'zh-CN', inklingLabels: kobatoInklingLabelsZhCN } })
     expect(labels).toBe(kobatoInklingLabelsZhCN)

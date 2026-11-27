@@ -24,6 +24,12 @@ export function decorateCard(node: LexicalNode): ReactNode {
   )
 }
 
+let adapterRegistered = false
+
 export function registerCardDecorateAdapter(): void {
+  if (adapterRegistered) {
+    return
+  }
+  adapterRegistered = true
   registerCardDecorate(decorateCard)
 }

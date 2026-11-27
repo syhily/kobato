@@ -1,10 +1,10 @@
-import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
+import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
 import { MyCommentsView } from '@/ui/account/MyCommentsView'
 import { MyEditCommentDialog } from '@/ui/account/MyEditCommentDialog'
 
-vi.mock('@kobato/web-kit/ui/comments/LazyCommentBodyEditor', () => ({
+vi.mock('@kobato/inkling/comment/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 
@@ -46,7 +46,9 @@ describe('snapshot: MyCommentsView', () => {
 
 describe('snapshot: MyEditCommentDialog', () => {
   it('renders closed', () => {
-    const html = stableHtml(renderToHtml(<MyEditCommentDialog target={null} onClose={() => {}} onSaved={() => {}} />))
+    const html = stableHtml(
+      renderInRouter(<MyEditCommentDialog target={null} onClose={() => {}} onSaved={() => {}} />, '/admin/me/comments'),
+    )
     expect(html).toBe('')
   })
 })

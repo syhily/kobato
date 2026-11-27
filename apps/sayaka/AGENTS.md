@@ -73,8 +73,11 @@ domain logic.
   imported); `src/` never imports `@kobato/pack` (vite.config may). Pinned by
   `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - Sayaka owns the public UI layer in `src/ui/**` (the former `@kobato/web-public` tree, dissolved and deleted per
-  ADR-0009) and MAY import `@kobato/web-kit`; the `@kobato/web-admin` package is gone (its tree is kobato's
-  `apps/kobato/src/ui` now) and the specifier stays banned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
+  ADR-0009) and MAY import `@kobato/web-kit`; the public comment composer is Inkling's comment surface
+  (`@kobato/inkling/comment/*`: `LazyCommentBodyEditor`, `CommentContentHtml`, `comment-body-helpers`, and the iOS
+  viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the `@kobato/web-admin` package is gone
+  (its tree is kobato's `apps/kobato/src/ui` now) and the specifier stays banned by
+  `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - The two inbound protocols are perimeter handlers, not React Router routes, so raw-body POSTs keep their limits and
   status semantics without the document pipeline's root-loader bootstrap (`createRelayClient` in
   `src/server/relay-client.ts` builds the per-request server client; both handlers key kobato's rate limits on the

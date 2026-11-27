@@ -1,6 +1,7 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -13,12 +14,13 @@ import {
 } from '@kobato/ui/components/dialog'
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { LazyCommentBodyEditor } from '@kobato/web-kit/ui/comments/LazyCommentBodyEditor'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+import { useKobatoInklingLabels } from '@/ui/shared/use-inkling-labels'
 
 export interface MyEditCommentDialogProps {
   target: { id: string; body: CommentEditorState } | null
@@ -28,6 +30,7 @@ export interface MyEditCommentDialogProps {
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
   const { t } = useI18n()
+  const inklingLabels = useKobatoInklingLabels()
   const update = useMutation({
     ...orpcQuery.public.comments.updateOwn.mutationOptions(),
     onSuccess: () => onSaved(),
@@ -78,6 +81,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
             <Label htmlFor="my-edit-comment-content">{t('admin.my.edit.content')}</Label>
             <LazyCommentBodyEditor
               eager
+              labels={inklingLabels}
               initialBody={initialBody}
               bodyKey={`my-edit-${dialogKey}-${bodyKey}`}
               onBodyChange={setBody}

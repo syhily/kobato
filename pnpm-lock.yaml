@@ -1230,6 +1230,9 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n
+      '@kobato/sanitize':
+        specifier: workspace:*
+        version: link:../shared/sanitize
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
@@ -1722,12 +1725,6 @@ importers:
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n
-      '@kobato/inkling':
-        specifier: workspace:*
-        version: link:../../inkling
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../../shared/sanitize
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../shared/settings

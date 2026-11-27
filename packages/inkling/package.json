@@ -19,6 +19,10 @@
       "./src/headless/*.tsx"
     ],
     "./host-cards": "./src/host-cards/index.ts",
+    "./comment/*": [
+      "./src/comment/*.ts",
+      "./src/comment/*.tsx"
+    ],
     "./types": "./types/index.d.ts",
     "./styles/*": "./src/styles/*",
     "./assets/*": "./src/assets/*",
@@ -35,6 +39,7 @@
     "@kobato/assets": "workspace:*",
     "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
+    "@kobato/sanitize": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",

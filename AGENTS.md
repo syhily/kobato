@@ -12,9 +12,9 @@ runtime state):
   serves the public document perimeter and forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo`
   (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
-  editor with a React-free `/headless/` document model), the two front-end packages under `packages/web/` — `ui`
-  (`@kobato/ui`, the design system) and `kit` (`web-kit`, the cross-surface kit; the admin UI lives in
-  `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves under `packages/shared/*`.
+  editor with a React-free `/headless/` document model and the `/comment/` comment surface), the two front-end packages
+  under `packages/web/` — `ui` (`@kobato/ui`, the design system) and `kit` (`web-kit`, the cross-surface kit; the admin
+  UI lives in `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 
@@ -70,7 +70,8 @@ the SEA build-output entry, generated probe JavaScript, and import-scanner test 
 - Source never imports a package's `tests/` tree; the one sanctioned cross-package seam is
   `@kobato/<owner>/tests/utils/<name>` — the canonical fixture registry lives in `tools/test/AGENTS.md`.
 - Inkling internals: `@kobato/inkling-internal/...` is private to `packages/inkling/`. Public consumers use
-  `@kobato/inkling`, `/headless*`, `/host-cards`, or `/styles/*`; the demo uses `@kobato/inkling-demo/...`.
+  `@kobato/inkling`, `/headless*`, `/comment/*`, `/host-cards`, or `/styles/*`; the demo uses
+  `@kobato/inkling-demo/...`.
 
 ## Layering
 
@@ -90,7 +91,8 @@ section pins the direction graph only — package composition rules live in each
   declarations. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit; kobato's `src/ui`
   imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato allows it tests-only). The
   browser oRPC client is typed exclusively through `@kobato/api`.
-- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `utils`.
+- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `sanitize`,
+  `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
 - `apps/sayaka` is the public-front-end split (ADR-0009): it never imports `@kobato/server` or `@kobato/db` and never
   touches the database — it reaches `kobato` exclusively over oRPC (`createKobatoServerClient` from `@kobato/api`) and

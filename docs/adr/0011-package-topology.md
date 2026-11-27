@@ -1,8 +1,10 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption step 1 has landed, steps 2–6 follow. It amends
-  [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
-  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+- Status: **accepted** 2026-11-27 and being implemented: adoption step 1 and the first of step 2's three commits (the
+  comment surface and the shared composer platform to Inkling, the root-data label hook to the workspace UI) have
+  landed; the rest of step 2 and steps 3–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where
+  the code lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other
+  section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -63,8 +65,14 @@ What leaves the kit:
   `chunk-error` / `chunk-reload` / `ChunkReloadOverlay`, `BrandLogo`, `Image` with its hooks, and the chrome clock. None
   imports `@kobato/api`; 27 of sayaka's 40 kit import lines are these.
 - **The comment composer → `@kobato/inkling/comment`** (§2).
-- **The editor platform → the workspace:** `EditorSurfaceComposer`, `useEditorSurface`, `useEditorBodyReset`,
-  `excludeBaseNodes`, `blockQuoteAsideCycle`, and the root-data label hook have one direct consumer.
+- **The shared composer platform → Inkling's public API, the root-data label hook → the workspace:** what both composers
+  need becomes Inkling's deliberately-public API on the React barrel, never a per-host copy — `useEditorSurface` with
+  `useEditorBodyReset`, `excludeBaseNodes`, `blockQuoteAsideCycle`, the per-locale label loader `loadInklingLabels`, and
+  `InklingHostComposer`, the host-facing composer that binds `@kobato/ui`'s locale and theme and takes `labels` as a
+  prop. Only the root-data label hook `useKobatoInklingLabels` moves to the workspace UI (`ui/shared/`, beside the
+  comment dialogs that read the same payload) — the one module that knows the React Router root loader. Inside Inkling
+  the comment composer mounts `InklingHostComposer` and takes labels as a prop or from `loadInklingLabels` (§2); the
+  workspace hands its page and comment editors the root table through the `labels` prop.
 - **`use-notifications` → `@kobato/api/browser`** (§3).
 
 The kit keeps what calls the wire from both front-ends — the notifications family, `use-logout`, `toast-api-error`:
@@ -204,9 +212,9 @@ Each step is green on its own — `pnpm run fmt`, `pnpm run lint`, `pnpm test`, 
 1. **`packages/ui` → `packages/web/ui`.** Two path-table rows, its two Vitest projects (and the `web-unit` and
    `web-snaps` globs, which would otherwise also match ui's tests, doubling them against `ui-unit` and `ui-snaps`), the
    documentation pins. No specifier changes; the coverage config names no `packages/web` path, so it needs no edit.
-2. **The kit re-homes**, in three commits: the comment surface to Inkling and the editor platform to the workspace UI;
-   the shell modules and the document shell to `@kobato/ui`, both roots onto it; `use-notifications` to
-   `@kobato/api/browser`. Pin §1's rule.
+2. **The kit re-homes**, in three commits: the comment surface and the shared composer platform to Inkling, the
+   root-data label hook to the workspace UI; the shell modules and the document shell to `@kobato/ui`, both roots onto
+   it; `use-notifications` to `@kobato/api/browser`. Pin §1's rule.
 3. **`startKobato`** and the workspace-serving module land in `@kobato/server`; `apps/kobato/src/server.ts` thins to the
    call.
 4. **The workspace moves** to `packages/web/admin`: source, tests, and arch pins; its own Vite and React Router project;

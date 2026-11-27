@@ -1,9 +1,7 @@
+import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { LazyCommentBodyEditor } from '@kobato/web-kit/ui/comments/LazyCommentBodyEditor'
-// @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
@@ -11,17 +9,17 @@ const PAYLOAD_LABELS = { 'placeholder.editor': 'PAYLOAD labels' }
 const loader = vi.hoisted(() => ({ load: vi.fn() }))
 const zoomLock = vi.hoisted(() => ({ acquire: vi.fn(), release: vi.fn() }))
 
-vi.mock('@kobato/web-kit/ui/shared/editor/inkling-labels', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-kit/ui/shared/editor/inkling-labels')>()
+vi.mock('@kobato/inkling-internal/labels/load-inkling-labels', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/inkling-internal/labels/load-inkling-labels')>()
   return { ...actual, loadInklingLabels: loader.load }
 })
 
-vi.mock('@kobato/web-kit/ui/comments/viewport-zoom-lock', () => ({
+vi.mock('@kobato/inkling-internal/comment/viewport-zoom-lock', () => ({
   acquireViewportZoomLock: zoomLock.acquire,
   releaseViewportZoomLock: zoomLock.release,
 }))
 
-vi.mock('@kobato/web-kit/ui/comments/CommentBodyEditor', () => ({
+vi.mock('@kobato/inkling-internal/comment/CommentBodyEditor', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
       {labels?.['placeholder.editor'] ?? 'english-defaults'}
@@ -29,29 +27,18 @@ vi.mock('@kobato/web-kit/ui/comments/CommentBodyEditor', () => ({
   ),
 }))
 
-const SEED = { root: {} }
-
-function makeRouter(rootLoaderData: { i18n?: unknown } = SEED.root as never) {
-  return createMemoryRouter(editorRoute(), { hydrationData: { loaderData: { root: rootLoaderData } } })
-}
-
-function editorRoute(options: { eager?: boolean; focusOnMount?: boolean } = {}): RouteObject[] {
-  return [
-    {
-      id: 'root',
-      path: '*',
-      element: wrapWithI18n(
-        <LazyCommentBodyEditor
-          eager={options.eager === true}
-          focusOnMount={options.focusOnMount === true}
-          initialBody={{} as never}
-          bodyKey="comment-1"
-          onBodyChange={() => {}}
-        />,
-        { locale: 'zh-CN' },
-      ),
-    },
-  ]
+function editor(options: { eager?: boolean; focusOnMount?: boolean; labels?: Record<string, string> } = {}) {
+  return wrapWithI18n(
+    <LazyCommentBodyEditor
+      eager={options.eager === true}
+      focusOnMount={options.focusOnMount === true}
+      labels={options.labels}
+      initialBody={{} as never}
+      bodyKey="comment-1"
+      onBodyChange={() => {}}
+    />,
+    { locale: 'zh-CN' },
+  )
 }
 
 beforeEach(() => {
@@ -59,9 +46,9 @@ beforeEach(() => {
   loader.load.mockImplementation(async (locale: string) => ({ 'placeholder.editor': `${locale} labels` }))
 })
 
-describe('LazyCommentBodyEditor — public labels load on activation', () => {
+describe('LazyCommentBodyEditor — labels load on activation', () => {
   it('mounts the placeholder first and loads only the active locale after activation', async () => {
-    render(<RouterProvider router={makeRouter()} />)
+    render(editor())
 
     expect(screen.queryByTestId('composer')).toBeNull()
     expect(screen.getByRole('textbox')).toBeTruthy()
@@ -76,7 +63,7 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
   })
 
   it('prefetches the active locale label chunk on hover, before any activation', () => {
-    render(<RouterProvider router={makeRouter()} />)
+    render(editor())
 
     fireEvent.pointerEnter(screen.getByRole('textbox'))
 
@@ -84,8 +71,8 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
     expect(screen.queryByTestId('composer')).toBeNull()
   })
 
-  it('does not fetch a label chunk on hover when the workspace payload already has one', () => {
-    render(<RouterProvider router={makeRouter({ i18n: { locale: 'zh-CN', inklingLabels: PAYLOAD_LABELS } })} />)
+  it('does not fetch a label chunk on hover when the host already handed over a table', () => {
+    render(editor({ labels: PAYLOAD_LABELS }))
 
     fireEvent.pointerEnter(screen.getByRole('textbox'))
 
@@ -93,19 +80,15 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
   })
 
   it('eager composers (an already-interacted surface) load the active locale directly', async () => {
-    render(
-      <RouterProvider
-        router={createMemoryRouter(editorRoute({ eager: true }), { hydrationData: { loaderData: SEED } })}
-      />,
-    )
+    render(editor({ eager: true }))
 
     await waitFor(() => expect(screen.getByTestId('composer')).toBeTruthy())
     expect(loader.load.mock.calls.every(([locale]) => locale === 'zh-CN')).toBe(true)
     expect(loader.load).toHaveBeenCalledWith('zh-CN')
   })
 
-  it('uses the workspace payload table without fetching any chunk', async () => {
-    render(<RouterProvider router={makeRouter({ i18n: { locale: 'zh-CN', inklingLabels: PAYLOAD_LABELS } })} />)
+  it('uses the host table without fetching any chunk', async () => {
+    render(editor({ labels: PAYLOAD_LABELS }))
 
     fireEvent.pointerDown(screen.getByRole('textbox'))
 
@@ -116,7 +99,7 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
 
   it('still mounts the composer with English defaults when the table chunk fails', async () => {
     loader.load.mockRejectedValue(new Error('chunk load failed'))
-    render(<RouterProvider router={makeRouter()} />)
+    render(editor())
 
     fireEvent.pointerDown(screen.getByRole('textbox'))
 
@@ -125,41 +108,43 @@ describe('LazyCommentBodyEditor — public labels load on activation', () => {
   })
 })
 
-describe('LazyCommentBodyEditor — SSR placeholder parity', () => {
-  it('renders the same placeholder with and without a workspace label payload', () => {
-    const staticHtml = (rootLoaderData: { i18n?: unknown }): string => {
-      const router = createMemoryRouter(editorRoute(), { hydrationData: { loaderData: { root: rootLoaderData } } })
-      return renderToStaticMarkup(<RouterProvider router={router} />)
-    }
+describe('LazyCommentBodyEditor — a host table arriving after mount', () => {
+  it('mounts the eager composer with the host table while the locale chunk is still loading', async () => {
+    loader.load.mockImplementation(() => new Promise(() => {}) as Promise<Record<string, string>>)
+    const view = render(editor({ eager: true }))
 
-    expect(staticHtml(SEED.root as never)).toBe(
-      staticHtml({
-        i18n: { locale: 'zh-CN', inklingLabels: PAYLOAD_LABELS },
-      } as never),
-    )
+    view.rerender(editor({ eager: true, labels: PAYLOAD_LABELS }))
+
+    expect(await screen.findByTestId('composer')).toHaveTextContent('PAYLOAD labels')
+  })
+
+  it('activates with the host table handed over after mount, without fetching a chunk', async () => {
+    const view = render(editor())
+
+    view.rerender(editor({ labels: PAYLOAD_LABELS }))
+    fireEvent.pointerDown(screen.getByRole('textbox'))
+
+    expect(await screen.findByTestId('composer')).toHaveTextContent('PAYLOAD labels')
+    expect(loader.load).not.toHaveBeenCalled()
+  })
+})
+
+describe('LazyCommentBodyEditor — SSR placeholder parity', () => {
+  it('renders the same placeholder with and without a host label table', () => {
+    expect(renderToStaticMarkup(editor())).toBe(renderToStaticMarkup(editor({ labels: PAYLOAD_LABELS })))
   })
 })
 
 describe('LazyCommentBodyEditor — focusOnMount hands focus to the mounted composer', () => {
   it('focuses the contenteditable as soon as the eager composer mounts', async () => {
-    render(
-      <RouterProvider
-        router={createMemoryRouter(editorRoute({ eager: true, focusOnMount: true }), {
-          hydrationData: { loaderData: SEED },
-        })}
-      />,
-    )
+    render(editor({ eager: true, focusOnMount: true }))
 
     const composer = await screen.findByTestId('composer')
     await waitFor(() => expect(document.activeElement).toBe(composer))
   })
 
   it('leaves the composer unfocused without focusOnMount', async () => {
-    render(
-      <RouterProvider
-        router={createMemoryRouter(editorRoute({ eager: true }), { hydrationData: { loaderData: SEED } })}
-      />,
-    )
+    render(editor({ eager: true }))
 
     const composer = await screen.findByTestId('composer')
     expect(document.activeElement).not.toBe(composer)
@@ -173,7 +158,7 @@ describe('LazyCommentBodyEditor — iOS zoom lock around the focus handoff', () 
   })
 
   it('holds the lock from the tap until one task after focus lands', async () => {
-    render(<RouterProvider router={makeRouter()} />)
+    render(editor())
 
     fireEvent.pointerDown(screen.getByRole('textbox'))
     expect(zoomLock.acquire).toHaveBeenCalledTimes(1)
@@ -186,7 +171,7 @@ describe('LazyCommentBodyEditor — iOS zoom lock around the focus handoff', () 
 
   it('releases the lock when the surface unmounts before the composer mounts', async () => {
     loader.load.mockImplementation(() => new Promise(() => {}) as Promise<Record<string, string>>)
-    const view = render(<RouterProvider router={makeRouter()} />)
+    const view = render(editor())
 
     fireEvent.pointerDown(screen.getByRole('textbox'))
     expect(zoomLock.acquire).toHaveBeenCalledTimes(1)

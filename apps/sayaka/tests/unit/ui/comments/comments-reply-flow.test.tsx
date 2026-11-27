@@ -1,6 +1,7 @@
 import type { Comments as CommentsData } from '@kobato/api/contracts/public/comments'
 
 import { makeComment } from '@kobato/api/tests/utils/catalog'
+import { kobatoInklingLabelsZhCN } from '@kobato/i18n/inkling-labels/zh-CN'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
@@ -9,18 +10,11 @@ import { Comments } from '@sayaka/ui/comments/Comments'
 // @vitest-environment happy-dom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
-const loader = vi.hoisted(() => ({ load: vi.fn() }))
-
-vi.mock('@kobato/web-kit/ui/shared/editor/inkling-labels', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@kobato/web-kit/ui/shared/editor/inkling-labels')>()
-  return { ...actual, loadInklingLabels: loader.load }
-})
-
-vi.mock('@kobato/web-kit/ui/comments/CommentBodyEditor', () => ({
+vi.mock('@kobato/inkling/comment/CommentBodyEditor', () => ({
   CommentBodyEditor: ({ labels }: { labels?: Record<string, string> }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
       {labels?.['placeholder.editor'] ?? 'english-defaults'}
@@ -56,11 +50,6 @@ beforeAll(() => {
   window.HTMLElement.prototype.scrollIntoView = vi.fn()
 })
 
-beforeEach(() => {
-  loader.load.mockReset()
-  loader.load.mockImplementation(async (locale: string) => ({ 'placeholder.editor': `${locale} labels` }))
-})
-
 describe('Comments — clicking 回复 activates the inline composer', () => {
   it('mounts the reply form under the target comment, eager and focused', async () => {
     renderComments()
@@ -76,7 +65,7 @@ describe('Comments — clicking 回复 activates the inline composer', () => {
     expect(document.querySelectorAll('#respond')).toHaveLength(1)
 
     await waitFor(() => expect(document.activeElement).toBe(composer))
-    expect(loader.load).toHaveBeenCalledWith('zh-CN')
+    expect(composer.textContent).toBe(kobatoInklingLabelsZhCN['placeholder.editor'])
   })
 
   it('keeps the top-level form interaction-gated while no reply target is active', () => {

@@ -71,7 +71,7 @@ primitives in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/a
 
 - Document-level hooks mount once per document — never per form or per route component that can render more than once.
 - iOS auto-zoom: iOS Safari zooms when focusing a control with `font-size < 16px`; rewriting the viewport `<meta>` from
-  `focusin` is too late. The lock is refcounted in `@kobato/web-kit/ui/comments/viewport-zoom-lock` (iOS/iPadOS WebKit
+  `focusin` is too late. The lock is refcounted in `@kobato/inkling/comment/viewport-zoom-lock` (iOS/iPadOS WebKit
   only): every focus-ending activation holds the lock BEFORE focus lands. `useIosNoZoomOnFocus()` is mounted once at the
   top of the root `App`; the comment composer's activation handoff holds the same lock. Do NOT re-install the hook
   per-form and do NOT rewrite the viewport `<meta>` anywhere else.

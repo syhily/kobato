@@ -27,7 +27,7 @@ const SOURCE_ROOTS = [
 
 const BRIDGE_SHEETS = {
   admin: ['apps/kobato/src/ui/styles/inkling-editor.css'],
-  public: ['packages/web/kit/src/styles/inkling-comment-editor.css'],
+  public: ['packages/inkling/src/styles/comment-editor.css'],
   demo: [],
 } as const
 
@@ -144,6 +144,7 @@ describe('Tailwind compile contract', () => {
         'apps/kobato/src/routes/auth',
         'apps/kobato/src/routes/editor',
         'apps/kobato/src/ui',
+        'packages/inkling/src/comment',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/kit/src/ui',
@@ -155,12 +156,14 @@ describe('Tailwind compile contract', () => {
         'apps/sayaka/src/routes',
         'apps/sayaka/src/rum',
         'apps/sayaka/src/ui',
+        'packages/inkling/src/comment',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/kit/src/ui',
       ],
       demo: [
         'apps/inkling-demo/src/**/*.{ts,tsx}',
+        'packages/inkling/src/comment',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
         'packages/web/kit/src/ui',

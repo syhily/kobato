@@ -2,6 +2,7 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
 import { Button } from '@kobato/ui/components/button'
 import {
@@ -15,12 +16,13 @@ import {
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { idStr } from '@kobato/utils/id'
-import { LazyCommentBodyEditor } from '@kobato/web-kit/ui/comments/LazyCommentBodyEditor'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+import { useKobatoInklingLabels } from '@/ui/shared/use-inkling-labels'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null
@@ -30,6 +32,7 @@ export interface EditCommentDialogProps {
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
   const { t } = useI18n()
+  const inklingLabels = useKobatoInklingLabels()
   const [initialBody, setInitialBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [body, setBody] = useState<CommentEditorState>(EMPTY_COMMENT_EDITOR_STATE)
   const [bodyKey, setBodyKey] = useState(0)
@@ -105,6 +108,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
             ) : (
               <LazyCommentBodyEditor
                 eager
+                labels={inklingLabels}
                 initialBody={initialBody}
                 bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
                 onBodyChange={setBody}

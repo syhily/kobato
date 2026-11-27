@@ -1,7 +1,9 @@
 # UI style conventions
 
 `packages/web/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and
-`@source` graphs belong to the consuming app; Inkling host chrome belongs to `apps/kobato/src/ui`
+`@source` graphs belong to the consuming app; Inkling host chrome lives outside this tree — the comment canvas chrome is
+Inkling's own `packages/inkling/src/styles/comment-editor.css`, and only the page-editor host chrome
+(`apps/kobato/src/ui/styles/inkling-editor.css`) is the workspace's
 (`packages/web/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and
 additional product styles here).
 

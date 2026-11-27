@@ -1,8 +1,8 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 
+import { CommentContentHtml } from '@kobato/inkling/comment/CommentContentHtml'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { CommentContentHtml } from '@kobato/web-kit/ui/comments/CommentContentHtml'
 import { commentFlags } from '@sayaka/ui/comments/comment-item/comment-flags'
 import {
   getCommentFlashServerSnapshot,

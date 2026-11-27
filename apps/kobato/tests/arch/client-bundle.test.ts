@@ -20,8 +20,12 @@ const CLIENT_LAYERS = [
   'packages/api/src/contracts',
   'packages/api/src/browser',
   'packages/shared/catalog/src/seo',
+  'packages/inkling/src/comment',
   'packages/inkling/src/headless',
   'packages/inkling/src/host-cards',
+  'packages/inkling/src/hooks',
+  'packages/inkling/src/labels',
+  'packages/inkling/src/components',
   'packages/shared/utils/src',
   'packages/shared/i18n/src',
   'packages/shared/settings/src',
@@ -349,25 +353,30 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
   owners: [
     'packages/shared/i18n/src/inkling-labels.ts',
 
-    'packages/web/kit/src/ui/shared/editor/inkling-labels.ts',
+    'packages/inkling/src/labels/load-inkling-labels.ts',
   ],
 }
 
-const INKLING_LABEL_RESOLVER = 'packages/web/kit/src/ui/shared/editor/inkling-labels.ts'
+const INKLING_LABEL_LOADER = 'packages/inkling/src/labels/load-inkling-labels.ts'
+const ROOT_LABEL_READER = 'apps/kobato/src/ui/shared/use-inkling-labels.ts'
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {
     expect(collectServerOnlyImportViolations(collectScannedFiles(), INKLING_LABEL_RULE)).toEqual([])
   })
 
-  it('the client resolver reads the active locale from the root payload', () => {
-    const source = readFileSync(join(PROJECT_ROOT, INKLING_LABEL_RESOLVER), 'utf-8')
-    expect(source).toContain("from 'react-router'")
-    expect(source).toContain('useRouteLoaderData')
-
+  it('the client loader reaches the tables only through per-locale dynamic imports', () => {
+    const source = readFileSync(join(PROJECT_ROOT, INKLING_LABEL_LOADER), 'utf-8')
     expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
     for (const locale of ['en-US', 'zh-CN', 'zh-HK', 'zh-TW']) {
       expect(source).toContain(`import('@kobato/i18n/inkling-labels/${locale}')`)
     }
+  })
+
+  it('the workspace label hook reads the root payload and never a table', () => {
+    const source = readFileSync(join(PROJECT_ROOT, ROOT_LABEL_READER), 'utf-8')
+    expect(source).toContain("from 'react-router'")
+    expect(source).toContain('useRouteLoaderData')
+    expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
   })
 
   it('tripwire: reports a table import and ignores the type-only key import', () => {

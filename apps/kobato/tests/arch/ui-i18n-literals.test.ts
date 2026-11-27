@@ -108,7 +108,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'apps/kobato/src/ui/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'apps/kobato/src/ui/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
   { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
-  { path: 'packages/web/kit/src/ui/shared/editor/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/inkling/src/labels/load-inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'apps/kobato/src/ui/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'apps/kobato/src/ui/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
   { path: 'packages/server/src/domains/posts/services/mutate.ts', rules: ['domain-error'] },
@@ -212,7 +212,7 @@ describe('production sources', () => {
         'apps/kobato/src/ui/users/UserEditForm.tsx',
 
         'packages/shared/i18n/src/inkling-labels.ts',
-        'packages/web/kit/src/ui/shared/editor/inkling-labels.ts',
+        'packages/inkling/src/labels/load-inkling-labels.ts',
         'apps/kobato/src/ui/editor-shell/RevisionsDrawer.tsx',
         'apps/kobato/src/ui/editor/pickers/ImageLibraryPicker.tsx',
         'packages/server/src/domains/posts/services/mutate.ts',

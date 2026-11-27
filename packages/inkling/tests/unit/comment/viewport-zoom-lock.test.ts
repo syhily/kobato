@@ -1,6 +1,5 @@
-import type * as LockModule from '@kobato/web-kit/ui/comments/viewport-zoom-lock'
+import type * as LockModule from '@kobato/inkling/comment/viewport-zoom-lock'
 
-// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15'
@@ -27,7 +26,7 @@ beforeEach(() => {
 })
 
 async function freshLock(): Promise<typeof LockModule> {
-  return import('@kobato/web-kit/ui/comments/viewport-zoom-lock')
+  return import('@kobato/inkling/comment/viewport-zoom-lock')
 }
 
 describe('viewport-zoom-lock', () => {

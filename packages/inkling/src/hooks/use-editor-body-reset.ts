@@ -1,4 +1,4 @@
-import type { LexicalEditor, SerializedEditorState } from '@kobato/inkling'
+import type { LexicalEditor, SerializedEditorState } from 'lexical'
 
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { useCallback, useEffect, useRef, useState } from 'react'

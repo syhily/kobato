@@ -23,6 +23,7 @@ const WEB_PARTIAL_REQUIRED_SOURCES = {
   'apps/sayaka/src/ui/styles/public.css': ['..'],
   'apps/kobato/src/ui/styles/admin.css': ['..'],
   'packages/web/kit/src/styles/kit.css': ['../ui'],
+  'packages/inkling/src/styles/cards.css': ['../comment', '../headless/cards', '../host-cards'],
 } as const
 
 function collectFiles(root: string, matches: (fileName: string) => boolean): string[] {

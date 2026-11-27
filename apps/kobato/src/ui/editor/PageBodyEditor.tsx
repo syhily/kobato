@@ -2,12 +2,10 @@ import '@kobato/inkling/styles/index.css'
 import '@/ui/styles/inkling-editor.css'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { InklingEditor } from '@kobato/inkling'
+import { InklingEditor, InklingHostComposer, blockQuoteAsideCycle, useEditorSurface } from '@kobato/inkling'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useHydrated } from '@kobato/ui/lib/use-hydrated'
-import { blockQuoteAsideCycle } from '@kobato/web-kit/ui/shared/editor/block-quote-aside-cycle'
-import { EditorSurfaceComposer, useEditorSurface } from '@kobato/web-kit/ui/shared/editor/editor-surface'
 import { FocusIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo } from 'react'
 
@@ -16,6 +14,7 @@ import { makePageEditorCardConfig } from '@/ui/editor/page-editor-card-config'
 import { PAGE_EDITOR_NODES } from '@/ui/editor/page-editor-nodes'
 import { pageEditorFileUploader } from '@/ui/editor/page-editor-upload'
 import { useFocusModePreference } from '@/ui/editor/use-focus-mode'
+import { useKobatoInklingLabels } from '@/ui/shared/use-inkling-labels'
 export interface PageBodyEditorProps {
   initialBody: LexicalEditorState
   bodyKey: string
@@ -44,6 +43,7 @@ export function PageBodyEditor(props: PageBodyEditorProps) {
 
 function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, header }: PageBodyEditorProps) {
   const { t, localizeMessage } = useI18n()
+  const inklingLabels = useKobatoInklingLabels()
   const cardConfig = useMemo(() => makePageEditorCardConfig(t, localizeMessage), [t, localizeMessage])
   const [focusMode, toggleFocusMode] = useFocusModePreference()
   const { editorInstance, registerAPI, mountedInitialState, handleChange } = useEditorSurface({
@@ -66,9 +66,10 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
     >
       <div data-kobato-editor-scroll="" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
         {header}
-        <EditorSurfaceComposer
+        <InklingHostComposer
           nodes={PAGE_EDITOR_NODES}
           initialEditorState={mountedInitialState}
+          labels={inklingLabels}
           fileUploader={pageEditorFileUploader}
           cardConfig={cardConfig}
           dragScrollContainerSelector="[data-kobato-editor-scroll]"
@@ -82,7 +83,7 @@ function PageBodyEditorClient({ initialBody, bodyKey, onBodyChange, disabled, he
             placeholderClassName="kobato-page-placeholder"
             contentEditableClassName="typeset typeset-post"
           />
-        </EditorSurfaceComposer>
+        </InklingHostComposer>
       </div>
       <div className="absolute right-3 bottom-3 z-30">
         <Button

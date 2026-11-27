@@ -12,7 +12,14 @@
   `render-live.ts`, fixtures), never a `*.test.ts`. Tree-specific helpers sit beside their tree
   (`tests/unit/nodes/base/test-helpers.ts`, `tests/unit/transforms/test-helpers.ts`) — never a nested `test-utils/`
   directory or an `index.ts` barrel.
-- `tests/utils/lexical.ts` is the WORKSPACE-canonical Lexical document-model fixture: `@kobato/web-kit` and the app test
-  trees import it cross-package (the one sanctioned `@kobato/inkling/tests/*` deep import, pinned by
-  `apps/kobato/tests/arch/package-dag.test.ts`). Import helpers through `@kobato/inkling/tests/utils/...`; production
-  internals use the private `@kobato/inkling-internal/...` alias rather than relative traversal.
+- The comment surface (`tests/unit/comment/`) is driven through its public `@kobato/inkling/comment/*` specifiers. Tests
+  that mount a provider-wrapped component use `wrapWithI18n` from `@kobato/ui/tests/utils/i18n-render` (the UI package's
+  canonical helper); a props-binding test mocks `InklingComposer` / `InklingSurface` through the private alias rather
+  than mounting a live editor, and stubs `window.matchMedia` for `ThemeProvider` (jsdom ships none). The card-rendering
+  spec (`CommentBodyEditor.cards.test.tsx`) mounts the live composer and must NOT import `tests/utils/test-editor.ts` —
+  that helper's top-level `registerCardDecorateAdapter()` would mask the comment entry's own registration.
+- `tests/utils/lexical.ts` is the WORKSPACE-canonical Lexical document-model fixture: this package's own tests and the
+  kobato app test trees (`apps/kobato/tests/unit`, `apps/kobato/tests/snaps`) import it — for the app trees the one
+  sanctioned `@kobato/inkling/tests/*` deep import, pinned by `apps/kobato/tests/arch/package-dag.test.ts`. Import
+  helpers through `@kobato/inkling/tests/utils/...`; production internals use the private `@kobato/inkling-internal/...`
+  alias rather than relative traversal.

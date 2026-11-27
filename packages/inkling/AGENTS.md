@@ -3,18 +3,24 @@
 ## Overview
 
 - `packages/inkling/src/` is kobato's rich-text editor (Lexical 0.53, React 19). It owns the stored document model
-  (`src/headless/`, React-free) and the kobato host cards (`src/host-cards/`). It imports only `@kobato/ui`,
-  `@kobato/i18n`, `@kobato/distribution`, `@kobato/assets`, `@kobato/utils` — never contracts, server, db, or web.
-- Three public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
+  (`src/headless/`, React-free), the comment surface beside that model (`src/comment/`), and the kobato host cards
+  (`src/host-cards/`). It imports only `@kobato/ui`, `@kobato/i18n`, `@kobato/distribution`, `@kobato/assets`,
+  `@kobato/sanitize`, `@kobato/utils` — never contracts, server, db, or web.
+- Four public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
   `src/index.ts`), `@kobato/inkling/headless` + per-file imports (`src/headless/`, React-free — the only editor surface
-  `server`/`db`/`contracts`/`catalog` may use), and `@kobato/inkling/host-cards` (side-effect registration + image
-  node + music base class). The barrel's top-level `registerCardDecorateAdapter()` call MUST stay explicit; the barrel
-  never re-exports host-cards.
+  `server`/`db`/`contracts`/`catalog` may use), `@kobato/inkling/host-cards` (side-effect registration + image node +
+  music base class), and `@kobato/inkling/comment/*` (per-file imports into `src/comment/`, the comment surface). The
+  barrel's top-level `registerCardDecorateAdapter()` call MUST stay explicit; the comment composer
+  (`src/comment/CommentBodyEditor.tsx`) makes the same call because it renders cards in apps that never load the barrel
+  (sayaka) — the registration is idempotent, so whichever entry loads first installs the adapter. The barrel never
+  re-exports host-cards or the comment surface (the composer and its editor island ride a lazy chunk).
 - Composer: the Lexical EXTENSION API, not `LexicalComposer`. `InklingComposerBase` mounts `LexicalExtensionComposer`
   with the root extension from `src/components/inkling-root-extension.ts`; `contentEditable={null}` (RichTextPlugin owns
   the editable); decorators render through `ReactExtension`, so the root extension wires the `ErrorBoundary`.
   Composer-owned Providers wrap the composer itself — Providers under `children` are invisible to cards and nested
-  editors. Freeze the extension per mount via a lazy `useState` initializer.
+  editors. Freeze the extension per mount via a lazy `useState` initializer. `InklingHostComposer` is the composer a
+  host mounts: an `InklingComposer` that reads locale and dark mode from `@kobato/ui`'s `useI18n` / `useTheme` and takes
+  `labels` as an explicit prop — the one place that binding lives, never a host copy.
 
 ## Essential commands
 
@@ -44,7 +50,9 @@ pnpm demo
 - `transforms/` is flat; `utils/` holds pure helpers plus `utils/draggable/` only; `services/` is the React-free
   request-machine layer.
 - `src/index.ts` exports the editor's full API, not today's consumer subset — "unused in kobato" is not dead surface.
-  Extend it only with deliberately-public API.
+  Extend it only with deliberately-public API, single-sourced in `src/shared-exports.ts`: today that also covers the
+  editor platform both composers share — `InklingHostComposer`, `useEditorSurface` (+ `useEditorBodyReset`),
+  `excludeBaseNodes`, `blockQuoteAsideCycle`, and `loadInklingLabels`.
 
 ## Architecture
 
@@ -55,8 +63,24 @@ card**, **artifact slot**, **render-time meta**.
 
 `nodes/` is the model core; `components/` renders it, `plugins/` + `transforms/` mutate it, `context/` carries state,
 `hooks/` is React glue, `services/` the machines, `html/` + `markdown/` the serialization planes, `headless/` the
-React-free model, `host-cards/` the kobato assemblies. `headless/` is the one hard floor: React-free at the
-runtime-closure level (`tests/unit/headless/headless-boundary.test.ts`).
+React-free model, `comment/` the comment surface over it, `host-cards/` the kobato assemblies. `headless/` is the one
+hard floor: React-free at the runtime-closure level (`tests/unit/headless/headless-boundary.test.ts`).
+
+### Editor platform (`InklingHostComposer`, `hooks/`, `nodes/exclude-base-nodes.ts`, `labels/load-inkling-labels.ts`)
+
+- `InklingHostComposer` is the host-facing composer: it spreads an `InklingComposer` and owns the `@kobato/ui` binding —
+  `useI18n().locale` drives `wordCountLanguage` and `emojiLocale`, `useTheme().resolvedTheme` drives `darkMode`, and
+  `labels` is an explicit prop. Both composers (the comment composer here, the workspace page composer) mount it; a host
+  never re-implements the binding.
+- `useEditorSurface` composes `useEditorBodyReset`: the mount-time seed (`prepareSeed`), the `bodyKey` reseed, the
+  `registerAPI` editor instance, and the serialized `handleChange`. Both composers are its only consumers — never
+  duplicate it in a host.
+- `excludeBaseNodes` (`nodes/exclude-base-nodes.ts`, beside the node sets) filters `EDITOR_BASE_NODES` by `getType`,
+  honouring `{ replace }` pairs; `blockQuoteAsideCycle` (`hooks/`) is the composer-root Ctrl+Q capture both hosts mount.
+- `loadInklingLabels(locale)` is the ONE sanctioned dynamic import of a kobato overlay table
+  (`@kobato/i18n/inkling-labels/<locale>`): one chunk per locale, no static table import anywhere in the client
+  (`apps/kobato/tests/arch/client-bundle.test.ts`). Reading the same tables off a consumer's root route is host glue and
+  lives in the host (`apps/kobato/src/ui/shared/use-inkling-labels`).
 
 ### Card pipeline
 
@@ -76,13 +100,14 @@ runtime-closure level (`tests/unit/headless/headless-boundary.test.ts`).
 
 `decorate()` goes through the injection slot: `src/nodes/card-decorate-slot.ts` (react-free) owns `registerCardDecorate`
 / `decorateCardNode`; `assemble-card-node.ts` delegates to it; the adapter is `src/nodes/decorate-card.tsx`, keeping
-headless React-free.
+headless React-free. `registerCardDecorateAdapter()` is idempotent: the barrel and the comment composer each call it at
+module top level, and whichever entry loads first in a document installs the adapter.
 
 ### Editor surfaces
 
 - Node sets derive from `EDITOR_BASE_NODES`; plugins are two data lists (`CORE_PLUGINS` with `when` conditions,
   `DEFAULT_FEATURE_PLUGINS`), snapshot-pinned by `tests/unit/plugins/derived-feature-plugin-sets.test.ts`.
-- A custom host surface wraps its top-level tree in exactly one `InklingSurface` inside an `InklingComposer` (nested
+- A custom host surface wraps its top-level tree in exactly one `InklingSurface` inside an `InklingHostComposer` (nested
   card editors share the top-level undo stack and `onChange`).
 - `alignment` defaults ON for the article surface; `focusMode` defaults OFF (host owns the toggle); IME composition
   protection is the update-scan seam's composing skip.
@@ -95,6 +120,26 @@ scheme policy), the save-pipeline readers (`walk`, `collect`, `toc`, `artifacts`
 (host-card specs + render helpers, incl. `musicPlayerFallbackHtml`). The server's save/projection pipeline CONSUMES this
 model; the feed downgrade + defensive host-card substitution live server-side
 (`packages/server/src/infra/lexical/projection-state.ts`) and import back into `/headless` — never the reverse.
+
+### Comment surface (`src/comment/`, the `@kobato/inkling/comment/*` entry)
+
+- The composer beside `headless/comment-schema.ts`: `CommentBodyEditor` wraps `InklingHostComposer` + `InklingSurface`
+  with the trimmed node set (`editor/comment-editor-nodes`), the markdown transformers filtered to that node set
+  (`editor/comment-markdown-transformers`), the legacy-math downgrade (`editor/comment-legacy-math`, applied to the
+  seed), `isEmojiEnabled={false}`, `codeEditor="plain"`, no snippets, no drag. `COMMENT_EDITOR_NODES` stays free of
+  `math` / `math-inline` (`apps/kobato/tests/arch/lexical-node-whitelist.test.ts`). The module registers the decorate
+  adapter at its top level, so the surface renders its code blocks without the barrel
+  (`tests/unit/comment/CommentBodyEditor.cards.test.tsx`).
+- Locale and dark mode arrive through `InklingHostComposer` (as the host cards do); labels arrive as the `labels` prop
+  or through `loadInklingLabels` — never from route data. `CommentBodyEditor` is reached only through
+  `LazyCommentBodyEditor` (placeholder, hover prefetch, `eager` / `focusOnMount`, the iOS zoom lock around the focus
+  handoff, an optional host `labels` table that spares the chunk and wins over a table the chunk loaded).
+  `warmCommentEditorChunks(locale)` is the hover prefetch hosts call from an action row.
+- `CommentContentHtml` renders the stored `content` HTML through `@kobato/sanitize`'s `'comment'` preset (the one reason
+  Inkling depends on `sanitize`); `comment-body-helpers` is the plain-text reader (`commentBodyPlainText`).
+- `viewport-zoom-lock.ts` is the refcounted iOS viewport lock (`acquireViewportZoomLock` / `releaseViewportZoomLock` /
+  `isIosWebKit`) both apps' `useIosNoZoomOnFocus` hooks and the composer hold.
+- The surface imports Inkling internals through the private alias, never the barrel, so the island stays a lazy chunk.
 
 ### Host cards (`src/host-cards/`)
 
@@ -136,7 +181,8 @@ model; the feed downgrade + defensive host-card substitution live server-side
 ### Labels and word counting
 
 - `src/labels/inkling-labels.ts` owns the closed flat table; `<InklingComposer labels>` merges a host override subset
-  once; `DEFAULT_LABELS` and its types export from `src/shared-exports.ts`.
+  once; `DEFAULT_LABELS` and its types export from `src/shared-exports.ts`. The kobato overlay tables arrive per locale
+  through `loadInklingLabels` (see "Editor platform").
 - Word count: `language` drives `Intl.Segmenter`; state lives in a per-TOP-LEVEL-editor `WordCountState` WeakMap keyed
   by COUNTER INSTANCE identity — never globals; dedup is PER CALLBACK.
 - Backtick chord: an unmodified backtick over a non-collapsed range dispatches `FORMAT_TEXT_COMMAND 'code'` (one undo
@@ -147,6 +193,11 @@ model; the feed downgrade + defensive host-card substitution live server-side
 - Content typography is host-owned (`typeset typeset-post|typeset-comment`); `src/styles/components/inkling-prose.css`
   keeps only card rhythm, nested-editor chrome variants, and the accent re-scope.
 - `src/styles/index.css` is the package's complete Tailwind entry; consumers never add Inkling paths to their `@source`.
+  The one sanctioned surface scan of Inkling code is `src/styles/cards.css` — Inkling's own product-token partial,
+  composed by every surface entry: it scans the host cards and `src/comment`, whose product-token chrome (`border-line`,
+  `border-brand`, `ring-brand/40`) has no theme token in Inkling's own compile. `src/styles/comment-editor.css` is the
+  comment canvas host rules (no zoom), imported by `CommentBodyEditor`; the page canvas twin is the workspace's
+  `apps/kobato/src/ui/styles/inkling-editor.css`.
 - Chrome arbitrary values are authored in rem, never px (canvas runs `zoom: 2/3` on a 15px root); web's host adapters
   bridge tokens (`--inkling-accent-color` ← `--brand`).
 - `@kobato/inkling/headless` is the server bundle's ONLY editor import; the barrel's shared contract is single-sourced

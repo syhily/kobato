@@ -29,14 +29,14 @@ const LABEL: Record<AppLocale, string> = {
   'zh-TW': 'ZH-TW labels',
 }
 
-describe('client/editor/inkling-labels — lazy per-locale chunks', () => {
+describe('labels/load-inkling-labels — lazy per-locale chunks', () => {
   beforeEach(() => {
     vi.resetModules()
     imports.loaded.length = 0
   })
 
   it.each(SUPPORTED_LOCALES)('loads only the %s table chunk', async (locale) => {
-    const { loadInklingLabels } = await import('@kobato/web-kit/ui/shared/editor/inkling-labels')
+    const { loadInklingLabels } = await import('@kobato/inkling')
 
     const table = await loadInklingLabels(locale)
 

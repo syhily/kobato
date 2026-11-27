@@ -7,9 +7,10 @@ cross-package contract pins in the app test tree).
 - `ui/` — `@kobato/ui`: the design system — design tokens, base styles, the shadcn/Base UI primitives, theme and i18n
   providers, and generic presentation hooks (`ui/AGENTS.md`).
 - `kit/` — `@kobato/web-kit`: the cross-surface kit of ADR-0009 — the modules both consuming surfaces render (the
-  `ui/shared` and `ui/lib` tiers, the comment composer and body projection, the chunk-recovery family, `BrandLogo`,
-  `Image`). It stays a workspace package because the backend app never imports the public frontend. The admin UI is not
-  a package: it lives in `apps/kobato/src/ui/` (ADR-0009), and the public surface lives in `apps/sayaka/src/ui/`.
+  `ui/shared` and `ui/lib` tiers, the chunk-recovery family, `BrandLogo`, `Image`). The comment surface and the shared
+  composer platform left it for Inkling's public API, and the root-data label hook for the workspace UI (ADR-0011). It
+  stays a workspace package because the backend app never imports the public frontend. The admin UI is not a package: it
+  lives in `apps/kobato/src/ui/` (ADR-0009), and the public surface lives in `apps/sayaka/src/ui/`.
 
 A module both consuming surfaces need lives in `@kobato/web-kit`, a UI primitive in `@kobato/ui`, and the app's own
 document runtime or admin tree in the consuming app's `src/`.
