@@ -1,6 +1,6 @@
-import { expect, test } from '@kobato/pack/browser/fixtures'
-import { collectConsoleIssues, waitForHydration } from '@kobato/pack/browser/journey'
-import { browserEnv } from '@kobato/pack/instance/client/browser-env'
+import { expect, test } from '@kobato/test/browser/fixtures'
+import { collectConsoleIssues, waitForHydration } from '@kobato/test/browser/journey'
+import { browserEnv } from '@kobato/test/instance/client/browser-env'
 
 const env = browserEnv()
 

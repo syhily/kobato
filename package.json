@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench:font-split": "pnpm -C tools/font-split bench:font-split",
+    "bench:font-split": "pnpm -C packages/font-split bench:font-split",
     "build": "pnpm -C packages/web/admin build && pnpm -C apps/kobato build && pnpm -C apps/sayaka build",
     "bump": "taze && pnpm update",
     "db:gen": "pnpm -C packages/db db:gen && pnpm -C packages/db db:gen:duckdb",
@@ -26,7 +26,7 @@
     "sea:package": "pnpm -C tools/pack sea:package",
     "sea:probe": "pnpm -C tools/pack sea:probe",
     "sea:smoke": "pnpm -C tools/pack sea:smoke",
-    "split:smoke": "pnpm -C tools/pack split:smoke",
+    "split:smoke": "pnpm -C tools/test split:smoke",
     "start": "pnpm -C apps/kobato start",
     "test": "vitest run",
     "test:browser": "pnpm -C tools/pack test:browser",

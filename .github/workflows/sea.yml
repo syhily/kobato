@@ -86,7 +86,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: tools/font-split
+          workspaces: packages/font-split
           key: ${{ matrix.target }}
       - run: pnpm --filter @kobato/font-split run build
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
@@ -96,7 +96,7 @@ jobs:
         run: pnpm run sea:package rename --target ${{ matrix.target }}
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
-      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/test exec playwright install --with-deps chromium
       - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
         env:
           KOBATO_BROWSER_CHANNEL: chromium
@@ -128,14 +128,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: tools/font-split
+          workspaces: packages/font-split
           key: linux-x64
       - run: pnpm --filter @kobato/font-split run build
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
-      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/test exec playwright install --with-deps chromium
       - run: pnpm run sea:browser dist-sea/kobato
         env:
           KOBATO_BROWSER_CHANNEL: chromium

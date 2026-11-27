@@ -15,7 +15,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "cd ../../.. && react-router dev packages/web/admin",
-    "typegen": "react-router typegen"
+    "typegen": "cd ../../.. && react-router typegen packages/web/admin"
   },
   "devDependencies": {
     "@dnd-kit/core": "catalog:",
@@ -43,7 +43,6 @@
     "@simplewebauthn/browser": "catalog:",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/oxide": "catalog:",
-    "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/diff-match-patch": "catalog:",

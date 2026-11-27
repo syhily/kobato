@@ -70,7 +70,9 @@ test-only exception is under `tests/`.
   `build/client` through the working directory: the backend (`apps/kobato/src/server/client-assets-root.ts`) and the SEA
   asset collection (`tools/pack/src/sea/paths.ts` → `adminClientBuildDir()`) go through the package. The production
   bundle guard (`apps/kobato/tests/arch/production-rum-bundle.test.ts`) is an architecture test and locates the build
-  from the repository root, like every arch test.
+  from the repository root, like every arch test. `vite.config.ts` is one call to `frontEndConfig`
+  (`@kobato/pack/vite/front-end-config`): port 4321, kobato's `__APP_*__` identity, the `/admin/` base, the `/editor`
+  rewrite and `svgr` around the shared plugin list, the backend proxy, and the dev-server dependency pre-bundling.
 - Vite `base: '/admin/'` prefixes every client asset URL (`/admin/assets/*`) while route URLs stay `/admin/...` and
   `/editor/...` — React Router's `basename` stays `/` and is independent of Vite's `base`.
 - `pnpm dev:admin` (root) runs the workspace on `127.0.0.1:4321` (`react-router dev packages/web/admin` from the

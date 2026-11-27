@@ -1,0 +1,163 @@
+import type { BrowserEnv } from '@kobato/test/instance/client/browser-env'
+
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/instance/client/http'
+import { callE2eRpc } from '@kobato/test/instance/client/rpc'
+
+export const BASELINE_GENERAL = {
+  locale: 'zh-CN',
+  timeZone: 'Asia/Shanghai',
+  title: 'Kobato Browser Acceptance',
+  description: 'Browser acceptance baseline',
+} as const
+
+export const STAGED_POST = {
+  title: 'Browser Acceptance Post',
+  summary: 'Staged by the Playwright global setup.',
+  contentLanguage: 'ar',
+  commentsEnabled: true,
+} as const
+
+export interface StagedPost {
+  id: string
+  slug: string
+}
+
+interface UpsertPostOutput {
+  post: StagedPost
+}
+
+export class SettingsApi {
+  private constructor(
+    private readonly client: E2eClient,
+    private readonly csrfToken: string,
+  ) {}
+
+  static async connect(env: BrowserEnv): Promise<SettingsApi> {
+    const client = new E2eClient(env.baseUrl)
+    const { flow } = await loginAdmin(client, env)
+    if (flow.type !== 'redirect') {
+      throw new Error(`admin sign-in answered ${flow.type} — check KOBATO_BROWSER_ADMIN_*`)
+    }
+    const csrfToken = await getAdminCsrfToken(client)
+    return new SettingsApi(client, csrfToken)
+  }
+
+  async updateGeneral(payload: Record<string, unknown>): Promise<void> {
+    const result = await callE2eRpc<{ section: unknown }>(
+      this.client,
+      '/admin/settings/update',
+      { section: 'general', payload },
+      this.csrfToken,
+    )
+    if (result.status !== 200) {
+      throw new Error(`settings update failed (${result.status}) for ${JSON.stringify(Object.keys(payload))}`)
+    }
+  }
+
+  async resetGeneral(): Promise<void> {
+    await this.updateGeneral(BASELINE_GENERAL)
+    let observed: Record<string, unknown> = {}
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const result = await callE2eRpc<{ bundle: { siteIdentity: Record<string, unknown> } }>(
+        this.client,
+        '/admin/settings/bootstrap',
+        undefined,
+        this.csrfToken,
+      )
+      if (result.status === 200) {
+        observed = result.json.bundle.siteIdentity
+        let matches = true
+        for (const [key, value] of Object.entries(BASELINE_GENERAL)) {
+          if (observed[key] !== value) {
+            matches = false
+            break
+          }
+        }
+        if (matches) {
+          return
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    throw new Error(`settings reset did not converge: ${JSON.stringify(observed)}`)
+  }
+
+  async updateSocials(socials: Array<Record<string, unknown>>): Promise<void> {
+    const result = await callE2eRpc<{ section: unknown }>(
+      this.client,
+      '/admin/settings/update',
+      { section: 'socials', payload: { socials } },
+      this.csrfToken,
+    )
+    if (result.status !== 200) {
+      throw new Error(`socials settings update failed (${result.status})`)
+    }
+  }
+
+  async deletePost(id: string): Promise<void> {
+    const result = await callE2eRpc<unknown>(this.client, '/admin/posts/delete', { id }, this.csrfToken)
+    if (result.status !== 200) {
+      throw new Error(`post removal failed (${result.status})`)
+    }
+  }
+
+  async upsertStagedPost(slug: string): Promise<StagedPost> {
+    const result = await callE2eRpc<UpsertPostOutput>(
+      this.client,
+      '/admin/posts/upsertMeta',
+      {
+        ...STAGED_POST,
+        slug,
+        published: true,
+        publishedAt: new Date().toISOString(),
+      },
+      this.csrfToken,
+    )
+    if (result.status !== 200) {
+      throw new Error(`staged post upsert failed (${result.status})`)
+    }
+    return result.json.post
+  }
+
+  async publishStagedPostBody(id: string, prose: string): Promise<void> {
+    const body = {
+      root: {
+        type: 'root',
+        version: 1,
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        children: [
+          {
+            type: 'paragraph',
+            version: 1,
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            children: [
+              { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text: prose },
+            ],
+          },
+        ],
+      },
+    }
+    const draft = await callE2eRpc<{ status: string }>(
+      this.client,
+      '/admin/posts/saveDraft',
+      { id, body },
+      this.csrfToken,
+    )
+    if (draft.status !== 200 || draft.json.status !== 'saved') {
+      throw new Error(`staged post draft save failed (${draft.status})`)
+    }
+    const published = await callE2eRpc<{ status: string }>(
+      this.client,
+      '/admin/posts/publishLatest',
+      { id, body, publishedAt: new Date().toISOString() },
+      this.csrfToken,
+    )
+    if (published.status !== 200 || published.json.status !== 'saved') {
+      throw new Error(`staged post publish failed (${published.status})`)
+    }
+  }
+}

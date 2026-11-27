@@ -1,7 +1,7 @@
 import { isRecord } from '@kobato/base/utils/type-guards'
-import { E2eClient, bootstrapCsrfToken, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/pack/instance/client/http'
-import { callE2eRpc } from '@kobato/pack/instance/client/rpc'
 import { SmtpCapture, extractMagicLinkPath, extractOtpCode } from '@kobato/server/tests/utils/smtp-capture'
+import { E2eClient, bootstrapCsrfToken, e2eEnv, getAdminCsrfToken, loginAdmin } from '@kobato/test/instance/client/http'
+import { callE2eRpc } from '@kobato/test/instance/client/rpc'
 import { DatabaseSync } from 'node:sqlite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 

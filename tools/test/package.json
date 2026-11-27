@@ -9,15 +9,23 @@
       "./src/*.tsx"
     ]
   },
+  "scripts": {
+    "split:smoke": "node src/instance/split-smoke.ts"
+  },
   "devDependencies": {
     "@date-fns/tz": "catalog:",
+    "@duckdb/node-api": "catalog:",
+    "@kobato/base": "workspace:*",
+    "@kobato/settings": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@opentelemetry/sdk-metrics": "catalog:",
+    "@playwright/test": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
+    "bcryptjs": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "sonner": "catalog:",

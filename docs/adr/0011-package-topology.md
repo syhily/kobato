@@ -1,13 +1,15 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 5 have landed (the comment surface and the
-  shared composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document
-  shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned;
-  `startKobato` in `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry
-  thinned to the call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router
-  SPA project with no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client
-  build located through the package; the five floor leaves merged into `@kobato/base` — the prefix rewrite, the path
-  table, the directory-level DAG pin, the documents). Step 6 follows. It amends
+- Status: **accepted** 2026-11-27 and implemented: adoption steps 1 to 6 have landed (the comment surface and the shared
+  composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document shell
+  to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned; `startKobato` in
+  `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry thinned to the
+  call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router SPA project with
+  no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client build located
+  through the package; the five floor leaves merged into `@kobato/base` — the prefix rewrite, the path table, the
+  directory-level DAG pin, the documents; `font-split` in `packages/`, the instance driver, the browser support, and the
+  Playwright config in `tools/test`, the front-end config factory, output paths anchored on the repository root — the
+  DAG pins moved with them). Only the final review of this ADR follows. It amends
   [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
   and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
@@ -170,15 +172,25 @@ language-backed concepts.
 - `font-split` moves to `packages/font-split`. It is the one package under `tools/` that ships; after the move nothing
   under `tools/` does, and the exception in its `AGENTS.md` goes with it.
 - The live-instance driver (`pack/src/instance/`) and the Playwright journey support (`pack/src/browser/` with
-  `playwright.config.ts`) move to `tools/test/` as `instance/` and `browser/`, imported as `@kobato/test/instance/*` and
-  `@kobato/test/browser/*`. `tools/test` is then everything a test needs — fixtures and doubles, the Vitest project
-  table, the booted-instance driver, the browser journeys.
+  `playwright.config.ts`) move to `tools/test/` as `src/instance/` and `src/browser/`, imported as
+  `@kobato/test/instance/*` and `@kobato/test/browser/*`. `tools/test` is then everything a test needs — fixtures and
+  doubles, the Vitest project table, the booted-instance driver, the browser journeys. Only its Vitest half stays
+  product-free: the driver and the browser support reach exactly `@kobato/settings`, the `@kobato/base/utils` sub-tree,
+  and their own modules, and the driver never reaches the browser support.
 - `tools/pack` keeps the SEA pipeline, the Vite plugins, and the release scripts. The process primitives both halves
   used (`pack/src/process.ts`) go with the driver, so `pack` → `test` is the only direction between them.
-- `pack/src/vite` gains one front-end config factory: the workspace and sayaka configs become a call with tiers and a
-  port, not two copies of the plugin list.
+- `pack/src/vite` gains one front-end config factory, `frontEndConfig` (`front-end-config.ts`): it assembles the shared
+  plugin list (the sanitize engine alias, inline package data, the React Compiler transform, React Router, Tailwind)
+  with the application's own plugins around it (`plugins.leading` / `plugins.trailing`), the `__APP_*__` defines, the
+  chunk-size limits, the tsconfig path resolution, the route warmup files, and the port. The workspace and sayaka
+  configs are each one call — `appDir`, `port`, `identityDir` (default `apps/kobato`), `base`, `server`, `optimizeDeps`,
+  `serverEntry`, `ssrExternals` — not two copies of the plugin list; the route tiers belong to sayaka's route-warmup
+  plugin alone, since only sayaka mounts a route-warmup plugin (the workspace mounts none, §4), while Vite's dev
+  `server.warmup.clientFiles`, set by the factory, applies to both.
 - Scripts anchor their output on the repository root, so Playwright reports and React Router typegen stop landing under
-  `tools/` when a script runs from a package directory.
+  `tools/` when a script runs from a package directory: the Playwright config and `split-smoke.ts` resolve every path
+  from `REPO_ROOT` (`@kobato/test/repo-root`), and each React Router `typegen` script `cd`s to the repository root and
+  names its project directory, as its `dev` script already did.
 - `trace` and `tsconfig` stay as they are.
 
 ## Rejected alternatives
@@ -229,7 +241,11 @@ language-backed concepts.
 - The shared merge rewrites the path table from eight leaves to four (sixteen rows to eight), 584 import lines, and
   every documentation mention of the five directories.
 - The app e2e and browser trees import `@kobato/test/instance/*` and `@kobato/test/browser/*`; `tools/test` gains the
-  driver's dependencies; `@kobato/font-split`'s path-table rows follow its directory.
+  driver's dependencies (`@duckdb/node-api`, `bcryptjs`, `@playwright/test`, `@kobato/base`, `@kobato/settings`) and the
+  `split:smoke` script, `tools/pack` drops them and declares `@tailwindcss/vite` for the factory (neither front-end
+  package declares it: each imports the factory, not the plugin); `@kobato/font-split`'s path-table rows follow its
+  directory, and `no source tree imports @kobato/font-split` becomes a pin of its own now that "product never imports
+  tools" no longer covers it.
 - ADR-0009 is amended as above; the `AGENTS.md` tree follows each step (root, `apps/kobato`, `packages/web` and its
   three packages, `packages/shared`, `tools/`, `tools/pack`, `tools/test`, `apps/inkling-demo`).
 - An external frontend author builds comments and reads notifications from the contract plus `@kobato/inkling/comment`

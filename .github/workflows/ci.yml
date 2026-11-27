@@ -24,7 +24,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: tools/font-split
+          workspaces: packages/font-split
       - run: pnpm --filter @kobato/font-split run build
       - run: pnpm --filter @kobato/font-split run test
       - run: pnpm --filter @kobato/font-split run lint
@@ -58,7 +58,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         if: github.event_name == 'pull_request'
         with:
-          workspaces: tools/font-split
+          workspaces: packages/font-split
       - run: pnpm --filter @kobato/font-split run build
         if: github.event_name == 'pull_request'
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
@@ -72,7 +72,7 @@ jobs:
           pnpm run test:production-rum
         env:
           KOBATO_REQUIRE_PRODUCTION_BUILD: '1'
-      - run: pnpm --filter @kobato/pack exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/test exec playwright install --with-deps chromium
         if: github.event_name == 'pull_request'
       - run: pnpm run sea:browser dist-sea/kobato
         if: github.event_name == 'pull_request'

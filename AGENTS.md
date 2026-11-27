@@ -20,9 +20,14 @@ runtime state):
   whose static client build lives under the `/admin/` base; it sits under `packages/` because it is not deployed on its
   own, ADR-0011 §4) — and four isomorphic React-free leaves under `packages/shared/*`. `@kobato/server` owns the
   backend's boot sequence (`bootstrap/start-kobato`) and the workspace-serving Hono app (`http/kobato-app`,
-  `http/spa-shell`) — the app hands over the workspace build's location, nothing more.
-- `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
-  tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
+  `http/spa-shell`) — the app hands over the workspace build's location, nothing more. `@kobato/font-split`
+  (`packages/font-split`) is the Rust font-slicing addon: the product reaches it only through `nativeRequire` with a
+  specifier string, never an import.
+- `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`), none of which ships. Product `src/` never
+  imports a tools package. `tools/test` holds everything a test needs (fixtures and doubles, the Vitest project table,
+  the live-instance driver `src/instance/`, the Playwright journey support `src/browser/` with `playwright.config.ts`);
+  `tools/pack` holds the SEA pipeline, the Vite plugins with the front-end config factory, and the release scripts, and
+  depends on `tools/test` — never the reverse.
 
 Package shape: `package.json`, `AGENTS.md` (required), `src/` (runtime source only), `tests/` mirroring `src/`, plus
 `drizzle/` (db) or `assets|styles/` when owned; config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`,
@@ -154,17 +159,18 @@ React Router's dev middleware serves the `/admin/*` + `/editor/*` documents (and
 target — in dev the workspace origin, which serves both through its proxy (`SAYAKA_KOBATO_RPC_URL`, default
 `http://127.0.0.1:4321/rpc`).
 
-`pnpm run bench:font-split` is local-only (`tools/font-split/scripts/bench/`): it regenerates
-`tools/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a
+`pnpm run bench:font-split` is local-only (`packages/font-split/scripts/bench/`): it regenerates
+`packages/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a
 font-split change is meant to move those numbers and commit the regenerated files with it.
 
-`pnpm run lint` is the one static gate: it runs `react-router typegen` for the workspace and sayaka (route modules
-import generated `./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and
-TypeScript compiler diagnostics in a single pass. There is no separate type-check command and `tsc` is never run
-(`oxlint.config.ts` sets `typeAware`/`typeCheck`). Each file type-checks through its nearest `tsconfig.json`, so a new
-package or config file needs no root-level registration. The root `tsconfig.json` covers only the root `*.config.ts`
-files. oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the generated
-`packages/web/admin/.react-router/types/` and `apps/sayaka/.react-router/types/`) is never type-checked.
+`pnpm run lint` is the one static gate: it runs `react-router typegen` for the workspace and sayaka (each package script
+`cd`s to the repository root and names its project directory, so the generated types land under that package from any
+working directory; route modules import generated `./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole
+workspace — lint rules and TypeScript compiler diagnostics in a single pass. There is no separate type-check command and
+`tsc` is never run (`oxlint.config.ts` sets `typeAware`/`typeCheck`). Each file type-checks through its nearest
+`tsconfig.json`, so a new package or config file needs no root-level registration. The root `tsconfig.json` covers only
+the root `*.config.ts` files. oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the
+generated `packages/web/admin/.react-router/types/` and `apps/sayaka/.react-router/types/`) is never type-checked.
 
 ## Tests
 
@@ -178,6 +184,10 @@ Tests live next to the covered package — no root-level test tree.
 - Project registration: the root `vitest.config.ts` spreads `allTestProjects` from `@kobato/test/projects/registry` —
   the explicit, ordered project table. No config glob discovery; every test file is matched exactly once and
   `e2e`/`browser` are registered nowhere (`apps/kobato/tests/arch/vitest-project-registry.test.ts`).
+- The live-instance suites (`split:smoke`, `sea:smoke`, `sea:e2e`, `sea:browser`, `trace:smoke`) boot the real
+  kobato+sayaka pair or the dev servers through the instance driver in `tools/test/src/instance/` and drive the browser
+  through `tools/test/src/browser/` (`tools/test/AGENTS.md`); the e2e and browser trees import
+  `@kobato/test/instance/client/*` and `@kobato/test/browser/*`.
 - Import `describe`, `it`, `expect`, `vi` from `vitest`; run through the root `test*` scripts; `pnpm test <path>` for
   path filters; never select Vitest projects on the command line.
 - Pool/isolation: every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `maxWorkers: 4`,

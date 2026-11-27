@@ -2,8 +2,10 @@ import type { O2Context, TraceState } from '@kobato/trace/lib'
 import type { BrowserContext, Page } from '@playwright/test'
 
 import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/pack/instance/client/http'
-import { callE2eRpc } from '@kobato/pack/instance/client/rpc'
+import { TRACE_METRIC_STREAMS } from '@kobato/settings/telemetry/metrics'
+import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/settings/telemetry/pipeline'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/instance/client/http'
+import { callE2eRpc } from '@kobato/test/instance/client/rpc'
 import {
   bootAdminDevServer,
   bootBackendDevServer,
@@ -11,11 +13,9 @@ import {
   stopDevServer,
   writeDevConfig,
   type DevServer,
-} from '@kobato/pack/instance/dev-instance'
-import { seedInstalledInstance } from '@kobato/pack/instance/seed'
-import { pickFreePort, sleep } from '@kobato/pack/process'
-import { TRACE_METRIC_STREAMS } from '@kobato/settings/telemetry/metrics'
-import { RUM_PRIVACY_FUNCTION_NAME, RUM_PRIVACY_PIPELINE_NAME } from '@kobato/settings/telemetry/pipeline'
+} from '@kobato/test/instance/dev-instance'
+import { seedInstalledInstance } from '@kobato/test/instance/seed'
+import { pickFreePort, sleep } from '@kobato/test/process'
 import { lexicalBodyWith, lexicalParagraph } from '@kobato/trace/lexical-fixtures'
 import {
   buildState,

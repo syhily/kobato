@@ -7,7 +7,7 @@
 
 ## Context
 
-`@kobato/font-split` (vendored cn-font-split fork, `tools/font-split/`) partitions a font's cmap in `pre_subset`:
+`@kobato/font-split` (vendored cn-font-split fork, `packages/font-split/`) partitions a font's cmap in `pre_subset`:
 official character-list layers (`unicode/cjk_tables.rs` — 通用规范汉字表 一/二/三级, HK/TW/JA lists, Hangul syllables)
 plus Unicode script blocks; `pre_subset/auto_chunk.rs` then re-chunks each layer to a ~70 KB byte budget with a
 cube-root length ramp (`length_for_index`).
@@ -70,7 +70,7 @@ Adopt the two measured wins inside our existing Rust pipeline.
    replace stroke order with corpus document-frequency order inside each pack, in the existing `corpus:generate`
    pipeline; the generator also emits the parallel `*_DF` arrays the DP consumes as touch probabilities. −38% to −41%
    per-page bytes, zero algorithm change. Corpus (settled): the pinned `zhwiki-20261101` Wikimedia dump, processed by
-   font-split's `corpus build` script (`tools/font-split/scripts/corpus/`) in one streaming pass — wikitext cleaning,
+   font-split's `corpus build` script (`packages/font-split/scripts/corpus/`) in one streaming pass — wikitext cleaning,
    conversion through the `opencc-fmmseg` 0.13.1 dictionaries (vendored under `scripts/cjk-tables/opencc/`) into **two
    script dimensions** (`t2s` Simplified orders the TGH/JA packs, `s2t` orders the HK/TW packs, both over the same
    document set), per-document character frequencies. Fixture pages are excluded from the counts. (zhwiki is stub-heavy:
@@ -81,7 +81,7 @@ Adopt the two measured wins inside our existing Rust pipeline.
    frequency table, bytes from a per-pack size probe (one font-wide 1% sampling estimate until the 2026-11-26 revision).
    **λ=55 KB, μ=0.5 KB** — λ was 30 KB when this ADR was accepted and was retuned on production content (see
    "Re-validation on production content"). Later λ/μ changes are arbitrated by the harness (decision 3).
-3. **Evaluation harness as the gate — landed at `tools/font-split/tests/page_cost.rs`.** Runs the real `font_split`
+3. **Evaluation harness as the gate — landed at `packages/font-split/tests/page_cost.rs`.** Runs the real `font_split`
    pipeline on a committed OFL fixture font (ASCII + `ZH_SYMBOL` + 通用规范汉字表 一级字表) against 64 held-out pages
    **per script dimension** (`zh-hans-heldout-64.txt` / `zh-hant-heldout-64.txt`, produced by `corpus build`) plus the
    234 pages of the production-blog fixture (`blog-zh-hans-234.txt`, produced by `corpus blog-pages`), parses
@@ -332,7 +332,7 @@ Costs of the revision:
   103). λ=30 saves 43% per cold page at +29% requests; WOFF2 quality 11 adds its −15% to −17% package bytes. An
   already-uploaded font keeps its old slices until it is re-uploaded.
 - The `corpus` pipeline is the single producer of the frequency TSVs and the held-out page fixtures; both are committed
-  inside `tools/font-split/` and regenerate together when the dump pin changes.
+  inside `packages/font-split/` and regenerate together when the dump pin changes.
 - Tables remain editable official lists: frequency changes _order_, not coverage, so the `corpus:generate` size
   invariants (3500/3000/1605, …) keep guarding the generator.
 - Both script dimensions now come from the same document set via OpenCC conversion, so Traditional-heavy sites are

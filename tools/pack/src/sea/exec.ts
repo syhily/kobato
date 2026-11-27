@@ -1,5 +1,5 @@
-import { fail } from '@kobato/pack/process'
 import { repoRoot } from '@kobato/pack/sea/paths'
+import { fail } from '@kobato/test/process'
 import { spawnSync } from 'node:child_process'
 
 interface RunOptions {

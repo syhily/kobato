@@ -1,6 +1,8 @@
-import type { SmokeServer } from '@kobato/pack/instance/sea-instance'
+import type { SmokeServer } from '@kobato/test/instance/sea-instance'
 
-import { scanAccessEvents } from '@kobato/pack/instance/analytics'
+import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
+import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
+import { scanAccessEvents } from '@kobato/test/instance/analytics'
 import {
   bootSayakaServer,
   bootServer,
@@ -9,12 +11,10 @@ import {
   seaInstanceEnv,
   waitForExit,
   waitForHttp,
-} from '@kobato/pack/instance/sea-instance'
-import { readConvergedConfig, seedInstalledInstance } from '@kobato/pack/instance/seed'
-import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
-import { fail, fetchManual, pickFreePort, scrubbedParentEnv, sleep } from '@kobato/pack/process'
-import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
-import { repoRoot, seaBinaryPath } from '@kobato/pack/sea/paths'
+} from '@kobato/test/instance/sea-instance'
+import { readConvergedConfig, seedInstalledInstance } from '@kobato/test/instance/seed'
+import { makeTempDirs, smokeDatabases } from '@kobato/test/instance/temp'
+import { fail, fetchManual, pickFreePort, scrubbedParentEnv, sleep } from '@kobato/test/process'
 import { spawnSync } from 'node:child_process'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'

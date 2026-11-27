@@ -1,7 +1,7 @@
-import { fail } from '@kobato/pack/process'
 import { writeSeaConfig } from '@kobato/pack/sea/blob'
 import { run, tryRun } from '@kobato/pack/sea/exec'
 import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir, type SeaApp } from '@kobato/pack/sea/paths'
+import { fail } from '@kobato/test/process'
 import { mkdir, readFile } from 'node:fs/promises'
 
 async function ensureSentinelFuse() {

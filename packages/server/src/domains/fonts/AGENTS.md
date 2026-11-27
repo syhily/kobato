@@ -1,7 +1,7 @@
 # Fonts
 
 Self-hosted web-font slicing. `slice.ts` drives the `@kobato/font-split` Node-API native addon — a vendored fork of
-[KonghaYao/cn-font-split](https://github.com/KonghaYao/cn-font-split) living at `tools/font-split/` with its own
+[KonghaYao/cn-font-split](https://github.com/KonghaYao/cn-font-split) living at `packages/font-split/` with its own
 AGENTS.md (layout, toolchain pins, corpus, commands). The binding runs on the libuv pool, so the event loop is never
 blocked. `vendor/napi-split.ts` is the binding seam: `fontSplit(props)` + `fontSplitAlgorithmVersion()`, loading the
 addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`. Product src never statically imports `@kobato/font-split`
@@ -31,6 +31,6 @@ and a stable ETag.
   `services/upload.ts`).
 - The addon is compiled, not vendored as a binary: `pnpm --filter @kobato/font-split run build` must run once per
   machine before `pnpm dev` or any test touching `sliceFont`, and in CI before `sea:build` — `vendor/napi-split.ts`
-  throws an actionable error when it is missing. Updating: take upstream fixes into `tools/font-split/` by hand
+  throws an actionable error when it is missing. Updating: take upstream fixes into `packages/font-split/` by hand
   following its AGENTS.md — the partition pipeline there is Kobato-owned, a re-vendor would drop it; `cargo test` plus
   the real-TTF `sliceFont` unit test are the drift guards.

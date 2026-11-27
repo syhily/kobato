@@ -7,8 +7,8 @@ workspace through `@kobato/web-admin/...`, plus the canonical product helpers cr
 (DB/session/mail/request-context from `@kobato/server/tests/utils/`, the SSR render helper from
 `@kobato/web-kit/tests/utils/render.tsx`, i18n render from `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the
 `DocumentFacts` fixture from `@kobato/ui/tests/utils/document-facts.ts` for tests that mount their own stack); React
-Router's `./+types/*` stays relative. The Playwright tree is the one runner-level exception: its config/support imports
-stay relative because Playwright loads them before any tsconfig-path resolver.
+Router's `./+types/*` stays relative. The Playwright tree reaches its shared support through the package as well:
+`tests/browser/*.spec.ts` import `@kobato/test/browser/*`.
 
 - **`tests/{unit,it}/`** — tests mirroring the backend: `src/server/client-assets-root.ts` →
   `tests/unit/server/client-assets-root.test.ts`, the server middlewares the app pins → `tests/unit/http/`, and the
@@ -34,12 +34,12 @@ stay relative because Playwright loads them before any tsconfig-path resolver.
   `KOBATO_E2E_PUBLIC_URL` (sayaka origin, browser-facing), admin email/password — plus `KOBATO_E2E_DATABASE`, the one
   sanctioned seam for state no HTTP surface can stage (use only when no admin RPC exists; always restore). Mail never
   leaves the machine. The HTTP / oRPC helpers (`E2eClient`, `bootstrapCsrfToken`, `loginAdmin` + the `AuthFlowOutput`
-  answer, `callE2eRpc`) come from `@kobato/pack/instance/client`. Signin is the oRPC auth flow: bootstrap CSRF →
+  answer, `callE2eRpc`) come from `@kobato/test/instance/client`. Signin is the oRPC auth flow: bootstrap CSRF →
   `account.auth.login` → `{ type: 'redirect' | 'error' | 'success' }` — there is no document form POST.
 - **`tests/browser/`** — real-browser Playwright journeys for behavior jsdom cannot prove; admin/editor/settings
   journeys only, since the public-site journeys live in `apps/sayaka/tests/browser` (ADR-0009). Spec files import the
-  SHARED journey support from `@kobato/pack/browser/{fixtures,journey,settings-api}` — the per-tree `support/` copy is
-  gone; the Playwright config lives in `tools/pack/playwright.config.ts` (two projects, one booted pair, `baseURL` = the
+  SHARED journey support from `@kobato/test/browser/{fixtures,journey,settings-api}` — the per-tree `support/` copy is
+  gone; the Playwright config lives in `tools/test/playwright.config.ts` (two projects, one booted pair, `baseURL` = the
   sayaka origin; the workspace and public journeys both reach the admin through sayaka's forwarded `/admin/*` + `/rpc/*`
   families). **Not part of `pnpm test`**: `pnpm run test:browser` boots a throwaway pair or targets
   `KOBATO_BROWSER_BASE_URL` (the sayaka origin); `pnpm run sea:browser [kobato-binary]` always boots the built pair

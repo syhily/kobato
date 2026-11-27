@@ -1,12 +1,6 @@
-import type { Plugin, PluginOption } from 'vite'
+import type { Plugin } from 'vite'
 
-import { inlinePackageDataPlugin } from '@kobato/pack/sea/inline-package-data'
-import { appDefines, readAppPackage } from '@kobato/pack/vite/app-metadata'
-import { appOptimizeDeps } from '@kobato/pack/vite/optimize-deps'
-import { reactCompilerPlugin } from '@kobato/pack/vite/react-compiler-plugin'
-import { sanitizeEngineAliasPlugin } from '@kobato/pack/vite/sanitize-engine-alias'
-import { reactRouter } from '@react-router/dev/vite'
-import tailwindcss from '@tailwindcss/vite'
+import { frontEndConfig } from '@kobato/pack/vite/front-end-config'
 import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 
@@ -30,60 +24,27 @@ function editorDocumentRewritePlugin(): Plugin {
   }
 }
 
-export default defineConfig(({ command, isPreview }) => {
-  const backendUrl = process.env[BACKEND_URL_ENV] ?? DEFAULT_BACKEND_URL
-  const proxyRule = { target: backendUrl, changeOrigin: true }
-  return {
-    base: isPreview ? '/' : '/admin/',
-    ...(command === 'build'
-      ? {
-          ssr: {
-            noExternal: true,
-            target: 'node',
-          },
-        }
-      : {}),
-    environments: {
-      client: {
-        build: {
-          chunkSizeWarningLimit: 2500,
-        },
-      },
-      ssr: {
-        resolve: {
-          conditions: ['node'],
-        },
-      },
+const backendUrl = process.env[BACKEND_URL_ENV] ?? DEFAULT_BACKEND_URL
+const proxyRule = { target: backendUrl, changeOrigin: true }
+
+export default defineConfig(
+  frontEndConfig({
+    appDir: 'packages/web/admin',
+    port: 4321,
+    identityDir: 'apps/kobato',
+    base: ({ isPreview }) => (isPreview ? '/' : '/admin/'),
+    optimizeDeps: true,
+    plugins: {
+      leading: [editorDocumentRewritePlugin()],
+      trailing: [svgr()],
     },
-    plugins: [
-      editorDocumentRewritePlugin(),
-      sanitizeEngineAliasPlugin(),
-      inlinePackageDataPlugin(),
-      reactCompilerPlugin(),
-      ...(reactRouter() as Plugin[]),
-      tailwindcss(),
-      svgr(),
-    ] as PluginOption[],
-    resolve: {
-      tsconfigPaths: true,
-    },
-    optimizeDeps: appOptimizeDeps('packages/web/admin'),
-    build: {
-      emptyOutDir: true,
-      chunkSizeWarningLimit: 500,
-    },
-    define: appDefines(readAppPackage()),
     server: {
       host: '127.0.0.1',
-      port: 4321,
       proxy: {
         '/rpc': proxyRule,
         '/health': proxyRule,
         '/ready': proxyRule,
       },
-      warmup: {
-        clientFiles: ['./src/root.tsx', './src/routes.ts', './src/routes/**/*.{ts,tsx}'],
-      },
     },
-  }
-})
+  }),
+)

@@ -1,4 +1,4 @@
-import { E2eClient, e2eEnv } from '@kobato/pack/instance/client/http'
+import { E2eClient, e2eEnv } from '@kobato/test/instance/client/http'
 import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()

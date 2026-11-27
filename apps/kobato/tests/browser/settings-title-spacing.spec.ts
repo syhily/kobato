@@ -1,5 +1,5 @@
-import { expect, test } from '@kobato/pack/browser/fixtures'
-import { openSettings } from '@kobato/pack/browser/journey'
+import { expect, test } from '@kobato/test/browser/fixtures'
+import { openSettings } from '@kobato/test/browser/journey'
 
 const ANALYTICS_NAV_LABEL = '分析统计'
 const COLLECTION_TITLE = '采集与过滤策略'

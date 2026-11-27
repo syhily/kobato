@@ -1,19 +1,20 @@
-import { bootSuiteInstance, stopSuiteInstance } from '@kobato/pack/instance/suite-instance'
-import { fail } from '@kobato/pack/process'
 import { repoRoot, seaBinaryPath, sayakaBinarySiblingPath } from '@kobato/pack/sea/paths'
+import { bootSuiteInstance, stopSuiteInstance } from '@kobato/test/instance/suite-instance'
+import { fail } from '@kobato/test/process'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { resolve as resolvePath } from 'node:path'
+import { join, resolve as resolvePath } from 'node:path'
 
 const USAGE = 'Usage: node tools/pack/src/sea/browser.ts [--managed] [path-to-kobato-binary]'
-const PLAYWRIGHT_CONFIG = resolvePath(import.meta.dirname, '..', '..', 'playwright.config.ts')
+const PLAYWRIGHT_CONFIG = join(repoRoot, 'tools', 'test', 'playwright.config.ts')
+const PLAYWRIGHT_PACKAGE = '@kobato/test'
 
 function uniquePostSlug() {
   return `browser-journey-${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`
 }
 
 function runPlaywright(extraEnv: Record<string, string>) {
-  const args = ['--filter', '@kobato/pack', 'exec', 'playwright', 'test', '--config', PLAYWRIGHT_CONFIG]
+  const args = ['--filter', PLAYWRIGHT_PACKAGE, 'exec', 'playwright', 'test', '--config', PLAYWRIGHT_CONFIG]
   const grep = process.env.KOBATO_BROWSER_TEST_GREP
   if (grep !== undefined && grep !== '') {
     args.push('--grep', grep)

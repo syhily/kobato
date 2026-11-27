@@ -1,4 +1,4 @@
-import { expect, test } from '@kobato/pack/browser/fixtures'
+import { expect, test } from '@kobato/test/browser/fixtures'
 import {
   chooseTimeZone,
   collectConsoleIssues,
@@ -10,8 +10,8 @@ import {
   replaceInput,
   switchLocale,
   waitForSettingsReady,
-} from '@kobato/pack/browser/journey'
-import { BASELINE_GENERAL } from '@kobato/pack/browser/settings-api'
+} from '@kobato/test/browser/journey'
+import { BASELINE_GENERAL } from '@kobato/test/browser/settings-api'
 
 test.describe.configure({ mode: 'serial' })
 

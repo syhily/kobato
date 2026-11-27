@@ -1,7 +1,7 @@
-import { readConvergedConfig } from '@kobato/pack/instance/seed'
-import { bootSuiteInstance, stopSuiteInstance } from '@kobato/pack/instance/suite-instance'
-import { fail } from '@kobato/pack/process'
 import { repoRoot, seaBinaryPath, sayakaBinarySiblingPath } from '@kobato/pack/sea/paths'
+import { readConvergedConfig } from '@kobato/test/instance/seed'
+import { bootSuiteInstance, stopSuiteInstance } from '@kobato/test/instance/suite-instance'
+import { fail } from '@kobato/test/process'
 import { spawnSync } from 'node:child_process'
 import { join, resolve as resolvePath } from 'node:path'
 

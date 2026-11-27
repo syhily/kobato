@@ -13,7 +13,7 @@ export const inklingUnitConfigPath = 'packages/inkling/tests/vitest.config.ts'
 export const demoUnitConfigPath = 'apps/inkling-demo/tests/vitest.config.ts'
 export const packUnitConfigPath = 'tools/pack/tests/unit/vitest.config.ts'
 export const traceUnitConfigPath = 'tools/trace/tests/unit/vitest.config.ts'
-export const fontSplitUnitConfigPath = 'tools/font-split/tests/unit/vitest.config.ts'
+export const fontSplitUnitConfigPath = 'packages/font-split/tests/unit/vitest.config.ts'
 
 export const allTestProjects = [
   sharedUnitProject,

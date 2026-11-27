@@ -82,7 +82,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/ui',
     '@kobato/web-kit',
   ],
-  '@kobato/test': [],
+  '@kobato/test': ['@kobato/settings', '@kobato/base'],
 
   kobato: INTERNAL_SCOPES,
   sayaka: [
@@ -135,7 +135,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/inkling',
   ],
-  '@kobato/test': ['@kobato/test'],
+  '@kobato/test': ['@kobato/test', '@kobato/settings', '@kobato/base'],
   kobato: [
     'kobato',
     '@kobato/api',
@@ -436,19 +436,27 @@ describe('package DAG', () => {
     ).toEqual([])
   })
 
+  const DRIVER_FILES = ['tools/test/src/process.ts', ...sourceFiles('tools/test/src/instance')]
+  const DRIVER_OWN_SPECIFIER = /^@kobato\/test\/(?:instance\/|process$|repo-root$)/
+
+  function workspaceTargetsOf(file: string): Array<readonly [string, string | undefined]> {
+    return importSpecifiers(readSource(file)).map((specifier) => [
+      specifier,
+      INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`)),
+    ])
+  }
+
   it('the instance driver and process primitives stay product-light and off the build pipeline', () => {
-    const allowed = new Set(['@kobato/settings'])
     const offenders: string[] = []
-    for (const file of [...sourceFiles('tools/pack/src/instance'), 'tools/pack/src/process.ts']) {
-      for (const specifier of importSpecifiers(readSource(file))) {
-        const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
-        if (target === undefined || allowed.has(target)) {
+    for (const file of DRIVER_FILES) {
+      for (const [specifier, target] of workspaceTargetsOf(file)) {
+        if (target === undefined || target === '@kobato/settings') {
           continue
         }
         if (target === '@kobato/base' && /^@kobato\/base\/utils(?:\/|$)/.test(specifier)) {
           continue
         }
-        if (target === '@kobato/pack' && /^@kobato\/pack\/(?:instance\/|process$)/.test(specifier)) {
+        if (target === '@kobato/test' && DRIVER_OWN_SPECIFIER.test(specifier)) {
           continue
         }
         offenders.push(`${file}: ${specifier}`)
@@ -456,8 +464,97 @@ describe('package DAG', () => {
     }
     expect(
       offenders,
-      'src/instance/ and src/process.ts drive running processes: they import only @kobato/settings, @kobato/base/utils, ' +
-        'and their own modules',
+      'tools/test/src/instance/ and tools/test/src/process.ts drive running processes: they import only ' +
+        '@kobato/settings, @kobato/base/utils, @kobato/test/repo-root, and their own modules',
+    ).toEqual([])
+  })
+
+  it('the instance driver never reaches the browser support, and the browser support reaches only the driver client', () => {
+    const driverOffenders: string[] = []
+    for (const file of DRIVER_FILES) {
+      for (const [specifier, target] of workspaceTargetsOf(file)) {
+        if (target === '@kobato/test' && !DRIVER_OWN_SPECIFIER.test(specifier)) {
+          driverOffenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(
+      driverOffenders,
+      'the driver never imports the Playwright journey support under @kobato/test/browser',
+    ).toEqual([])
+
+    const browserOffenders: string[] = []
+    for (const file of sourceFiles('tools/test/src/browser')) {
+      for (const [specifier, target] of workspaceTargetsOf(file)) {
+        const driverClient = /^@kobato\/test\/instance\/client\/(?:browser-env|http|rpc)$/
+        if (
+          target === undefined ||
+          (target === '@kobato/test' && (driverClient.test(specifier) || specifier.startsWith('@kobato/test/browser/')))
+        ) {
+          continue
+        }
+        if (target === '@kobato/base' && /^@kobato\/base\/utils(?:\/|$)/.test(specifier)) {
+          continue
+        }
+        browserOffenders.push(`${file}: ${specifier}`)
+      }
+    }
+    expect(
+      browserOffenders,
+      'tools/test/src/browser/ runs under Playwright: it imports @playwright/test, @kobato/base/utils, the driver client ' +
+        '(@kobato/test/instance/client/*), and its own modules',
+    ).toEqual([])
+  })
+
+  it('pack → test is the only direction between the two tooling packages', () => {
+    const offenders: string[] = []
+    for (const file of sourceFiles('tools/test')) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier === '@kobato/pack' || specifier.startsWith('@kobato/pack/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(offenders, 'nothing under tools/test imports @kobato/pack').toEqual([])
+  })
+
+  it('the product-free half of @kobato/test stays product-free', () => {
+    const offenders: string[] = []
+    const liveInstanceTree = new Set([...DRIVER_FILES, ...sourceFiles('tools/test/src/browser')])
+    for (const file of sourceFiles('tools/test/src')) {
+      if (liveInstanceTree.has(file)) {
+        continue
+      }
+      for (const [specifier, target] of workspaceTargetsOf(file)) {
+        if (target !== undefined && target !== '@kobato/test') {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(
+      offenders,
+      'fixtures, doubles, setups, and the project table import no @kobato/* product package; only the live-instance ' +
+        'driver and the browser support under tools/test do',
+    ).toEqual([])
+  })
+
+  it('no source tree imports the font-split addon package', () => {
+    const offenders: string[] = []
+    for (const pkg of REPO_PACKAGES) {
+      if (pkg.name === '@kobato/font-split') {
+        continue
+      }
+      for (const file of sourceFiles(`${pkg.dir}/src`)) {
+        for (const specifier of importSpecifiers(readSource(file))) {
+          if (specifier === '@kobato/font-split' || specifier.startsWith('@kobato/font-split/')) {
+            offenders.push(`${file}: ${specifier}`)
+          }
+        }
+      }
+    }
+    expect(
+      offenders,
+      'the addon is reached only through nativeRequire(FONT_SPLIT_ADDON_SPEC), never an import',
     ).toEqual([])
   })
 

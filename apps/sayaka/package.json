@@ -30,7 +30,7 @@
     "build": "react-router build",
     "dev": "cd ../.. && react-router dev apps/sayaka",
     "start": "cd ../.. && node ./apps/sayaka/build/server/index.js",
-    "typegen": "react-router typegen"
+    "typegen": "cd ../.. && react-router typegen apps/sayaka"
   },
   "devDependencies": {
     "@hono/node-server": "catalog:",
@@ -53,7 +53,6 @@
     "@playwright/test": "catalog:",
     "@react-router/dev": "catalog:",
     "@react-router/node": "catalog:",
-    "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
