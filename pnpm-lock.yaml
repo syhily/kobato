@@ -686,7 +686,7 @@ importers:
         version: link:../../tools/tsconfig
       '@kobato/ui':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/web/ui
       '@kobato/web-kit':
         specifier: workspace:*
         version: link:../../packages/web/kit
@@ -818,7 +818,7 @@ importers:
         version: link:../../tools/tsconfig
       '@kobato/ui':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/web/ui
       '@kobato/utils':
         specifier: workspace:*
         version: link:../../packages/shared/utils
@@ -1010,7 +1010,7 @@ importers:
         version: link:../../tools/tsconfig
       '@kobato/ui':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/web/ui
       '@kobato/utils':
         specifier: workspace:*
         version: link:../../packages/shared/utils
@@ -1238,7 +1238,7 @@ importers:
         version: link:../../tools/tsconfig
       '@kobato/ui':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../web/ui
       '@kobato/utils':
         specifier: workspace:*
         version: link:../shared/utils
@@ -1711,26 +1711,95 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
 
-  packages/ui:
+  packages/web/kit:
+    devDependencies:
+      '@kobato/api':
+        specifier: workspace:*
+        version: link:../../api
+      '@kobato/assets':
+        specifier: workspace:*
+        version: link:../../shared/assets
+      '@kobato/i18n':
+        specifier: workspace:*
+        version: link:../../shared/i18n
+      '@kobato/inkling':
+        specifier: workspace:*
+        version: link:../../inkling
+      '@kobato/sanitize':
+        specifier: workspace:*
+        version: link:../../shared/sanitize
+      '@kobato/settings':
+        specifier: workspace:*
+        version: link:../../shared/settings
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:../../../tools/test
+      '@kobato/tsconfig':
+        specifier: workspace:*
+        version: link:../../../tools/tsconfig
+      '@kobato/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@kobato/utils':
+        specifier: workspace:*
+        version: link:../../shared/utils
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.16.6(@opentelemetry/api@1.10.0)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.108.4(@types/react@19.3.3)(react@19.3.1)
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 8.0.0(@testing-library/dom@10.4.2)(vitest@5.1.2)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.3
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.3)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.81.0(@types/react@19.3.3)(react@19.3.1)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
+      react-router:
+        specifier: 'catalog:'
+        version: 8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      sonner:
+        specifier: 'catalog:'
+        version: 2.0.8(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+
+  packages/web/ui:
     devDependencies:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.3.3)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@kobato/i18n':
         specifier: workspace:*
-        version: link:../shared/i18n
+        version: link:../../shared/i18n
       '@kobato/settings':
         specifier: workspace:*
-        version: link:../shared/settings
+        version: link:../../shared/settings
       '@kobato/test':
         specifier: workspace:*
-        version: link:../../tools/test
+        version: link:../../../tools/test
       '@kobato/tsconfig':
         specifier: workspace:*
-        version: link:../../tools/tsconfig
+        version: link:../../../tools/tsconfig
       '@kobato/utils':
         specifier: workspace:*
-        version: link:../shared/utils
+        version: link:../../shared/utils
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 8.0.0(@testing-library/dom@10.4.2)(vitest@5.1.2)
@@ -1782,75 +1851,6 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.5
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-
-  packages/web/kit:
-    devDependencies:
-      '@kobato/api':
-        specifier: workspace:*
-        version: link:../../api
-      '@kobato/assets':
-        specifier: workspace:*
-        version: link:../../shared/assets
-      '@kobato/i18n':
-        specifier: workspace:*
-        version: link:../../shared/i18n
-      '@kobato/inkling':
-        specifier: workspace:*
-        version: link:../../inkling
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../../shared/sanitize
-      '@kobato/settings':
-        specifier: workspace:*
-        version: link:../../shared/settings
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../../tools/test
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      '@kobato/ui':
-        specifier: workspace:*
-        version: link:../../ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../shared/utils
-      '@orpc/client':
-        specifier: 'catalog:'
-        version: 1.16.6(@opentelemetry/api@1.10.0)
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.108.4(@types/react@19.3.3)(react@19.3.1)
-      '@testing-library/jest-dom':
-        specifier: 'catalog:'
-        version: 8.0.0(@testing-library/dom@10.4.2)(vitest@5.1.2)
-      '@testing-library/react':
-        specifier: 'catalog:'
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.3.3
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.3.0(@types/react@19.3.3)
-      lucide-react:
-        specifier: 'catalog:'
-        version: 1.81.0(@types/react@19.3.3)(react@19.3.1)
-      react:
-        specifier: 'catalog:'
-        version: 19.3.1
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.3.1(react@19.3.1)
-      react-router:
-        specifier: 'catalog:'
-        version: 8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      sonner:
-        specifier: 'catalog:'
-        version: 2.0.8(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))

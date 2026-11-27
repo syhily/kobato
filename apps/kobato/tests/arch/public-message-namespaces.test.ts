@@ -11,7 +11,7 @@ const APP_SRC = join(REPO_ROOT, 'apps/sayaka/src')
 
 const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web-kit': 'packages/web/kit/src',
-  '@kobato/ui': 'packages/ui/src',
+  '@kobato/ui': 'packages/web/ui/src',
   '@kobato/api': 'packages/api/src',
   '@kobato/catalog': 'packages/shared/catalog/src',
   '@kobato/utils': 'packages/shared/utils/src',

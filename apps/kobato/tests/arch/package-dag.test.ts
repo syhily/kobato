@@ -193,7 +193,7 @@ const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'apps/kobato/tests/arch/client-bundle.test.ts',
   'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
   'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
-  'packages/ui/tests/unit/contract/dark-variant.test.ts',
+  'packages/web/ui/tests/unit/contract/dark-variant.test.ts',
 ])
 
 function resolveInternalScope(specifier: string): string | undefined {
@@ -643,7 +643,7 @@ describe('package DAG', () => {
   })
 
   it('db and ui expose bounded package surfaces', () => {
-    for (const dir of ['packages/db', 'packages/ui']) {
+    for (const dir of ['packages/db', 'packages/web/ui']) {
       const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as {
         exports: Record<string, string>
       }
@@ -657,7 +657,7 @@ describe('package DAG', () => {
       'packages/shared/i18n',
       'packages/api',
       'packages/server',
-      'packages/ui',
+      'packages/web/ui',
       'packages/web/kit',
       'packages/inkling',
     ]) {

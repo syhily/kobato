@@ -56,6 +56,7 @@ and is imported by `CommentBodyEditor`. The exact `@source` sets are pinned by
   classNames go through `cn()`; JS-driven animation only through the `@kobato/ui/components/lazy-motion` facade with
   constants from `@kobato/ui/lib/motion`.
 - Never import `shiki` here — highlighted code arrives pre-rendered (SSR-only).
-- Tests live in `packages/web/kit/tests/{unit,snaps}`, run by the umbrella `web-unit`/`web-snaps` projects.
-  `tests/utils/render.tsx` is the workspace-canonical web render helper: the kobato and sayaka app test trees import it
-  cross-package as `@kobato/web-kit/tests/utils/render` (`tools/test/AGENTS.md`).
+- Tests live in `packages/web/kit/tests/{unit,snaps}`, run by the `web-unit`/`web-snaps` projects, which match only this
+  package (`packages/web/kit/tests/**`). `tests/utils/render.tsx` is the workspace-canonical web render helper: the
+  kobato and sayaka app test trees import it cross-package as `@kobato/web-kit/tests/utils/render`
+  (`tools/test/AGENTS.md`).

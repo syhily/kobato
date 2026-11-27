@@ -9,7 +9,7 @@ part of the product build.
   `src/content/` fixture documents; `src/hooks/` demo-level React hooks; `src/utils/` demo data/config helpers (no
   hooks).
 - `src/styles/public.css` is the demo's single Tailwind compile; it composes the UI/Inkling/kit partials exactly like
-  the app's public surface (`packages/ui/src/styles/AGENTS.md`).
+  the app's public surface (`packages/web/ui/src/styles/AGENTS.md`).
 - Internal imports use `@kobato/inkling-demo/...` (resolved through the package `exports` map to `src/`).
   `src/generate-content.ts` regenerates `src/content/content.json` — run `pnpm run demo:content` (the write path is
   anchored on the demo directory, never cwd).

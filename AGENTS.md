@@ -11,10 +11,10 @@ runtime state):
   `vite.backend.config.ts`), `sayaka` (the public-front-end split from ADR-0009: a second React Router 8 SSR app that
   serves the public document perimeter and forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo`
   (standalone Inkling playground, `pnpm demo`).
-- `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/ui`, `@kobato/inkling`
-  (Lexical editor with a React-free `/headless/` document model), `packages/web/kit` (`web-kit`, the one web package —
-  the admin UI lives in `apps/kobato/src/ui` per ADR-0009), and eight isomorphic React-free leaves under
-  `packages/shared/*`.
+- `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
+  editor with a React-free `/headless/` document model), the two front-end packages under `packages/web/` — `ui`
+  (`@kobato/ui`, the design system) and `kit` (`web-kit`, the cross-surface kit; the admin UI lives in
+  `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 
@@ -84,11 +84,12 @@ section pins the direction graph only — package composition rules live in each
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
-- Web direction: `packages/web` holds exactly one package, `web-kit` — the admin UI lives in `apps/kobato/src/ui` and
-  the public UI in `apps/sayaka/src/ui` (ADR-0009). The kit imports neither app, neither consuming UI tree, nor a shared
-  leaf beyond its declarations. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit; kobato's
-  `src/ui` imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato allows it tests-only).
-  The browser oRPC client is typed exclusively through `@kobato/api`.
+- Web direction: `packages/web` holds two packages, `@kobato/ui` (`packages/web/ui`, the design system) and
+  `@kobato/web-kit` (`packages/web/kit`) — the admin UI lives in `apps/kobato/src/ui` and the public UI in
+  `apps/sayaka/src/ui` (ADR-0009). The kit imports neither app, neither consuming UI tree, nor a shared leaf beyond its
+  declarations. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit; kobato's `src/ui`
+  imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato allows it tests-only). The
+  browser oRPC client is typed exclusively through `@kobato/api`.
 - `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
 - `apps/sayaka` is the public-front-end split (ADR-0009): it never imports `@kobato/server` or `@kobato/db` and never
@@ -174,7 +175,7 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
   `motion/react` import. Simple hover/state styling stays on CSS `transition-*`.
 - Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation
   animation — named captures paint in the `::view-transition` overlay above every z-index. The theme-switch wipe in
-  `packages/ui/src/lib/ThemeProvider.tsx` is the sole consumer.
+  `packages/web/ui/src/lib/ThemeProvider.tsx` is the sole consumer.
 - `isolate: false` in `vitestTestBase` is a hard constraint: never flip the default back to `isolate: true`, and never
   add `isolate: true` to a project outside `ISOLATED_PROJECTS` in
   `apps/kobato/tests/arch/vitest-project-registry.test.ts`. A file that cannot share a worker is renamed `*.iso.test.ts`

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 const REPO_ROOT = process.cwd()
 
 const KIT_ROOT = 'packages/web/kit/src'
+const UI_ROOT = 'packages/web/ui/src'
 const WORKSPACE_UI_ROOT = 'apps/kobato/src/ui'
 
 function walk(root: string, out: string[]): void {
@@ -53,16 +54,16 @@ function offendersImporting(roots: string[], banned: readonly string[]): string[
 }
 
 describe('web direction', () => {
-  it('keeps packages/web at exactly the cross-surface kit', () => {
+  it('keeps packages/web at exactly the design system and the cross-surface kit', () => {
     const leaves = readdirSync(`${REPO_ROOT}/packages/web`, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
 
-    expect(
-      leaves,
-      'sayaka is the public site — an app under apps/; the admin UI moved into apps/kobato/src/ui',
-    ).toEqual(['kit'])
+    expect(leaves, 'sayaka is the public site — an app under apps/; the admin UI lives in apps/kobato/src/ui').toEqual([
+      'kit',
+      'ui',
+    ])
   })
 
   it('keeps the kit below every consumer: no kit module imports @kobato/server or the sayaka app', () => {
@@ -74,6 +75,6 @@ describe('web direction', () => {
   })
 
   it('keeps route title/meta resolution in the app layer: no web package or workspace UI module imports @kobato/catalog/seo', () => {
-    expect(offendersImporting([KIT_ROOT, WORKSPACE_UI_ROOT], ['@kobato/catalog/seo'])).toEqual([])
+    expect(offendersImporting([KIT_ROOT, UI_ROOT, WORKSPACE_UI_ROOT], ['@kobato/catalog/seo'])).toEqual([])
   })
 })

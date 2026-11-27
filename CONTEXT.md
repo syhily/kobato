@@ -182,6 +182,13 @@ SDK, `/api/content/v1`
 **Headless**: the delivery form in which the public site is a frontend deployed apart from the backend and reaching it
 only through the public contract — sayaka is the first-party one. _Avoid_: headless-only, `headless.enabled`
 
+**kobato**: the backend deliverable of Kobato — the `/rpc/*` transport, the operational probes, and the workspace served
+beside them on one origin. _Avoid_: backend app, admin app (that is the workspace)
+
+**workspace**: the admin, editor, and auth screens — one static single-page app over the `account` and `admin` contract
+groups, built into kobato and served at `/admin/*` and `/editor/*`, so same-origin with the API by construction.
+_Avoid_: admin SPA, admin app, back office
+
 **sayaka**: the public-site deliverable of Kobato — the frontend that renders the public site through the public
 contract and is deployed beside `kobato`, the backend deliverable. _Avoid_: web app, public app, `apps/web`, frontend
 binary

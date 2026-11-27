@@ -9,7 +9,7 @@ const REPO_ROOT = process.cwd()
 const nodeRequire = createRequire(resolve(REPO_ROOT, 'apps/kobato/vite.config.ts'))
 
 const ENTRIES = {
-  root: 'packages/ui/src/styles/ui.css',
+  root: 'packages/web/ui/src/styles/ui.css',
   admin: 'apps/kobato/src/styles/admin.css',
   sayaka: 'apps/sayaka/src/styles/public.css',
   demo: 'apps/inkling-demo/src/styles/public.css',
@@ -20,7 +20,7 @@ const SOURCE_ROOTS = [
   'apps/kobato/src',
   'apps/sayaka/src',
   'apps/inkling-demo/src',
-  'packages/ui/src',
+  'packages/web/ui/src',
   'packages/web/kit/src',
   'packages/inkling/src',
 ] as const
@@ -137,7 +137,7 @@ function inlineStyleProperties(): Set<string> {
 describe('Tailwind compile contract', () => {
   it('pins each surface compile to its intended source scan', async () => {
     const expected: Record<string, string[]> = {
-      root: ['packages/ui/src/components', 'packages/ui/src/icons', 'packages/ui/src/lib'],
+      root: ['packages/web/ui/src/components', 'packages/web/ui/src/icons', 'packages/web/ui/src/lib'],
       admin: [
         'apps/kobato/src/root.tsx',
         'apps/kobato/src/routes/admin',

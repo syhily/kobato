@@ -27,7 +27,7 @@ components are explicit-props — no reads from sessions, route params, request 
 - `editor-meta/` — the post/page meta form family (presentation/controllers only); `account/`, `music/` (+
   `music/player/`), `branding/` — product domains; `settings/` has its own AGENTS.md.
 
-Token rules (merge groups, dark tiers) live in `packages/ui/src/styles/AGENTS.md`.
+Token rules (merge groups, dark tiers) live in `packages/web/ui/src/styles/AGENTS.md`.
 
 ## File naming
 

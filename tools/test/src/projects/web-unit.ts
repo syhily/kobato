@@ -15,7 +15,7 @@ export const webUnitProjects = [
       pool: 'vmThreads',
       environment: 'happy-dom',
       setupFiles: [SETUP_FILE],
-      include: ['packages/web/*/tests/unit/**/*.test.{ts,tsx}'],
+      include: ['packages/web/kit/tests/unit/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
     },
   },

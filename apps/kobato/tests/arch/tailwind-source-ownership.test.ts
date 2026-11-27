@@ -7,7 +7,7 @@ const SOURCE_ROOTS = [
   { packageRoot: 'apps/kobato', sourceRoot: 'apps/kobato/src' },
   { packageRoot: 'apps/sayaka', sourceRoot: 'apps/sayaka/src' },
   { packageRoot: 'apps/inkling-demo', sourceRoot: 'apps/inkling-demo/src' },
-  { packageRoot: 'packages/ui', sourceRoot: 'packages/ui/src' },
+  { packageRoot: 'packages/web/ui', sourceRoot: 'packages/web/ui/src' },
   { packageRoot: 'packages/web/kit', sourceRoot: 'packages/web/kit/src' },
   { packageRoot: 'packages/inkling', sourceRoot: 'packages/inkling/src' },
 ] as const
@@ -62,7 +62,7 @@ describe('Tailwind source ownership', () => {
         'apps/sayaka/src/styles/public.css',
         'apps/sayaka/src/ui/styles/public.css',
         'apps/inkling-demo/src/styles/public.css',
-        'packages/ui/src/styles/ui.css',
+        'packages/web/ui/src/styles/ui.css',
         'packages/web/kit/src/styles/kit.css',
         'apps/kobato/src/ui/styles/admin.css',
         'packages/inkling/src/styles/cards.css',
@@ -164,7 +164,7 @@ describe('Tailwind source ownership', () => {
   })
   it('pins shared card compile tokens to the UI runtime contract', () => {
     const shared = readFileSync('packages/inkling/src/styles/cards.css', 'utf8')
-    const ui = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')
+    const ui = readFileSync('packages/web/ui/src/styles/tailwind.css', 'utf8')
     for (const match of shared.matchAll(/^\s*(--color-[\w-]+:\s*var\(--[\w-]+\));/gm)) {
       expect(ui).toContain(match[1])
     }

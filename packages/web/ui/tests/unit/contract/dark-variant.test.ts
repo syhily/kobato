@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const STYLES = resolve(process.cwd(), 'packages/ui/src/styles')
+const STYLES = resolve(process.cwd(), 'packages/web/ui/src/styles')
 
 const read = (name: string) => readFileSync(resolve(STYLES, name), 'utf8')
 

@@ -3,7 +3,7 @@ import { DEFAULT_FONT_STACKS } from '@kobato/ui/lib/font-stacks'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-const CSS = readFileSync('packages/ui/src/styles/tailwind.css', 'utf8')
+const CSS = readFileSync('packages/web/ui/src/styles/tailwind.css', 'utf8')
 const ROOT = readFileSync('apps/kobato/src/root.tsx', 'utf8')
 
 function normalize(value: string): string {

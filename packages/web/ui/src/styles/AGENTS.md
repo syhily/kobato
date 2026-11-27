@@ -1,9 +1,9 @@
 # UI style conventions
 
-`packages/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and `@source`
-graphs belong to the consuming app; Inkling host chrome belongs to `apps/kobato/src/ui`
-(`packages/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and additional
-product styles here).
+`packages/web/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and
+`@source` graphs belong to the consuming app; Inkling host chrome belongs to `apps/kobato/src/ui`
+(`packages/web/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and
+additional product styles here).
 
 ## Generic styles
 
@@ -24,8 +24,8 @@ product styles here).
 ## Design tokens
 
 - Every custom property behind a utility is declared in `@theme inline` in `tailwind.css` AND registered in
-  `packages/ui/src/lib/cn.ts`, which extends every project token namespace so custom `--text-*` / `--color-*` /
-  `--shadow-*` tokens land in the correct merge group (`packages/ui/tests/unit/contract/tailwind-tokens.test.ts`).
+  `packages/web/ui/src/lib/cn.ts`, which extends every project token namespace so custom `--text-*` / `--color-*` /
+  `--shadow-*` tokens land in the correct merge group (`packages/web/ui/tests/unit/contract/tailwind-tokens.test.ts`).
 - No arbitrary-value syntax for design-system or size tokens — declare a named token and its merge group instead.
 - Never write `dark:bg-foo` on a tier-1 token — the `.dark` rebind handles the switch. Adjacent dark surface tiers stay
   3–8 L apart; no `--line-*` token shares a value with a `--surface-*` token.
@@ -38,7 +38,8 @@ product styles here).
 ## Locale font chains
 
 `tailwind.css` owns the default `--font-body` / `--font-serif` chains: zh-CN at `:root`, `:lang(en-US)` / `:lang(zh-TW)`
-/ `:lang(zh-HK)` overrides — keep them in lockstep with `DEFAULT_FONT_STACKS` in `packages/ui/src/lib/font-stacks.ts`.
+/ `:lang(zh-HK)` overrides — keep them in lockstep with `DEFAULT_FONT_STACKS` in
+`packages/web/ui/src/lib/font-stacks.ts`.
 
 ## Shadow tiers
 

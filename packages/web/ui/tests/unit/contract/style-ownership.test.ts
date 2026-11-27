@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const STYLES = resolve(process.cwd(), 'packages/ui/src/styles')
+const STYLES = resolve(process.cwd(), 'packages/web/ui/src/styles')
 
 describe('UI style ownership', () => {
   it('contains only generic design-system partials', () => {

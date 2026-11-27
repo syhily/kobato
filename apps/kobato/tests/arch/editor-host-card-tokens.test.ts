@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const editorCss = readFileSync(resolve(process.cwd(), 'apps/kobato/src/ui/styles/inkling-editor.css'), 'utf8')
 const inklingCss = readFileSync(resolve(process.cwd(), 'packages/inkling/src/styles/index.css'), 'utf8')
-const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css'), 'utf8')
+const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/web/ui/src/styles/tailwind.css'), 'utf8')
 
 const restoreRule = /\.kobato-page-editor\s+\[data-inkling-card='[^']+'\][^{]*\{([^}]*)\}/.exec(editorCss)
 

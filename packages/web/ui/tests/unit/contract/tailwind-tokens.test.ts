@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const CSS_PATH = resolve(process.cwd(), 'packages/ui/src/styles/tailwind.css')
+const CSS_PATH = resolve(process.cwd(), 'packages/web/ui/src/styles/tailwind.css')
 
 const BUILTIN_NAMESPACES = new Set(['breakpoint', 'container'])
 

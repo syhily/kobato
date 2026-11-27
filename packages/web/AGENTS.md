@@ -1,9 +1,11 @@
 # Web umbrella conventions
 
-`packages/web/` is the UMBRELLA directory for the ONE product web package, with no package of its own and no umbrella
-test directory (the `web-unit` and `web-snaps` projects live in `tools/test/src/projects/`; cross-package contract pins
-in the app test tree):
+`packages/web/` is the UMBRELLA directory for the front-end packages, with no package of its own and no umbrella test
+directory (the `ui-unit`, `ui-snaps`, `web-unit`, and `web-snaps` projects live in `tools/test/src/projects/`;
+cross-package contract pins in the app test tree).
 
+- `ui/` — `@kobato/ui`: the design system — design tokens, base styles, the shadcn/Base UI primitives, theme and i18n
+  providers, and generic presentation hooks (`ui/AGENTS.md`).
 - `kit/` — `@kobato/web-kit`: the cross-surface kit of ADR-0009 — the modules both consuming surfaces render (the
   `ui/shared` and `ui/lib` tiers, the comment composer and body projection, the chunk-recovery family, `BrandLogo`,
   `Image`). It stays a workspace package because the backend app never imports the public frontend. The admin UI is not

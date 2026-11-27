@@ -5,8 +5,8 @@ import { testDefine } from '@kobato/test/vitest.define'
 import path from 'node:path'
 import { configDefaults, defineConfig } from 'vitest/config'
 
-const UNIT_SETUP = path.resolve(REPO_ROOT, 'packages/ui/tests/utils/setup/unit.ts')
-const SNAPS_SETUP = path.resolve(REPO_ROOT, 'packages/ui/tests/utils/setup/snaps.ts')
+const UNIT_SETUP = path.resolve(REPO_ROOT, 'packages/web/ui/tests/utils/setup/unit.ts')
+const SNAPS_SETUP = path.resolve(REPO_ROOT, 'packages/web/ui/tests/utils/setup/snaps.ts')
 
 export const uiProjects = [
   defineConfig({
@@ -19,7 +19,7 @@ export const uiProjects = [
       name: 'ui-unit',
       pool: 'vmThreads',
       environment: 'happy-dom',
-      include: ['packages/ui/tests/unit/**/*.test.{ts,tsx}'],
+      include: ['packages/web/ui/tests/unit/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
       setupFiles: [UNIT_SETUP],
     },
@@ -33,7 +33,7 @@ export const uiProjects = [
       ...vitestTestBase,
       name: 'ui-snaps',
       pool: 'vmThreads',
-      include: ['packages/ui/tests/snaps/**/*.test.{ts,tsx}'],
+      include: ['packages/web/ui/tests/snaps/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
       setupFiles: [SNAPS_SETUP],
     },

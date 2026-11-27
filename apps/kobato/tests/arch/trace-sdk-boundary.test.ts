@@ -19,7 +19,7 @@ const SOURCE_DIRS = [
   'packages/shared/settings/src',
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
-  'packages/ui/src',
+  'packages/web/ui/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
 export const APPROVED_SDK_ENTRIES = [

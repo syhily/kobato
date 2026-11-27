@@ -56,7 +56,7 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
 
 const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width', 'z'])
 
-const CSS_PATH = 'packages/ui/src/styles/tailwind.css'
+const CSS_PATH = 'packages/web/ui/src/styles/tailwind.css'
 
 describe('contract: @theme tokens are mirrored into the cn engine', () => {
   const css = readFileSync(CSS_PATH, 'utf8')
@@ -104,7 +104,7 @@ describe('contract: @theme tokens are mirrored into the cn engine', () => {
     expect(
       drift,
       [
-        `packages/ui/src/lib/cn.ts disagrees with packages/ui/src/styles/tailwind.css.`,
+        `packages/web/ui/src/lib/cn.ts disagrees with packages/web/ui/src/styles/tailwind.css.`,
         `For each namespace below, the entries under "missingFromCn" exist in`,
         `the CSS but were not registered with createCn -- a future`,
         `cn() call composing two tokens of the same namespace prefix may`,

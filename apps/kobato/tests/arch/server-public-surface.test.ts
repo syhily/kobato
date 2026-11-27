@@ -9,7 +9,7 @@ const CONSUMING_TREES = [
   'apps/inkling-demo/src',
   'packages/api/src',
   'packages/db/src',
-  'packages/ui/src',
+  'packages/web/ui/src',
   'packages/inkling/src',
   'tools/test/src',
   'tools/trace/src',

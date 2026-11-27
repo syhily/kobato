@@ -111,7 +111,7 @@ describe('structure conventions', () => {
       'packages/server/src',
       'apps/kobato/src/ui',
       'packages/web/kit/src',
-      'packages/ui/src',
+      'packages/web/ui/src',
       'packages/inkling/src',
       'packages/db/src',
       'packages/api/src',
@@ -133,12 +133,12 @@ describe('structure conventions', () => {
   })
 
   it('keeps UI primitives free of hook definitions', () => {
-    const root = `${REPO_ROOT}/packages/ui/src/components`
+    const root = `${REPO_ROOT}/packages/web/ui/src/components`
     const offenders = walk(root)
       .filter((file) => /\.tsx?$/.test(file))
       .filter((file) => /(?:export\s+)?function\s+use[A-Z]/.test(readFileSync(file, 'utf8')))
       .map((file) => relative(REPO_ROOT, file))
-    expect(offenders, 'a context/hook pair lives in packages/ui/src/lib, never in components/').toEqual([])
+    expect(offenders, 'a context/hook pair lives in packages/web/ui/src/lib, never in components/').toEqual([])
   })
 
   it('lets a settings section directory own its view or form file', () => {

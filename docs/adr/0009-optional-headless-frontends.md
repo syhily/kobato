@@ -6,6 +6,9 @@
   (branded contract procedures, canonical-only transport), whose files are removed. Rewritten 2026-11-25 for the
   `kobato`/`sayaka` split: §1, §2, §3, and §6–§11 are decided anew, and §4, §5, and the type guarantees carry over (§7
   in wording only). Implemented 2026-11-26.
+- Amended 2026-11-27 by [ADR-0011](0011-package-topology.md) (front-end package topology): §1 "Where the code lives" and
+  the Implementation notes' "Packages" and "Builds" paragraphs are superseded there as its adoption steps land; the
+  ADR-0011 this file cited earlier for branded contract procedures was removed on consolidation and its number reused.
 - Related: [ADR-0001](0001-request-and-process-state.md) (amended 2026-11-26: `RequestContext` keeps two projections in
   `kobato` — the Hono variable and the oRPC `HandlerContext`; sayaka derives its own per-request context), the consumer
   guide ([../manual/Headless.md](../manual/Headless.md) — the guide for an external frontend author building against a

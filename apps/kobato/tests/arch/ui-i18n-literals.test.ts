@@ -22,7 +22,7 @@ const SCAN_ROOTS = [
   'packages/shared/settings/src',
   'packages/shared/assets/src',
   'packages/shared/sanitize/src',
-  'packages/ui/src',
+  'packages/web/ui/src',
   'apps/kobato/src/ui',
   'packages/web/kit/src',
 ] as const
@@ -119,7 +119,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'packages/server/src/domains/webmentions/target.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/domains/webmentions/verify.ts', rules: ['domain-error'] },
   { path: 'packages/server/src/render/calendar/locale.ts', rules: ['hardcoded-locale', 'han-literal'] },
-  { path: 'packages/ui/src/lib/font-stacks.ts', rules: ['hardcoded-locale'] },
+  { path: 'packages/web/ui/src/lib/font-stacks.ts', rules: ['hardcoded-locale'] },
   {
     path: 'packages/server/src/render/feed/generator.tsx',
     rules: ['domain-error'],
@@ -224,7 +224,7 @@ describe('production sources', () => {
         'packages/server/src/domains/webmentions/verify.ts',
 
         'packages/server/src/render/calendar/locale.ts',
-        'packages/ui/src/lib/font-stacks.ts',
+        'packages/web/ui/src/lib/font-stacks.ts',
         'packages/server/src/render/feed/generator.tsx',
         'packages/inkling/src/components/ui/LibrarySelector.tsx',
         'packages/inkling/src/nodes/FootnoteDefinitionNodeComponent.tsx',
@@ -279,8 +279,8 @@ describe('production sources', () => {
         'apps/kobato/src/ui/settings/cache/BucketCard.tsx',
         'apps/kobato/src/routes/admin/settings/layout.tsx',
         'apps/kobato/src/routes/admin/layout.tsx',
-        'packages/ui/src/components/pagination.tsx',
-        'packages/ui/src/components/combobox.tsx',
+        'packages/web/ui/src/components/pagination.tsx',
+        'packages/web/ui/src/components/combobox.tsx',
 
         'apps/kobato/src/routes/editor/layout.tsx',
         'apps/kobato/src/routes/editor/post/analytics.tsx',
@@ -384,7 +384,7 @@ describe('production sources', () => {
         'packages/server/src/render/calendar/render.ts',
         'packages/server/src/render/calendar/locale.ts',
         'packages/server/src/http/middleware-pipeline.ts',
-        'packages/ui/src/lib/font-stacks.ts',
+        'packages/web/ui/src/lib/font-stacks.ts',
         'apps/kobato/src/root.tsx',
       ]),
     )

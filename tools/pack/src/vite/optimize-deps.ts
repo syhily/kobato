@@ -16,7 +16,7 @@ const WORKSPACE_PACKAGE_DIRS = [
   'packages/api',
   'packages/db',
   'packages/web/kit',
-  'packages/ui',
+  'packages/web/ui',
   'packages/server',
   'packages/shared/utils',
   'packages/shared/auth',

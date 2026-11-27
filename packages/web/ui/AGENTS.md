@@ -2,7 +2,8 @@
 
 `@kobato/ui` is the design system: design tokens, base styles, shadcn/Base UI primitives, static icons, theme and i18n
 providers, and generic presentation hooks. Production sources depend only on `@kobato/settings`, `@kobato/i18n`,
-`@kobato/utils` — never web packages or `@kobato/server`.
+`@kobato/utils` — never `@kobato/web-kit`, the apps' UI trees (`apps/kobato/src/ui`, `apps/sayaka/src/ui`), or
+`@kobato/server`.
 
 - `styles/` owns the generic token, typeset, and dark-variant partials plus `ui.css` (`src/styles/AGENTS.md`).
 - `components/` contains reusable primitives, not product screens or domain orchestration; a component file never
