@@ -83,8 +83,10 @@ All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single wor
 `@sayaka/...` in `apps/sayaka`; app test helpers: `@tests/...` (kobato app tests only). Everything else:
 `@kobato/<package>/...` — the workspace (`@kobato/web-admin`) included, which imports its own source as
 `@kobato/web-admin/<path>` and its test helpers as `@kobato/web-admin/tests/<path>`, as every package does. No relative
-specifiers in source or tests — exceptions: React Router generated `./+types/*`, the SEA build-output entry, generated
-probe JavaScript, and import-scanner test fixtures.
+specifiers in source or tests — exceptions: React Router generated `./+types/*`; the SEA pipeline's two build-output
+entries (`tools/pack/src/sea/server-entry.ts` → kobato's `build/server/index.js`, `sayaka-entry.ts` → sayaka's) and
+`sayaka-entry.ts`'s tools-internal `./sayaka-sea-cli`, so the pipeline holds no dependency on the sayaka app; generated
+probe JavaScript; and import-scanner test fixtures.
 
 - Source never imports a package's `tests/` tree; the one sanctioned cross-package seam is
   `@kobato/<owner>/tests/utils/<name>` — the canonical fixture registry lives in `tools/test/AGENTS.md`.

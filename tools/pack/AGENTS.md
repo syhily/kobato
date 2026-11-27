@@ -58,7 +58,10 @@ inside the product binaries.
   native-require redirect plugin (sayaka embeds no natives and must never gain the `@kobato/server` binding).
 - `src/vite/` plugins are BUILD code: only a `vite.config.ts` (or a test of the plugin) may import them — never a
   product `src/` module — and they never move back into `packages/server/src/infra/`. Build-time configs import them
-  through `@kobato/pack/vite/*`; the only relative import left is the build-output entry (`src/sea/server-entry.ts`).
+  through `@kobato/pack/vite/*`; the relative imports left under `src/` are the two injected mains' build-output entries
+  (`src/sea/server-entry.ts` → kobato's `build/server/index.js`, `src/sea/sayaka-entry.ts` → sayaka's) and
+  `sayaka-entry.ts`'s tools-internal `./sayaka-sea-cli`; the `./lib/greet.mjs` in `src/sea/vfs-capabilities.ts` is
+  inside the probe script it generates, not a source import.
 
 ## Runtime shape
 
@@ -134,8 +137,12 @@ asset-key pins live in `apps/kobato/tests/arch/`.
 
 - `pnpm run sea:build` → `dist-sea/kobato` + `dist-sea/sayaka` (each with a `.sha256` sidecar), each binary budgeted at
   250 MB (`BINARY_MAX_BYTES`). Deliberately NOT UPX-compressed — do not re-add. The injector requires an official
-  **single-architecture** Node distribution; on an Intel Mac with the universal node, prepend a single-arch `node` to
-  `PATH`. **`--build-sea` is the only injector** — no postject, no codesign on darwin.
+  **single-architecture** Node distribution and injects with the Node that runs it (`process.execPath`): through pnpm
+  that is the repository root's `devEngines.runtime` (the pinned single-arch download), so nothing needs configuring;
+  the note about prepending a single-arch `node` to `PATH` (on an Intel Mac with the universal node) applies only when
+  the injector is invoked with a bare `node`. **`--build-sea` is the only injector** — no postject; on darwin the
+  injector then ad-hoc re-signs the injected binary (`resignDarwinBinary` in `src/sea/inject.ts`:
+  `codesign --remove-signature`, then `codesign --sign - --force`).
 - `pnpm run sea:smoke [kobato-binary]` — deep managed smoke over the PAIR (budgets, versions, probes, natives + flat
   layout, worker pool, fresh-pair boot, restarts, seeded document through sayaka, the DuckDB round-trip);
   `--external <sayaka-url>` runs only the public HTTP checks; `--binary-only` the service-free ones.

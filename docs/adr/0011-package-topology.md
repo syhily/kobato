@@ -1,17 +1,16 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and implemented: adoption steps 1 to 6 have landed (the comment surface and the shared
+- Status: accepted and **implemented** 2026-11-27 — the six Adoption steps landed (the comment surface and the shared
   composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document shell
   to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned; `startKobato` in
   `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry thinned to the
   call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router SPA project with
   no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client build located
-  through the package; the five floor leaves merged into `@kobato/base` — the prefix rewrite, the path table, the
-  directory-level DAG pin, the documents; `font-split` in `packages/`, the instance driver, the browser support, and the
-  Playwright config in `tools/test`, the front-end config factory, output paths anchored on the repository root — the
-  DAG pins moved with them). Only the final review of this ADR follows. It amends
-  [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
-  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+  through the package; the five floor leaves merged into `@kobato/base`; `font-split` in `packages/`, the instance
+  driver, the browser support, and the Playwright config in `tools/test`, the front-end config factory, output paths
+  anchored on the repository root); see "Implementation notes (2026-11-27)" for where the tree refined the Decision. It
+  amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes'
+  "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -57,7 +56,7 @@ workspace carries one piece of public-site machinery it does not need.
 | Package                           | Holds                                                     | May import                                         |
 | --------------------------------- | --------------------------------------------------------- | -------------------------------------------------- |
 | `@kobato/ui` (`web/ui`)           | the design system and the document shell                  | `@kobato/settings`, `@kobato/i18n`, `@kobato/base` |
-| `@kobato/web-kit` (`web/kit`)     | the features both front-ends render that call a procedure | `@kobato/ui`, `@kobato/api`, `@kobato/inkling`     |
+| `@kobato/web-kit` (`web/kit`)     | the features both front-ends render that call a procedure | `@kobato/ui`, `@kobato/api`, and the shared leaves |
 | `@kobato/web-admin` (`web/admin`) | the workspace: the admin, editor, and auth SPA            | the two rows above and the shared leaves           |
 
 `@kobato/ui` moves from `packages/ui`; its name and its import specifiers do not change. `@kobato/web-admin` is new
@@ -71,8 +70,7 @@ What leaves the kit:
 
 - **Document-shell modules → `@kobato/ui`:** `blog-settings-context`, `LocaleSyncProvider` with `locale-sync`,
   `chunk-error` / `chunk-reload` / `ChunkReloadOverlay`, `BrandLogo`, `Image` with its hooks, and the chrome clock
-  (`use-chrome-clock`, landed as `@kobato/ui/lib/use-document-clock` over the shell's document facts). None imports
-  `@kobato/api`; 27 of sayaka's 40 kit import lines are these.
+  (`use-chrome-clock`). None imports `@kobato/api`; 27 of sayaka's 40 kit import lines are these.
 - **The comment composer → `@kobato/inkling/comment`** (§2).
 - **The shared composer platform → Inkling's public API, the root-data label hook → the workspace:** what both composers
   need becomes Inkling's deliberately-public API on the React barrel, never a per-host copy — `useEditorSurface` with
@@ -92,10 +90,10 @@ lines in 10 source files, with `use-notifications` (180 lines) in `@kobato/api` 
 
 **The document shell.** `@kobato/ui` gains one family (`components/document-shell/`: `DocumentShell`,
 `DocumentProviders`, the head planner) that renders a document and owns root route data: fonts and preconnects, theme,
-locale and messages, the settings contexts, locale sync, and the hooks that hand document facts (`nowIso`, the CSRF
-token, the label payload) to shared modules. A shared hook no longer calls `useRouteLoaderData`. The shell takes
-document facts, never `content.bootstrap`'s DTO — each app maps its bootstrap to them — so `@kobato/ui` stays free of
-`@kobato/api`.
+locale and messages, the settings contexts, locale sync, and the hooks that hand document facts to shared modules —
+`useDocumentClock` (`nowIso`), `useDocumentCsrfToken`, and `useDocumentLabels` (the label payload), under `lib/`. A
+shared hook no longer calls `useRouteLoaderData`. The shell takes document facts, never `content.bootstrap`'s DTO — each
+app maps its bootstrap to them — so `@kobato/ui` stays free of `@kobato/api`.
 
 ### 2. The comment editor belongs to Inkling
 
@@ -109,30 +107,34 @@ external frontend author composes a comment with the public contract and this on
 
 `use-notifications` is 180 lines of TanStack Query over `public.notifications.*` with the cache patching beside it, and
 imports no UI package. It moves to `src/browser/`. The rule for that directory grows one sentence: **a browser hook
-imports the contract, the client, and TanStack Query — never a UI package (`@kobato/ui`, `@kobato/web-kit`, and the
-`@kobato/inkling` barrel and every Inkling entry but `/headless*`), never message copy (the `@kobato/i18n` message
-catalogs, the fallback catalog, and the label tables), never a consumer's route data (React Router).** `toast-api-error`
-(sonner, message ids) and the document clock (`use-chrome-clock` when this was written, now
-`@kobato/ui/lib/use-document-clock` over document facts) fail it and stay out.
+imports the contract, the client, TanStack Query, and the shared leaves — never a UI package (`@kobato/ui`,
+`@kobato/web-kit`, and the `@kobato/inkling` barrel and every Inkling entry but `/headless*`), never message copy (the
+`@kobato/i18n` message catalogs, the fallback catalog, and the label tables), never a consumer's route data (React
+Router).** `toast-api-error` (sonner, message ids) fails it and stays out; the document clock is
+`@kobato/ui/lib/use-document-clock` over document facts, not a browser data hook.
 
 ### 4. The workspace is a static project; `kobato` mounts the server and serves it
 
 `packages/web/admin` (`@kobato/web-admin`) is the workspace as a React Router SPA project — `react-router.config.ts`,
 `vite.config.ts`, the routes, the root, the UI tree, the document runtime, the styles — whose build is a static client
 tree under the `/admin/` base. It lives under `packages/` because it is not deployed on its own: `apps/` holds what is.
-`apps/kobato` keeps the backend — `src/server.ts` and the backend Vite config — and no React Router project.
+`apps/kobato` keeps the backend — `src/server.ts`, its build-layout and dev-server helpers under `src/server/`, and the
+backend Vite config — and no React Router project.
 
 **Three dev commands.** React Router's typegen writes route types to
 `<project root>/.react-router/types/<app directory>` and types a route outside the app directory as `unknown`, so the
 workspace has to be its own project; the single dev server that served both the workspace and the Hono app ends.
-`pnpm dev` is the backend — a Vite SSR host for the Hono app, with server HMR. `pnpm dev:admin` is the workspace, on
-today's port and URLs, proxying the backend's path families (`/rpc/*`, `/health`, `/ready`). `pnpm dev:public` is
-sayaka; its forwarding keeps a single target, the workspace origin, which serves both the workspace and `/rpc/*`, and
-`SAYAKA_KOBATO_RPC_URL` still points it at the backend directly when the workspace is not needed.
+`pnpm dev` is the backend — a Vite SSR host for the Hono app, with server HMR, on `127.0.0.1:4320`. `pnpm dev:admin` is
+the workspace, on `127.0.0.1:4321`, proxying the backend's path families (`/rpc/*`, `/health`, `/ready`) to
+`KOBATO_DEV_BACKEND_URL` (default `http://127.0.0.1:4320`). `pnpm dev:public` is sayaka; its forwarding keeps a single
+target, the workspace origin, which serves both the workspace and `/rpc/*`, and `SAYAKA_KOBATO_RPC_URL` still points it
+at the backend directly when the workspace is not needed.
 
 **The workspace has no route warmup.** sayaka keeps its inline idle script and the manifest that feeds it. The workspace
 drops `useRouteWarmup`, its idle script, and its tiers; the manifest contract and the Vite plugin shrink to the public
-surface — `tier1`, one tier-2 list, and a cap keyed on the hrefs the manifest carries.
+surface — the manifest is `{ version, tier1, tier2 }`, one tier-2 list, and the idle cap is keyed on the hrefs the
+manifest carries, so a base prefix cannot hide an oversized chunk. What both front-ends keep is Vite's dev
+`server.warmup.clientFiles`, set by the front-end config factory (§7).
 
 **The build output is found through the package.** `kobato` locates the workspace's client build by resolving
 `@kobato/web-admin` — the SEA asset collection and the node-mode static root alike — never through the working
@@ -175,8 +177,12 @@ language-backed concepts.
   `playwright.config.ts`) move to `tools/test/` as `src/instance/` and `src/browser/`, imported as
   `@kobato/test/instance/*` and `@kobato/test/browser/*`. `tools/test` is then everything a test needs — fixtures and
   doubles, the Vitest project table, the booted-instance driver, the browser journeys. Only its Vitest half stays
-  product-free: the driver and the browser support reach exactly `@kobato/settings`, the `@kobato/base/utils` sub-tree,
-  and their own modules, and the driver never reaches the browser support.
+  product-free; the two live halves are pinned separately (`package-dag.test.ts`): the driver (`src/instance/` with
+  `process.ts`) imports exactly `@kobato/settings`, the `@kobato/base/utils` sub-tree, and its own modules, and the
+  browser support (`src/browser/`) imports `@playwright/test`, `@kobato/base/utils`, the driver's `client/`, and its own
+  modules; the driver never reaches the browser support. The move created one dev-only workspace dependency cycle,
+  accepted and documented in `tools/AGENTS.md`: `packages/shared/settings` dev-depends on `@kobato/test` and
+  `tools/test` dev-depends on `@kobato/settings` for `instance/seed.ts` and `instance/split-smoke.ts`.
 - `tools/pack` keeps the SEA pipeline, the Vite plugins, and the release scripts. The process primitives both halves
   used (`pack/src/process.ts`) go with the driver, so `pack` → `test` is the only direction between them.
 - `pack/src/vite` gains one front-end config factory, `frontEndConfig` (`front-end-config.ts`): it assembles the shared
@@ -202,8 +208,8 @@ language-backed concepts.
 - **Move the kit's shared modules into `@kobato/api`.** Only hooks with no UI dependency qualify (§3); the rest would
   make the contract package depend on a design system and message catalogs.
 - **Leave the workspace in `apps/kobato`.** Keeps one dev process and today's build, at exactly the price this ADR
-  removes: a backend app that is 94% front-end source, a build of two Vite projects writing one `build/` directory, and
-  a boot sequence in the app. The second dev process is the accepted cost.
+  removes: an `apps/kobato` that is 94% front-end source, a build of two Vite projects writing one `build/` directory,
+  and a boot sequence in the app. The second dev process is the accepted cost.
 - **Point `apps/kobato`'s React Router `appDirectory` at the workspace source to keep one dev server.** Route types are
   written relative to the project root, and routes outside the app directory type as `unknown`.
 - **Put the backend dev server in front and forward `/admin/*` to the workspace dev server.** Mirrors production, but
@@ -223,21 +229,25 @@ language-backed concepts.
   its sayaka side and loses its kobato-side React Router glue.
 - A first navigation into each workspace section waits on its chunk with no pending state — the workspace never had one.
   A pending indicator is the fix if that ever reads as a dead click.
-- Paths pinned in tools move with the workspace: the SEA asset collection (`apps/kobato/build/client`). Three stale pins
-  are corrected on the way — `components.json` (`tailwind.css`, the sheet the shadcn CLI reads), `oxfmt.config.ts`
-  (`sortTailwindcss.stylesheet`, the sheet oxfmt resolves the theme from to sort classes), and `.vscode/settings.json`
+- Paths pinned in tools move with the workspace: the SEA asset collection, which had pinned `apps/kobato/build/client`
+  and now reads the workspace's build through `@kobato/web-admin`. Three stale pins are corrected on the way —
+  `components.json` (`tailwind.css`, the sheet the shadcn CLI reads), `oxfmt.config.ts` (`sortTailwindcss.stylesheet`,
+  the sheet oxfmt resolves the theme from to sort classes), and `.vscode/settings.json`
   (`tailwindCSS.experimental.configFile`) — named `apps/kobato/src/styles/public.css`, which has lived in sayaka since
   ADR-0009; each now names `packages/web/ui/src/styles/ui.css`, the design system's compilation entry — it carries
   `@import 'tailwindcss'` over the token partial and scans the shadcn components, so all three consumers resolve the
   same theme. The kobato build no longer produces a client tree.
-- Tests move with the source they mirror: about 230 files (29,000 lines) to `packages/web/admin/tests`, their own Vitest
-  projects, and the workspace arch pins beside them; cross-package pins stay in `apps/kobato/tests/arch`.
-  `web-direction` changes its scan root to `packages/web/admin/src/ui`; sayaka's `frozen-admin-set` is untouched — it
-  never scanned the workspace, and its roots last changed in step 2, when `packages/api/src/browser` joined. Five moved
-  tests keep their `@kobato/server` / `@kobato/db` imports as the documented test-only exception
-  (`packages/web/admin/AGENTS.md`): the package declares both as test dependencies and its `src/` imports neither.
-- The workspace's `@/` imports (946 in source, 480 in tests) switch to its package specifier; `@/` remains the backend
-  app's alias.
+- Tests move with the source they mirror: 247 files to `packages/web/admin/tests` — 242 test files and the five helpers
+  beside them — with zero `@/` or `@tests/` imports left; the `admin-arch`, `admin-unit`, `admin-snaps`, and
+  `admin-tz-unit` projects take the workspace's tests, in place of the `app-*` projects that had covered them; the
+  workspace arch pins sit beside them and cross-package pins stay in `apps/kobato/tests/arch`; `inkling-demo` drops the
+  kit. `web-direction` changes its scan root to `packages/web/admin/src/ui`; sayaka's `frozen-admin-set` is untouched —
+  it never scanned the workspace, and its roots last changed in step 2, when `packages/api/src/browser` joined. The
+  workspace's test-only imports of `@kobato/server` and `@kobato/db` are five files (four tests and the unit setup),
+  kept as the documented test-only exception (`packages/web/admin/AGENTS.md`): the package declares both as test
+  dependencies and its `src/` imports neither.
+- The workspace's `@/` imports (946 in source, 480 in tests) switch to its package specifier; `@/` remains the alias of
+  `apps/kobato`'s own source.
 - The shared merge rewrites the path table from eight leaves to four (sixteen rows to eight), 584 import lines, and
   every documentation mention of the five directories.
 - The app e2e and browser trees import `@kobato/test/instance/*` and `@kobato/test/browser/*`; `tools/test` gains the
@@ -249,7 +259,7 @@ language-backed concepts.
 - ADR-0009 is amended as above; the `AGENTS.md` tree follows each step (root, `apps/kobato`, `packages/web` and its
   three packages, `packages/shared`, `tools/`, `tools/pack`, `tools/test`, `apps/inkling-demo`).
 - An external frontend author builds comments and reads notifications from the contract plus `@kobato/inkling/comment`
-  and the browser data hooks, with no Kobato UI package.
+  and the browser data hooks, without importing `@kobato/ui` themselves.
 
 ## Adoption
 
@@ -274,3 +284,88 @@ Each step is green on its own — `pnpm run fmt`, `pnpm run lint`, `pnpm test`, 
    documents.
 6. **`tools/` regroups**: `font-split` into `packages/`; the instance driver, the browser support, and
    `playwright.config.ts` into `tools/test`; the front-end config factory; output paths anchored on the repository root.
+
+## Implementation notes (2026-11-27)
+
+The adoption landed as decided, in eight commits — step 2 in three, every other step in one. This section records what
+the tree added on top of the Decision and where it refined it.
+
+**Inkling's public API.**
+
+- `InklingHostComposer` (`packages/inkling/src/components/InklingHostComposer.tsx`) is the host-facing composer: it
+  reads locale and resolved theme from `@kobato/ui`'s `useI18n` / `useTheme` and takes `labels` as an explicit prop —
+  the one place that binding lives. The barrel re-exports it from `shared-exports.ts` beside `useEditorSurface` (which
+  composes `useEditorBodyReset`), `excludeBaseNodes`, `blockQuoteAsideCycle`, and `loadInklingLabels`. The workspace
+  keeps only `ui/shared/use-inkling-labels.ts`, the typed reader of the shell's `labels` fact (`useDocumentLabels`).
+- The comment entry registers the card decorate adapter itself. Nothing in the comment closure imports the React barrel,
+  so `src/comment/CommentBodyEditor.tsx` calls `registerCardDecorateAdapter()` — the idempotent module-level call
+  defined in `src/nodes/decorate-card.tsx` — and whichever entry loads first installs the adapter. The live-composer
+  regression test `tests/unit/comment/CommentBodyEditor.cards.test.tsx` renders a code block through the comment entry
+  alone.
+
+**Document facts.** The chrome clock `use-chrome-clock` landed as `@kobato/ui/lib/use-document-clock`, over the shell's
+document facts, beside `use-document-csrf-token` and `use-document-labels`. The settings contexts
+(`@kobato/ui/lib/blog-settings-context.tsx`) gained a fonts context — `useFontsSettings` / `useFontsSettingsOptional`.
+Three workspace readers that still read the root loader moved onto the shell: `AdminInstallForm` and `BackupView` onto
+`useDocumentCsrfToken`, and the fonts controller (`ui/fonts/font-slots.ts`) onto `useFontsSettingsOptional`. Each app
+maps its root loader data to `DocumentFacts` in its own `src/document/document-facts.ts` (`documentFactsFrom`),
+unit-tested beside it (`packages/web/admin/tests/unit/document/document-facts.test.ts`,
+`apps/sayaka/tests/unit/document/document-facts.test.ts`).
+
+**Dev topology.** `honoDevHost` (`tools/pack/src/vite/hono-dev-host.ts`) is the backend's Vite SSR dev host: it loads
+`apps/kobato/src/server.ts` through `@hono/vite-dev-server` and publishes the Vite dev server under the `globalThis`
+slot (`Symbol.for('kobato.vite-dev-server')`) before the entry evaluates. `startKobato`'s `listener` union is
+`{ mode: 'bind' }` or `{ mode: 'host'; server }` — the adopted `httpServer`, or `null` when the slot is empty. The
+workspace keeps one dev-only plugin, a pre-middleware rewriting `/editor/*` → `/admin/editor/*` so Vite's `/admin/` base
+lets those documents through (`packages/web/admin/vite.config.ts`). Sayaka's dev forwarding defaults to the workspace
+origin (`DEV_KOBATO_RPC_URL = http://127.0.0.1:4321/rpc`, `apps/sayaka/src/server/config.ts`), so `/admin/*` and
+`/rpc/*` both work through it; `SAYAKA_KOBATO_RPC_URL` still overrides.
+
+**One listener.** `listenHono` (`packages/server/src/infra/http/listener.ts`) is the package's single
+`@hono/node-server` `serve()` site — the configured host and port, `overrideGlobalObjects: false` — and both
+`listenKobato` (`http/kobato-app.ts`) and the lifecycle's `restartServer` go through it, so a restart binds exactly the
+options a cold boot does. `startKobato` wraps `app.fetch` with the leaked-response handler before anything binds it; a
+cold production boot used to serve the unwrapped fetch until a restart.
+
+**Route warmup.** The plugin's idle size cap (`IDLE_SIZE_LIMIT`, 100 KB in `tools/pack/src/vite/route-warmup.ts`) is
+keyed on the hrefs the manifest carries. It used to key chunk sizes as `/assets/<file>`, without the base prefix, so it
+never matched a workspace chunk and never applied. The manifest is `{ version, tier1, tier2 }`
+(`@kobato/base/distribution/warmup-manifest`), `deriveTier2RouteIds` returns the one tier-2 list, and only sayaka mounts
+the plugin (`apps/sayaka/vite.config.ts`); Vite's dev `server.warmup.clientFiles` — the root, the routes module, and
+`src/routes/**` — is what the factory gives both front-ends.
+
+**The workspace move (step 4)** landed as one commit with the route warmup removal in it: 247 files under
+`packages/web/admin/tests` (242 tests and five helpers), zero `@/` or `@tests/` imports left. The three stale stylesheet
+pins — `components.json` (`css`), `oxfmt.config.ts` (`sortTailwindcss.stylesheet`), `.vscode/settings.json`
+(`tailwindCSS.experimental.configFile`) — now name `packages/web/ui/src/styles/ui.css`, the design system's compilation
+entry.
+
+**Tests and the backend packages.** `@kobato/web-admin`'s test tree imports `@kobato/server` and `@kobato/db`
+tests-only, in five files: `tests/utils/setup/unit.ts` (it resets the analytics query executor through
+`@kobato/db/duckdb/query`) and four unit tests — one pins `toClientActionResult` against the server's `authFlowMessage`,
+two replay `mergeSectionPatch` behind the mocked settings commit, and one resolves mirror-preset label keys through
+`createServerTranslator`. It is the documented exception (`packages/web/admin/AGENTS.md`): both are declared test
+dependencies, `tests/arch/route-server-surface.test.ts` pins that `src/` imports no `@kobato/server` module, and the
+package's src targets in `package-dag.test.ts` exclude both.
+
+**The front-end config factory (`tools/pack/src/vite/front-end-config.ts`).**
+`frontEndConfig({ appDir, port, identityDir?, base?, plugins?, server?, optimizeDeps?, serverEntry?, ssrExternals? })`
+returns the config function; `plugins` is `{ leading, trailing }` around the shared plugin list, `base` is a function of
+the config env, `optimizeDeps` adds `appOptimizeDeps(appDir)`, `serverEntry` adds the SSR environment build on `build`,
+and `ssrExternals` is the build-only `ssr.external`. `identityDir` defaults to `apps/kobato` (`readAppPackage`), so the
+workspace's `__APP_*__` identity still comes from the backend's manifest; sayaka passes its own.
+
+**Pins.** The directory-level DAG pin covers `base/src` and `base/tests` — both trees must hold the five directories:
+`auth` and `utils` reach only `@kobato/i18n`, and `assets`, `distribution`, and `sanitize` reach no workspace package.
+The instance-driver pin is scoped to the `@kobato/base/utils` sub-tree; `@kobato/base` as a whole is not admitted.
+`packages/api/src/browser` is a pinned root of sayaka's `frozen-admin-set` (beside `apps/sayaka/src` and the kit), of
+`web-direction` (the `@kobato/catalog/seo` and `useRouteLoaderData` bans), and of `ui-i18n-literals`.
+
+**The kit's final size.** 10 source files and 957 lines, plus `styles/kit.css`. Sayaka imports three of its modules in
+four import lines: `use-logout`, `LazyNotificationsDrawer` (two lines), and `NotificationBadge`.
+
+**Output paths.** The workspace's production bundle guard (`apps/kobato/tests/arch/production-rum-bundle.test.ts`) scans
+`packages/web/admin/build/client` and `apps/kobato/build/server`, located from the repository root like every arch test;
+the Playwright config (`tools/test/playwright.config.ts`) resolves its report and results directories from `REPO_ROOT`
+into `apps/<app>/tmp/`; and both React Router `typegen` scripts `cd` to the repository root and name their project
+directory.

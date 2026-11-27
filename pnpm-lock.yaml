@@ -1587,12 +1587,6 @@ importers:
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 14.0.0
-      '@tailwindcss/node':
-        specifier: 'catalog:'
-        version: 4.3.5
-      '@tailwindcss/oxide':
-        specifier: 'catalog:'
-        version: 4.3.5
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.108.4(@types/react@19.3.3)(react@19.3.1)

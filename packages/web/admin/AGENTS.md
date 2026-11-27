@@ -3,7 +3,7 @@
 `packages/web/admin` (`@kobato/web-admin`) is the workspace: the admin, editor, and auth single-page application as a
 React Router 8 **SPA** project (`react-router.config.ts` — `appDirectory: 'src'`, `ssr: false`,
 `routeDiscovery: { mode: 'initial' }`) whose build is a static client tree under the `/admin/` base (ADR-0011 §4). It
-lives under `packages/` because it is not deployed on its own: the backend app `apps/kobato` builds and serves it under
+lives under `packages/` because it is not deployed on its own: kobato (`apps/kobato`) builds and serves it under
 `/admin/*` + `/editor/*`, locating the build through this package (`clientAssetsRoot()` resolves
 `@kobato/web-admin/package.json`; the SEA asset collection does the same from `tools/pack`), and sayaka forwards the two
 path families. Its production sources import `@kobato/ui`, `@kobato/web-kit`, `@kobato/api`, `@kobato/inkling`, and the

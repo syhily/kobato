@@ -126,8 +126,8 @@ their own.
   `tests/unit/client/create-server-client.test.ts`. `client-address.ts` is the visitor-address derivation both
   perimeters share — a pure function over the web `Request` (loopback/trusted-proxy-gated proxy-header resolution), with
   the IP/CIDR grammar from `@kobato/base/auth/trusted-proxy`. `is-bot.ts` is the User-Agent bot heuristic shared by the
-  analytics domains and sayaka's entry server (moved here from `@kobato/server` so the public app consumes it without
-  crossing the server boundary).
+  analytics domains and sayaka's entry server (moved here from `@kobato/server` so sayaka consumes it without crossing
+  the server boundary).
 - `src/browser/` — the built-in frontend's browser assembly, and the ONLY UI-bound, ambient part of the package:
   `client.ts` is the browser singleton (`orpc` + `setCsrfToken` — the CSRF token store and the same-origin `/rpc` URL
   default, delegating to `createKobatoClient`), `orpc-query.ts` the TanStack Query binding (`orpcQuery`),
@@ -150,9 +150,10 @@ their own.
 - A browser hook imports the contract, the client, and TanStack Query — never a UI package (`@kobato/ui`,
   `@kobato/web-kit`, and `@kobato/inkling` — the barrel and every entry but `/headless*`), never message copy (the
   `@kobato/i18n` message catalogs `messages/*`, the fallback catalog `fallback-messages`, and the label tables
-  `inkling-labels/*`), never a consumer's route data (React Router); `toast-api-error` (sonner, message ids) and the
-  document clock fail it and stay out (ADR-0011 §3, `apps/kobato/tests/arch/shared-react-free.test.ts` — its tripwire
-  proves every entry of the ban list, type-only imports included).
+  `inkling-labels/*`), never a consumer's route data (React Router); `toast-api-error` (sonner, message ids) fails it
+  and stays out, and so does the document clock, which is a `@kobato/ui` hook over document facts (ADR-0011 §3,
+  `apps/kobato/tests/arch/shared-react-free.test.ts` — its tripwire proves every entry of the ban list, type-only
+  imports included).
 - Runtime-isomorphic and React-free outside `src/browser/`: no node/DOM-only APIs, no logger. The contract, rpc, and
   client layers use only the isomorphic web platform — never browser-only globals or ambient mutable state;
   `globalThis.fetch` is only the default fetch adapter. `src/browser/` is the one exemption and never grows a second

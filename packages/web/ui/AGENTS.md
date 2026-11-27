@@ -43,7 +43,7 @@ reaches the package only as document facts, never through `useRouteLoaderData`.
 - `icons/` holds static icon exports; named imports only, never runtime name lookups.
 - `lib/` is flat and role-prefixed: `use-*.ts` is a hook, `*Provider.tsx` a provider, `kebab-case-context.tsx` a
   context, `*.ts` a pure helper — `lib/motion.ts` holds the motion presets consumers pass to the `lazy-motion` facade.
-  Browser product state and routes belong in the workspace (`packages/web/admin`) and the public app (`apps/sayaka`),
-  editor glue in `@kobato/inkling`; the oRPC binding is `@kobato/api/browser`.
+  Browser product state and routes belong in the workspace (`packages/web/admin`) and sayaka (`apps/sayaka`), editor
+  glue in `@kobato/inkling`; the oRPC binding is `@kobato/api/browser`.
 - Consumers import directly from `@kobato/ui/<path>`; there is no barrel.
 - Preserve SSR/hydration parity and the lazy-motion facade rules.

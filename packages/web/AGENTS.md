@@ -62,9 +62,10 @@ tree (`apps/sayaka/src/ui`):
 
 ## Source layout and naming (the three packages and both consuming UI trees)
 
-- `src/` holds only the documented roots (`ui/` with its feature dirs, `styles/`; the workspace adds the React Router
-  entry set — `root.tsx`, `routes.ts`, `routes/`, `lib/`, `document/`, `seo/`); a new root directory needs a line here
-  first. No web package warms routes: the idle script and its manifest are the public site's (`apps/sayaka`).
+- `src/` holds only the documented roots — `@kobato/ui`: `components/`, `icons/`, `lib/`, `styles/`; the kit: `ui/` with
+  its feature dirs, `styles/`; the workspace: the React Router entry set (`root.tsx`, `routes.ts`, `routes/`) plus
+  `ui/`, `styles/`, `lib/`, `document/`, `seo/`; a new root directory needs a line here first. No web package warms
+  routes: the idle script and its manifest are the public site's (`apps/sayaka`).
 - `PascalCase.tsx` components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `kebab-case.ts` for
   everything else; a module that renders JSX uses `.tsx`. No `index.ts`.
 - A feature directory groups everything its surface needs; only three or more sibling files earn a nested directory.

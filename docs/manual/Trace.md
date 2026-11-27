@@ -19,12 +19,19 @@ Nothing here writes `kobato.config.json`; there is no `trace.*` configuration su
 ```bash
 pnpm run trace:up      # start openobserve/openobserve:v1.1.2 on 127.0.0.1:5080
 pnpm run trace:init    # apply dev retention + print the admin-panel values
-pnpm run dev
-# Admin → Settings → Observability: enter endpoint/organization/username/password,
+pnpm run dev           # the backend on 127.0.0.1:4320 (two terminals: this and the next line)
+pnpm run dev:admin     # the workspace on 127.0.0.1:4321 — Admin lives here, not on the backend's port
+# Admin → Settings → Observability (http://127.0.0.1:4321/admin/settings): enter endpoint/organization/username/password,
 # enable tracing + server logs + frontend RUM, save, then "Test connection".
 pnpm run trace:status  # container, dashboards, stream retention, pipeline state
 pnpm run trace:down    # stop/remove container; add --volumes to delete telemetry
 ```
+
+Admin settings are a workspace page, so dev needs `pnpm dev:admin` beside `pnpm dev`: the backend's own port (4320)
+serves the workspace only from its built client tree, which a fresh clone lacks until `pnpm run build`. Frontend RUM
+reaches the relay (`POST /api/rum/intake`) only through sayaka, and the workspace dev server proxies only `/rpc`,
+`/health`, and `/ready` — so a public page's browser trace needs `pnpm run dev:public` as well (the public site on port
+4322, forwarding to the workspace origin); browse the public site there, not on 4321.
 
 ## Commands
 
@@ -239,9 +246,9 @@ Not part of `pnpm test`: unit/integration builds never require Docker or Playwri
 
 The ordinary CI test job runs before any build exists, so the production-bundle guard
 `apps/kobato/tests/arch/production-rum-bundle.test.ts` (run with `pnpm run test:production-rum`) runs explicitly in the
-CI build job after `pnpm run build` (push) or `pnpm run sea:build` (PR); it scans the real `build/client` and
-`build/server` output for OpenObserve/RUM and server OTel markers. `trace:smoke` itself is a local tool and is not wired
-into CI.
+CI build job after `pnpm run build` (push) or `pnpm run sea:build` (PR); it scans the real build outputs — the
+workspace's `packages/web/admin/build/client` and the backend's `apps/kobato/build/server` — for OpenObserve/RUM and
+server OTel markers. `trace:smoke` itself is a local tool and is not wired into CI.
 
 ## Troubleshooting
 

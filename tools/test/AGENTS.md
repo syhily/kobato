@@ -39,11 +39,14 @@ directory deeper, under `tests/<directory>/`, so the same projects also glob
 `packages/shared/*/tests/*/{unit,snaps}/**`); each module group has ONE multi-project owner
 (`{api,db,server}-projects.ts`, which also owns its `*-duckdb` and `-iso-*` twins); single-project packages keep a
 package-local `tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path. Each app owns its projects in
-`projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — the sayaka projects point their
-setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings bundle, no
-server/db seams), and the workspace owns `projects/admin-projects.ts` (`admin-arch` on the product-free Node setup,
-`admin-unit` / `admin-snaps` on vmThreads over `packages/web/admin/tests/utils/setup/{unit,snaps}.ts`, and the
-forks-pool `admin-tz-unit` for the one runtime-`TZ` write).
+`projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — `sayaka-unit` / `sayaka-snaps`
+point their setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings
+bundle, no server/db seams; `sayaka-it` runs `apps/sayaka/tests/it` — the public route loaders driven through the
+stub-Kobato harness — on the default `threads` pool behind `setup/it.ts`, the Node base with the blog-settings bundle,
+with 30 s test and 120 s hook timeouts), and the workspace owns `projects/admin-projects.ts` (`admin-arch` on the
+product-free Node setup, `admin-unit` / `admin-snaps` on vmThreads over
+`packages/web/admin/tests/utils/setup/{unit,snaps}.ts`, and the forks-pool `admin-tz-unit` for the one runtime-`TZ`
+write).
 
 `projects/iso-project.ts` is the twin factory: `isoTestGlob(tree)` is the one spelling of `**/*.iso.test.{ts,tsx}` — a
 tree's default project excludes it, its `-iso-` twin (`threads`, `isolate: true`) includes it, and both spread

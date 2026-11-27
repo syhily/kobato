@@ -41,8 +41,6 @@
     "@react-router/dev": "catalog:",
     "@react-router/node": "catalog:",
     "@simplewebauthn/browser": "catalog:",
-    "@tailwindcss/node": "catalog:",
-    "@tailwindcss/oxide": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/diff-match-patch": "catalog:",

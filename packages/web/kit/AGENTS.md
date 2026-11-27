@@ -3,10 +3,10 @@
 `@kobato/web-kit` (`packages/web/kit/`) is the kit of ADR-0009/ADR-0011: the front-end features BOTH consuming surfaces
 render that call a procedure — the notifications drawer family (`ui/shared/notifications`) and the logout
 (`ui/shared/auth/use-logout.ts`) — plus `ui/lib/toast-api-error.ts` (sonner + message ids over API errors). It exists
-because the backend app never imports the public frontend: a module both surfaces render that calls the wire lives HERE,
-not in either consumer. Two rules bound it from either side: `@kobato/ui` imports no `@kobato/api` module — a front-end
-module that calls a procedure is a kit module or an app's own (ADR-0011 §1) — and a procedure-calling hook that needs no
-UI package, no message copy, and no route data is not a kit module but the contract's own
+because kobato never imports the public frontend: a module both surfaces render that calls the wire lives HERE, not in
+either consumer. Two rules bound it from either side: `@kobato/ui` imports no `@kobato/api` module — a front-end module
+that calls a procedure is a kit module or an app's own (ADR-0011 §1) — and a procedure-calling hook that needs no UI
+package, no message copy, and no route data is not a kit module but the contract's own
 (`@kobato/api/browser/use-notifications`, ADR-0011 §3). The kit may import `@kobato/ui`, `@kobato/api`, and the shared
 leaves it declares — never `@kobato/inkling`, `@kobato/catalog/seo`, `@kobato/server`, the sayaka app (`@sayaka/*`), the
 workspace (`@kobato/web-admin`), either consuming surface's own tree (`packages/web/admin/src/ui`,

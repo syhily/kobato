@@ -7,8 +7,8 @@
   `kobato`/`sayaka` split: §1, §2, §3, and §6–§11 are decided anew, and §4, §5, and the type guarantees carry over (§7
   in wording only). Implemented 2026-11-26.
 - Amended 2026-11-27 by [ADR-0011](0011-package-topology.md) (front-end package topology): §1 "Where the code lives" and
-  the Implementation notes' "Packages" and "Builds" paragraphs are superseded there as its adoption steps land; the
-  ADR-0011 this file cited earlier for branded contract procedures was removed on consolidation and its number reused.
+  the Implementation notes' "Packages" and "Builds" paragraphs are superseded there; the ADR-0011 this file cited
+  earlier for branded contract procedures was removed on consolidation and its number reused.
 - Related: [ADR-0001](0001-request-and-process-state.md) (amended 2026-11-26: `RequestContext` keeps two projections in
   `kobato` — the Hono variable and the oRPC `HandlerContext`; sayaka derives its own per-request context), the consumer
   guide ([../manual/Headless.md](../manual/Headless.md) — the guide for an external frontend author building against a
@@ -538,8 +538,8 @@ every claim is pinned by the suites named beside it.
 - `content.bootstrap` grew: it carries the frontend RUM bootstrap (`rum`, null while the relay gate is inactive), the
   install state (`installState: 'noAdmin' | 'installed'`), the viewer's `email` on `currentUser`, and takes
   `{ scope: 'public' | 'workspace' }` — the i18n catalog scope of the calling document; the workspace SPA asks for
-  `workspace` (`apps/kobato/src/lib/root-bootstrap`). It is the one public read that is also `installGateExempt`, so
-  sayaka renders the install redirect and the home document from one call before an admin exists.
+  `workspace` (`packages/web/admin/src/lib/root-bootstrap`). It is the one public read that is also `installGateExempt`,
+  so sayaka renders the install redirect and the home document from one call before an admin exists.
 - Session listings (`account.sessions`, `admin.users.listSessions`) carry server-derived `isCurrent` — the session
   cookie is httpOnly, so the client cannot know which row is its own.
 - The analytics event id travels on the request header `x-kobato-analytics-event` (`ANALYTICS_EVENT_HEADER`,

@@ -21,7 +21,7 @@ const RETIRED_JSON_ROUTES = [
   '/api/rum/status',
   '/api/setup/restore',
 ] as const
-const TELEMETRY_POLICIES = ['apps/kobato/src/rum/rum-url-policy.ts', 'apps/sayaka/src/rum/rum-url-policy.ts'] as const
+const TELEMETRY_POLICY = 'apps/sayaka/src/rum/rum-url-policy.ts'
 const OUTBOUND_API_PREFIXES = [
   'packages/server/src/domains/music/providers/',
   'packages/server/src/domains/observability/',
@@ -54,7 +54,7 @@ function productionFiles(): string[] {
   const files: string[] = []
   walk(join(REPO_ROOT, 'packages/server/src'), files)
   walk(join(REPO_ROOT, 'packages/web'), files)
-  walk(join(REPO_ROOT, 'apps/kobato/src/rum'), files)
+  walk(join(REPO_ROOT, 'apps/kobato/src'), files)
   walk(join(REPO_ROOT, 'apps/sayaka/src/rum'), files)
   walk(join(REPO_ROOT, 'apps/sayaka/src/server'), files)
   return files.filter((file) => {
@@ -80,7 +80,7 @@ describe('HTTP resource surface', () => {
   it('allows /api paths only for the OpenObserve intake and other external protocol resources', () => {
     const offenders = productionFiles().flatMap((file) => {
       const relativeFile = relative(REPO_ROOT, file)
-      if (TELEMETRY_POLICIES.includes(relativeFile as (typeof TELEMETRY_POLICIES)[number])) {
+      if (relativeFile === TELEMETRY_POLICY) {
         return []
       }
       return apiLiterals(file)

@@ -6,14 +6,16 @@
   (`src/headless/`, React-free), the comment surface beside that model (`src/comment/`), and the kobato host cards
   (`src/host-cards/`). It imports only `@kobato/ui`, `@kobato/i18n`, and `@kobato/base` (`distribution`, `assets`,
   `sanitize`, `utils`) — never contracts, server, db, or web.
-- Four public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
+- Five public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
   `src/index.ts`), `@kobato/inkling/headless` + per-file imports (`src/headless/`, React-free — the only editor surface
   `server`/`db`/`contracts`/`catalog` may use), `@kobato/inkling/host-cards` (side-effect registration + image node +
-  music base class), and `@kobato/inkling/comment/*` (per-file imports into `src/comment/`, the comment surface). The
-  barrel's top-level `registerCardDecorateAdapter()` call MUST stay explicit; the comment composer
-  (`src/comment/CommentBodyEditor.tsx`) makes the same call because it renders cards in apps that never load the barrel
-  (sayaka) — the registration is idempotent, so whichever entry loads first installs the adapter. The barrel never
-  re-exports host-cards or the comment surface (the composer and its editor island ride a lazy chunk).
+  music base class), `@kobato/inkling/comment/*` (per-file imports into `src/comment/`, the comment surface), and
+  `@kobato/inkling/styles/*` (the package's stylesheets by file — `index.css`, `cards.css`, `comment-editor.css` —
+  imported by hosts for their URL, never re-exported through the barrel). The barrel's top-level
+  `registerCardDecorateAdapter()` call MUST stay explicit; the comment composer (`src/comment/CommentBodyEditor.tsx`)
+  makes the same call because it renders cards in apps that never load the barrel (sayaka) — the registration is
+  idempotent, so whichever entry loads first installs the adapter. The barrel never re-exports host-cards or the comment
+  surface (the composer and its editor island ride a lazy chunk).
 - Composer: the Lexical EXTENSION API, not `LexicalComposer`. `InklingComposerBase` mounts `LexicalExtensionComposer`
   with the root extension from `src/components/inkling-root-extension.ts`; `contentEditable={null}` (RichTextPlugin owns
   the editable); decorators render through `ReactExtension`, so the root extension wires the `ErrorBoundary`.

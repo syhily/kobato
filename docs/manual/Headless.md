@@ -31,9 +31,18 @@ and pin the exact commit your backend runs. Every package carries the same versi
 version X talk to backend at version X" is the whole compatibility story. Minimum set for a rendering consumer:
 
 - `@kobato/api` — the contract tree and the client transport (`contracts/`, `rpc/`, and `client/` are React-free and
-  carry no ambient state; `@kobato/api/browser` is the built-in frontend's own assembly and not part of this seam).
+  carry no ambient state).
+- `@kobato/api/browser` — the browser client and the contract's data hooks for the interactive side of a front-end
+  (ADR-0011 §3): the oRPC browser singleton (`browser/client`), the TanStack Query binding and `QueryClient` factory
+  (`browser/orpc-query`, `browser/query-client`), and `browser/use-notifications` over `public.notifications.*`; it
+  needs React and TanStack Query.
 - The shared leaves your renderer reads: `@kobato/catalog` for the listing/read models, `@kobato/inkling/headless` for
   the document model.
+- `@kobato/inkling/comment` — the comment composer beside the comment model (`@kobato/inkling/headless/comment-schema`
+  is the validation gate): `CommentBodyEditor` / `LazyCommentBodyEditor` compose a comment body, `CommentContentHtml`
+  renders a stored one, and `comment-body-helpers` reads its plain text. It is a React surface, and because
+  `@kobato/inkling` depends on `@kobato/ui` it transitively brings `@kobato/ui` along — its host composer reads the
+  locale and theme contexts `@kobato/ui` provides.
 
 ## The public client
 

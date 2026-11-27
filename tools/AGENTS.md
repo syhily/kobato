@@ -22,9 +22,9 @@ package under `packages/font-split`.
 - Product **tests** import tools freely (`@kobato/test`, the live-instance clients under
   `@kobato/test/instance/client`), declared in each package's devDependencies. The two directions together make one
   workspace dependency cycle, dev-only and accepted: `@kobato/settings` dev-depends on `@kobato/test` for its test setup
-  while `@kobato/test` dev-depends on `@kobato/settings` for `instance/seed.ts` and `instance/split-smoke.ts` — neither
-  package's production source reaches the other, no rule forbids it, and both packages are private; pnpm warns about it
-  on install.
+  while `@kobato/test` dev-depends on `@kobato/settings` for `instance/seed.ts` and `instance/split-smoke.ts` — the
+  `@kobato/settings` source imports no tools package, `tools/test` has no production source (the driver is the side that
+  imports settings), no rule forbids it, and both packages are private; pnpm warns about it on install.
 - Build-time configs reach `pack` through its package specifier (declared by the root, `apps/kobato`, `apps/sayaka`, and
   `packages/web/admin`).
 - Tools packages declare every import in their own package.json, self-import through `@kobato/<name>/...`, and expose

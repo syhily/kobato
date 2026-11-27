@@ -38,11 +38,12 @@ No database server: SQLite and DuckDB are embedded.
 
 ## Quick start
 
-Install dependencies and start the dev server:
+Install dependencies and start the two dev processes — the backend, then the workspace (two terminals):
 
 ```bash
 pnpm install
-pnpm run dev
+pnpm run dev         # the backend on http://127.0.0.1:4320
+pnpm run dev:admin   # the workspace on http://127.0.0.1:4321, proxying /rpc to the backend
 ```
 
 On first boot a `kobato.config.json` is created in the repo root (gitignored) — fill in the two secrets (see
@@ -58,8 +59,13 @@ On first boot a `kobato.config.json` is created in the repo root (gitignored) �
 }
 ```
 
-Open `/admin/setup` and enter the setup token printed in the console to create the admin account. Settings are seeded
-automatically.
+Open `http://127.0.0.1:4321/admin/setup` and enter the setup token printed in the console to create the admin account.
+Settings are seeded automatically. Open it on the workspace dev server's origin, not the backend's (4320): the backend
+answers an `/admin/*` document from the workspace's built client tree, which a fresh clone lacks until `pnpm run build`.
+
+`pnpm run build` is the alternative: it builds the workspace (`packages/web/admin/build/client`) before the backend
+bundle, so `pnpm start` — the built backend — serves the workspace itself from one origin, at the port
+`kobato.config.json` names, with no dev server. `pnpm run dev:public` adds the public site's dev server on port 4322.
 
 ## Testing
 
@@ -80,7 +86,9 @@ pnpm run test:snaps
 ## Scripts
 
 ```bash
-pnpm run dev         # development server
+pnpm run dev         # the backend dev server (127.0.0.1:4320)
+pnpm run dev:admin   # the workspace dev server (127.0.0.1:4321), proxying /rpc to the backend
+pnpm run dev:public  # the public site dev server (port 4322)
 pnpm run build       # production build
 pnpm run test        # run tests
 pnpm run test:unit   # run unit tests only

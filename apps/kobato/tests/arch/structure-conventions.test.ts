@@ -36,7 +36,12 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-const WEB_SRC_ROOTS = ['packages/web/admin/src/ui', 'packages/web/kit/src', 'packages/api/src/browser']
+const WEB_SRC_ROOTS = [
+  'packages/web/ui/src',
+  'packages/web/kit/src',
+  'packages/web/admin/src/ui',
+  'packages/api/src/browser',
+]
 
 function packageDirs(): string[] {
   const out: string[] = []
