@@ -134,9 +134,11 @@ Tests live next to the covered package — no root-level test tree.
   `e2e`/`browser` are registered nowhere (`apps/kobato/tests/arch/vitest-project-registry.test.ts`).
 - Import `describe`, `it`, `expect`, `vi` from `vitest`; run through the root `test*` scripts; `pnpm test <path>` for
   path filters; never select Vitest projects on the command line.
-- Pool/isolation: every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `isolate: true`, so
-  `vi.mock` holders, product global state, and native engines get a fresh module registry per file (no mock-file
-  scanning, no shared/isolated split). Pool defaults and the DOM-project overrides live in `tools/test/AGENTS.md`.
+- Pool/isolation: every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `maxWorkers: 4`,
+  `isolate: false`, so a worker thread is reused across files instead of restarted per file. Trees whose files register
+  module mocks (`vi.mock`) or hold module-scoped product state run on `vmThreads` (a fresh VM context per file, worker
+  reused); a file that needs an isolated real thread is named `*.iso.test.ts` and routed into its tree's `-iso-` twin.
+  Pool defaults, the per-project table, and the `*.iso` contract live in `tools/test/AGENTS.md`.
 - Hygiene: no `process.chdir()` (spy on `process.cwd`), no runtime `process.env.TZ` writes outside the forks project,
   "no browser globals" tests declare `@vitest-environment node`, realm-safe DOM comparisons use identity (`!==`).
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative. `any`,
@@ -169,6 +171,10 @@ main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION_
 - Never use React `<ViewTransition>` / `addTransitionType` / `document.startViewTransition` for element or navigation
   animation — named captures paint in the `::view-transition` overlay above every z-index. The theme-switch wipe in
   `packages/ui/src/lib/ThemeProvider.tsx` is the sole consumer.
+- `isolate: false` in `vitestTestBase` is a hard constraint: never flip the default back to `isolate: true`, and never
+  add `isolate: true` to a project outside `ISOLATED_PROJECTS` in
+  `apps/kobato/tests/arch/vitest-project-registry.test.ts`. A file that cannot share a worker is renamed `*.iso.test.ts`
+  into its tree's isolated twin; a tree that cannot share a module registry moves to `vmThreads`.
 
 ## Dependencies
 

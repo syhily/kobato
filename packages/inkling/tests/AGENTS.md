@@ -1,6 +1,6 @@
 # Inkling test conventions
 
-- `tests/` (`inkling-unit`) is the single inkling suite (jsdom, globals off, vmThreads, `isolate: true`) and mirrors
+- `tests/` (`inkling-unit`) is the single inkling suite (jsdom, globals off, vmThreads) and mirrors
   `packages/inkling/src` under `tests/unit/`. The project is built by the `inklingUnitProject` factory in
   `@kobato/test/projects/inkling-unit.ts` (which owns the include glob) and instantiated by `tests/vitest.config.ts` —
   the only package-local Vitest config, because it owns the React/SVGR Vite plugins; the root registry references that

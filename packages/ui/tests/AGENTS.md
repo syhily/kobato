@@ -2,8 +2,8 @@
 
 - `tests/unit/` (`ui-unit`) covers primitives, generic hooks, providers, and style/token contracts
   (`tests/unit/contract/` runs in the same project). `tests/snaps/` (`ui-snaps`) covers primitive SSR snapshots. Both
-  are defined in `@kobato/test/projects/ui-projects.ts` and run `isolate: true` (vmThreads/happy-dom for `ui-unit`). Run
-  with `pnpm test packages/ui`.
+  are defined in `@kobato/test/projects/ui-projects.ts` and run on vmThreads (a fresh VM context per file; `ui-unit` on
+  happy-dom). Run with `pnpm test packages/ui`.
 - Product-component tests live in the consuming surfaces (`apps/kobato/tests/{unit,snaps}/ui`, `apps/sayaka/tests`).
   `tests/utils/i18n-render.tsx` + `tests/utils/hook.tsx` are the canonical i18n render helpers — the web leaves and the
   app import them cross-package; generic infrastructure comes from `@kobato/test`.

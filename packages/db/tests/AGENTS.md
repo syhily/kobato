@@ -6,7 +6,8 @@
 - Files that spin up the real DuckDB native engine live in `tests/it/` named `*.duckdb.test.ts`; the suffix routes them
   into the dedicated `db-duckdb` project and out of `db-unit`/`db-it` — membership is by filename, never a manual list
   (`apps/kobato/tests/arch/duckdb-project-files.test.ts`).
-- The three projects are defined in `@kobato/test/projects/db-projects.ts` and run `isolate: true`. Run with
+- The four projects are defined in `@kobato/test/projects/db-projects.ts` and run on shared workers (`isolate: false`):
+  a `db-unit` file that registers module mocks is named `*.iso.test.ts` and runs in `db-iso-unit`. Run with
   `pnpm test packages/db`.
 - DB setup and database helpers live in `tests/utils/` and import `@kobato/db` only — the harness owns the full
   lifecycle (open/migrate/close) and never touches `@kobato/server` composition, caches, or batchers. `getTestDb` keeps

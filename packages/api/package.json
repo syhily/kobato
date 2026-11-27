@@ -17,7 +17,6 @@
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
-    "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@kobato/utils": "workspace:*",
     "@orpc/client": "catalog:",

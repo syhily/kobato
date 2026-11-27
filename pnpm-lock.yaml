@@ -1122,9 +1122,6 @@ importers:
       '@kobato/settings':
         specifier: workspace:*
         version: link:../shared/settings
-      '@kobato/test':
-        specifier: workspace:*
-        version: link:../../tools/test
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig

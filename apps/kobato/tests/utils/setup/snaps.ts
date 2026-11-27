@@ -1,5 +1,6 @@
 import '@kobato/test/setup/snaps'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { installWebStreamGlobals } from '@kobato/test/web-streams'
 import { afterEach, vi } from 'vitest'
 
 vi.mock('@/ui/settings/use-settings-mutation', async () => {
@@ -7,6 +8,7 @@ vi.mock('@/ui/settings/use-settings-mutation', async () => {
   return { useSettingsMutation: settingsMutationMock }
 })
 
+installWebStreamGlobals()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {

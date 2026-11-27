@@ -2,14 +2,14 @@ import { DEMO_UNIT_INCLUDE } from '@kobato/test/projects/demo-unit'
 import { INKLING_UNIT_INCLUDE } from '@kobato/test/projects/inkling-unit'
 import {
   allTestProjects,
-  apiUnitConfigPath,
   demoUnitConfigPath,
   inklingUnitConfigPath,
   packUnitConfigPath,
   traceUnitConfigPath,
 } from '@kobato/test/projects/registry'
-import { API_UNIT_INCLUDE, PACK_UNIT_INCLUDE, TRACE_UNIT_INCLUDE } from '@kobato/test/projects/unit-includes'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { PACK_UNIT_INCLUDE, TRACE_UNIT_INCLUDE } from '@kobato/test/projects/unit-includes'
+import { vitestTestBase } from '@kobato/test/vitest.base'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -21,6 +21,8 @@ type InlineProject = {
     include?: string[]
     exclude?: string[]
     isolate?: boolean
+    maxWorkers?: number
+    pool?: string
   }
 }
 
@@ -32,11 +34,17 @@ const PINNED_INLINE_PROJECT_NAMES = [
   'ui-unit',
   'ui-snaps',
   'db-unit',
+  'db-iso-unit',
   'db-it',
   'db-duckdb',
   'server-unit',
+  'server-iso-unit',
   'server-it',
+  'server-iso-it',
   'server-duckdb',
+  'api-unit',
+  'api-iso-unit',
+  'app-arch',
   'app-unit',
   'app-it',
   'app-duckdb',
@@ -50,10 +58,37 @@ const PINNED_INLINE_PROJECT_NAMES = [
 const PINNED_CONFIG_PATH_ENTRIES = [
   inklingUnitConfigPath,
   demoUnitConfigPath,
-  apiUnitConfigPath,
   packUnitConfigPath,
   traceUnitConfigPath,
 ] as const
+
+const VM_THREAD_PROJECTS = [
+  'web-unit',
+  'web-snaps',
+  'ui-unit',
+  'ui-snaps',
+  'server-unit',
+  'server-it',
+  'app-unit',
+  'app-snaps',
+  'sayaka-unit',
+  'sayaka-snaps',
+] as const
+
+const ISOLATED_PROJECTS = [
+  'db-iso-unit',
+  'server-iso-unit',
+  'server-iso-it',
+  'api-iso-unit',
+  'app-it',
+  'app-duckdb',
+] as const
+
+const PATH_CONFIG_THREAD_PROJECTS = ['pack-unit', 'trace-unit'] as const
+
+const ISOLATE_CONSTRAINT =
+  'isolate: false is a hard constraint (AGENTS.md): rename the file to *.iso.test.ts instead of flipping the default'
+const ISO_OVERRIDE = /\bisolate\s*:/
 
 const OUT_OF_DEFAULT_TEST_TREES = [
   'apps/kobato/tests/e2e',
@@ -63,6 +98,10 @@ const OUT_OF_DEFAULT_TEST_TREES = [
 ] as const
 
 const SKIPPED_TREE_DIRS = new Set(['node_modules', '__snapshots__', 'e2e', 'browser'])
+const WORKSPACE_BASES = ['apps', 'packages', 'packages/shared', 'packages/web', 'tools'] as const
+
+const MOCK_REGISTERING_HELPERS = ['mock-react-query'] as const
+const MOCK_CALL = /^\s*vi\.(?:do)?mock\(/m
 
 function inlineProjects(): InlineProject[] {
   return allTestProjects.filter((entry) => typeof entry !== 'string') as InlineProject[]
@@ -97,7 +136,6 @@ function configPathIncludes(): Array<readonly [readonly string[], string]> {
   return [
     [INKLING_UNIT_INCLUDE, 'inkling-unit'],
     [DEMO_UNIT_INCLUDE, 'demo-unit'],
-    [API_UNIT_INCLUDE, 'api-unit'],
     [PACK_UNIT_INCLUDE, 'pack-unit'],
     [TRACE_UNIT_INCLUDE, 'trace-unit'],
   ] as const
@@ -120,21 +158,97 @@ function projectsMatching(file: string): string[] {
   return names
 }
 
-function walkTests(dir: string, out: string[], skipTrees = SKIPPED_TREE_DIRS): void {
-  if (!existsSync(dir)) {
-    return
-  }
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (skipTrees.has(entry.name)) {
+function sharedThreadProjects(): string[] {
+  return inlineProjects()
+    .filter((project) => {
+      const test = project.test
+      if (test?.isolate || test?.pool === 'vmThreads' || test?.pool === 'forks') {
+        return false
+      }
+      return (test?.pool ?? 'threads') === 'threads'
+    })
+    .map((project) => project.test?.name ?? '(unnamed)')
+}
+
+function workspacePackageDirs(): string[] {
+  const dirs: string[] = []
+  for (const base of WORKSPACE_BASES) {
+    const baseDir = join(REPO_ROOT, base)
+    if (!existsSync(baseDir)) {
       continue
     }
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      walkTests(full, out, skipTrees)
-    } else if (/\.test\.(ts|tsx|js|jsx)$/.test(entry.name)) {
-      out.push(relative(REPO_ROOT, full).replace(/\\/g, '/'))
+    for (const entry of readdirSync(baseDir, { withFileTypes: true })) {
+      if (entry.isDirectory() && entry.name !== 'node_modules') {
+        dirs.push(join(baseDir, entry.name))
+      }
     }
   }
+  return dirs
+}
+
+function walkSource(dir: string, out: string[], skip: (file: string) => boolean): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name)
+    const file = relative(REPO_ROOT, full).replace(/\\/g, '/')
+    if (skip(file)) {
+      continue
+    }
+    if (entry.isDirectory()) {
+      walkSource(full, out, skip)
+    } else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+      out.push(file)
+    }
+  }
+}
+
+function allDiskTestFiles(): string[] {
+  const files: string[] = []
+  const roots: string[] = []
+  for (const base of WORKSPACE_BASES) {
+    const baseDir = join(REPO_ROOT, base)
+    if (!existsSync(baseDir)) {
+      continue
+    }
+    for (const entry of readdirSync(baseDir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === 'node_modules') {
+        continue
+      }
+      roots.push(join(baseDir, entry.name, 'tests'))
+    }
+  }
+  for (const root of roots) {
+    if (existsSync(root) && statSync(root).isDirectory()) {
+      walkSource(root, files, (file) => file.split('/').some((segment) => SKIPPED_TREE_DIRS.has(segment)))
+    }
+  }
+  return files.filter((file) => /\.test\.(ts|tsx|js|jsx)$/.test(file)).sort()
+}
+
+function mockRegisteringHelperNames(): string[] {
+  const files: string[] = []
+  const utilsDirs = workspacePackageDirs().map((dir) => join(dir, 'tests/utils'))
+  for (const dir of [join(REPO_ROOT, 'tools/test/src'), ...utilsDirs]) {
+    if (existsSync(dir) && statSync(dir).isDirectory()) {
+      walkSource(dir, files, (file) => /(^|\/)setup(\.tsx?$|\/)/.test(file))
+    }
+  }
+  return files
+    .filter((file) => MOCK_CALL.test(readFileSync(join(REPO_ROOT, file), 'utf8')))
+    .map(
+      (file) =>
+        file
+          .split('/')
+          .pop()
+          ?.replace(/\.tsx?$/, '') ?? file,
+    )
+    .sort()
+}
+
+function registersMocks(source: string): boolean {
+  if (MOCK_CALL.test(source)) {
+    return true
+  }
+  return MOCK_REGISTERING_HELPERS.some((name) => new RegExp(`(?:from|import\\()\\s*'[^']*/${name}'`).test(source))
 }
 
 function walkSpecFiles(dir: string, out: string[]): void {
@@ -154,27 +268,6 @@ function walkSpecFiles(dir: string, out: string[]): void {
   }
 }
 
-function allDiskTestFiles(): string[] {
-  const files: string[] = []
-  const roots: string[] = []
-  for (const base of ['apps', 'packages', 'packages/shared', 'packages/web', 'tools'] as const) {
-    const baseDir = join(REPO_ROOT, base)
-    if (!existsSync(baseDir)) {
-      continue
-    }
-    for (const entry of readdirSync(baseDir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || entry.name === 'node_modules') {
-        continue
-      }
-      roots.push(join(baseDir, entry.name, 'tests'))
-    }
-  }
-  for (const root of roots) {
-    walkTests(root, files)
-  }
-  return files.sort()
-}
-
 describe('vitest project registry', () => {
   it('registers exactly the pinned project set, explicitly', () => {
     expect(inlineProjects().map((project) => project.test?.name)).toEqual([...PINNED_INLINE_PROJECT_NAMES])
@@ -184,20 +277,55 @@ describe('vitest project registry', () => {
     }
   })
 
-  it('every project runs with per-file isolation', () => {
+  it('the shared-worker base is the default and pins four workers', () => {
+    expect(vitestTestBase.maxWorkers).toBe(4)
+    expect(vitestTestBase.isolate, ISOLATE_CONSTRAINT).toBe(false)
     for (const project of inlineProjects()) {
-      expect(project.test?.isolate, project.test?.name).toBe(true)
+      expect(project.test?.maxWorkers, `${project.test?.name} maxWorkers`).toBe(4)
     }
     const sourceChecks: Array<[string, string]> = [
       [inklingUnitConfigPath, 'inklingUnitProject('],
       [demoUnitConfigPath, 'demoUnitProject('],
-      [apiUnitConfigPath, 'API_UNIT_INCLUDE'],
       [packUnitConfigPath, 'PACK_UNIT_INCLUDE'],
       [traceUnitConfigPath, 'TRACE_UNIT_INCLUDE'],
     ]
     for (const [path, marker] of sourceChecks) {
       expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toContain(marker)
     }
+    for (const path of [packUnitConfigPath, traceUnitConfigPath]) {
+      expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toContain('vitestTestBase')
+    }
+    for (const path of [
+      ...configPathEntries(),
+      'vitest.config.ts',
+      'tools/test/src/projects/inkling-unit.ts',
+      'tools/test/src/projects/demo-unit.ts',
+    ]) {
+      expect(readFileSync(join(REPO_ROOT, path), 'utf8'), `${path}: ${ISOLATE_CONSTRAINT}`).not.toMatch(ISO_OVERRIDE)
+    }
+  })
+
+  it('isolate stays false everywhere except the pinned isolated projects', () => {
+    for (const project of inlineProjects()) {
+      const name = project.test?.name ?? '(unnamed)'
+      if ((ISOLATED_PROJECTS as readonly string[]).includes(name)) {
+        expect(project.test?.pool ?? 'threads', `${name} pool`).toBe('threads')
+        expect(project.test?.isolate, `${name} isolate`).toBe(true)
+        continue
+      }
+      expect(project.test?.isolate, `${name}: ${ISOLATE_CONSTRAINT}`).toBe(false)
+      if ((VM_THREAD_PROJECTS as readonly string[]).includes(name)) {
+        expect(project.test?.pool, `${name} pool`).toBe('vmThreads')
+      } else if (name === 'app-tz-unit') {
+        expect(project.test?.pool, `${name} pool`).toBe('forks')
+      } else {
+        expect(project.test?.pool, `${name} pool`).toBe('threads')
+      }
+    }
+    const isolated = inlineProjects().filter((project) => project.test?.isolate)
+    expect(isolated.map((project) => project.test?.name ?? '(unnamed)').sort()).toEqual([...ISOLATED_PROJECTS].sort())
+    const vm = inlineProjects().filter((project) => project.test?.pool === 'vmThreads')
+    expect(vm.map((project) => project.test?.name ?? '(unnamed)').sort()).toEqual([...VM_THREAD_PROJECTS].sort())
   })
 
   it('discovers every workspace test file exactly once', () => {
@@ -222,6 +350,30 @@ describe('vitest project registry', () => {
       const matched = files.filter((file) => projectsMatching(file).includes(name))
       expect(matched.length, `project ${name} matches no test file`).toBeGreaterThan(0)
     }
+  })
+
+  it('every helper that registers module mocks is known', () => {
+    expect(mockRegisteringHelperNames()).toEqual([...MOCK_REGISTERING_HELPERS])
+  })
+
+  it('a shared threads pool never carries a mock-registering file and *.iso.test.ts runs only isolated', () => {
+    const shared = new Set<string>([...sharedThreadProjects(), ...PATH_CONFIG_THREAD_PROJECTS])
+    const isolated = new Set<string>(ISOLATED_PROJECTS)
+    const offenders: string[] = []
+    for (const file of allDiskTestFiles()) {
+      const projects = projectsMatching(file)
+      if (/\.iso\.test\.(ts|tsx|js|jsx)$/.test(file)) {
+        if (projects.length === 0 || projects.some((name) => !isolated.has(name))) {
+          offenders.push(`${file}: *.iso.test.ts must run only in an isolated project`)
+        }
+        continue
+      }
+      const registers = registersMocks(readFileSync(join(REPO_ROOT, file), 'utf8'))
+      if (registers && projects.some((name) => shared.has(name))) {
+        offenders.push(`${file}: registers mocks on a shared threads pool but is not named *.iso.test.ts`)
+      }
+    }
+    expect(offenders).toEqual([])
   })
 
   it('the e2e and browser trees are registered nowhere', () => {

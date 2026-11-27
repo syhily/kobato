@@ -2,8 +2,10 @@ import '@kobato/test/setup/node'
 import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
 import { __resetSetupTokenForTests } from '@kobato/server/domains/auth/setup-token'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { installWebStreamGlobals } from '@kobato/test/web-streams'
 import { afterAll, afterEach } from 'vitest'
 
+installWebStreamGlobals()
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 afterEach(() => {

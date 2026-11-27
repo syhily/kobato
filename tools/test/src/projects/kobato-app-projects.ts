@@ -17,8 +17,21 @@ export const kobatoAppProjects = [
     define: testDefine,
     test: {
       ...vitestTestBase,
+      name: 'app-arch',
+      include: ['apps/kobato/tests/arch/**/*.test.{ts,tsx}'],
+      exclude: [...configDefaults.exclude],
+      setupFiles: [UNIT_SETUP],
+    },
+  }),
+  defineConfig({
+    root: REPO_ROOT,
+    resolve: { tsconfigPaths: true },
+    define: testDefine,
+    test: {
+      ...vitestTestBase,
       name: 'app-unit',
-      include: ['apps/kobato/tests/unit/**/*.test.{ts,tsx}', 'apps/kobato/tests/arch/**/*.test.{ts,tsx}'],
+      pool: 'vmThreads',
+      include: ['apps/kobato/tests/unit/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude, 'apps/kobato/tests/unit/**/*.duckdb.test.{ts,tsx}', TZ_TEST],
       setupFiles: [UNIT_SETUP],
     },
@@ -31,6 +44,7 @@ export const kobatoAppProjects = [
     test: {
       ...vitestTestBase,
       name: 'app-it',
+      isolate: true,
       include: ['apps/kobato/tests/it/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude, 'apps/kobato/tests/it/**/*.duckdb.test.{ts,tsx}'],
       setupFiles: [IT_SETUP],
@@ -46,6 +60,7 @@ export const kobatoAppProjects = [
     test: {
       ...vitestTestBase,
       name: 'app-duckdb',
+      isolate: true,
       include: ['apps/kobato/tests/it/**/*.duckdb.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
       setupFiles: [IT_SETUP],
@@ -74,6 +89,7 @@ export const kobatoAppProjects = [
     test: {
       ...vitestTestBase,
       name: 'app-snaps',
+      pool: 'vmThreads',
       include: ['apps/kobato/tests/snaps/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
       setupFiles: [SNAPS_SETUP],

@@ -32,6 +32,7 @@ export const uiProjects = [
     test: {
       ...vitestTestBase,
       name: 'ui-snaps',
+      pool: 'vmThreads',
       include: ['packages/ui/tests/snaps/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
       setupFiles: [SNAPS_SETUP],

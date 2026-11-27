@@ -10,14 +10,16 @@ tsconfig-path resolver.
 
 - **`tests/{unit,it,snaps}/`** — tests mirroring `apps/kobato/src/` (`routes/`, `ui/`, `seo/`, `document/`,
   `route-warmup/`, `lib/`, `server/`): `src/ui/posts/filter-fields.ts` → `tests/unit/ui/posts/filter-fields.test.ts`.
-  Each tree is one project (`app-unit` also runs `tests/arch/`), defined in
-  `@kobato/test/projects/kobato-app-projects.ts`; every project runs `isolate: true`. Unit/it setup wrappers live under
-  `tests/utils/setup/` (they own the settings-mutation mock and the blog-settings bundle reset); DOM-rendering tests
-  declare their environment per file (`@vitest-environment happy-dom` / `jsdom` — the projects default to node), and
-  `tests/utils/dialog.tsx` stays the leaf-local `@kobato/ui` dialog stub the snap suites use. The runtime-`TZ` write
-  test (`unit/ui/analytics/time-labels.test.ts`) runs alone in the `app-tz-unit` forks project — never under `app-unit`.
+  Each tree is one project, defined in `@kobato/test/projects/kobato-app-projects.ts`; `tests/arch/` is its own
+  `app-arch` project. `app-unit` and `app-snaps` run on vmThreads (a fresh VM context per file, worker reused), while
+  `app-it` and `app-duckdb` keep `isolate: true` because every file boots a server perimeter. Unit/it setup wrappers
+  live under `tests/utils/setup/` (they own the settings-mutation mock and the blog-settings bundle reset);
+  DOM-rendering tests declare their environment per file (`@vitest-environment happy-dom` / `jsdom` — the projects
+  default to node), and `tests/utils/dialog.tsx` stays the leaf-local `@kobato/ui` dialog stub the snap suites use. The
+  runtime-`TZ` write test (`unit/ui/analytics/time-labels.test.ts`) runs alone in the `app-tz-unit` forks project —
+  never under `app-unit`.
 - **`tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message
-  literals, the Vitest project registry itself); runs inside `app-unit`.
+  literals, the Vitest project registry itself); runs in `app-arch`.
 - **DuckDB** — every file that spins up the real DuckDB engine lives in `tests/it/` named `*.duckdb.test.ts`; the suffix
   routes it into the `app-duckdb` project. Membership is by filename, never a manual list (pinned by
   `tests/arch/duckdb-project-files.test.ts`). Run with `pnpm test:duckdb`; the files also run under `pnpm test`.

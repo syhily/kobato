@@ -3,8 +3,11 @@
 - `tests/unit/` (`server-unit`) covers pure server logic with no database; `tests/it/` (`server-it`) covers integration
   tests needing a real database and mirrors `src/` (`src/domains/posts/services/search-query.ts` →
   `tests/it/server/domains/posts/services/search-query.test.ts`). Both are defined in
-  `@kobato/test/projects/server-projects.ts` and run `isolate: true`. Files that spin up the real DuckDB engine live in
-  `tests/it/` named `*.duckdb.test.ts` and run only in `server-duckdb`.
+  `@kobato/test/projects/server-projects.ts` and run on vmThreads: a fresh VM context per file keeps `vi.mock` and
+  module-scoped product state per-file while the worker thread is reused. A file that needs a real realm — it relies on
+  `instanceof Error` for an error thrown by `node:fs`, SQLite, or fetch — is named `*.iso.test.ts` and runs in
+  `server-iso-unit`/`server-iso-it` instead. Files that spin up the real DuckDB engine live in `tests/it/` named
+  `*.duckdb.test.ts` and run only in `server-duckdb`.
 - Test-only binary fixtures live under `tests/fixtures/` (the font-slicing canary owns `fixtures/fonts/`); never reach
   into `tools/test` by upward path.
 - Cross-cutting integration tests live here under the primary domain they exercise — there is no `features/` bucket. Run

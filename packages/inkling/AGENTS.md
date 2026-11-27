@@ -162,7 +162,7 @@ model; the feed downgrade + defensive host-card substitution live server-side
 
 ## Testing
 
-Own vitest project (`inkling-unit`, jsdom, globals off, `isolate: true`), built by the `inklingUnitProject` factory
+Own vitest project (`inkling-unit`, jsdom, globals off, vmThreads), built by the `inklingUnitProject` factory
 (`@kobato/test/projects/inkling-unit.ts`) and instantiated from `tests/vitest.config.ts`; the factory inlines
 `@testing-library/jest-dom` (`server.deps.inline`) — keep that inline entry. Rendered-card specs need the decorate
 adapter (`tests/utils/test-editor.ts`); an unregistered slot throws on first card render. See `tests/AGENTS.md`.

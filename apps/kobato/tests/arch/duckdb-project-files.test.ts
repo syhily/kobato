@@ -108,24 +108,31 @@ describe('duckdb test naming', () => {
     expect(offenders).toEqual([])
   })
 
-  it('the db/server/app duckdb projects discover them by glob, isolated, on their own setup', () => {
+  it('the db/server/app duckdb projects discover them by glob, on their own setup', () => {
     const expectations = [
-      { projects: dbProjects, name: 'db-duckdb', include: 'packages/db/tests/it/**/*.duckdb.test.{ts,tsx}' },
+      {
+        projects: dbProjects,
+        name: 'db-duckdb',
+        include: 'packages/db/tests/it/**/*.duckdb.test.{ts,tsx}',
+        isolate: false,
+      },
       {
         projects: serverProjects,
         name: 'server-duckdb',
         include: 'packages/server/tests/it/**/*.duckdb.test.{ts,tsx}',
+        isolate: false,
       },
       {
         projects: kobatoAppProjects,
         name: 'app-duckdb',
         include: 'apps/kobato/tests/it/**/*.duckdb.test.{ts,tsx}',
+        isolate: true,
       },
     ]
-    for (const { projects, name, include } of expectations) {
+    for (const { projects, name, include, isolate } of expectations) {
       const project = projectByName(projects, name)
       expect(project.test?.include).toEqual([include])
-      expect(project.test?.isolate).toBe(true)
+      expect(project.test?.isolate).toBe(isolate)
       for (const setupFile of project.test?.setupFiles ?? []) {
         expect(existsSync(setupFile), setupFile).toBe(true)
       }

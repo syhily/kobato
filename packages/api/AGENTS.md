@@ -148,9 +148,10 @@ their own.
 - No barrel `index.ts`, no `export { X } from 'y'` re-exports; consumers import `@kobato/api/<module>.ts`.
 - Auth, CSRF, rate limits, tracing, and the `HandlerContext` stay server-side: a contract carries only transport-visible
   metadata, never behavior.
-- Tests: `tests/unit/` (`api-unit`) pins contract shapes (key sets, route method/path values, schema identity against
-  the contracts, parse behavior, per group), the `defineProcedure` factory (`define-procedure.test.ts`), and the frozen
-  `publicRead` key set; `tests/unit/client/` pins the transport factory, the real-transport public seam
-  (`public-client.test.ts`), and wire error decoding; `tests/unit/browser/` pins the browser singleton assembly. The
-  server-side full-tree parity test and `apps/kobato/tests/arch/public-api-contract.test.ts` pin the surfaces.
-  `tests/utils/catalog.ts` is the workspace-canonical content and DTO fixture.
+- Tests: `tests/unit/` (`api-unit`, defined with its `api-iso-unit` twin in `@kobato/test/projects/api-projects.ts`)
+  pins contract shapes (key sets, route method/path values, schema identity against the contracts, parse behavior, per
+  group), the `defineProcedure` factory (`define-procedure.test.ts`), and the frozen `publicRead` key set;
+  `tests/unit/client/` pins the transport factory, the real-transport public seam (`public-client.test.ts`), and wire
+  error decoding; `tests/unit/browser/` pins the browser singleton assembly. The server-side full-tree parity test and
+  `apps/kobato/tests/arch/public-api-contract.test.ts` pin the surfaces. `tests/utils/catalog.ts` is the
+  workspace-canonical content and DTO fixture.

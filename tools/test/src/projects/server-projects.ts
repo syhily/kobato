@@ -1,9 +1,12 @@
+import { isoProject, isoTestGlob } from '@kobato/test/projects/iso-project'
 import { REPO_ROOT } from '@kobato/test/repo-root'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
 import path from 'node:path'
 import { configDefaults, defineConfig } from 'vitest/config'
 
+const UNIT_TREE = 'packages/server/tests/unit'
+const IT_TREE = 'packages/server/tests/it'
 const UNIT_SETUP = path.resolve(REPO_ROOT, 'packages/server/tests/utils/setup/unit.ts')
 const IT_SETUP = path.resolve(REPO_ROOT, 'packages/server/tests/utils/setup/it.ts')
 
@@ -15,11 +18,13 @@ export const serverProjects = [
     test: {
       ...vitestTestBase,
       name: 'server-unit',
-      include: ['packages/server/tests/unit/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude, 'packages/server/tests/unit/**/*.duckdb.test.{ts,tsx}'],
+      pool: 'vmThreads',
+      include: [`${UNIT_TREE}/**/*.test.{ts,tsx}`],
+      exclude: [...configDefaults.exclude, `${UNIT_TREE}/**/*.duckdb.test.{ts,tsx}`, isoTestGlob(UNIT_TREE)],
       setupFiles: [UNIT_SETUP],
     },
   }),
+  isoProject({ name: 'server-iso-unit', tree: UNIT_TREE, setupFiles: [UNIT_SETUP] }),
   defineConfig({
     root: REPO_ROOT,
     resolve: { tsconfigPaths: true },
@@ -27,12 +32,20 @@ export const serverProjects = [
     test: {
       ...vitestTestBase,
       name: 'server-it',
-      include: ['packages/server/tests/it/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude, 'packages/server/tests/it/**/*.duckdb.test.{ts,tsx}'],
+      pool: 'vmThreads',
+      include: [`${IT_TREE}/**/*.test.{ts,tsx}`],
+      exclude: [...configDefaults.exclude, `${IT_TREE}/**/*.duckdb.test.{ts,tsx}`, isoTestGlob(IT_TREE)],
       setupFiles: [IT_SETUP],
       testTimeout: 30_000,
       hookTimeout: 120_000,
     },
+  }),
+  isoProject({
+    name: 'server-iso-it',
+    tree: IT_TREE,
+    setupFiles: [IT_SETUP],
+    testTimeout: 30_000,
+    hookTimeout: 120_000,
   }),
   defineConfig({
     root: REPO_ROOT,
@@ -41,7 +54,7 @@ export const serverProjects = [
     test: {
       ...vitestTestBase,
       name: 'server-duckdb',
-      include: ['packages/server/tests/it/**/*.duckdb.test.{ts,tsx}'],
+      include: [`${IT_TREE}/**/*.duckdb.test.{ts,tsx}`],
       exclude: [...configDefaults.exclude],
       setupFiles: [IT_SETUP],
       testTimeout: 30_000,
