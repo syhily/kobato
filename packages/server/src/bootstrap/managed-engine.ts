@@ -1,6 +1,11 @@
-import { isRecord } from '@kobato/base/utils/type-guards'
 import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
+import {
+  deleteDevHostValue,
+  onDevHostDispose,
+  readDevHostValue,
+  writeDevHostValue,
+} from '@kobato/server/infra/dev-host-state'
+import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 
 export interface EngineAdapter<THandle> {
   open(): THandle | Promise<THandle>
@@ -10,21 +15,22 @@ export interface EngineAdapter<THandle> {
 export class ManagedEngine<THandle> {
   private current: THandle | null = null
 
-  constructor(
-    private readonly adapter: EngineAdapter<THandle>,
-    private readonly hmrKey: string,
-  ) {
-    registerShutdownHook(async () => {
-      await this.closeForSwap()
-    }, 0)
+  private readonly closeHook = async (): Promise<void> => {
+    await this.closeForSwap()
   }
 
-  private hmrHandle(): THandle | undefined {
-    const data: unknown = import.meta.hot?.data
-    if (!isRecord(data)) {
-      return undefined
-    }
-    const cached = data[this.hmrKey]
+  constructor(
+    private readonly adapter: EngineAdapter<THandle>,
+    private readonly key: string,
+  ) {
+    registerShutdownHook(this.closeHook, 0)
+    onDevHostDispose(`bootstrap/managed-engine:${this.key}`, () => {
+      unregisterShutdownHook(this.closeHook)
+    })
+  }
+
+  private devHostHandle(): THandle | undefined {
+    const cached = readDevHostValue(this.key)
     return cached !== null && typeof cached === 'object' ? unsafeCast<THandle>(cached) : undefined
   }
 
@@ -32,12 +38,9 @@ export class ManagedEngine<THandle> {
     if (this.current !== null) {
       return this.current
     }
-    const handle = this.hmrHandle() ?? (await this.adapter.open())
+    const handle = this.devHostHandle() ?? (await this.adapter.open())
     this.current = handle
-    const hot = import.meta.hot
-    if (hot && isRecord(hot.data)) {
-      hot.data[this.hmrKey] = handle
-    }
+    writeDevHostValue(this.key, handle)
     return handle
   }
 
@@ -66,10 +69,7 @@ export class ManagedEngine<THandle> {
     }
     const handle = this.current
     this.current = null
-    const hot = import.meta.hot
-    if (hot && isRecord(hot.data)) {
-      delete hot.data[this.hmrKey]
-    }
+    deleteDevHostValue(this.key)
     await this.adapter.close(handle)
   }
 }

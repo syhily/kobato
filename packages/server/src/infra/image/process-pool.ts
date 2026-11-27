@@ -10,8 +10,9 @@ import type { Span } from '@kobato/server/infra/trace/facade'
 import type { ImageOperation, ImageSizeBucket } from '@kobato/server/infra/trace/sanitize'
 
 import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/base/distribution/sea-assets'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { domainErrorFromWire } from '@kobato/server/infra/http/errors'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
+import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger } from '@kobato/server/infra/logger'
 import { isSea, getEmbeddedAsset, seaAssetPath } from '@kobato/server/infra/sea/sea'
 import { startSpan } from '@kobato/server/infra/trace/facade'
@@ -381,3 +382,7 @@ function defaultCreateWorker(): Worker {
 }
 
 registerShutdownHook(stopProcessPool, 0)
+onDevHostDispose('infra/image/process-pool', () => {
+  void stopProcessPool()
+  unregisterShutdownHook(stopProcessPool)
+})

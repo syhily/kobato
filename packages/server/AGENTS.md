@@ -22,10 +22,13 @@ server/
   builds the app, wraps its fetch handler (`http/leaked-response.ts`) before anything binds it, listens (or adopts the
   host's HTTP server) and registers the server and the restart app, then runs migrations and secrets, settings
   hydration, observability provisioning and retention, the job registry and the schedulers, the setup token, and the
-  process pool, in that order, with the HMR-once guards kept in `import.meta.hot.data` (`bootstrap/hmr-state.ts`);
-  nothing inside the package imports it (pinned). The engine lifecycles (`db-lifecycle`, `analytics-lifecycle`) are the
-  one `bootstrap/` seam the request pipeline and the analytics controllers reach. `assets/` is static data outside the
-  import graph. A file belongs to exactly one root.
+  process pool, in that order, with the run-once guards (`migrationsRan`, `bootStepsRan` — the secrets migration, the
+  settings refresh, and the job start — `domains/observability/runtime-manager.started`, the `ManagedEngine` handles,
+  the per-module disposers) kept in the dev-host state store (`infra/dev-host-state.ts`; `apps/kobato/AGENTS.md`) —
+  never in `import.meta.hot.data`, which no module under the package reads; nothing inside the package imports the
+  composition root (pinned). The engine lifecycles (`db-lifecycle`, `analytics-lifecycle`) are the one `bootstrap/` seam
+  the request pipeline and the analytics controllers reach. `assets/` is static data outside the import graph. A file
+  belongs to exactly one root.
 - `infra/*` imports nothing from `domains/`, `http/`, or `render/`. `domains/*` imports nothing from `bootstrap/*`:
   wiring goes through `wire*` seams; background jobs self-register on `infra/job-registry`.
 - `http/controllers/*` and `http/loaders/*` orchestrate only; `render/*` never persists.
@@ -69,12 +72,15 @@ directory: every former Hono resource is a `public.*` procedure pair now, and ko
 one-year cache, the `/admin`, `/admin/*`, and `/editor/*` documents through `spa-shell.ts` (the pure nonce-CSP shell
 handler), and the final 404 — and `listenKobato(app)` is the production listener: the start-up log lines over
 `infra/http/listener.ts`'s `listenHono`, the package's one `@hono/node-server` `serve()` call site (the configured host
-and port, `overrideGlobalObjects: false`), which `infra/lifecycle.ts`'s `restartServer` serves through as well — a cold
-boot and a restart bind identical options. It serves files and a shell document and imports no web package, and only
-`bootstrap/start-kobato.ts` calls it. The pipeline keeps the static `secureHeaders` CSP (`overwrite: false` — a
-handler-set CSP, i.e. the SPA shell nonce policy, survives), the conditional HSTS header, and the generic static-asset
-`cache` middleware; there is no per-request dynamic CSP, `Accept-CH`, or Webmention `Link` — kobato no longer renders
-documents.
+and port, `overrideGlobalObjects: false`, and `serverOptions: HTTP_SERVER_OPTIONS` from
+`@kobato/base/utils/http-server-options` — the ONE source of the Node `http.ServerOptions` both Kobato listeners bind,
+sayaka's `createHonoServer` the other; `requestTimeout: 0` because the application-level `requestTimeout` middleware and
+its per-procedure overrides own the request deadline, never Node's 300 s default), which `infra/lifecycle.ts`'s
+`restartServer` serves through as well — a cold boot and a restart bind identical options. It serves files and a shell
+document and imports no web package, and only `bootstrap/start-kobato.ts` calls it. The pipeline keeps the static
+`secureHeaders` CSP (`overwrite: false` — a handler-set CSP, i.e. the SPA shell nonce policy, survives), the conditional
+HSTS header, and the generic static-asset `cache` middleware; there is no per-request dynamic CSP, `Accept-CH`, or
+Webmention `Link` — kobato no longer renders documents.
 
 - Controllers and loaders **orchestrate only** — logic stays in `domains/<x>/service.ts`. `controllers/**` mirrors the
   `apiRouter` groups one-to-one (`apiRouter.public.comments` ⇔ `controllers/public/comments-*.controller.ts`); only the

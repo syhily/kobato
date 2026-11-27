@@ -1,6 +1,7 @@
 import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 
 const log = getLogger('batcher-registry')
@@ -22,6 +23,13 @@ interface BatcherEntry {
 }
 
 const entries: BatcherEntry[] = []
+
+onDevHostDispose('infra/db/batcher-registry', () => {
+  for (const entry of entries) {
+    entry.instance?.dispose?.()
+    entry.instance = undefined
+  }
+})
 
 export function registerBatcher(
   name: string,

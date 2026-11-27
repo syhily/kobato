@@ -3,7 +3,6 @@ import type { Env } from '@kobato/server/http/hono-env'
 import type { Hono } from 'hono'
 
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle'
-import { readHmrFlag, writeHmrFlag } from '@kobato/server/bootstrap/hmr-state'
 import { getSetupToken } from '@kobato/server/domains/auth/setup-token'
 import { upgradeObservabilityProvisioningAtBoot } from '@kobato/server/domains/observability/provision'
 import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention'
@@ -14,6 +13,7 @@ import { hydrateBlogSettings, refreshBlogSettings } from '@kobato/server/domains
 import { migrateSecretsEncryption } from '@kobato/server/domains/settings/services/migrate-secrets'
 import { createKobatoApp, listenKobato } from '@kobato/server/http/kobato-app'
 import { wrapFetchWithLeakedResponseHandler } from '@kobato/server/http/leaked-response'
+import { readDevHostFlag, writeDevHostFlag } from '@kobato/server/infra/dev-host-state'
 import { getProcessPool } from '@kobato/server/infra/image/process-pool'
 import { startAllRegisteredJobs } from '@kobato/server/infra/job-registry'
 import { setHttpServer, setRestartApp, setServerPhase } from '@kobato/server/infra/lifecycle'
@@ -38,7 +38,7 @@ export interface StartKobatoOptions {
   onListening?: (server: ServerType) => void
 }
 
-const SECRETS_MIGRATED = 'secretsMigrated'
+const BOOT_STEPS_RAN = 'bootStepsRan'
 
 export async function startKobato(options: StartKobatoOptions): Promise<Hono<Env>> {
   const app = createKobatoApp(options.assetsRoot)
@@ -55,8 +55,8 @@ export async function startKobato(options: StartKobatoOptions): Promise<Hono<Env
 
   setRestartApp(app)
 
-  const secretsMigrated = readHmrFlag(SECRETS_MIGRATED)
-  if (!secretsMigrated) {
+  const bootStepsRan = readDevHostFlag(BOOT_STEPS_RAN)
+  if (!bootStepsRan) {
     await migrateSecretsEncryption(getDb())
     await refreshBlogSettings(getDb())
   }
@@ -71,10 +71,10 @@ export async function startKobato(options: StartKobatoOptions): Promise<Hono<Env
   })
 
   void syncObservabilityRetention()
-  if (!secretsMigrated) {
+  if (!bootStepsRan) {
     startAllRegisteredJobs()
 
-    writeHmrFlag(SECRETS_MIGRATED, true)
+    writeDevHostFlag(BOOT_STEPS_RAN, true)
   }
 
   try {

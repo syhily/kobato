@@ -1,12 +1,16 @@
 import type { City, ReaderModel } from '@maxmind/geoip2-node'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { serverConfig } from '@kobato/server/infra/config'
 import { MAXMIND_DB_PATH, isPathInside } from '@kobato/server/infra/data-paths'
+import { deleteDevHostValue, readDevHostValue, writeDevHostValue } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 import { Reader } from '@maxmind/geoip2-node'
 import { existsSync } from 'node:fs'
 
 const log = getLogger('analytics.geoip')
+
+const READER_KEY = 'domains/analytics/geoip/lookup.reader'
 
 let readerPromise: Promise<ReaderModel | null> | undefined
 let dbPathForTests: string | null = null
@@ -38,25 +42,31 @@ async function openReader(): Promise<ReaderModel | null> {
   return reader
 }
 
+function memoizedReader(): Promise<ReaderModel | null> | undefined {
+  const carried = readDevHostValue(READER_KEY)
+  return carried instanceof Promise ? unsafeCast<Promise<ReaderModel | null>>(carried) : readerPromise
+}
+
 export function getGeoReader(): Promise<ReaderModel | null> {
-  readerPromise ??= openReader().catch((err: unknown) => {
+  const memoized = memoizedReader()
+  if (memoized !== undefined) {
+    return memoized
+  }
+  readerPromise = openReader().catch((err: unknown) => {
     readerPromise = undefined
+    deleteDevHostValue(READER_KEY)
     log.warn('MaxMind reader failed to open; will retry on next lookup', {
       err: err instanceof Error ? err.message : String(err),
     })
     return null
   })
+  writeDevHostValue(READER_KEY, readerPromise)
   return readerPromise
 }
 
 export function resetGeoReader(): void {
   readerPromise = undefined
-}
-
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    readerPromise = undefined
-  })
+  deleteDevHostValue(READER_KEY)
 }
 
 export async function lookupCity(ip: string): Promise<City | null> {

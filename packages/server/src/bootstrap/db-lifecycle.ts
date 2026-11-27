@@ -1,7 +1,6 @@
 import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/public/notifications'
-import { isRecord } from '@kobato/base/utils/type-guards'
 import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
 import { defaultMigrationsFolder, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import {
@@ -51,6 +50,7 @@ import {
 } from '@kobato/server/infra/db/job-run-recorder'
 import { resolveDatabasePath, resolveEmbeddedMigrationsRoot } from '@kobato/server/infra/db/paths'
 import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics'
+import { readDevHostFlag, writeDevHostFlag } from '@kobato/server/infra/dev-host-state'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { setJobHandleGetter } from '@kobato/server/infra/job-registry'
@@ -66,17 +66,7 @@ import {
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
 
-function migrationsRanInHmr(): boolean {
-  const data: unknown = import.meta.hot?.data
-  return isRecord(data) && data.migrationsRan === true
-}
-
-function markMigrationsRanInHmr(): void {
-  const hot = import.meta.hot
-  if (hot && isRecord(hot.data)) {
-    hot.data.migrationsRan = true
-  }
-}
+const MIGRATIONS_RAN = 'migrationsRan'
 
 const engine = new ManagedEngine<DatabaseHandle>(
   {
@@ -197,9 +187,9 @@ registerSectionChangeHandler('observability', () =>
   Promise.all([syncObservabilityRuntime(), syncObservabilityRetention()]).then(() => undefined),
 )
 
-if (!migrationsRanInHmr()) {
+if (!readDevHostFlag(MIGRATIONS_RAN)) {
   await migrateContentDatabase(getDb())
-  markMigrationsRanInHmr()
+  writeDevHostFlag(MIGRATIONS_RAN, true)
 }
 
 if (!isVitest()) {

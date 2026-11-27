@@ -65,6 +65,13 @@ describe('sayaka import boundary', () => {
     }
     expect(offenders).toEqual([])
   })
+
+  it('reads no import.meta.hot in the server graph — the dev host loads it through ssrLoadModule, whose runner has hmr: false', () => {
+    const offenders = sourceFiles(`${SRC_ROOT}/server`)
+      .concat(`${SRC_ROOT}/server.ts`)
+      .filter((file) => readFileSync(full(file), 'utf8').includes('import.meta.hot'))
+    expect(offenders, 'an HMR boundary or hot.data carrier in the server graph is dead code').toEqual([])
+  })
 })
 
 function full(file: string): string {

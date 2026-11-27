@@ -1,5 +1,6 @@
 import { isRecord } from '@kobato/base/utils/type-guards'
 import { isVitest } from '@kobato/server/infra/config'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { getLogger, root } from '@kobato/server/infra/logger'
 import diagnostics_channel from 'node:diagnostics_channel'
 
@@ -100,8 +101,4 @@ export function stopQueryDiagnostics(): void {
   subscribed = false
 }
 
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    stopQueryDiagnostics()
-  })
-}
+onDevHostDispose('infra/db/query-diagnostics', stopQueryDiagnostics)

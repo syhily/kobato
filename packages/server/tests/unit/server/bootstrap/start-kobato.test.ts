@@ -18,8 +18,6 @@ const h = vi.hoisted(() => {
   const getInstallState = vi.fn()
   const getSetupToken = vi.fn()
   const getProcessPool = vi.fn()
-  const readHmrFlag = vi.fn((_key: string): boolean => false)
-  const writeHmrFlag = vi.fn()
   const updateBlogSettingsSection = vi.fn()
   return {
     calls,
@@ -31,24 +29,11 @@ const h = vi.hoisted(() => {
     getInstallState,
     getSetupToken,
     getProcessPool,
-    readHmrFlag,
-    writeHmrFlag,
     updateBlogSettingsSection,
   }
 })
 
 vi.mock('@kobato/server/bootstrap/db-lifecycle', () => ({ getDb: () => h.db }))
-
-vi.mock('@kobato/server/bootstrap/hmr-state', () => ({
-  readHmrFlag: (key: string) => {
-    h.calls.push(`readHmrFlag:${key}`)
-    return h.readHmrFlag(key)
-  },
-  writeHmrFlag: (key: string, value: boolean) => {
-    h.calls.push(`writeHmrFlag:${key}=${value}`)
-    h.writeHmrFlag(key, value)
-  },
-}))
 
 vi.mock('@kobato/server/http/kobato-app', () => ({
   createKobatoApp: (assetsRoot: string) => {
@@ -160,6 +145,8 @@ vi.mock('@kobato/server/infra/cache/kv-maintenance', () => ({}))
 vi.mock('@kobato/server/infra/db/maintenance', () => ({}))
 
 const { startKobato } = await import('@kobato/server/bootstrap/start-kobato')
+const { __installDevHostStateForTests, __resetDevHostStateForTests, readDevHostFlag, writeDevHostFlag } =
+  await import('@kobato/server/infra/dev-host-state')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('@kobato/settings/tests/utils/blog-settings')
 
 const ASSETS_ROOT = '/tmp/workspace-client'
@@ -171,7 +158,6 @@ const COLD_BOOT = [
   'setHttpServer:bind',
   'onListening:bind',
   'setRestartApp:true',
-  'readHmrFlag:secretsMigrated',
   'migrateSecretsEncryption:true',
   'refreshBlogSettings:true',
   'hydrateBlogSettings:true',
@@ -180,7 +166,6 @@ const COLD_BOOT = [
   'updateBlogSettingsSection:true:observability',
   'syncObservabilityRetention',
   'startAllRegisteredJobs',
-  'writeHmrFlag:secretsMigrated=true',
   'getInstallState:true',
   'getSetupToken:true',
   'setServerPhase:running',
@@ -209,9 +194,6 @@ describe('bootstrap/start-kobato', () => {
     h.getSetupToken.mockResolvedValue('token')
     h.getProcessPool.mockReset()
     h.getProcessPool.mockResolvedValue({ id: 'pool' })
-    h.readHmrFlag.mockReset()
-    h.readHmrFlag.mockReturnValue(false)
-    h.writeHmrFlag.mockReset()
     h.updateBlogSettingsSection.mockReset()
     h.updateBlogSettingsSection.mockResolvedValue(undefined)
     vi.stubEnv('PROD', false)
@@ -220,6 +202,7 @@ describe('bootstrap/start-kobato', () => {
   })
 
   afterEach(() => {
+    __resetDevHostStateForTests()
     vi.unstubAllEnvs()
     warnSpy.mockRestore()
     infoSpy.mockRestore()
@@ -234,7 +217,7 @@ describe('bootstrap/start-kobato', () => {
 
     expect(app).toBe(h.app)
     expect(h.calls).toEqual(COLD_BOOT)
-    expect(h.writeHmrFlag).toHaveBeenCalledWith('secretsMigrated', true)
+    expect(readDevHostFlag('bootStepsRan')).toBe(false)
   })
 
   it('hands the observability provisioning the hydrated slice and the settings write seam', async () => {
@@ -253,13 +236,12 @@ describe('bootstrap/start-kobato', () => {
       onListening: recordingOnListening(),
     })
 
-    expect(h.calls.slice(0, 6)).toEqual([
+    expect(h.calls.slice(0, 5)).toEqual([
       'createKobatoApp:/tmp/workspace-client',
       'wrapFetch:true',
       'setHttpServer:host',
       'onListening:host',
       'setRestartApp:true',
-      'readHmrFlag:secretsMigrated',
     ])
     expect(h.calls).not.toContain('listenKobato:true')
     expect(h.calls.at(-1)).toBe('setServerPhase:running')
@@ -282,19 +264,20 @@ describe('bootstrap/start-kobato', () => {
     expect(h.calls.at(-1)).toBe('setServerPhase:running')
   })
 
-  it('skips the secrets migration and the job start once the HMR flag is set', async () => {
-    h.readHmrFlag.mockReturnValue(true)
+  it('skips the secrets migration, the settings refresh, and the job start once the boot flag is set', async () => {
+    const state = __installDevHostStateForTests()
+    writeDevHostFlag('bootStepsRan', true)
 
     await startKobato({ assetsRoot: ASSETS_ROOT, listener: { mode: 'bind' } })
 
     expect(h.calls).not.toContain('migrateSecretsEncryption:true')
     expect(h.calls).not.toContain('refreshBlogSettings:true')
     expect(h.calls).not.toContain('startAllRegisteredJobs')
-    expect(h.writeHmrFlag).not.toHaveBeenCalled()
     for (const step of ['hydrateBlogSettings:true', 'syncObservabilityRuntime', 'syncObservabilityRetention']) {
       expect(h.calls).toContain(step)
     }
     expect(h.calls.at(-1)).toBe('setServerPhase:running')
+    expect(state.flags.get('bootStepsRan')).toBe(true)
   })
 
   it('skips the setup token when an admin exists', async () => {

@@ -8,8 +8,4 @@ const app = await startKobato({
   listener: import.meta.env.PROD ? { mode: 'bind' } : { mode: 'host', server: getViteDevServer()?.httpServer ?? null },
 })
 
-if (import.meta.hot) {
-  import.meta.hot.accept()
-}
-
 export default app

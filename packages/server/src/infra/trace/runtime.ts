@@ -26,6 +26,7 @@ import type { MetricReader } from '@opentelemetry/sdk-metrics'
 import type { SpanExporter } from '@opentelemetry/sdk-trace'
 
 import { APP_VERSION } from '@kobato/base/distribution/app'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger } from '@kobato/server/infra/logger'
 import { clearLogSink, setLogSink } from '@kobato/server/infra/logger/sink'
@@ -790,8 +791,6 @@ export function isTraceRuntimeRunning(): boolean {
   return runtime !== null
 }
 
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    void stopTraceRuntime()
-  })
-}
+onDevHostDispose('infra/trace/runtime', () => {
+  void stopTraceRuntime()
+})

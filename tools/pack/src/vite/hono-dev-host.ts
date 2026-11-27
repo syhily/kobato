@@ -6,9 +6,14 @@ import nodeAdapter from '@hono/vite-dev-server/node'
 import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 export const VITE_DEV_SERVER_SLOT = Symbol.for('kobato.vite-dev-server')
+const DEV_HOST_MARKER = Symbol.for('kobato.server.dev-host')
 
 export function exposeViteDevServer(server: ViteDevServer): void {
   Reflect.set(globalThis, VITE_DEV_SERVER_SLOT, server)
+}
+
+export function markDevHost(): void {
+  Reflect.set(globalThis, DEV_HOST_MARKER, true)
 }
 
 export function remoteAddressMiddleware() {
@@ -47,6 +52,7 @@ export function honoDevHost(options: HonoDevHostOptions): Plugin {
     configureServer(server) {
       forceDevMode()
       exposeViteDevServer(server)
+      markDevHost()
       server.middlewares.use(remoteAddressMiddleware())
       return applyHonoDevServer(devServerPlugin, server)
     },

@@ -11,6 +11,7 @@ import { wireAccessLogBatcher } from '@kobato/server/domains/analytics/services/
 import { wireDeviceEnvBeaconBatcher } from '@kobato/server/domains/analytics/services/env-beacon'
 import { getBatcher } from '@kobato/server/infra/db/batcher-registry'
 import { resolveAnalyticsPath, resolveEmbeddedMigrationsRoot } from '@kobato/server/infra/db/paths'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-utils'
 import { copyFile } from 'node:fs/promises'
@@ -117,9 +118,15 @@ export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean>
 }
 
 export async function closeAnalyticsForRestore(): Promise<void> {
+  stopAnalyticsMaintenance()
+  await engine.closeForSwap()
+}
+
+function stopAnalyticsMaintenance(): void {
   if (maintenanceJob !== null) {
     maintenanceJob.stop()
     maintenanceJob = null
   }
-  await engine.closeForSwap()
 }
+
+onDevHostDispose('bootstrap/analytics-lifecycle', stopAnalyticsMaintenance)

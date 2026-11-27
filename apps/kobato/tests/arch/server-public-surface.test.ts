@@ -12,6 +12,7 @@ const CONSUMING_TREES = [
   'packages/db/src',
   'packages/web/ui/src',
   'packages/inkling/src',
+  'tools/instance/src',
   'tools/test/src',
   'tools/trace/src',
   'tools/pack/src',
@@ -104,7 +105,11 @@ describe('server public surface', () => {
     expect(entry).toMatch(/await startKobato\(\{\s*assetsRoot: clientAssetsRoot\(\),/)
     expect(entry).toContain("{ mode: 'bind' }")
     expect(entry).toContain("{ mode: 'host', server: getViteDevServer()?.httpServer ?? null }")
-    expect(entry).toContain('import.meta.hot.accept()')
+    expect(
+      entry,
+      'the dev host loads this graph through ssrLoadModule, whose compat runner has hmr: false — import.meta.hot is ' +
+        'undefined here, so an accept() boundary is dead code and the run-once guards live in the dev-host state store',
+    ).not.toContain('import.meta.hot')
     expect(entry).toMatch(/export default app\s*$/)
 
     const appServerImports = scanned

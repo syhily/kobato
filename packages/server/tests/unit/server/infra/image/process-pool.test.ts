@@ -1,10 +1,12 @@
 import type { Worker } from 'node:worker_threads'
 
 import { EventEmitter } from 'node:events'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { WorkerPool, getProcessPool, stopProcessPool, __setWorkerFactory, __resetWorkerFactory } =
   await import('@kobato/server/infra/image/process-pool')
+const { __installDevHostStateForTests, __resetDevHostStateForTests } =
+  await import('@kobato/server/infra/dev-host-state')
 
 class FakeWorker extends EventEmitter {
   posted: Array<{ id: number; type: string; input: unknown }> = []
@@ -287,6 +289,8 @@ describe('process-pool singleton', () => {
   afterEach(async () => {
     await stopProcessPool()
     __resetWorkerFactory()
+    __resetDevHostStateForTests()
+    vi.resetModules()
   })
 
   it('returns a memoised pool', async () => {
@@ -294,5 +298,28 @@ describe('process-pool singleton', () => {
     const pool2 = await getProcessPool()
     expect(pool1).toBe(pool2)
     await stopProcessPool()
+  })
+
+  it('a re-evaluated module under the dev host stops the previous evaluation’s pool instead of stranding its workers', async () => {
+    __installDevHostStateForTests()
+    vi.resetModules()
+    const first = await import('@kobato/server/infra/image/process-pool')
+    first.__setWorkerFactory(createFakeWorker)
+    const previous = await first.getProcessPool()
+    const previousWorkers = [...workersOf(previous)]
+    expect(previousWorkers.length).toBeGreaterThan(0)
+
+    vi.resetModules()
+    const next = await import('@kobato/server/infra/image/process-pool')
+    next.__setWorkerFactory(createFakeWorker)
+    const current = await next.getProcessPool()
+
+    expect(current).not.toBe(previous)
+    await vi.waitFor(() => {
+      expect(previousWorkers.map((entry) => entry.worker.terminated)).toEqual(previousWorkers.map(() => true))
+    })
+    expect(workersOf(current).map((entry) => entry.worker.terminated)).toEqual(workersOf(current).map(() => false))
+    await next.stopProcessPool()
+    __resetWorkerFactory()
   })
 })

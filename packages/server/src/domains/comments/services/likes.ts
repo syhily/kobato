@@ -13,6 +13,7 @@ import {
 } from '@kobato/db/sqlite/operations/engagement/like'
 import { targetKey } from '@kobato/db/sqlite/target'
 import { pendingViewDelta } from '@kobato/server/domains/analytics/services/pv-batcher'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 import { startOfDay, subDays } from 'date-fns'
 
@@ -115,3 +116,5 @@ export function resetLikeTokenSweep(): void {
     sweepTimer = undefined
   }
 }
+
+onDevHostDispose('domains/comments/services/likes', resetLikeTokenSweep)

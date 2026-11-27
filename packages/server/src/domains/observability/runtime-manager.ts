@@ -2,13 +2,13 @@ import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observab
 import type { TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ExportFailure } from '@kobato/server/infra/trace/export-health'
 
-import { isRecord } from '@kobato/base/utils/type-guards'
 import {
   observabilityConnectionFingerprint,
   observabilityRuntimeFingerprint,
   toTraceRuntimeSettings,
 } from '@kobato/server/domains/observability/config'
 import { syncObservabilityRetention } from '@kobato/server/domains/observability/retention'
+import { onDevHostDispose, readDevHostFlag, writeDevHostFlag } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '@kobato/server/infra/trace/config'
 import { lastExportFailure } from '@kobato/server/infra/trace/export-health'
@@ -39,16 +39,7 @@ function errorName(error: unknown): string {
   return error instanceof Error ? error.name : typeof error
 }
 
-function hmrStarted(): boolean {
-  return isRecord(import.meta.hot?.data) && import.meta.hot.data.observabilityStarted === true
-}
-
-function markHmrStarted(started: boolean): void {
-  const data: unknown = import.meta.hot?.data
-  if (isRecord(data)) {
-    data.observabilityStarted = started
-  }
-}
+const STARTED_FLAG = 'domains/observability/runtime-manager.started'
 
 export function getObservabilityRuntimeStatus(): ObservabilityRuntimeStatus {
   return {
@@ -80,7 +71,7 @@ function schedulePostStartRetentionSync(): void {
 
 async function stopRuntime(): Promise<void> {
   cancelPostStartRetentionSync()
-  if (!state.started && !hmrStarted()) {
+  if (!state.started && !readDevHostFlag(STARTED_FLAG)) {
     return
   }
   try {
@@ -96,7 +87,7 @@ async function stopRuntime(): Promise<void> {
       started: false,
       phase: state.phase === 'running' ? 'disabled' : state.phase,
     }
-    markHmrStarted(false)
+    writeDevHostFlag(STARTED_FLAG, false)
   }
 }
 
@@ -128,11 +119,11 @@ async function startRuntime(site: ObservabilitySettingsSlice, fingerprint: strin
       return
     }
     state = { phase: 'running', fingerprint, lastError: null, started: true }
-    markHmrStarted(true)
+    writeDevHostFlag(STARTED_FLAG, true)
     schedulePostStartRetentionSync()
   } catch (error) {
     state = { phase: 'failed', fingerprint, lastError: `trace-start-failed: ${errorName(error)}`, started: false }
-    markHmrStarted(false)
+    writeDevHostFlag(STARTED_FLAG, false)
     log.warn('OpenObserve telemetry could not start; the site continues without it', {
       error: errorName(error),
     })
@@ -185,8 +176,6 @@ export function __resetObservabilityRuntimeForTests(): void {
   queue = Promise.resolve()
 }
 
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    void stopRuntime()
-  })
-}
+onDevHostDispose('domains/observability/runtime-manager', () => {
+  void stopRuntime()
+})

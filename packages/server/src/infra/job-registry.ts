@@ -1,6 +1,8 @@
 import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { databaseOf } from '@kobato/db/sqlite/database'
+import { readDevHostValue, writeDevHostValue } from '@kobato/server/infra/dev-host-state'
 import { getLogger } from '@kobato/server/infra/logger'
 import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@kobato/server/infra/scheduler-utils'
 
@@ -17,13 +19,21 @@ interface JobEntry extends JobRegistration {
   instance: ScheduledJob | undefined
 }
 
-const entries: JobEntry[] = []
+const ENTRIES_KEY = 'infra/job-registry.entries'
+
+const storedEntries = readDevHostValue(ENTRIES_KEY)
+const entries: JobEntry[] = Array.isArray(storedEntries) ? unsafeCast<JobEntry[]>(storedEntries) : []
+writeDevHostValue(ENTRIES_KEY, entries)
 
 export function registerJob(registration: JobRegistration): void {
   const index = entries.findIndex((entry) => entry.name === registration.name)
   if (index !== -1) {
+    const armed = entries[index]!.instance !== undefined
     entries[index]!.instance?.stop()
     entries[index] = { ...registration, instance: undefined }
+    if (armed) {
+      arm(entries[index]!)
+    }
     return
   }
   entries.push({ ...registration, instance: undefined })

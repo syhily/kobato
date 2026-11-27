@@ -1,8 +1,10 @@
 import { TZDate } from '@date-fns/tz'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { finishJobRun, startJobRun } from '@kobato/server/infra/db/job-run-recorder'
+import { onDevHostDispose, readDevHostValue, writeDevHostValue } from '@kobato/server/infra/dev-host-state'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
-import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
+import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger } from '@kobato/server/infra/logger'
 import { isTraceActive, withSpanAsync } from '@kobato/server/infra/trace/facade'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
@@ -172,7 +174,11 @@ function wrapWithHistory(taskKey: string, run: () => Promise<void> | void): () =
   }
 }
 
-const registeredJobs: ScheduledJob[] = []
+const REGISTERED_JOBS_KEY = 'infra/scheduler-utils.registeredJobs'
+
+const storedJobs = readDevHostValue(REGISTERED_JOBS_KEY)
+const registeredJobs: ScheduledJob[] = Array.isArray(storedJobs) ? unsafeCast<ScheduledJob[]>(storedJobs) : []
+writeDevHostValue(REGISTERED_JOBS_KEY, registeredJobs)
 
 export const MAX_TIMER_DELAY_MS = 24 * 60 * 60 * 1000
 
@@ -259,6 +265,10 @@ export function stopAllScheduledJobs(): void {
   }
 }
 
-registerShutdownHook(async () => {
+const stopAllJobsHook = async (): Promise<void> => {
   stopAllScheduledJobs()
-}, 0)
+}
+registerShutdownHook(stopAllJobsHook, 0)
+onDevHostDispose('infra/scheduler-utils', () => {
+  unregisterShutdownHook(stopAllJobsHook)
+})

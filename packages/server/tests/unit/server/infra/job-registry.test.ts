@@ -12,6 +12,8 @@ const {
   startAllRegisteredJobs,
 } = await import('@kobato/server/infra/job-registry')
 const { stopAllScheduledJobs } = await import('@kobato/server/infra/scheduler-utils')
+const { __installDevHostStateForTests, __resetDevHostStateForTests } =
+  await import('@kobato/server/infra/dev-host-state')
 
 describe('job registry', () => {
   beforeEach(() => {
@@ -25,6 +27,8 @@ describe('job registry', () => {
   afterEach(() => {
     stopAllScheduledJobs()
     __resetJobRegistrationsForTests()
+    __resetDevHostStateForTests()
+    vi.resetModules()
     vi.useRealTimers()
   })
 
@@ -86,7 +90,7 @@ describe('job registry', () => {
     expect(vi.getTimerCount()).toBe(1)
   })
 
-  it('re-registering a name replaces the entry HMR-safely', () => {
+  it('re-registering a name replaces the entry and keeps an armed job armed exactly once', () => {
     const db = {}
     setJobHandleGetter({ getDatabaseHandle: () => ({ db }) as never })
     const runV1 = vi.fn()
@@ -94,12 +98,47 @@ describe('job registry', () => {
     registerJob({ name: 'test.replaced', nextDelayMs: () => 10_000, run: runV1 })
 
     startAllRegisteredJobs()
+    expect(vi.getTimerCount()).toBe(1)
     registerJob({ name: 'test.replaced', nextDelayMs: () => 1_000, run: runV2 })
-    expect(vi.getTimerCount()).toBe(0)
+    expect(vi.getTimerCount()).toBe(1)
 
     startAllRegisteredJobs()
+    expect(vi.getTimerCount()).toBe(1)
     vi.advanceTimersByTime(1_000)
     expect(runV1).not.toHaveBeenCalled()
     expect(runV2).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-registering an unarmed name leaves the entry unarmed', () => {
+    const db = {}
+    setJobHandleGetter({ getDatabaseHandle: () => ({ db }) as never })
+    registerJob({ name: 'test.unarmed', nextDelayMs: () => 1_000, run: vi.fn() })
+
+    registerJob({ name: 'test.unarmed', nextDelayMs: () => 1_000, run: vi.fn() })
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('carries the registered entries, armed instances included, to a re-evaluated registry under the dev host', async () => {
+    const db = {}
+    const run = vi.fn()
+    const handle = { getDatabaseHandle: () => ({ db }) as never }
+    __installDevHostStateForTests()
+    vi.resetModules()
+    const first = await import('@kobato/server/infra/job-registry')
+    first.setJobHandleGetter(handle)
+    first.registerJob({ name: 'test.carried', nextDelayMs: () => 10_000, run })
+    first.startAllRegisteredJobs()
+    expect(vi.getTimerCount()).toBe(1)
+
+    vi.resetModules()
+    const next = await import('@kobato/server/infra/job-registry')
+    next.setJobHandleGetter(handle)
+    next.registerJob({ name: 'test.carried', nextDelayMs: () => 10_000, run })
+    next.startAllRegisteredJobs()
+    expect(vi.getTimerCount()).toBe(1)
+
+    vi.advanceTimersByTime(10_000)
+    expect(run).toHaveBeenCalledTimes(1)
+    __resetJobRegistrationsForTests()
   })
 })

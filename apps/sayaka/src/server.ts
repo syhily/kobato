@@ -10,8 +10,4 @@ const app = await createHonoServer<Env>({
   onServe: setLifecycleHttpServer,
 })
 
-if (import.meta.hot) {
-  import.meta.hot.accept()
-}
-
 export default app

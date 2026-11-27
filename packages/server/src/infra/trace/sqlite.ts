@@ -1,6 +1,7 @@
 import { isRecord } from '@kobato/base/utils/type-guards'
 import { isVitest } from '@kobato/server/infra/config'
 import { redactBoundValues } from '@kobato/server/infra/db/query-diagnostics'
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { activeTraceIds, isTraceActive, startSpan } from '@kobato/server/infra/trace/facade'
 import { recordDbOperation } from '@kobato/server/infra/trace/metrics'
 import diagnostics_channel from 'node:diagnostics_channel'
@@ -111,8 +112,4 @@ export function isSqliteQueryTraceSubscribed(): boolean {
   return subscribed
 }
 
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    stopSqliteQueryTrace()
-  })
-}
+onDevHostDispose('infra/trace/sqlite', stopSqliteQueryTrace)

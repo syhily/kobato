@@ -13,9 +13,11 @@ every package and for the `__APP_*__` build globals of both the backend bundle a
 
 - `src/server.ts` — the backend entry: it calls `startKobato` (`@kobato/server/bootstrap/start-kobato`) with the
   workspace build's location and, in production, lets the package bind the listener or, under Vite, hands over the dev
-  server's `httpServer`; it keeps the HMR boundary (`import.meta.hot.accept()`) and default-exports the app. The boot
-  sequence and the workspace-serving app (middleware pipeline + `/admin/assets/*` statics + shell documents + 404) live
-  in `@kobato/server` (`bootstrap/start-kobato`, `http/kobato-app`, `http/spa-shell`) — nothing of it is here.
+  server's `httpServer`, and default-exports the app; it carries no `import.meta.hot.accept()` — the dev host loads this
+  graph through `ssrLoadModule`, whose runner has `hmr: false`, so an HMR boundary here would be dead code (pinned by
+  `tests/arch/server-public-surface.test.ts`). The boot sequence and the workspace-serving app (middleware pipeline +
+  `/admin/assets/*` statics + shell documents + 404) live in `@kobato/server` (`bootstrap/start-kobato`,
+  `http/kobato-app`, `http/spa-shell`) — nothing of it is here.
 - `src/server/` — what only the app knows: `client-assets-root` (`clientAssetsRoot()` — under the kobato SEA binary it
   resolves the assets from the VFS `client/` prefix; on disk it resolves `@kobato/web-admin/package.json` through
   `createRequire(import.meta.url)` and takes that package's `build/client`, whatever the working directory) and
@@ -24,8 +26,18 @@ every package and for the `__APP_*__` build globals of both the backend bundle a
   `honoDevHost` (`@kobato/pack/vite/hono-dev-host`: `@hono/vite-dev-server` with the node adapter, no client-script
   injection), loading `src/server.ts` and serving its default export for every request outside Vite's own paths. The
   plugin publishes the Vite dev server on the `globalThis` slot before the entry evaluates, so `startKobato` adopts its
-  `httpServer` as the lifecycle's server instead of binding a port; server HMR re-evaluates the entry behind
-  `startKobato`'s HMR-once guards.
+  `httpServer` as the lifecycle's server instead of binding a port. A server-side edit re-evaluates the invalidated
+  modules and the entry on the NEXT request (the dev host sends no HMR update; `import.meta.hot` is `undefined` for this
+  graph — Vite's `ssrLoadModule` runs its compat module runner with `hmr: false`, so `import.meta.hot.data` is not a
+  usable carrier), and the plugin marks the process as a dev host on a second `globalThis` slot
+  (`Symbol.for('kobato.server.dev-host')`) before any module loads; `@kobato/server/infra/dev-host-state` reads that
+  marker and keeps the run-once state there — the flags for the migrations, the secrets migration + settings refresh +
+  job start (`bootStepsRan`), and the observability runtime; the carried values (the content and analytics engine
+  handles, the job registry's entries, the scheduler's registered-job list, the GeoIP reader promise); and each module's
+  previous disposer — so a re-evaluation neither repeats a run-once step, re-opens an engine, duplicates a scheduler,
+  nor stacks a signal handler. The marker exists only inside the dev host: a production bind boot and every test process
+  see no store and run every step (`tools/pack/tests/unit/vite/hono-dev-host.test.ts` pins that the plugin sets it
+  before the entry evaluates).
 - `vite.backend.config.ts` — the backend bundle: `src/server.ts` in, `build/server/index.js` out (chunks under
   `build/server/assets/`), with `processWorkerEntryPlugin` writing `build/server/process-worker.js` beside it.
 - `tests/` — `arch/`, `unit/`, `it/`, `browser/`, `e2e/`; see `tests/AGENTS.md`.

@@ -107,6 +107,16 @@ describe('server layers', () => {
     ).toEqual([])
   })
 
+  it('reads no import.meta.hot — the dev host loads the graph through ssrLoadModule, whose runner has hmr: false, so the run-once state lives in the dev-host store', () => {
+    const offenders = walk(SERVER_SRC, [])
+      .filter((file) => readFileSync(file, 'utf8').includes('import.meta.hot'))
+      .map((file) => `packages/server/src/${relative(SERVER_SRC, file)}`)
+    expect(
+      offenders,
+      'an HMR boundary or hot.data carrier in the server graph is dead code; use infra/dev-host-state',
+    ).toEqual([])
+  })
+
   it('infra imports no domains/http/render/bootstrap module', () => {
     const banned = new Set(['domains', 'http', 'render', 'bootstrap'])
     const offenders = offendersOf(

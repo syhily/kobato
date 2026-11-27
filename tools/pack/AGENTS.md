@@ -2,8 +2,8 @@
 
 Build and release tooling for the two-binary SEA distribution (`dist-sea/kobato` and `dist-sea/sayaka`, both from
 `pnpm run sea:build`): the SEA pipeline, the build-time Vite plugins, and the binary-suite entry scripts, which compose
-the instance driver and the Playwright support that live in `@kobato/test` (`tools/test/AGENTS.md`). Nothing here ships
-inside the product binaries.
+the instance driver and the Playwright support that live in `@kobato/instance` (`tools/instance/AGENTS.md`). Nothing
+here ships inside the product binaries.
 
 - `src/sea/` — the SEA pipeline (asset discovery/embedding, injection, smoke/probe) and the binary-suite entry scripts
   (`e2e.ts`, `browser.ts`). `sayaka-entry.ts` and `server-entry.ts` are the two injected mains (one per binary);
@@ -27,8 +27,15 @@ inside the product binaries.
   injection, used by `apps/kobato/vite.config.ts` to load `src/server.ts`) and owns the three pieces both plugins share:
   the `globalThis` slot keyed by `Symbol.for('kobato.vite-dev-server')` (`VITE_DEV_SERVER_SLOT`, `exposeViteDevServer`),
   the `x-remote-*` request-header middleware, and `forceDevMode`. Each app keeps an app-side `dev-server-ref.ts` that
-  reads the slot, because product `src/` never imports a tools package. `src/vite/front-end-config.ts` is the one
-  front-end config factory both React Router configs call:
+  reads the slot, because product `src/` never imports a tools package. The backend host additionally marks the process
+  as a dev host (`markDevHost`, the `globalThis` slot keyed by `Symbol.for('kobato.server.dev-host')`) before the entry
+  loads; `@kobato/server/infra/dev-host-state` reads that marker (its own copy of the key — same technique as
+  `dev-server-ref.ts`) and keeps the server graph's run-once state there across re-evaluations. Both dev hosts load
+  their entry through `@hono/vite-dev-server`, i.e. Vite's `ssrLoadModule` compat runner (`hmr: false`): neither app's
+  server graph has an `import.meta.hot`, so neither entry keeps an `accept()` boundary, nothing under
+  `packages/server/src` reads one (`apps/kobato/tests/arch/server-layers.test.ts`), and a server-side edit simply
+  re-evaluates on the next request. `src/vite/front-end-config.ts` is the one front-end config factory both React Router
+  configs call:
   `frontEndConfig({ appDir, port, identityDir?, base?, plugins?, server?, optimizeDeps?, serverEntry?, ssrExternals? })`
   returns the config function — the shared plugin list (`sanitizeEngineAliasPlugin`, `inlinePackageDataPlugin`,
   `reactCompilerPlugin`, `reactRouter()`, `tailwindcss()`) with the application's own plugins around it
@@ -41,12 +48,14 @@ inside the product binaries.
   `src/sea/paths.ts` resolves the workspace's client build through the package (`adminPackageDir()` /
   `adminClientBuildDir()` resolve `@kobato/web-admin/package.json` from the kobato app's dependency table) — the SEA
   asset collection reads the workspace build only through the package.
-- `src/sea/{smoke,e2e,browser}.ts` — the binary-suite entry scripts — boot the PAIR through `@kobato/test/instance`
+- `src/sea/{smoke,e2e,browser}.ts` — the binary-suite entry scripts — boot the PAIR through `@kobato/instance`
   (`bootSuiteInstance` / `stopSuiteInstance`, `readConvergedConfig`, the DuckDB sidecar scan) and share its process
-  primitives (`@kobato/test/process`: `fail`, `sleep`, `pickFreePort`, `fetchManual`, `scrubbedParentEnv`,
+  primitives (`@kobato/instance/process`: `fail`, `sleep`, `pickFreePort`, `fetchManual`, `scrubbedParentEnv`,
   `watchChildExit` / `raceChildExit`); `sea/exec.ts` keeps only the command runners (`run`, `tryRun`) on top of them.
-  `browser.ts` spawns `pnpm --filter @kobato/test exec playwright test --config tools/test/playwright.config.ts`. This
-  package depends on `@kobato/test`; nothing under it imports `@kobato/pack`.
+  `browser.ts` spawns
+  `pnpm --filter @kobato/instance exec playwright test --config tools/instance/playwright.config.ts`. This package
+  depends on `@kobato/instance` (and on `@kobato/test` for its own Vitest config); nothing under those two imports
+  `@kobato/pack`.
 - `vite.config.ts` — the SEA bundle config behind the `SEA_BUNDLE` loop in `src/sea/build.ts` (`server.mjs`,
   `process-worker.mjs`, `smoke-worker.mjs` for kobato, `sayaka-server.mjs` for sayaka — each bundle row carries its app,
   and per-app bundles land in per-app intermediates: `dist-sea/intermediates` vs `dist-sea/sayaka-intermediates`).
@@ -130,8 +139,11 @@ companion libraries and no rpath patch, and server code reaches it only through 
 — the config anchors at the REPOSITORY ROOT, so filters resolve from there. The suites pin the SEA compression contract
 across the writer/reader seam, the sayaka VFS fs-patch's sequential readv/writev shapes, the `check-bundle` scanner, the
 inline-package-data rewrite shapes against the INSTALLED packages, the installed native platform specifiers, and the
-build-time plugins (`vite/`, the front-end config factory's plugin order and build shapes among them). Cross-package
-asset-key pins live in `apps/kobato/tests/arch/`.
+build-time plugins (`vite/`: the front-end config factory's plugin order and build shapes, and the dev host's
+marker-before-entry guarantee — a real Vite dev server loads a probe entry through `honoDevHost`, the entry sees the
+dev-host marker and no `import.meta.hot`, and `@kobato/server`'s `devHostState()` reads the same marker). The tree is
+`tests/unit/` only — it has no `tests/it/` — so it also holds these real-resource suites beside the pure-logic ones.
+Cross-package asset-key pins live in `apps/kobato/tests/arch/`.
 
 ## Commands
 
@@ -153,9 +165,9 @@ asset-key pins live in `apps/kobato/tests/arch/`.
   smoke); `archive` tars each binary and writes + re-verifies the `.tar.gz.sha256` and bare-binary `.sha256` sidecars
   for both.
 - `pnpm run sea:e2e [kobato-binary]` / `sea:browser [kobato-binary]` / `test:browser` — the binary suites over the
-  booted pair; `pnpm run split:smoke [--sea]` (`@kobato/test`'s script) is the ADR-0009 perimeter smoke. What each boots
-  and proves, and the binary-argument rules, are in `tools/test/AGENTS.md`; coverage in `apps/kobato/tests/AGENTS.md`
-  and `apps/sayaka/AGENTS.md`.
+  booted pair; `pnpm run split:smoke [--sea]` (`@kobato/instance`'s script) is the ADR-0009 perimeter smoke. What each
+  boots and proves, and the binary-argument rules, are in `tools/instance/AGENTS.md`; coverage in
+  `apps/kobato/tests/AGENTS.md` and `apps/sayaka/AGENTS.md`.
 
 ## Delivery targets
 

@@ -23,11 +23,14 @@ runtime state):
   `http/spa-shell`) — the app hands over the workspace build's location, nothing more. `@kobato/font-split`
   (`packages/font-split`) is the Rust font-slicing addon: the product reaches it only through `nativeRequire` with a
   specifier string, never an import.
-- `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`), none of which ships. Product `src/` never
-  imports a tools package. `tools/test` holds everything a test needs (fixtures and doubles, the Vitest project table,
-  the live-instance driver `src/instance/`, the Playwright journey support `src/browser/` with `playwright.config.ts`);
-  `tools/pack` holds the SEA pipeline, the Vite plugins with the front-end config factory, and the release scripts, and
-  depends on `tools/test` — never the reverse.
+- `tools/` — dev-support packages (`tsconfig`, `test`, `instance`, `pack`, `trace`), none of which ships. Product `src/`
+  never imports a tools package. `tools/test` holds everything an in-process test needs (fixtures and doubles, the
+  Vitest project table, `repo-root`) and depends on no product package; `tools/instance` holds everything that runs out
+  of process (the live-instance driver `src/*.ts` + `client/`, the process primitives, the Playwright journey support
+  `src/browser/` with `playwright.config.ts`) and depends on `tools/test`; `tools/pack` holds the SEA pipeline, the Vite
+  plugins with the front-end config factory, and the release scripts, and depends on `tools/instance` and `tools/test`.
+  Between the tooling packages the direction is `pack` → `instance` → `test`, never the reverse, and the workspace
+  dependency graph has no cycle of any kind (`apps/kobato/tests/arch/package-dag.test.ts`).
 
 Package shape: `package.json`, `AGENTS.md` (required), `src/` (runtime source only), `tests/` mirroring `src/`, plus
 `drizzle/` (db) or `assets|styles/` when owned; config files (`vite.config.ts`, `vitest.config.ts`, `tsconfig.json`,
@@ -154,12 +157,13 @@ Dev workflow: three commands, three processes. `pnpm run dev` is the backend —
 (`apps/kobato/vite.config.ts`) on 4320 whose `honoDevHost` plugin (`@kobato/pack/vite/hono-dev-host`) loads
 `apps/kobato/src/server.ts` through `@hono/vite-dev-server`, publishes the Vite dev server on the `globalThis` slot so
 `startKobato` adopts its `httpServer` instead of binding a port, and serves `/rpc/*`, `/health`, and `/ready` through
-the Hono app with server HMR. `pnpm run dev:admin` is the workspace on 4321 (`react-router dev packages/web/admin`):
-React Router's dev middleware serves the `/admin/*` + `/editor/*` documents (and `.data` requests) while `/rpc`,
-`/health`, and `/ready` proxy to the backend (`KOBATO_DEV_BACKEND_URL`, default `http://127.0.0.1:4320`).
-`pnpm run dev:public` adds the public origin on 4322; sayaka forwards `/rpc/*` and `/admin/*`+`/editor/*` to a single
-target — in dev the workspace origin, which serves both through its proxy (`SAYAKA_KOBATO_RPC_URL`, default
-`http://127.0.0.1:4321/rpc`).
+the Hono app — a server-side edit re-evaluates the changed module chain on the next request behind the dev-host run-once
+guards (`@kobato/server/infra/dev-host-state`; the dev host has no `import.meta.hot`). `pnpm run dev:admin` is the
+workspace on 4321 (`react-router dev packages/web/admin`): React Router's dev middleware serves the `/admin/*` +
+`/editor/*` documents (and `.data` requests) while `/rpc`, `/health`, and `/ready` proxy to the backend
+(`KOBATO_DEV_BACKEND_URL`, default `http://127.0.0.1:4320`). `pnpm run dev:public` adds the public origin on 4322;
+sayaka forwards `/rpc/*` and `/admin/*`+`/editor/*` to a single target — in dev the workspace origin, which serves both
+through its proxy (`SAYAKA_KOBATO_RPC_URL`, default `http://127.0.0.1:4321/rpc`).
 
 `pnpm run bench:font-split` is local-only (`packages/font-split/scripts/bench/`): it regenerates
 `packages/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a
@@ -187,9 +191,9 @@ Tests live next to the covered package — no root-level test tree.
   the explicit, ordered project table. No config glob discovery; every test file is matched exactly once and
   `e2e`/`browser` are registered nowhere (`apps/kobato/tests/arch/vitest-project-registry.test.ts`).
 - The live-instance suites (`split:smoke`, `sea:smoke`, `sea:e2e`, `sea:browser`, `trace:smoke`) boot the real
-  kobato+sayaka pair or the dev servers through the instance driver in `tools/test/src/instance/` and drive the browser
-  through `tools/test/src/browser/` (`tools/test/AGENTS.md`); the e2e and browser trees import
-  `@kobato/test/instance/client/*` and `@kobato/test/browser/*`.
+  kobato+sayaka pair or the dev servers through the instance driver in `tools/instance/src/` and drive the browser
+  through `tools/instance/src/browser/` (`tools/instance/AGENTS.md`); the e2e and browser trees import
+  `@kobato/instance/client/*` and `@kobato/instance/browser/*`.
 - Import `describe`, `it`, `expect`, `vi` from `vitest`; run through the root `test*` scripts; `pnpm test <path>` for
   path filters; never select Vitest projects on the command line.
 - Pool/isolation: every project spreads `vitestTestBase` from `@kobato/test/vitest.base.ts` — `maxWorkers: 4`,

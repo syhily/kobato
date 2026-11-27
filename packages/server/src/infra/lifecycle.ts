@@ -2,6 +2,7 @@ import type { ServerType } from '@hono/node-server'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { Hono } from 'hono'
 
+import { onDevHostDispose } from '@kobato/server/infra/dev-host-state'
 import { listenHono } from '@kobato/server/infra/http/listener'
 import { getLogger } from '@kobato/server/infra/logger'
 import { Server as NodeHttpServer } from 'node:http'
@@ -119,16 +120,27 @@ async function performShutdown(reason: string): Promise<void> {
   process.exit(0)
 }
 
-process.once('SIGTERM', () => requestShutdown('SIGTERM'))
-process.once('SIGINT', () => requestShutdown('SIGINT'))
-process.once('SIGHUP', () => requestShutdown('SIGHUP'))
-process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
+const signalHandlers: Array<[NodeJS.Signals, () => void]> = [
+  ['SIGTERM', () => requestShutdown('SIGTERM')],
+  ['SIGINT', () => requestShutdown('SIGINT')],
+  ['SIGHUP', () => requestShutdown('SIGHUP')],
+  ['SIGBREAK', () => requestShutdown('SIGBREAK')],
+]
+for (const [signal, handler] of signalHandlers) {
+  process.once(signal, handler)
+}
 
 export function handleUnhandledRejection(error: unknown): void {
   log.error('Unhandled promise rejection', { err: error instanceof Error ? error.message : String(error) })
 }
 
 process.on('unhandledRejection', handleUnhandledRejection)
+onDevHostDispose('infra/lifecycle', () => {
+  for (const [signal, handler] of signalHandlers) {
+    process.removeListener(signal, handler)
+  }
+  process.removeListener('unhandledRejection', handleUnhandledRejection)
+})
 
 export function getServerPhase(): ServerPhase {
   return container.serverPhase

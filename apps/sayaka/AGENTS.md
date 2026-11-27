@@ -134,7 +134,10 @@ domain logic.
   gate gave those URL prefixes; the font/storage families stay gated and answer an error status, not a redirect, when a
   sub-resource fetch races an uninstalled instance.
 - `src/server/hono/` is the vendored `react-router-hono-server` glue (MIT, see its `LICENSE`): it imports sayaka's own
-  config/logger, never `@kobato/server`. `clientAssetsRoot()` in `node.ts` is the one SEA seam: under the sayaka SEA
+  config/logger, never `@kobato/server`. Its production listener binds `HTTP_SERVER_OPTIONS`
+  (`@kobato/base/utils/http-server-options`) — the ONE source of the Node `http.ServerOptions` both Kobato listeners
+  bind, kobato's `listenHono` the other; sayaka has no setting of its own, and a `customNodeServer` option still
+  replaces the whole server-creation block. `clientAssetsRoot()` in `node.ts` is the one SEA seam: under the sayaka SEA
   binary it resolves `<vfs-root>/sayaka-client`, on disk `../client` beside the built server. The SEA runtime awareness
   sayaka needs lives in `src/server/sea.ts` (`node:sea` detection + the VFS root + the client-assets swap);
   `warmup-manifest.ts` reads its manifest through the same VFS root. The injected-entry side — the sequential
@@ -159,20 +162,20 @@ domain logic.
 - `pnpm run sea:build` (root) builds the sayaka SEA binary too: `dist-sea/sayaka` (+ `sayaka.sha256`) embeds
   `build/client/**` under the `sayaka-client/` VFS key and is covered by `pnpm run split:smoke --sea` together with
   `dist-sea/kobato`.
-- `pnpm run split:smoke` — the two-process boot + perimeter smoke (`@kobato/test`'s instance driver); `--sea` runs it
-  against the binaries.
+- `pnpm run split:smoke` — the two-process boot + perimeter smoke (`@kobato/instance`'s driver); `--sea` runs it against
+  the binaries.
 
 ## Live-instance suites
 
 - `tests/e2e/` and `tests/browser/` hold the PUBLIC-site HTTP e2e and real-browser journeys moved here from
   `apps/kobato/tests` (ADR-0009): home/listings/details, the comment moderation flow, four-locale i18n, the public
   composer's locale-chunk loading, the cold-load popup journeys. Both run against the booted kobato+sayaka PAIR — the
-  vitest e2e helpers live under `tests/e2e/` (plain `fetch` over `@kobato/test/instance/client/*`; admin RPC talks to
+  vitest e2e helpers live under `tests/e2e/` (plain `fetch` over `@kobato/instance/client/*`; admin RPC talks to
   kobato's origin, every public URL and viewer RPC goes through sayaka's origin) and the Playwright journeys import the
-  SHARED journey support from `@kobato/test/browser/{fixtures,journey,settings-api}` — there is no per-tree `support/`
-  copy. The Playwright config (`tools/test/playwright.config.ts`) runs two projects over one booted pair; `baseURL` is
-  sayaka's origin, so the shared sign-in and staging helpers reach the admin through sayaka's forwarded `/admin/*` +
-  `/rpc/*` families. Browser channel: bundled Chromium unless `KOBATO_BROWSER_CHANNEL` names another (set
+  SHARED journey support from `@kobato/instance/browser/{fixtures,journey,settings-api}` — there is no per-tree
+  `support/` copy. The Playwright config (`tools/instance/playwright.config.ts`) runs two projects over one booted pair;
+  `baseURL` is sayaka's origin, so the shared sign-in and staging helpers reach the admin through sayaka's forwarded
+  `/admin/*` + `/rpc/*` families. Browser channel: bundled Chromium unless `KOBATO_BROWSER_CHANNEL` names another (set
   `KOBATO_BROWSER_CHANNEL=chrome` to drive the installed Google Chrome without downloading Playwright browsers).
 - Neither tree is registered in the Vitest project table — not part of `pnpm test`. Run them through `pnpm run sea:e2e`
   / `pnpm run sea:browser` (built binaries, managed pair boot) or `pnpm run test:browser` against
