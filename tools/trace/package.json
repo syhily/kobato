@@ -19,6 +19,7 @@
   "devDependencies": {
     "@kobato/base": "workspace:*",
     "@kobato/inkling": "workspace:*",
+    "@kobato/instance": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",

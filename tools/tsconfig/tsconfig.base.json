@@ -50,6 +50,7 @@
       "@kobato/settings/*": ["../../packages/shared/settings/src/*"],
       "@kobato/settings/tests/*": ["../../packages/shared/settings/tests/*"],
       "@kobato/test/*": ["../../tools/test/src/*"],
+      "@kobato/instance/*": ["../../tools/instance/src/*"],
       "@kobato/font-split": ["../../packages/font-split/src/index.ts"],
       "@kobato/font-split/*": ["../../packages/font-split/src/*"],
       "@kobato/font-split/scripts/*": ["../../packages/font-split/scripts/*"],

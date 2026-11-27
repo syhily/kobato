@@ -5,9 +5,12 @@ in the product (ADR-0011 §7): the one package that used to live here and does s
 package under `packages/font-split`.
 
 - `tsconfig` — configuration-only: `tsconfig.base.json`, the single workspace path table every package extends.
-- `test` — everything a test needs: in-process Vitest fixtures/doubles, shared setup, the multi-package project
-  definitions, the out-of-process instance driver (`src/instance/`), the shared Playwright journey support
-  (`src/browser/`) with `playwright.config.ts`.
+- `test` — everything an in-process test needs: Vitest fixtures/doubles, shared setup, the multi-package project
+  definitions, `repo-root`, the Vitest base. PRODUCT-FREE: it depends on no product package and no other tools package.
+- `instance` — everything that runs out of process: the live-instance driver (`src/*.ts` + `client/`), the process
+  primitives (`src/process.ts`), and the shared Playwright journey support (`src/browser/`) with `playwright.config.ts`;
+  it depends on `@kobato/test` and may reach `@kobato/settings` and `@kobato/base/utils` to stage and drive a booted
+  instance.
 - `pack` — build and release tooling: the SEA pipeline, the binary-suite entry scripts, the build-time Vite plugins and
   the front-end config factory (`src/vite/`), release automation.
 - `trace` — OpenObserve DEV container tooling.
@@ -15,16 +18,19 @@ package under `packages/font-split`.
 ## Boundary rules
 
 - **Product src never depends on tools** — not even type-only (`apps/kobato/tests/arch/package-dag.test.ts`). Tools may
-  depend on product packages (`test` reaches `@kobato/settings` and `@kobato/base/utils` for the instance driver; `pack`
-  and `trace` reach the shared leaves), never the reverse.
-- `pack` → `test` is the only direction between the two: `pack`'s suite entry scripts compose the instance driver, and
-  nothing under `test` imports `@kobato/pack` (pinned by the same test).
-- Product **tests** import tools freely (`@kobato/test`, the live-instance clients under
-  `@kobato/test/instance/client`), declared in each package's devDependencies. The two directions together make one
-  workspace dependency cycle, dev-only and accepted: `@kobato/settings` dev-depends on `@kobato/test` for its test setup
-  while `@kobato/test` dev-depends on `@kobato/settings` for `instance/seed.ts` and `instance/split-smoke.ts` — the
-  `@kobato/settings` source imports no tools package, `tools/test` has no production source (the driver is the side that
-  imports settings), no rule forbids it, and both packages are private; pnpm warns about it on install.
+  depend on product packages (`instance` reaches `@kobato/settings` and `@kobato/base/utils` for the driver; `pack` and
+  `trace` reach the shared leaves), never the reverse.
+- **No cycle of any kind** in the workspace dependency graph — `dependencies`, `devDependencies`, and
+  `optionalDependencies` edges together (`apps/kobato/tests/arch/package-dag.test.ts` builds the graph from every
+  workspace `package.json` and fails with the cycle printed; pnpm's install stays warning-free). Every cycle is
+  solvable: the one that used to exist (`@kobato/settings` ⇄ `@kobato/test`) was dissolved by moving the
+  product-reaching driver into `@kobato/instance`.
+- `pack` → `instance` → `test` is the only direction between the three tooling packages: `pack`'s suite entry scripts
+  compose the instance driver, `instance` takes `repo-root` and the Vitest base from `test`, and nothing under `test`
+  imports `@kobato/instance` or `@kobato/pack` (pinned by the same test). `@kobato/test` imports no `@kobato/*` product
+  package, which is what lets every shared leaf dev-depend on it for its tests.
+- Product **tests** import tools freely (`@kobato/test` for the in-process helpers, `@kobato/instance/client` for the
+  live-instance clients), declared in each package's devDependencies.
 - Build-time configs reach `pack` through its package specifier (declared by the root, `apps/kobato`, `apps/sayaka`, and
   `packages/web/admin`).
 - Tools packages declare every import in their own package.json, self-import through `@kobato/<name>/...`, and expose

@@ -39,6 +39,7 @@
     "@kobato/catalog": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
+    "@kobato/instance": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",

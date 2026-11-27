@@ -6,8 +6,8 @@ credentials state file; everything else (RUM token, privacy pipeline, dashboards
 during the admin connection test. Nothing here writes `kobato.config.json`. Full manual: `docs/manual/Trace.md`.
 
 - `src/{up,down,init,provision,status}.ts` — container lifecycle; `src/smoke.ts` — the end-to-end signal check, which
-  boots the three DEV servers through `@kobato/test/instance/dev-instance`, signs in and stages through
-  `@kobato/test/instance/client`, and takes its ports and sleeps from `@kobato/test/process`.
+  boots the three DEV servers through `@kobato/instance/dev-instance`, signs in and stages through
+  `@kobato/instance/client`, and takes its ports and sleeps from `@kobato/instance/process`.
 - Protocol names come from `@kobato/settings/telemetry`; dashboard/VRL assets are read from
   `packages/server/src/domains/observability/assets` (never copied).
 

@@ -771,6 +771,9 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling
+      '@kobato/instance':
+        specifier: workspace:*
+        version: link:../../tools/instance
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../tools/pack
@@ -840,6 +843,9 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling
+      '@kobato/instance':
+        specifier: workspace:*
+        version: link:../../tools/instance
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../tools/pack
@@ -1810,6 +1816,33 @@ importers:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
+  tools/instance:
+    devDependencies:
+      '@duckdb/node-api':
+        specifier: 'catalog:'
+        version: 2.0.1-r.1
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../../packages/shared/base
+      '@kobato/settings':
+        specifier: workspace:*
+        version: link:../../packages/shared/settings
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:../test
+      '@kobato/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.65.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.11
+      bcryptjs:
+        specifier: 'catalog:'
+        version: 3.0.3
+
   tools/pack:
     devDependencies:
       '@hono/vite-dev-server':
@@ -1818,6 +1851,9 @@ importers:
       '@kobato/base':
         specifier: workspace:*
         version: link:../../packages/shared/base
+      '@kobato/instance':
+        specifier: workspace:*
+        version: link:../instance
       '@kobato/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -1857,24 +1893,12 @@ importers:
       '@date-fns/tz':
         specifier: 'catalog:'
         version: 1.5.0
-      '@duckdb/node-api':
-        specifier: 'catalog:'
-        version: 2.0.1-r.1
-      '@kobato/base':
-        specifier: workspace:*
-        version: link:../../packages/shared/base
-      '@kobato/settings':
-        specifier: workspace:*
-        version: link:../../packages/shared/settings
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       '@opentelemetry/sdk-metrics':
         specifier: 'catalog:'
         version: 3.1.1(@opentelemetry/api@1.10.0)
-      '@playwright/test':
-        specifier: 'catalog:'
-        version: 1.65.1
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.108.4(@types/react@19.3.3)(react@19.3.1)
@@ -1890,9 +1914,6 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.3
-      bcryptjs:
-        specifier: 'catalog:'
-        version: 3.0.3
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -1920,6 +1941,9 @@ importers:
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling
+      '@kobato/instance':
+        specifier: workspace:*
+        version: link:../instance
       '@kobato/pack':
         specifier: workspace:*
         version: link:../pack

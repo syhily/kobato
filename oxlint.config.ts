@@ -291,7 +291,6 @@ export default defineConfig({
   overrides: [
     {
       files: ['**/tests/**/*.ts', '**/tests/**/*.tsx', 'tools/test/src/**/*.ts', 'tools/test/src/**/*.tsx'],
-      excludeFiles: ['tools/test/src/instance/**', 'tools/test/src/browser/**', 'tools/test/src/process.ts'],
       rules: {
         'typescript/no-unsafe-argument': 'off',
         'typescript/no-unsafe-assignment': 'off',
@@ -331,11 +330,8 @@ export default defineConfig({
     },
     {
       files: [
+        'tools/instance/**/*.ts',
         'tools/pack/**/*.ts',
-        'tools/test/src/instance/**/*.ts',
-        'tools/test/src/browser/**/*.ts',
-        'tools/test/src/process.ts',
-        'tools/test/playwright.config.ts',
         'tools/trace/**/*.ts',
         'packages/font-split/scripts/**/*.ts',
       ],

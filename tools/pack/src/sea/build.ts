@@ -1,3 +1,4 @@
+import { fail } from '@kobato/instance/process'
 import { collectSeaAssets } from '@kobato/pack/sea/assets'
 import { BINARY_MAX_BYTES } from '@kobato/pack/sea/budget'
 import { run } from '@kobato/pack/sea/exec'
@@ -10,7 +11,6 @@ import {
   seaIntermediatesDir,
   type SeaApp,
 } from '@kobato/pack/sea/paths'
-import { fail } from '@kobato/test/process'
 import { createHash } from 'node:crypto'
 import { readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'

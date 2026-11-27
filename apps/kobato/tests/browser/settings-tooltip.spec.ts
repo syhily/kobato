@@ -1,5 +1,5 @@
-import { expect, test } from '@kobato/test/browser/fixtures'
-import { openSettings } from '@kobato/test/browser/journey'
+import { expect, test } from '@kobato/instance/browser/fixtures'
+import { openSettings } from '@kobato/instance/browser/journey'
 
 const HINT_TRIGGER_LABEL = '了解更多'
 const OBSERVABILITY_NAV_LABEL = '可观测性'

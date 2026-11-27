@@ -1,4 +1,4 @@
-import { browserEnv } from '@kobato/test/instance/client/browser-env'
+import { browserEnv } from '@kobato/instance/client/browser-env'
 import { REPO_ROOT } from '@kobato/test/repo-root'
 import { defineConfig } from '@playwright/test'
 import { join } from 'node:path'

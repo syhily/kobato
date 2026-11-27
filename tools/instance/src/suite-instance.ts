@@ -1,6 +1,7 @@
-import type { SmokeServer } from '@kobato/test/instance/sea-instance'
-import type { SmokeDatabases, TempDirs } from '@kobato/test/instance/temp'
+import type { SmokeServer } from '@kobato/instance/sea-instance'
+import type { SmokeDatabases, TempDirs } from '@kobato/instance/temp'
 
+import { pickFreePort } from '@kobato/instance/process'
 import {
   bootSayakaServer,
   bootServer,
@@ -9,10 +10,9 @@ import {
   seaInstanceEnv,
   waitForExit,
   waitForHttp,
-} from '@kobato/test/instance/sea-instance'
-import { relaxRateLimits, seedInstalledInstance } from '@kobato/test/instance/seed'
-import { makeTempDirs, smokeDatabases } from '@kobato/test/instance/temp'
-import { pickFreePort } from '@kobato/test/process'
+} from '@kobato/instance/sea-instance'
+import { relaxRateLimits, seedInstalledInstance } from '@kobato/instance/seed'
+import { makeTempDirs, smokeDatabases } from '@kobato/instance/temp'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'node:crypto'
 import { rm } from 'node:fs/promises'

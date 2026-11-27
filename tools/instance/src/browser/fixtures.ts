@@ -2,9 +2,9 @@
 
 import type { BrowserContext, Page } from '@playwright/test'
 
-import { signInAdmin } from '@kobato/test/browser/journey'
-import { SettingsApi } from '@kobato/test/browser/settings-api'
-import { browserEnv } from '@kobato/test/instance/client/browser-env'
+import { signInAdmin } from '@kobato/instance/browser/journey'
+import { SettingsApi } from '@kobato/instance/browser/settings-api'
+import { browserEnv } from '@kobato/instance/client/browser-env'
 import { test as base } from '@playwright/test'
 
 interface WorkerFixtures {

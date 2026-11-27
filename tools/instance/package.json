@@ -1,0 +1,24 @@
+{
+  "name": "@kobato/instance",
+  "version": "8.2.2-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": [
+      "./src/*.ts"
+    ]
+  },
+  "scripts": {
+    "split:smoke": "node src/split-smoke.ts"
+  },
+  "devDependencies": {
+    "@duckdb/node-api": "catalog:",
+    "@kobato/base": "workspace:*",
+    "@kobato/settings": "workspace:*",
+    "@kobato/test": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "bcryptjs": "catalog:"
+  }
+}

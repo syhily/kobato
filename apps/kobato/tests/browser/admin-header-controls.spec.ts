@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test'
 
-import { expect, test } from '@kobato/test/browser/fixtures'
-import { waitForHydration } from '@kobato/test/browser/journey'
+import { expect, test } from '@kobato/instance/browser/fixtures'
+import { waitForHydration } from '@kobato/instance/browser/journey'
 
 const HEADER_ROUTES = [
   '/admin/posts',

@@ -27,6 +27,7 @@
   "devDependencies": {
     "@hono/vite-dev-server": "catalog:",
     "@kobato/base": "workspace:*",
+    "@kobato/instance": "workspace:*",
     "@kobato/server": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",

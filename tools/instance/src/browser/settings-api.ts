@@ -1,7 +1,7 @@
-import type { BrowserEnv } from '@kobato/test/instance/client/browser-env'
+import type { BrowserEnv } from '@kobato/instance/client/browser-env'
 
-import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/test/instance/client/http'
-import { callE2eRpc } from '@kobato/test/instance/client/rpc'
+import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/instance/client/http'
+import { callE2eRpc } from '@kobato/instance/client/rpc'
 
 export const BASELINE_GENERAL = {
   locale: 'zh-CN',

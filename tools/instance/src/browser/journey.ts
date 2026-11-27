@@ -1,8 +1,8 @@
-import type { BrowserEnv } from '@kobato/test/instance/client/browser-env'
+import type { BrowserEnv } from '@kobato/instance/client/browser-env'
 import type { APIRequestContext, BrowserContext, Locator, Page } from '@playwright/test'
 
 import { isRecord } from '@kobato/base/utils/type-guards'
-import { BASELINE_GENERAL } from '@kobato/test/browser/settings-api'
+import { BASELINE_GENERAL } from '@kobato/instance/browser/settings-api'
 import { expect } from '@playwright/test'
 
 export const LOCALE_LABELS = {

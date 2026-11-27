@@ -82,7 +82,8 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/ui',
     '@kobato/web-kit',
   ],
-  '@kobato/test': ['@kobato/settings', '@kobato/base'],
+  '@kobato/test': [],
+  '@kobato/instance': ['@kobato/settings', '@kobato/base', '@kobato/test'],
 
   kobato: INTERNAL_SCOPES,
   sayaka: [
@@ -91,6 +92,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/i18n',
     '@kobato/inkling',
+    '@kobato/instance',
     '@kobato/pack',
     '@kobato/settings',
     '@kobato/test',
@@ -135,7 +137,8 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/catalog',
     '@kobato/inkling',
   ],
-  '@kobato/test': ['@kobato/test', '@kobato/settings', '@kobato/base'],
+  '@kobato/test': ['@kobato/test'],
+  '@kobato/instance': ['@kobato/instance', '@kobato/settings', '@kobato/base', '@kobato/test'],
   kobato: [
     'kobato',
     '@kobato/api',
@@ -177,6 +180,7 @@ const RELATIVE_ESCAPE_EXCEPTIONS = new Set([
 
 const RELATIVE_IMPORT_FILE_EXCEPTIONS = new Set([
   'apps/kobato/tests/arch/client-bundle.test.ts',
+  'apps/kobato/tests/arch/module-cycles.test.ts',
   'packages/inkling/tests/unit/nodes/card-layering-imports.test.ts',
   'packages/inkling/tests/unit/utils/utils-import-guard.test.ts',
   'packages/web/ui/tests/unit/contract/dark-variant.test.ts',
@@ -298,18 +302,90 @@ function packageDirOf(file: string): string | null {
   return REPO_PACKAGES.find((pkg) => file === pkg.dir || file.startsWith(`${pkg.dir}/`))?.dir ?? null
 }
 
-function declaredInternalDeps(pkgName: string): string[] {
+const DEPENDENCY_KINDS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const
+
+type DependencyKinds = Record<(typeof DEPENDENCY_KINDS)[number], Record<string, string> | undefined>
+
+function readManifest(pkgName: string): DependencyKinds {
   const dir = REPO_PACKAGES.find((pkg) => pkg.name === pkgName)!.dir
-  const manifest = JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as {
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
-  }
-  const internalNames = new Set(REPO_PACKAGES.map((pkg) => pkg.name))
-  return Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).filter(
-    (dep) => dep.startsWith('@kobato/') || internalNames.has(dep),
-  )
+  return JSON.parse(readFileSync(`${REPO_ROOT}/${dir}/package.json`, 'utf8')) as DependencyKinds
 }
+
+function declaredInternalDeps(pkgName: string): string[] {
+  const manifest = readManifest(pkgName)
+  const declared = new Set<string>()
+  for (const kind of DEPENDENCY_KINDS) {
+    for (const dep of Object.keys(manifest[kind] ?? {})) {
+      declared.add(dep)
+    }
+  }
+  return [...declared].filter((dep) => dep.startsWith('@kobato/') || INTERNAL_SCOPES.includes(dep))
+}
+
+function workspaceEdges(pkgName: string): string[] {
+  const edges = new Set<string>()
+  for (const kind of DEPENDENCY_KINDS) {
+    for (const dep of Object.keys(readManifest(pkgName)[kind] ?? {})) {
+      if (dep !== pkgName && INTERNAL_SCOPES.includes(dep)) {
+        edges.add(dep)
+      }
+    }
+  }
+  return [...edges].sort()
+}
+
+const DRIVER_FILES = sourceFiles('tools/instance/src').filter((file) => !file.startsWith('tools/instance/src/browser/'))
+const DRIVER_BROWSER_SPECIFIER = /^@kobato\/instance\/browser\//
+
+function workspaceTargetsOf(file: string): Array<readonly [string, string | undefined]> {
+  return importSpecifiers(readSource(file)).map((specifier) => [
+    specifier,
+    INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`)),
+  ])
+}
+
+function canonicalCycle(loop: string[]): string[] {
+  const start = loop.indexOf([...loop].sort()[0]!)
+  const rotated = loop.slice(start).concat(loop.slice(0, start))
+  rotated.push(rotated[0]!)
+  return rotated
+}
+
+function workspaceDependencyCycles(): string[][] {
+  const state = new Map<string, 'visiting' | 'done'>()
+  const cycles: string[][] = []
+  const visit = (pkg: string, path: string[]): void => {
+    const current = state.get(pkg)
+    if (current === 'visiting') {
+      cycles.push(canonicalCycle(path.slice(path.indexOf(pkg))))
+      return
+    }
+    if (current === 'done') {
+      return
+    }
+    state.set(pkg, 'visiting')
+    const deeper = path.concat(pkg)
+    for (const dep of workspaceEdges(pkg)) {
+      visit(dep, deeper)
+    }
+    state.set(pkg, 'done')
+  }
+  for (const pkg of REPO_PACKAGES) {
+    visit(pkg.name, [])
+  }
+  return cycles
+}
+
 describe('package DAG', () => {
+  it('the workspace dependency graph has no cycle of any kind', () => {
+    const cycles = workspaceDependencyCycles()
+    expect(
+      cycles,
+      `workspace dependency cycles found (${DEPENDENCY_KINDS.join(', ')} edges together) — a cycle is always solvable; ` +
+        `move the shared piece into a package both sides can depend on:\n${cycles.map((cycle) => cycle.join(' -> ')).join('\n')}`,
+    ).toEqual([])
+  })
+
   it('every package declares only DAG-allowed @kobato/* dependencies', () => {
     const offenders: string[] = []
     for (const pkg of REPO_PACKAGES) {
@@ -327,6 +403,7 @@ describe('package DAG', () => {
     }
     expect(offenders).toEqual([])
   })
+
   it('workspace links match each package’s actual source, test, and config imports', () => {
     const missing: string[] = []
     const unused: string[] = []
@@ -371,6 +448,7 @@ describe('package DAG', () => {
     expect(missing).toEqual([])
     expect(unused).toEqual([])
   })
+
   it('src trees import @kobato/* only along the DAG, only as declared targets', () => {
     const offenders: string[] = []
     const exceptionKeys = new Set(SRC_IMPORT_EXCEPTIONS.map((entry) => `${entry.file}:${entry.specifier}`))
@@ -436,16 +514,6 @@ describe('package DAG', () => {
     ).toEqual([])
   })
 
-  const DRIVER_FILES = ['tools/test/src/process.ts', ...sourceFiles('tools/test/src/instance')]
-  const DRIVER_OWN_SPECIFIER = /^@kobato\/test\/(?:instance\/|process$|repo-root$)/
-
-  function workspaceTargetsOf(file: string): Array<readonly [string, string | undefined]> {
-    return importSpecifiers(readSource(file)).map((specifier) => [
-      specifier,
-      INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`)),
-    ])
-  }
-
   it('the instance driver and process primitives stay product-light and off the build pipeline', () => {
     const offenders: string[] = []
     for (const file of DRIVER_FILES) {
@@ -456,7 +524,10 @@ describe('package DAG', () => {
         if (target === '@kobato/base' && /^@kobato\/base\/utils(?:\/|$)/.test(specifier)) {
           continue
         }
-        if (target === '@kobato/test' && DRIVER_OWN_SPECIFIER.test(specifier)) {
+        if (target === '@kobato/instance' && !DRIVER_BROWSER_SPECIFIER.test(specifier)) {
+          continue
+        }
+        if (target === '@kobato/test' && specifier === '@kobato/test/repo-root') {
           continue
         }
         offenders.push(`${file}: ${specifier}`)
@@ -464,7 +535,7 @@ describe('package DAG', () => {
     }
     expect(
       offenders,
-      'tools/test/src/instance/ and tools/test/src/process.ts drive running processes: they import only ' +
+      'tools/instance/src/*.ts (the lifecycle half and client/ with process.ts) drive running processes: they import only ' +
         '@kobato/settings, @kobato/base/utils, @kobato/test/repo-root, and their own modules',
     ).toEqual([])
   })
@@ -472,24 +543,25 @@ describe('package DAG', () => {
   it('the instance driver never reaches the browser support, and the browser support reaches only the driver client', () => {
     const driverOffenders: string[] = []
     for (const file of DRIVER_FILES) {
-      for (const [specifier, target] of workspaceTargetsOf(file)) {
-        if (target === '@kobato/test' && !DRIVER_OWN_SPECIFIER.test(specifier)) {
+      for (const specifier of workspaceTargetsOf(file).map(([specifier]) => specifier)) {
+        if (DRIVER_BROWSER_SPECIFIER.test(specifier)) {
           driverOffenders.push(`${file}: ${specifier}`)
         }
       }
     }
     expect(
       driverOffenders,
-      'the driver never imports the Playwright journey support under @kobato/test/browser',
+      'the driver never imports the Playwright journey support under @kobato/instance/browser',
     ).toEqual([])
 
     const browserOffenders: string[] = []
-    for (const file of sourceFiles('tools/test/src/browser')) {
+    for (const file of sourceFiles('tools/instance/src/browser')) {
       for (const [specifier, target] of workspaceTargetsOf(file)) {
-        const driverClient = /^@kobato\/test\/instance\/client\/(?:browser-env|http|rpc)$/
+        const driverClient = /^@kobato\/instance\/client\/(?:browser-env|http|rpc)$/
         if (
           target === undefined ||
-          (target === '@kobato/test' && (driverClient.test(specifier) || specifier.startsWith('@kobato/test/browser/')))
+          (target === '@kobato/instance' &&
+            (driverClient.test(specifier) || specifier.startsWith('@kobato/instance/browser/')))
         ) {
           continue
         }
@@ -501,30 +573,36 @@ describe('package DAG', () => {
     }
     expect(
       browserOffenders,
-      'tools/test/src/browser/ runs under Playwright: it imports @playwright/test, @kobato/base/utils, the driver client ' +
-        '(@kobato/test/instance/client/*), and its own modules',
+      'tools/instance/src/browser/ runs under Playwright: it imports @playwright/test, @kobato/base/utils, the driver client ' +
+        '(@kobato/instance/client/*), and its own modules',
     ).toEqual([])
   })
 
-  it('pack → test is the only direction between the two tooling packages', () => {
+  it('pack → instance → test is the only direction between the three tooling packages', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('tools/test')) {
+    for (const file of sourceFiles('tools/test', 'tools/instance')) {
       for (const specifier of importSpecifiers(readSource(file))) {
         if (specifier === '@kobato/pack' || specifier.startsWith('@kobato/pack/')) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
     }
-    expect(offenders, 'nothing under tools/test imports @kobato/pack').toEqual([])
+    for (const file of sourceFiles('tools/test')) {
+      for (const specifier of importSpecifiers(readSource(file))) {
+        if (specifier === '@kobato/instance' || specifier.startsWith('@kobato/instance/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+    expect(
+      offenders,
+      'nothing under tools/test or tools/instance imports @kobato/pack, and nothing under tools/test imports @kobato/instance',
+    ).toEqual([])
   })
 
-  it('the product-free half of @kobato/test stays product-free', () => {
+  it('@kobato/test is product-free', () => {
     const offenders: string[] = []
-    const liveInstanceTree = new Set([...DRIVER_FILES, ...sourceFiles('tools/test/src/browser')])
-    for (const file of sourceFiles('tools/test/src')) {
-      if (liveInstanceTree.has(file)) {
-        continue
-      }
+    for (const file of sourceFiles('tools/test')) {
       for (const [specifier, target] of workspaceTargetsOf(file)) {
         if (target !== undefined && target !== '@kobato/test') {
           offenders.push(`${file}: ${specifier}`)
@@ -533,8 +611,8 @@ describe('package DAG', () => {
     }
     expect(
       offenders,
-      'fixtures, doubles, setups, and the project table import no @kobato/* product package; only the live-instance ' +
-        'driver and the browser support under tools/test do',
+      'fixtures, doubles, setups, and the project table import no @kobato/* product package — the live-instance driver ' +
+        'and the browser support live in @kobato/instance',
     ).toEqual([])
   })
 

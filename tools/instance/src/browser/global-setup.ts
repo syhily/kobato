@@ -1,5 +1,5 @@
-import { SettingsApi } from '@kobato/test/browser/settings-api'
-import { browserEnv } from '@kobato/test/instance/client/browser-env'
+import { SettingsApi } from '@kobato/instance/browser/settings-api'
+import { browserEnv } from '@kobato/instance/client/browser-env'
 
 export default async function globalSetup() {
   const env = browserEnv()

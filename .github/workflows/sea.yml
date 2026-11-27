@@ -96,7 +96,7 @@ jobs:
         run: pnpm run sea:package rename --target ${{ matrix.target }}
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
-      - run: pnpm --filter @kobato/test exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/instance exec playwright install --with-deps chromium
       - run: pnpm run sea:browser "dist-sea/kobato-${{ matrix.target }}${{ matrix.exe }}"
         env:
           KOBATO_BROWSER_CHANNEL: chromium
@@ -135,7 +135,7 @@ jobs:
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
       - run: pnpm run sea:e2e dist-sea/kobato
-      - run: pnpm --filter @kobato/test exec playwright install --with-deps chromium
+      - run: pnpm --filter @kobato/instance exec playwright install --with-deps chromium
       - run: pnpm run sea:browser dist-sea/kobato
         env:
           KOBATO_BROWSER_CHANNEL: chromium

@@ -1,5 +1,5 @@
-import { expect, test } from '@kobato/test/browser/fixtures'
-import { waitForHydration } from '@kobato/test/browser/journey'
+import { expect, test } from '@kobato/instance/browser/fixtures'
+import { waitForHydration } from '@kobato/instance/browser/journey'
 
 test('aligns the sidebar brand, search trigger, and active menu edges', async ({ adminPage }) => {
   await adminPage.goto('/admin')

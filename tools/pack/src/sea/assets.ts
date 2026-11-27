@@ -18,6 +18,7 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   type SeaAssetCodec,
 } from '@kobato/base/distribution/sea-assets'
+import { fail } from '@kobato/instance/process'
 import { run } from '@kobato/pack/sea/exec'
 import {
   adminClientBuildDir,
@@ -31,7 +32,6 @@ import {
   seaWorkerBundlePath,
   type SeaApp,
 } from '@kobato/pack/sea/paths'
-import { fail } from '@kobato/test/process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'

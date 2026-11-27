@@ -1,8 +1,8 @@
 import type { Browser } from '@playwright/test'
 
-import { expect, test } from '@kobato/test/browser/fixtures'
-import { collectConsoleIssues, waitForHydration } from '@kobato/test/browser/journey'
-import { browserEnv } from '@kobato/test/instance/client/browser-env'
+import { expect, test } from '@kobato/instance/browser/fixtures'
+import { collectConsoleIssues, waitForHydration } from '@kobato/instance/browser/journey'
+import { browserEnv } from '@kobato/instance/client/browser-env'
 
 const env = browserEnv()
 const MOTION_CHUNK = /\/node_modules\/\.vite\/deps\/motion_react\.js|\/assets\/lazy-motion-[^/]+\.js/

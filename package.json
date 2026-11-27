@@ -26,7 +26,7 @@
     "sea:package": "pnpm -C tools/pack sea:package",
     "sea:probe": "pnpm -C tools/pack sea:probe",
     "sea:smoke": "pnpm -C tools/pack sea:smoke",
-    "split:smoke": "pnpm -C tools/test split:smoke",
+    "split:smoke": "pnpm -C tools/instance split:smoke",
     "start": "pnpm -C apps/kobato start",
     "test": "vitest run",
     "test:browser": "pnpm -C tools/pack test:browser",

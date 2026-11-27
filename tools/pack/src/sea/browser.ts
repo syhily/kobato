@@ -1,13 +1,13 @@
+import { fail } from '@kobato/instance/process'
+import { bootSuiteInstance, stopSuiteInstance } from '@kobato/instance/suite-instance'
 import { repoRoot, seaBinaryPath, sayakaBinarySiblingPath } from '@kobato/pack/sea/paths'
-import { bootSuiteInstance, stopSuiteInstance } from '@kobato/test/instance/suite-instance'
-import { fail } from '@kobato/test/process'
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { join, resolve as resolvePath } from 'node:path'
 
 const USAGE = 'Usage: node tools/pack/src/sea/browser.ts [--managed] [path-to-kobato-binary]'
-const PLAYWRIGHT_CONFIG = join(repoRoot, 'tools', 'test', 'playwright.config.ts')
-const PLAYWRIGHT_PACKAGE = '@kobato/test'
+const PLAYWRIGHT_CONFIG = join(repoRoot, 'tools', 'instance', 'playwright.config.ts')
+const PLAYWRIGHT_PACKAGE = '@kobato/instance'
 
 function uniquePostSlug() {
   return `browser-journey-${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`

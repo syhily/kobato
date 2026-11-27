@@ -1,4 +1,4 @@
-import type { E2eClient } from '@kobato/test/instance/client/http'
+import type { E2eClient } from '@kobato/instance/client/http'
 
 export interface E2eRpcResult<T> {
   status: number

@@ -7,10 +7,11 @@
   call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router SPA project with
   no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client build located
   through the package; the five floor leaves merged into `@kobato/base`; `font-split` in `packages/`, the instance
-  driver, the browser support, and the Playwright config in `tools/test`, the front-end config factory, output paths
-  anchored on the repository root); see "Implementation notes (2026-11-27)" for where the tree refined the Decision. It
-  amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes'
-  "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+  driver, the browser support, and the Playwright config in `tools/instance` (split out of `tools/test` so the workspace
+  graph has no cycle), the front-end config factory, output paths anchored on the repository root); see "Implementation
+  notes (2026-11-27)" for where the tree refined the Decision. It amends
+  [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
+  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -174,17 +175,21 @@ language-backed concepts.
 - `font-split` moves to `packages/font-split`. It is the one package under `tools/` that ships; after the move nothing
   under `tools/` does, and the exception in its `AGENTS.md` goes with it.
 - The live-instance driver (`pack/src/instance/`) and the Playwright journey support (`pack/src/browser/` with
-  `playwright.config.ts`) move to `tools/test/` as `src/instance/` and `src/browser/`, imported as
-  `@kobato/test/instance/*` and `@kobato/test/browser/*`. `tools/test` is then everything a test needs — fixtures and
-  doubles, the Vitest project table, the booted-instance driver, the browser journeys. Only its Vitest half stays
-  product-free; the two live halves are pinned separately (`package-dag.test.ts`): the driver (`src/instance/` with
-  `process.ts`) imports exactly `@kobato/settings`, the `@kobato/base/utils` sub-tree, and its own modules, and the
-  browser support (`src/browser/`) imports `@playwright/test`, `@kobato/base/utils`, the driver's `client/`, and its own
-  modules; the driver never reaches the browser support. The move created one dev-only workspace dependency cycle,
-  accepted and documented in `tools/AGENTS.md`: `packages/shared/settings` dev-depends on `@kobato/test` and
-  `tools/test` dev-depends on `@kobato/settings` for `instance/seed.ts` and `instance/split-smoke.ts`.
+  `playwright.config.ts`) move out of `pack` as the driver modules and `src/browser/`, and land in `tools/instance`
+  (`@kobato/instance`), imported as `@kobato/instance/*` and `@kobato/instance/browser/*` — not in `tools/test`, so that
+  `tools/test` stays everything an in-process test needs and product-free (fixtures and doubles, the Vitest project
+  table, `repo-root`), which is what lets every shared leaf dev-depend on it for its tests without a workspace cycle.
+  The two live trees are pinned separately (`package-dag.test.ts`): the driver (the `src/*.ts` lifecycle modules with
+  `client/` and `process.ts`) imports exactly `@kobato/settings`, the `@kobato/base/utils` sub-tree,
+  `@kobato/test/repo-root`, and its own modules, and the browser support (`src/browser/`) imports `@playwright/test`,
+  `@kobato/base/utils`, the driver's `client/`, and its own modules; the driver never reaches the browser support, and
+  `pack` → `instance` → `test` is the only direction between the three tooling packages. The workspace dependency graph
+  carries no cycle of any kind: the dev-only cycle the first cut produced (`packages/shared/settings` dev-depending on
+  `@kobato/test` while `tools/test` dev-depended on `@kobato/settings` for `seed.ts` and `split-smoke.ts`) is dissolved
+  by the split and pinned acyclic.
 - `tools/pack` keeps the SEA pipeline, the Vite plugins, and the release scripts. The process primitives both halves
-  used (`pack/src/process.ts`) go with the driver, so `pack` → `test` is the only direction between them.
+  used (`pack/src/process.ts`) go with the driver, so `pack` → `instance` → `test` is the only direction among the three
+  tooling packages.
 - `pack/src/vite` gains one front-end config factory, `frontEndConfig` (`front-end-config.ts`): it assembles the shared
   plugin list (the sanitize engine alias, inline package data, the React Compiler transform, React Router, Tailwind)
   with the application's own plugins around it (`plugins.leading` / `plugins.trailing`), the `__APP_*__` defines, the
@@ -250,12 +255,12 @@ language-backed concepts.
   `apps/kobato`'s own source.
 - The shared merge rewrites the path table from eight leaves to four (sixteen rows to eight), 584 import lines, and
   every documentation mention of the five directories.
-- The app e2e and browser trees import `@kobato/test/instance/*` and `@kobato/test/browser/*`; `tools/test` gains the
-  driver's dependencies (`@duckdb/node-api`, `bcryptjs`, `@playwright/test`, `@kobato/base`, `@kobato/settings`) and the
-  `split:smoke` script, `tools/pack` drops them and declares `@tailwindcss/vite` for the factory (neither front-end
-  package declares it: each imports the factory, not the plugin); `@kobato/font-split`'s path-table rows follow its
-  directory, and `no source tree imports @kobato/font-split` becomes a pin of its own now that "product never imports
-  tools" no longer covers it.
+- The app e2e and browser trees import `@kobato/instance/client/*` and `@kobato/instance/browser/*`; `tools/instance`
+  gains the driver's dependencies (`@duckdb/node-api`, `bcryptjs`, `@playwright/test`, `@kobato/base`,
+  `@kobato/settings`, `@kobato/test`) and the `split:smoke` script, `tools/pack` drops them and declares
+  `@tailwindcss/vite` for the factory (neither front-end package declares it: each imports the factory, not the plugin);
+  `@kobato/font-split`'s path-table rows follow its directory, and `no source tree imports @kobato/font-split` becomes a
+  pin of its own now that "product never imports tools" no longer covers it.
 - ADR-0009 is amended as above; the `AGENTS.md` tree follows each step (root, `apps/kobato`, `packages/web` and its
   three packages, `packages/shared`, `tools/`, `tools/pack`, `tools/test`, `apps/inkling-demo`).
 - An external frontend author builds comments and reads notifications from the contract plus `@kobato/inkling/comment`
@@ -289,6 +294,14 @@ Each step is green on its own — `pnpm run fmt`, `pnpm run lint`, `pnpm test`, 
 
 The adoption landed as decided, in eight commits — step 2 in three, every other step in one. This section records what
 the tree added on top of the Decision and where it refined it.
+
+**`tools/` by purpose, without a cycle.** The first cut put the live-instance driver and the Playwright support in
+`tools/test`, which made the workspace graph cyclic (`packages/shared/settings` ⇄ `@kobato/test`, dev-only, pnpm warning
+on install). The owner's rule is that the project allows no cycle of any kind, so the two out-of-process trees moved on
+to `tools/instance` (`@kobato/instance`: the driver modules under `src/` with `client/`, `src/process.ts`,
+`src/browser/`, `playwright.config.ts`, the `split:smoke` script), `@kobato/test` became product-free, and
+`package-dag.test.ts` now builds the workspace graph from every `package.json` — `dependencies`, `devDependencies`, and
+`optionalDependencies` together — and fails on any cycle.
 
 **Inkling's public API.**
 
@@ -366,6 +379,6 @@ four import lines: `use-logout`, `LazyNotificationsDrawer` (two lines), and `Not
 
 **Output paths.** The workspace's production bundle guard (`apps/kobato/tests/arch/production-rum-bundle.test.ts`) scans
 `packages/web/admin/build/client` and `apps/kobato/build/server`, located from the repository root like every arch test;
-the Playwright config (`tools/test/playwright.config.ts`) resolves its report and results directories from `REPO_ROOT`
-into `apps/<app>/tmp/`; and both React Router `typegen` scripts `cd` to the repository root and name their project
-directory.
+the Playwright config (`tools/instance/playwright.config.ts`) resolves its report and results directories from
+`REPO_ROOT` into `apps/<app>/tmp/`; and both React Router `typegen` scripts `cd` to the repository root and name their
+project directory.

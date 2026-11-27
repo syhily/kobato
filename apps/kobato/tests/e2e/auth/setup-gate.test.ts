@@ -1,5 +1,5 @@
-import { E2eClient, bootstrapCsrfToken, e2eEnv, loginAdmin } from '@kobato/test/instance/client/http'
-import { callE2eRpc } from '@kobato/test/instance/client/rpc'
+import { E2eClient, bootstrapCsrfToken, e2eEnv, loginAdmin } from '@kobato/instance/client/http'
+import { callE2eRpc } from '@kobato/instance/client/rpc'
 import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
