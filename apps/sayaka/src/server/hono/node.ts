@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net'
 import { type ServerType, serve } from '@hono/node-server'
 import { type ServeStaticOptions, serveStatic } from '@hono/node-server/serve-static'
 import { SEA_SAYAKA_CLIENT_ASSET_PREFIX } from '@kobato/base/distribution/sea-assets'
+import { HTTP_SERVER_OPTIONS } from '@kobato/base/utils/http-server-options'
 import { sayakaConfig } from '@sayaka/server/config'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@sayaka/server/hono/build-runtime'
 import { cache } from '@sayaka/server/hono/cache-middleware'
@@ -114,14 +115,7 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
     }
     const server = serve(
       mergedOptions.customNodeServer === undefined
-        ? {
-            ...baseServeOptions,
-            serverOptions: {
-              headersTimeout: 20_000,
-              connectionsCheckingInterval: 10_000,
-              requestTimeout: 0,
-            },
-          }
+        ? { ...baseServeOptions, serverOptions: HTTP_SERVER_OPTIONS }
         : { ...baseServeOptions, ...mergedOptions.customNodeServer },
       mergedOptions.listeningListener,
     )

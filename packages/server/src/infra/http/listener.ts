@@ -4,6 +4,7 @@ import type { BlankEnv } from 'hono/types'
 import type { AddressInfo } from 'node:net'
 
 import { serve } from '@hono/node-server'
+import { HTTP_SERVER_OPTIONS } from '@kobato/base/utils/http-server-options'
 import { serverConfig } from '@kobato/server/infra/config'
 
 export interface ListenHonoOptions<E extends BlankEnv> {
@@ -18,6 +19,7 @@ export function listenHono<E extends BlankEnv>(options: ListenHonoOptions<E>): S
       port: serverConfig.server.port,
       hostname: serverConfig.server.host,
       overrideGlobalObjects: false,
+      serverOptions: HTTP_SERVER_OPTIONS,
     },
     options.onListening,
   )

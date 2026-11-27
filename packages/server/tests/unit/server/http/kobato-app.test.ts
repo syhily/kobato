@@ -1,6 +1,7 @@
 import type { ServerType } from '@hono/node-server'
 import type { AddressInfo } from 'node:net'
 
+import { HTTP_SERVER_OPTIONS } from '@kobato/base/utils/http-server-options'
 import { serverConfig } from '@kobato/server/infra/config'
 import { root } from '@kobato/server/infra/logger'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -101,6 +102,7 @@ describe('listenKobato', () => {
     expect(options.port).toBe(serverConfig.server.port)
     expect(options.hostname).toBe(serverConfig.server.host)
     expect(options.overrideGlobalObjects).toBe(false)
+    expect(options.serverOptions).toBe(HTTP_SERVER_OPTIONS)
     const fetchHandler = options.fetch as (request: Request) => Promise<Response>
     const res = await fetchHandler(new Request('http://127.0.0.1/nowhere'))
     expect(res.status).toBe(404)
@@ -134,6 +136,7 @@ describe('listenKobato', () => {
       port: serverConfig.server.port,
       hostname: serverConfig.server.host,
       overrideGlobalObjects: false,
+      serverOptions: HTTP_SERVER_OPTIONS,
     })
     expect(restartOptions).toEqual(coldBootOptions)
     for (const fetchHandler of [coldBootFetch, restartFetch]) {
