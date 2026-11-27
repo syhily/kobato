@@ -142,6 +142,16 @@ describe('server layers', () => {
     expect(offenders, 'render output never crosses the HTTP perimeter').toEqual([])
   })
 
+  it('nothing inside the package imports the composition root', () => {
+    const offenders = offendersOf(
+      scanned.filter((entry) => entry.specifier.startsWith('@kobato/server/bootstrap/start-kobato')),
+    )
+    expect(
+      offenders,
+      'start-kobato is the composition root the kobato app calls — nothing inside the package imports it',
+    ).toEqual([])
+  })
+
   it('render domain consumers equal the audited module table exactly', () => {
     const actual = new Map<string, string[]>()
     for (const entry of scanned) {

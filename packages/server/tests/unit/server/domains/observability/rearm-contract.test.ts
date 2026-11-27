@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 describe('server boot — observability sync runs after settings hydration', () => {
   it('hydrates settings before syncing the runtime', () => {
-    const source = readFileSync(join(process.cwd(), 'apps/kobato/src/server.ts'), 'utf-8')
+    const source = readFileSync(join(process.cwd(), 'packages/server/src/bootstrap/start-kobato.ts'), 'utf-8')
 
     const hydrateIndex = source.indexOf('await hydrateBlogSettings(getDb())')
     const syncIndex = source.indexOf('await syncObservabilityRuntime()')

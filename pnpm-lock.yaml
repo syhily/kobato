@@ -768,9 +768,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: 'catalog:'
         version: 3.2.2(react@19.3.1)
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 2.1.11(hono@4.13.22)
       '@kobato/api':
         specifier: workspace:*
         version: link:../../packages/api

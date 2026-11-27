@@ -6,17 +6,19 @@ pnpm monorepo with three top-level code roots — no new roots are created (`doc
 runtime state):
 
 - `apps/` — deployable apps: `kobato` (the backend: a React Router 8 **SPA** workspace — `ssr: false`, React 19,
-  `appDirectory: 'src'` — served by its own Hono app under the Vite base `/admin/`, so all workspace assets live at
-  `/admin/assets/*`; builds `build/client` plus the backend bundle `build/server/index.js` via
-  `vite.backend.config.ts`), `sayaka` (the public-front-end split from ADR-0009: a second React Router 8 SSR app that
-  serves the public document perimeter and forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo`
-  (standalone Inkling playground, `pnpm demo`).
+  `appDirectory: 'src'` — served under the Vite base `/admin/`, so all workspace assets live at `/admin/assets/*`, by
+  the `@kobato/server` Hono app that `src/server.ts` boots through `startKobato` and default-exports; builds
+  `build/client` plus the backend bundle `build/server/index.js` via `vite.backend.config.ts`), `sayaka` (the
+  public-front-end split from ADR-0009: a second React Router 8 SSR app that serves the public document perimeter and
+  forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo` (standalone Inkling playground,
+  `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
   editor with a React-free `/headless/` document model and the `/comment/` comment surface), the two front-end packages
   under `packages/web/` — `ui` (`@kobato/ui`, the design system and the document shell both app roots mount) and `kit`
   (`web-kit`, the features both front-ends render that call a procedure — the notifications UI, `use-logout`,
   `toast-api-error`; the admin UI lives in `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves
-  under `packages/shared/*`.
+  under `packages/shared/*`. `@kobato/server` owns the backend's boot sequence (`bootstrap/start-kobato`) and the
+  workspace-serving Hono app (`http/kobato-app`, `http/spa-shell`) — the app hands over its build layout, nothing more.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 
@@ -88,6 +90,8 @@ section pins the direction graph only — package composition rules live in each
   `apps/kobato/tests/arch/shared-react-free.test.ts`). `@kobato/server`, `@kobato/db`, and
   `packages/api/src/{contracts,rpc,client}` never import it.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
+  `bootstrap/start-kobato` is its composition root — the one module that knows every layer, which nothing inside the
+  package imports — and `apps/kobato/src` reaches the package through it and the SEA VFS seam alone.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
 - Web direction: `packages/web` holds two packages, `@kobato/ui` (`packages/web/ui`, the design system and the document
@@ -120,9 +124,11 @@ skills are pinned in `skills-lock.json`.
 `pnpm run dev:sayaka` runs the sayaka dev server, and `pnpm run split:smoke` boots the built kobato + sayaka pair and
 verifies the split deployment perimeter (install gate, CSP/ETag/304, forwarded RPCs, rate-limit keying).
 
-Dev workflow: `pnpm run dev` boots kobato's Vite dev server on 4321 — the shared `reactRouterHonoServer` plugin serves
-`/rpc/*`, `/health`, and the resource routes through the Hono app while `/admin/*` + `/editor/*` documents (and React
-Router's `.data` requests) stay on React Router's dev middleware; `pnpm dev:sayaka` adds the public origin on 4322.
+Dev workflow: `pnpm run dev` boots kobato's Vite dev server on 4321 — the shared `reactRouterHonoServer` plugin loads
+`apps/kobato/src/server.ts` and serves `/rpc/*`, `/health`, and the resource routes through the Hono app `startKobato`
+builds (in dev it adopts the Vite dev server's `httpServer` instead of binding a port) while `/admin/*` + `/editor/*`
+documents (and React Router's `.data` requests) stay on React Router's dev middleware; `pnpm dev:sayaka` adds the public
+origin on 4322.
 
 `pnpm run bench:font-split` is local-only (`tools/font-split/scripts/bench/`): it regenerates
 `tools/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a

@@ -6,15 +6,18 @@ name a persistence table, a settings-section field, or a task-domain noun. A mod
 domain-agnostic — searchable post text, visibility gates, site-origin derivation, and Webmention headers live in
 `domains/`. `sea/` owns the SEA runtime (CLI/bootstrap, VFS reads/patches, natives, rollback, self-update gate). There
 is no `infra/hono/` — the React Router mount, its dev plugin, and the server-build loader are deleted; the workspace SPA
-is served by the app's own Hono app (`apps/kobato/src/server/backend-server.ts`), the shared dev plugin lives in
-`tools/pack/src/vite/react-router-hono-server.ts`, and the generic static-asset cache middleware lives in
-`http/middlewares/cache.ts`.
+is served by the package's own Hono app (`http/kobato-app.ts`, booted by `bootstrap/start-kobato.ts`), the shared dev
+plugin lives in `tools/pack/src/vite/react-router-hono-server.ts`, and the generic static-asset cache middleware lives
+in `http/middlewares/cache.ts`.
 
 - `db/paths.ts` resolves validated config into both engines' paths; `data-paths.ts` is its non-database twin (fonts,
   MaxMind, dead-letter). The engines open in `@kobato/db` — infra owns no engine code. `__setEnginePathsForTests` pins
   both for a test file.
 - `lifecycle.ts` installs the process-level `unhandledRejection` handler — streamed loader promises require it; do not
-  remove it.
+  remove it. `restartServer` re-binds through `http/listener.ts`.
+- `http/listener.ts` is the one `@hono/node-server` `serve()` call site: `listenHono({ app, onListening })` binds the
+  app's fetch on the configured host and port with `overrideGlobalObjects: false`. `http/kobato-app.ts` (`listenKobato`,
+  the cold boot) and `lifecycle.ts` (`restartServer`) both serve through it — never a second `serve()` options shape.
 - Build-time Vite plugins are NOT infra: they live in `tools/pack/src/vite/`. Never import a tool package from here.
 
 ## Config file

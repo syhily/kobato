@@ -36,7 +36,6 @@
     "@dnd-kit/modifiers": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",
-    "@hono/node-server": "catalog:",
     "@kobato/api": "workspace:*",
     "@kobato/assets": "workspace:*",
     "@kobato/auth": "workspace:*",

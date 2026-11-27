@@ -1,22 +1,21 @@
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { user } from '@kobato/db/sqlite/schema/user'
+import { createKobatoApp } from '@kobato/server/http/kobato-app'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createBackendServer } from '@/server/backend-server'
-
 const SHELL_HTML = '<html><head><script>void 0</script></head><body><div id="root"></div></body></html>'
 const ASSET_NAME = 'entry-abc123.js'
 
-const assetsRoot = mkdtempSync(join(tmpdir(), 'kobato-backend-server-'))
+const assetsRoot = mkdtempSync(join(tmpdir(), 'kobato-app-'))
 writeFileSync(join(assetsRoot, 'index.html'), SHELL_HTML)
 mkdirSync(join(assetsRoot, 'assets'))
 writeFileSync(join(assetsRoot, 'assets', ASSET_NAME), 'export const ready = true')
 
-const app = createBackendServer({ assetsRoot, autoServe: false })
+const app = createKobatoApp(assetsRoot)
 
 const db = getTestDb()
 
@@ -32,7 +31,7 @@ function nonceFromCsp(csp: string | null): string | undefined {
   return /'nonce-([^']+)'/.exec(csp ?? '')?.[1]
 }
 
-describe('createBackendServer', () => {
+describe('createKobatoApp', () => {
   beforeEach(async () => {
     vi.stubEnv('DEV', false as never)
     await clearAllTables(db)

@@ -19,7 +19,8 @@ binary-suite entry scripts. Nothing here ships inside the product binaries.
   helpers can serve the sayaka build too. `src/vite/react-router-hono-server.ts` is the shared `reactRouterHonoServer`
   Vite plugin BOTH apps use — sayaka serves every request through its Hono app; kobato passes `dev.exclude` so the SPA
   workspace documents (`/admin/*`, `/editor/*`, `.data`) stay on React Router's dev middleware while `/rpc/*`,
-  `/health`, and the resource routes reach the Hono app. The plugin hands the Vite dev server to the app through a
+  `/health`, and the resource routes reach the Hono app (`@kobato/server/http/kobato-app`, assembled by the
+  `startKobato` call in `apps/kobato/src/server.ts`). The plugin hands the Vite dev server to the app through a
   `globalThis` slot keyed by `Symbol.for('kobato.vite-dev-server')` (exported as `VITE_DEV_SERVER_SLOT`); each app keeps
   an app-side `dev-server-ref.ts` that reads the slot, because product `src/` never imports a tools package.
 - `src/instance/` — the out-of-process instance driver behind `sea:smoke` / `sea:e2e` / `sea:browser` and `trace:smoke`
@@ -135,13 +136,14 @@ Everything that drives a kobato instance as a REAL separate process — two halv
   inbound protocols answered through sayaka's perimeter handlers byte-identically to the captured router answers
   (webmention invalid 400 / accepted 202 / unknown-target 404 / oversized 413 / disabled 410; RUM intake 404 while the
   relay is inactive and 415 for compressed batches), and resource rate-limit keying on the sayaka-forwarded visitor
-  address). In plain-node mode `split-smoke.ts` starts kobato with cwd `apps/kobato` (config and data paths stay
-  absolute in the temp root): kobato's vendored Hono glue resolves its client build root relative to the process cwd
-  (`REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY`), so any other cwd leaves kobato unable to serve its own `/assets/*`;
-  under `--sea` both binaries resolve their client assets from the VFS and the cwd is the temp root. The seeded-post
-  helpers stay inline in `split-smoke.ts` — `client/http.ts`'s parameter properties are not plain-node type-strippable.
-  The sayaka DEV boot runs the app's own `dev` script (`pnpm --filter <app> run dev --host …`) so the app-script's
-  repoRoot cwd and app-dir positional stay authoritative.
+  address). In plain-node mode `split-smoke.ts` starts kobato with cwd `apps/kobato` and
+  `--config <tempRoot>/kobato.config.json` (config and data paths stay absolute in the temp root): kobato resolves its
+  client build relative to its backend bundle — `clientAssetsRoot()` in `apps/kobato/src/server/client-assets-root.ts`
+  hands `startKobato` the `build/client` directory — never through the working directory; under `--sea` both binaries
+  resolve their client assets from the VFS and the cwd is the temp root. The seeded-post helpers stay inline in
+  `split-smoke.ts` — `client/http.ts`'s parameter properties are not plain-node type-strippable. The sayaka DEV boot
+  runs the app's own `dev` script (`pnpm --filter <app> run dev --host …`) so the app-script's repoRoot cwd and app-dir
+  positional stay authoritative.
 - **`client/`** (what the live-instance suites speak) — `http.ts` (`E2eClient`, the `KOBATO_E2E_*` env contract —
   `KOBATO_E2E_BASE_URL` is kobato's origin for backend-direct checks, `KOBATO_E2E_PUBLIC_URL` is sayaka's origin for
   everything a browser reaches; the oRPC signin helpers: `bootstrapCsrfToken` → `loginAdmin` answers the

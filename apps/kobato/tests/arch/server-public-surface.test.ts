@@ -17,39 +17,16 @@ const CONSUMING_TREES = [
 ] as const
 
 const SERVER_PUBLIC_SURFACE: readonly string[] = [
-  '@kobato/server/bootstrap/db-lifecycle',
-  '@kobato/server/domains/analytics/geoip/scheduler',
-  '@kobato/server/domains/audit/services/scheduler',
-  '@kobato/server/domains/auth/setup-token',
-  '@kobato/server/domains/auth/token-purge-scheduler',
-  '@kobato/server/domains/backup/scheduler',
-  '@kobato/server/domains/content/scheduled-publish',
-  '@kobato/server/domains/observability/provision',
-  '@kobato/server/domains/observability/retention',
-  '@kobato/server/domains/observability/runtime-manager',
-  '@kobato/server/domains/settings/services/core',
-  '@kobato/server/domains/settings/services/hydrate',
-  '@kobato/server/domains/settings/services/migrate-secrets',
-  '@kobato/server/domains/webmentions/inbox-scheduler',
-  '@kobato/server/domains/webmentions/outbox-scheduler',
-  '@kobato/server/domains/webmentions/reverify-scheduler',
-  '@kobato/server/http/hono-env',
-  '@kobato/server/http/leaked-response',
-  '@kobato/server/http/middleware-pipeline',
-  '@kobato/server/http/middlewares/cache',
-  '@kobato/server/infra/cache/kv-maintenance',
-  '@kobato/server/infra/config',
-  '@kobato/server/infra/db/maintenance',
+  '@kobato/server/bootstrap/start-kobato',
   '@kobato/server/infra/image/process-pool',
-  '@kobato/server/infra/job-registry',
-  '@kobato/server/infra/lifecycle',
-  '@kobato/server/infra/logger',
-
-  '@kobato/server/domains/settings/install-gate',
-  '@kobato/server/domains/auth/setup-token',
-
+  '@kobato/server/infra/sea/sea',
   '@kobato/server/infra/sea/sea-bootstrap',
   '@kobato/server/infra/sea/sea-cli',
+]
+
+const KOBATO_ENTRY = 'apps/kobato/src/server.ts'
+const KOBATO_ENTRY_SERVER_SEAM: readonly string[] = [
+  '@kobato/server/bootstrap/start-kobato',
   '@kobato/server/infra/sea/sea',
 ]
 
@@ -118,6 +95,25 @@ describe('server public surface', () => {
       }
     }
     expect(stale, 'the surface list must match reality exactly').toEqual([])
+  })
+
+  it('the kobato app boots through startKobato and reaches the server package only through the composition root and the SEA VFS seam', () => {
+    const entry = readFileSync(join(REPO_ROOT, KOBATO_ENTRY), 'utf8')
+    expect(entry).toContain("from '@kobato/server/bootstrap/start-kobato'")
+    expect(entry).toMatch(/await startKobato\(\{\s*assetsRoot: clientAssetsRoot\(\),/)
+    expect(entry).toContain("{ mode: 'bind' }")
+    expect(entry).toContain("{ mode: 'host', server: getViteDevServer()?.httpServer ?? null }")
+    expect(entry).toContain('import.meta.hot.accept()')
+    expect(entry).toMatch(/export default app\s*$/)
+
+    const appServerImports = scanned
+      .filter(({ file }) => file.startsWith('apps/kobato/src/'))
+      .map(({ specifier }) => specifier)
+      .filter((specifier) => specifier === '@kobato/server' || specifier.startsWith('@kobato/server/'))
+    expect(
+      [...new Set(appServerImports)].sort(),
+      'the boot sequence and the workspace-serving app live in @kobato/server (ADR-0011 §5) — the app hands over its build layout and nothing else',
+    ).toEqual([...KOBATO_ENTRY_SERVER_SEAM].sort())
   })
 
   it('a domain repos tree is private to its domain', () => {

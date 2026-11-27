@@ -3,13 +3,13 @@
 `packages/server/src/` (`@kobato/server`) knows no frontend framework: it imports NO `react-router` (pinned by the arch
 test), and besides `@kobato/db`, `@kobato/api`, the shared leaves, and `@kobato/inkling` through `/headless` it imports
 neither `@kobato/web-*` nor `@kobato/ui`. There is no `createSsrCaller` and no React Router mount — every frontend
-caller reaches the apiRouter over HTTP (`/rpc/*`), the workspace SPA shell lives in the app
-(`apps/kobato/src/server/backend-server.ts`).
+caller reaches the apiRouter over HTTP (`/rpc/*`), and the package owns the backend's boot sequence
+(`bootstrap/start-kobato.ts`) and the Hono app that serves the workspace shell (`http/kobato-app.ts`).
 
 ```
 server/
 ├── assets/     # Static asset blobs + manifest (data, outside the layer graph).
-├── bootstrap/  # Composition root: engine lifecycles and wire* seams.
+├── bootstrap/  # Composition root: startKobato, engine lifecycles and wire* seams.
 ├── infra/      # Technical primitives — zero business knowledge (src/infra/AGENTS.md).
 ├── domains/    # Self-contained business modules (one folder per domain).
 ├── http/       # HTTP perimeter (oRPC + Hono).
@@ -18,8 +18,14 @@ server/
 
 ## Layer graph (`apps/kobato/tests/arch/server-layers.test.ts`)
 
-- Only `bootstrap/` may know every layer, and nothing imports it. `assets/` is static data outside the import graph. A
-  file belongs to exactly one root.
+- Only `bootstrap/` may know every layer. `bootstrap/start-kobato.ts` is the composition root: `startKobato(options)`
+  builds the app, wraps its fetch handler (`http/leaked-response.ts`) before anything binds it, listens (or adopts the
+  host's HTTP server) and registers the server and the restart app, then runs migrations and secrets, settings
+  hydration, observability provisioning and retention, the job registry and the schedulers, the setup token, and the
+  process pool, in that order, with the HMR-once guards kept in `import.meta.hot.data` (`bootstrap/hmr-state.ts`);
+  nothing inside the package imports it (pinned). The engine lifecycles (`db-lifecycle`, `analytics-lifecycle`) are the
+  one `bootstrap/` seam the request pipeline and the analytics controllers reach. `assets/` is static data outside the
+  import graph. A file belongs to exactly one root.
 - `infra/*` imports nothing from `domains/`, `http/`, or `render/`. `domains/*` imports nothing from `bootstrap/*`:
   wiring goes through `wire*` seams; background jobs self-register on `infra/job-registry`.
 - `http/controllers/*` and `http/loaders/*` orchestrate only; `render/*` never persists.
@@ -55,10 +61,17 @@ feature files. Once a subdirectory exists (`services/`, `repos/`), the root file
 
 HTTP perimeter only: `orpc-base.ts`, `contract-implementation.ts`, `request-context.ts` (the `RequestContext` interface;
 the deriving middleware lives in `middlewares/request-context.ts`), `middleware-pipeline.ts`, `hono-env.ts`,
-`api-router.ts`, `errors.ts`, `app.ts`, `orpc-trace.ts`, `content-not-found.ts`, `middlewares/`, `controllers/`
-(`public/`, `account/`, `admin/`), `loaders/`, `request/`. There is no `resources/` directory: every former Hono
-resource is a `public.*` procedure pair now, and kobato's Hono app serves only `/rpc/*`, `/health`, `/ready`,
-`/admin/assets/*`, and the workspace shell. The pipeline keeps the static `secureHeaders` CSP (`overwrite: false` — a
+`api-router.ts`, `errors.ts`, `app.ts`, `orpc-trace.ts`, `content-not-found.ts`, `kobato-app.ts`, `spa-shell.ts`,
+`middlewares/`, `controllers/` (`public/`, `account/`, `admin/`), `loaders/`, `request/`. There is no `resources/`
+directory: every former Hono resource is a `public.*` procedure pair now, and kobato's Hono app serves only `/rpc/*`,
+`/health`, `/ready`, `/admin/assets/*`, and the workspace shell. `kobato-app.ts` assembles that app:
+`createKobatoApp(assetsRoot)` runs `configureMiddleware` and mounts the workspace — the `/admin/assets/*` statics with a
+one-year cache, the `/admin`, `/admin/*`, and `/editor/*` documents through `spa-shell.ts` (the pure nonce-CSP shell
+handler), and the final 404 — and `listenKobato(app)` is the production listener: the start-up log lines over
+`infra/http/listener.ts`'s `listenHono`, the package's one `@hono/node-server` `serve()` call site (the configured host
+and port, `overrideGlobalObjects: false`), which `infra/lifecycle.ts`'s `restartServer` serves through as well — a cold
+boot and a restart bind identical options. It serves files and a shell document and imports no web package, and only
+`bootstrap/start-kobato.ts` calls it. The pipeline keeps the static `secureHeaders` CSP (`overwrite: false` — a
 handler-set CSP, i.e. the SPA shell nonce policy, survives), the conditional HSTS header, and the generic static-asset
 `cache` middleware; there is no per-request dynamic CSP, `Accept-CH`, or Webmention `Link` — kobato no longer renders
 documents.
@@ -117,8 +130,8 @@ documents.
 - `buildCspHeader` — hoisted into `@kobato/settings/csp`, imported by this pipeline and sayaka's perimeter — is the
   single CSP builder and NEVER widens `connect-src`; the OpenObserve origin appears in no policy, document, or CORS
   entry (browser RUM relays through sayaka's same-origin `/api/rum/intake` handler, which calls the
-  `observability.rumIntake` procedure). The SPA shell handler in the app applies it with a per-request nonce to the
-  prerendered fallback document.
+  `observability.rumIntake` procedure). The SPA shell handler (`http/spa-shell.ts`) applies it with a per-request nonce
+  to the prerendered fallback document.
 
 ### Base procedures
 

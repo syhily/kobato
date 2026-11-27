@@ -1,16 +1,16 @@
 # Kobato app
 
 `apps/kobato` is the backend deployable (ADR-0009): a React Router 8 **SPA** (`appDirectory: 'src'`, `ssr: false`)
-served by its own Hono app, carrying the `admin/`, `editor/`, and `auth/` workspace and the `/rpc/*` oRPC transport —
-the feeds, the sitemap, robots.txt, manifest.webmanifest, and the `/tags` + `/search` 301s are sayaka's, and every
-public resource (images, storage, embedded fonts, branding assets, the Webmention receive, the RUM intake) is a
-`public.*` procedure pair that sayaka serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and
-the two forwarded path families. kobato wires routes to product code and owns the workspace admin UI in `src/ui/` (the
-former `@kobato/web-admin` package, absorbed per ADR-0009); cross-surface features that call a procedure stay in
-`@kobato/web-kit` (their UI-free data hooks, `use-notifications`, in `@kobato/api/browser`), primitives, the document
-shell, and the shared document modules in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/api`. The
-browser runtime under `src/document/` and `src/route-warmup/` is consumed by this app alone — nothing outside
-`apps/kobato` imports it.
+served by the `@kobato/server` Hono app that `src/server.ts` boots through `startKobato`, carrying the `admin/`,
+`editor/`, and `auth/` workspace and the `/rpc/*` oRPC transport — the feeds, the sitemap, robots.txt,
+manifest.webmanifest, and the `/tags` + `/search` 301s are sayaka's, and every public resource (images, storage,
+embedded fonts, branding assets, the Webmention receive, the RUM intake) is a `public.*` procedure pair that sayaka
+serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and the two forwarded path families. kobato
+wires routes to product code and owns the workspace admin UI in `src/ui/` (the former `@kobato/web-admin` package,
+absorbed per ADR-0009); cross-surface features that call a procedure stay in `@kobato/web-kit` (their UI-free data
+hooks, `use-notifications`, in `@kobato/api/browser`), primitives, the document shell, and the shared document modules
+in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/api`. The browser runtime under `src/document/` and
+`src/route-warmup/` is consumed by this app alone — nothing outside `apps/kobato` imports it.
 
 - `src/root.tsx`, `src/routes.ts`, `src/server.ts` — the framework entry set (`src/entry.server.tsx` is gone: SPA mode
   prerenders `/__spa-fallback.html` through React Router's default entry, renamed to `index.html` by the build);
@@ -37,10 +37,14 @@ browser runtime under `src/document/` and `src/route-warmup/` is consumed by thi
   `authErrorPayload` / `authMessagePayload`, `clientAuthFlowError`, `isCsrfFailure`), `guard-loader`
   (`guardLoader('<role>')`), `orpc-error` (`isOrpcErrorWithCode`), `route-status` (`notFound()` — React Router 8 has no
   `notFound` export).
-- `src/server/` — the SPA-era Hono app: `spa-shell` (the pure nonce-CSP document handler for `/__spa-fallback.html`),
-  `backend-server` (`createBackendServer` — middleware pipeline + `/admin/assets/*` statics + shell documents + 404;
-  under the kobato SEA binary `clientAssetsRoot()` resolves the assets from the VFS `client/` prefix, on disk from
-  `build/client`), `dev-server-ref` (reads the Vite dev server from the `globalThis` slot in dev).
+- `src/server.ts` — the backend entry: it calls `startKobato` (`@kobato/server/bootstrap/start-kobato`) with the
+  workspace build's location and, in production, lets the package bind the listener or, under Vite, hands over the dev
+  server's `httpServer`; it keeps the HMR boundary (`import.meta.hot.accept()`) and default-exports the app. The boot
+  sequence and the workspace-serving app (middleware pipeline + `/admin/assets/*` statics + shell documents + 404) live
+  in `@kobato/server` (`bootstrap/start-kobato`, `http/kobato-app`, `http/spa-shell`) — nothing of it is here.
+- `src/server/` — what only the app knows: `client-assets-root` (`clientAssetsRoot()` — under the kobato SEA binary it
+  resolves the assets from the VFS `client/` prefix, on disk `build/client` beside the backend bundle) and
+  `dev-server-ref` (reads the Vite dev server from the `globalThis` slot in dev).
 - `src/seo/` — the typed route-meta factory over `@kobato/catalog/seo` builders (app-owned because it feeds the `meta`
   route export).
 - `src/document/` — document-level behavior mounted once by the root: `use-chunk-error-recovery`, `use-ios-no-zoom`, and
@@ -63,10 +67,12 @@ browser runtime under `src/document/` and `src/route-warmup/` is consumed by thi
   build; the second overwrites `build/server/index.js` with the backend bundle (`src/server.ts`).
 - Vite `base: '/admin/'` prefixes every client asset URL (`/admin/assets/*`) while route URLs stay `/admin/...` and
   `/editor/...` — React Router's `basename` stays `/` and is independent of Vite's `base`.
-- `pnpm dev` runs Vite on 4321; the shared `reactRouterHonoServer` plugin hands `/rpc/*`, `/health`, and the resource
-  routes to the Hono app and excludes `/admin/*` + `/editor/*` documents (plus `.data`) so React Router's dev middleware
-  serves them; a dev-only pre-middleware rewrites `/editor/*` → `/admin/editor/*` so Vite's base middleware lets them
-  through.
+- `pnpm dev` runs Vite on 4321; the shared `reactRouterHonoServer` plugin loads `src/server.ts` and serves its default
+  export, and excludes `/admin/*` + `/editor/*` documents (plus `.data`) so React Router's dev middleware serves them
+  while `/rpc/*`, `/health`, and the resource routes reach the Hono app; the plugin publishes the Vite dev server on the
+  `globalThis` slot, so `startKobato` adopts its `httpServer` as the lifecycle's server instead of binding a port; a
+  dev-only pre-middleware rewrites `/editor/*` → `/admin/editor/*` so Vite's base middleware lets them through. In dev
+  the shell documents come from React Router's dev middleware, never from `startKobato`'s assets root.
 - `pnpm start` runs `node ./apps/kobato/build/server/index.js` — the backend bundle. `pnpm run sea:build` (root) turns
   the same outputs into the `dist-sea/kobato` SEA binary, which serves `/admin/assets/*` (the shell's `index.html`
   included) out of its embedded VFS `client/` prefix.

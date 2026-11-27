@@ -1,10 +1,12 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 and 2 have landed (the comment surface and the
+- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 3 have landed (the comment surface and the
   shared composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document
-  shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned); steps 3–6
-  follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation
-  notes' "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+  shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned;
+  `startKobato` in `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry
+  thinned to the call); steps 4–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code
+  lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other section of
+  ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -138,6 +140,17 @@ hydration, observability provisioning and retention, the job registry and the sc
 pool, and the HMR-once guards. Serving the workspace — static assets, the nonce-CSP shell document, the `/admin/*` and
 `/editor/*` fallbacks — is an HTTP-perimeter module of the same package taking an assets root.
 `apps/kobato/src/server.ts` calls `startKobato`, hands it the workspace build's location, and default-exports the app.
+
+`startKobato({ assetsRoot, listener, onListening? })` takes the workspace build's assets root, the listener —
+`{ mode: 'bind' }` binds the configured host and port; `{ mode: 'host', server }` adopts the HTTP server the host
+already runs (the Vite dev server, read from the app-side `globalThis` slot) — and an optional `onListening(server)`
+observer; the package registers the listening server with the lifecycle itself. It wraps the app's fetch handler with
+the leaked-response handler before anything binds it, so a cold production boot serves the wrapped fetch exactly as the
+dev host and a post-restart re-bind do. The workspace-serving module is `http/kobato-app.ts`
+(`createKobatoApp(assetsRoot)` and the production listener `listenKobato(app)`) over the pure shell handler
+`http/spa-shell.ts`; the listener itself is `infra/http/listener.ts` (`listenHono`), whose one `serve()` options shape —
+the configured host and port, `overrideGlobalObjects: false` — the lifecycle's `restartServer` binds too, so a restart
+never serves under different options than a cold boot.
 
 ### 6. `packages/shared` has four leaves
 

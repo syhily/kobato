@@ -1,7 +1,6 @@
+import { type SpaShellEnv, createSpaShellHandler } from '@kobato/server/http/spa-shell'
 import { Hono } from 'hono'
 import { describe, expect, it } from 'vitest'
-
-import { type SpaShellEnv, createSpaShellHandler } from '@/server/spa-shell'
 
 const DOCUMENT = [
   '<html>',

@@ -2,8 +2,7 @@ import type { ServerType } from '@hono/node-server'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { Hono } from 'hono'
 
-import { serve } from '@hono/node-server'
-import { serverConfig } from '@kobato/server/infra/config'
+import { listenHono } from '@kobato/server/infra/http/listener'
 import { getLogger } from '@kobato/server/infra/logger'
 import { Server as NodeHttpServer } from 'node:http'
 
@@ -190,12 +189,12 @@ export async function restartServer(): Promise<void> {
     try {
       await closeHttpServer()
 
-      const newServer = serve(
-        { fetch: app.fetch.bind(app), port: serverConfig.server.port, hostname: serverConfig.server.host },
-        (info) => {
+      const newServer = listenHono({
+        app,
+        onListening: (info) => {
           restartLog.info('Server restarted', { port: info.port })
         },
-      )
+      })
       setHttpServer(newServer)
 
       if (container.getDbFn && container.refreshSettingsFn) {
