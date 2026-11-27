@@ -6,7 +6,6 @@ import { serverProjects } from '@kobato/test/projects/server-projects'
 import sharedSnapsProject from '@kobato/test/projects/shared-snaps'
 import sharedUnitProject from '@kobato/test/projects/shared-unit'
 import { uiProjects } from '@kobato/test/projects/ui-projects'
-import webSnapsProject from '@kobato/test/projects/web-snaps'
 import { webUnitProjects } from '@kobato/test/projects/web-unit'
 
 export const inklingUnitConfigPath = 'packages/inkling/tests/vitest.config.ts'
@@ -19,7 +18,6 @@ export const allTestProjects = [
   sharedUnitProject,
   sharedSnapsProject,
   ...webUnitProjects,
-  webSnapsProject,
   ...uiProjects,
   ...dbProjects,
   ...serverProjects,

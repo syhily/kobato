@@ -12,10 +12,10 @@ import {
 } from '@kobato/ui/components/dialog'
 import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatBytes, formatDateTime } from '@kobato/utils/format'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 interface ImageDetailDialogProps {

@@ -1,7 +1,7 @@
-import { subscribeChunkReload } from '@kobato/web-kit/ui/chrome/chunk-reload'
+import { subscribeChunkReload } from '@kobato/ui/lib/chunk-reload'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-describe('chrome/chunk-reload — subscribeChunkReload', () => {
+describe('lib/chunk-reload — subscribeChunkReload', () => {
   it('returns an unsubscribe function', () => {
     const unsub = subscribeChunkReload(() => undefined)
     expect(unsub).toBeInstanceOf(Function)
@@ -16,7 +16,7 @@ describe('chrome/chunk-reload — subscribeChunkReload', () => {
   })
 })
 
-describe('chrome/chunk-reload — triggerChunkReload', () => {
+describe('lib/chunk-reload — triggerChunkReload', () => {
   beforeEach(() => {
     vi.stubGlobal('window', {
       location: { reload: vi.fn() },
@@ -31,7 +31,7 @@ describe('chrome/chunk-reload — triggerChunkReload', () => {
 
   it('notifies subscribed listeners', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-kit/ui/chrome/chunk-reload')
+    const mod = await import('@kobato/ui/lib/chunk-reload')
     const listener = vi.fn()
     const unsub = mod.subscribeChunkReload(listener)
     mod.triggerChunkReload()
@@ -41,7 +41,7 @@ describe('chrome/chunk-reload — triggerChunkReload', () => {
 
   it('survives a listener that throws (recovery must not be blocked)', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-kit/ui/chrome/chunk-reload')
+    const mod = await import('@kobato/ui/lib/chunk-reload')
     const good = vi.fn()
     const bad = vi.fn(() => {
       throw new Error('listener exploded')
@@ -57,7 +57,7 @@ describe('chrome/chunk-reload — triggerChunkReload', () => {
 
   it('only fires listeners once across repeated calls (reload-started guard)', async () => {
     vi.resetModules()
-    const mod = await import('@kobato/web-kit/ui/chrome/chunk-reload')
+    const mod = await import('@kobato/ui/lib/chunk-reload')
     const listener = vi.fn()
     const unsub = mod.subscribeChunkReload(listener)
     mod.triggerChunkReload()
@@ -76,7 +76,7 @@ describe('chrome/chunk-reload — triggerChunkReload', () => {
       requestAnimationFrame: undefined,
       setTimeout: setTimeoutMock,
     })
-    const mod = await import('@kobato/web-kit/ui/chrome/chunk-reload')
+    const mod = await import('@kobato/ui/lib/chunk-reload')
     mod.triggerChunkReload()
     expect(setTimeoutMock).toHaveBeenCalled()
   })
@@ -93,7 +93,7 @@ describe('chrome/chunk-reload — triggerChunkReload', () => {
       requestAnimationFrame: raf,
       setTimeout: vi.fn(() => 0 as unknown as NodeJS.Timeout),
     })
-    const mod = await import('@kobato/web-kit/ui/chrome/chunk-reload')
+    const mod = await import('@kobato/ui/lib/chunk-reload')
     mod.triggerChunkReload()
     expect(raf).toHaveBeenCalled()
   })

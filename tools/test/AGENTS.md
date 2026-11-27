@@ -6,10 +6,12 @@ canonical owner package's `tests/utils/`, imported cross-package as `@kobato/<ow
 sanctioned cross-package `tests/` edge (`apps/kobato/tests/arch/package-dag.test.ts`). Product-coupled fixtures must not
 move back here. Canonical fixture owners: `@kobato/settings/tests/utils/blog-settings.ts`,
 `@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/catalog.ts`, `@kobato/inkling/tests/utils/lexical.ts`,
-`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the server harnesses
-under `@kobato/server/tests/utils/` (session, mail capture, integration DBs, request context). The settings-mutation
-mock is app-local: `apps/kobato/tests/utils/settings-mutation-mock.ts`, imported as
-`@tests/utils/settings-mutation-mock`.
+`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`,
+`@kobato/ui/tests/utils/document-facts.ts` (the `DocumentFacts` fixture, mounted only by the kit's canonical render
+helper above — the `@kobato/ui` render helpers mount none, and tests mount `DocumentFactsProvider` themselves, as
+`packages/web/ui/tests/AGENTS.md` says), and the server harnesses under `@kobato/server/tests/utils/` (session, mail
+capture, integration DBs, request context). The settings-mutation mock is app-local:
+`apps/kobato/tests/utils/settings-mutation-mock.ts`, imported as `@tests/utils/settings-mutation-mock`.
 
 ## Import surface
 
@@ -63,8 +65,8 @@ never mount React). `node.ts` preloads `@date-fns/tz` so `TZDate` binds the real
   `isolate: false` — a worker thread is reused across the files of its project instead of restarted per file. Each pool
   name has its own four-worker budget, so the `threads` and `vmThreads` pools can run at the same time.
 - `vmThreads` (a fresh VM context per file, worker thread reused) is the pool for every tree whose files register module
-  mocks or hold module-scoped product state: `server-unit`, `server-it`, `web-unit`, `web-snaps`, `ui-unit`, `ui-snaps`,
-  `app-unit`, `app-snaps`, `sayaka-unit`, `sayaka-snaps`, `inkling-unit`, `demo-unit`.
+  mocks or hold module-scoped product state: `server-unit`, `server-it`, `web-unit`, `ui-unit`, `ui-snaps`, `app-unit`,
+  `app-snaps`, `sayaka-unit`, `sayaka-snaps`, `inkling-unit`, `demo-unit`.
 - A shared `threads` tree keeps only mock-free files: under a shared module registry a `vi.mock` binds into whichever
   importer is evaluated next and stays bound for every later file in the worker, so a mock-registering file there is
   named `*.iso.test.ts` and runs in the tree's `-iso-` twin. The same suffix moves a `vmThreads` file that needs a real

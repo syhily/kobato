@@ -2,8 +2,8 @@ import type { SecuritySettings } from '@kobato/settings/types'
 
 import { isValidPasskeyDomain } from '@kobato/auth/network'
 import { FieldLabel } from '@kobato/ui/components/field'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { Controller } from 'react-hook-form'
 
 import { SettingsRow } from '@/ui/settings/SettingsSection'

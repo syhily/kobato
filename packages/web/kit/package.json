@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@kobato/api": "workspace:*",
-    "@kobato/assets": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",

@@ -1,10 +1,9 @@
 import { orpc, setCsrfToken } from '@kobato/api/browser/client'
+import { useDocumentCsrfToken } from '@kobato/ui/lib/use-document-csrf-token'
 import { useCallback } from 'react'
-import { useRouteLoaderData } from 'react-router'
 
 export function useLogout(): (redirectTo: string) => Promise<void> {
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
+  const csrfToken = useDocumentCsrfToken()
   return useCallback(
     async (redirectTo: string) => {
       if (csrfToken) {

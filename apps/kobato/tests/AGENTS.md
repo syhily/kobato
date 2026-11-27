@@ -3,10 +3,12 @@
 Test trees for the deployable app, the workspace admin UI (absorbed into `src/ui` per ADR-0009), the cross-package
 architecture guards, and the two live-instance suites. Vitest trees import app source through `@/...` and helpers
 through `@tests/...`, plus the canonical product helpers cross-package (DB/session/mail/request-context from
-`@kobato/server/tests/utils/`, the SSR render helper from `@kobato/web-kit/tests/utils/render.tsx`, i18n render from
-`@kobato/ui/tests/utils/{i18n-render,hook}.tsx`); React Router's `./+types/*` stays relative. The Playwright tree is the
-one runner-level exception: its config/support imports stay relative because Playwright loads them before any
-tsconfig-path resolver.
+`@kobato/server/tests/utils/`, the SSR render helper from `@kobato/web-kit/tests/utils/render.tsx` (ThemeProvider →
+settings contexts → `DocumentFactsProvider` → `I18nProvider` over the test facts), i18n render from
+`@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the `DocumentFacts` fixture from
+`@kobato/ui/tests/utils/document-facts.ts` for tests that mount their own stack); React Router's `./+types/*` stays
+relative. The Playwright tree is the one runner-level exception: its config/support imports stay relative because
+Playwright loads them before any tsconfig-path resolver.
 
 - **`tests/{unit,it,snaps}/`** — tests mirroring `apps/kobato/src/` (`routes/`, `ui/`, `seo/`, `document/`,
   `route-warmup/`, `lib/`, `server/`): `src/ui/posts/filter-fields.ts` → `tests/unit/ui/posts/filter-fields.test.ts`.

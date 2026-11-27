@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const CSS = readFileSync('packages/web/ui/src/styles/tailwind.css', 'utf8')
-const ROOT = readFileSync('apps/kobato/src/root.tsx', 'utf8')
+const SHELL_HEAD = readFileSync('packages/web/ui/src/components/document-shell/document-head.ts', 'utf8')
+const ROOTS = ['apps/kobato/src/root.tsx', 'apps/sayaka/src/root.tsx'].map((file) => readFileSync(file, 'utf8'))
 
 function normalize(value: string): string {
   return value
@@ -56,12 +57,14 @@ describe('locale font stacks — CSS ⇔ shared map contract', () => {
     expect(cssVariable(block, 'font-serif')).toBe(normalize(DEFAULT_FONT_STACKS[locale].serif))
   })
 
-  it('has root.tsx consume the same map instead of a hardcoded fallback tail', () => {
-    expect(ROOT).toContain('defaultFontStackFor')
-    for (const locale of SUPPORTED_LOCALES) {
-      expect(ROOT).not.toContain(DEFAULT_FONT_STACKS[locale].body)
-      expect(ROOT).not.toContain(DEFAULT_FONT_STACKS[locale].serif)
+  it('has the document shell consume the same map instead of a hardcoded fallback tail', () => {
+    expect(SHELL_HEAD).toContain('defaultFontStackFor')
+    for (const source of [SHELL_HEAD, ...ROOTS]) {
+      for (const locale of SUPPORTED_LOCALES) {
+        expect(source).not.toContain(DEFAULT_FONT_STACKS[locale].body)
+        expect(source).not.toContain(DEFAULT_FONT_STACKS[locale].serif)
+      }
+      expect(source).not.toContain("'PingFang SC'")
     }
-    expect(ROOT).not.toContain("'PingFang SC'")
   })
 })

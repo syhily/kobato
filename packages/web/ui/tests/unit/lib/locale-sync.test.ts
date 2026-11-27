@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { LocaleChangeAnnouncement } from '@kobato/web-kit/ui/lib/locale-sync'
+import type { LocaleChangeAnnouncement } from '@kobato/ui/lib/locale-sync'
 
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
 import {
@@ -8,7 +8,7 @@ import {
   createLocaleSyncOrigin,
   publishLocaleChange,
   subscribeLocaleChange,
-} from '@kobato/web-kit/ui/lib/locale-sync'
+} from '@kobato/ui/lib/locale-sync'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 function collect() {
@@ -27,7 +27,7 @@ afterEach(() => {
   FakeBroadcastChannel.instances.length = 0
 })
 
-describe('client/lib/locale-sync', () => {
+describe('lib/locale-sync', () => {
   it('delivers a peer announcement to another document', () => {
     const { received, unsubscribe } = collect()
 

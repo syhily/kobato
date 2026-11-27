@@ -1,12 +1,12 @@
 import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { publishLocaleChange, subscribeLocaleChange } from '@kobato/web-kit/ui/lib/locale-sync'
+import { publishLocaleChange, subscribeLocaleChange } from '@kobato/ui/lib/locale-sync'
 import {
   LocaleSyncProvider,
   useLocaleSyncHostRegistration,
   useLocaleSyncPublish,
-} from '@kobato/web-kit/ui/lib/LocaleSyncProvider'
+} from '@kobato/ui/lib/LocaleSyncProvider'
+import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 // @vitest-environment happy-dom
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useEffect, useState } from 'react'

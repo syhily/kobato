@@ -1,8 +1,8 @@
 import type { ClearCacheTarget } from '@kobato/settings/cache-bucket'
 
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 
 import type { ClearStatus } from '@/ui/settings/cache/cache-status'
 

@@ -28,8 +28,10 @@ is forbidden by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts` (whic
   carries the base-layer border default after its own preflight. Product utilities use named theme tokens
   (`max-w-admin`, `text-admin-sm`), never `(--token)` arbitrary syntax — a var reference into a reference-imported theme
   emits nothing (`apps/kobato/tests/arch/tailwind-compile-contract.test.ts` compiles every entry for real).
-- UI `ui.css` is the document's single global entry: `root.tsx` imports it eagerly, once per document; an overriding
-  product rule wins the cascade on source order, never `!important`. Never add `ui.css` to a route module or lazy
-  branch.
+- UI `ui.css` is the document's single global entry: `root.tsx` imports it eagerly, once per document; it is also the
+  sheet that emits every utility the shared document modules use (`Image`, `BrandLogo`, the document shell's reload
+  overlay, the locale-sync notice) — they are `@kobato/ui` sources, scanned by `ui.css`, not by the kit partial. An
+  overriding product rule wins the cascade on source order, never `!important`. Never add `ui.css` to a route module or
+  lazy branch.
 - Route modules and components import only `@/styles/admin.css` — never cards.css, web partials, or ui.css. Route-local
   classes go in the app entry; never add downstream package paths here — extend that package's own partial.

@@ -77,17 +77,9 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
 
   '@kobato/server': ['@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
-  '@kobato/ui': ['@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/ui': ['@kobato/assets', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
-  '@kobato/web-kit': [
-    '@kobato/ui',
-    '@kobato/api',
-    '@kobato/utils',
-    '@kobato/i18n',
-    '@kobato/settings',
-    '@kobato/assets',
-    '@kobato/test',
-  ],
+  '@kobato/web-kit': ['@kobato/ui', '@kobato/api', '@kobato/utils', '@kobato/i18n', '@kobato/settings', '@kobato/test'],
   '@kobato/test': [],
 
   kobato: INTERNAL_SCOPES,
@@ -123,7 +115,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/assets',
     '@kobato/utils',
   ],
-  '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui', '@kobato/web-kit'],
+  '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui'],
   '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
   '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
   '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
@@ -136,7 +128,7 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
   '@kobato/api': ['@kobato/api', ...API_SHARED_DEPS],
   '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/utils'],
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
-  '@kobato/ui': ['@kobato/ui', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
+  '@kobato/ui': ['@kobato/ui', '@kobato/assets', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
 
   '@kobato/web-kit': [
     '@kobato/web-kit',
@@ -145,7 +137,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/settings',
-    '@kobato/assets',
   ],
   '@kobato/test': ['@kobato/test'],
   kobato: [

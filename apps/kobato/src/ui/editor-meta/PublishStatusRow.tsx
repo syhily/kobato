@@ -1,9 +1,9 @@
 import { Badge } from '@kobato/ui/components/badge'
 import { Label } from '@kobato/ui/components/label'
 import { RadioGroup } from '@kobato/ui/components/radio-group'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatDateTime } from '@kobato/utils/format'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 

@@ -25,14 +25,6 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router')
-  return {
-    ...actual,
-    useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
-  }
-})
-
 const scheduledBackup: BackupLoaderShape = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
   retention: { enabled: true, days: 30 },

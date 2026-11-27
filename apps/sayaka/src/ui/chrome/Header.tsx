@@ -2,19 +2,15 @@ import type { SocialNetwork } from '@kobato/settings/socials'
 import type { NavigationItem } from '@kobato/settings/types'
 
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
+import { BrandLogo } from '@kobato/ui/components/BrandLogo'
 import { Button } from '@kobato/ui/components/button'
 import { IconButtonContent } from '@kobato/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@kobato/ui/icons/brand'
+import { useAssetsSettingsOptional, useSiteIdentity, useSocialsSettings } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { safeRel } from '@kobato/ui/lib/link'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
-import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
-import {
-  useAssetsSettingsOptional,
-  useSiteIdentity,
-  useSocialsSettings,
-} from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { LazyUserMenu } from '@sayaka/ui/chrome/LazyUserMenu'
 import { ThemeToggle } from '@sayaka/ui/chrome/ThemeToggle'
 import { SearchIconButton } from '@sayaka/ui/Search'

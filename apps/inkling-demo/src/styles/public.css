@@ -3,6 +3,5 @@
 @import '@kobato/ui/styles/tailwind.css' reference;
 @import '@kobato/ui/styles/base-defaults.css';
 @import '@kobato/inkling/styles/cards.css';
-@import '@kobato/web-kit/styles/kit.css';
 
 @source '../**/*.{ts,tsx}';

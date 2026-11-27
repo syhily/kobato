@@ -6,9 +6,10 @@ the feeds, the sitemap, robots.txt, manifest.webmanifest, and the `/tags` + `/se
 public resource (images, storage, embedded fonts, branding assets, the Webmention receive, the RUM intake) is a
 `public.*` procedure pair that sayaka serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and
 the two forwarded path families. kobato wires routes to product code and owns the workspace admin UI in `src/ui/` (the
-former `@kobato/web-admin` package, absorbed per ADR-0009); reusable cross-surface modules stay in `@kobato/web-kit`,
-primitives in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/api`. The browser runtime under
-`src/document/` and `src/route-warmup/` is consumed by this app alone — nothing outside `apps/kobato` imports it.
+former `@kobato/web-admin` package, absorbed per ADR-0009); cross-surface features that call a procedure stay in
+`@kobato/web-kit`, primitives, the document shell, and the shared document modules in `@kobato/ui`, backend in
+`@kobato/server`, contracts in `@kobato/api`. The browser runtime under `src/document/` and `src/route-warmup/` is
+consumed by this app alone — nothing outside `apps/kobato` imports it.
 
 - `src/root.tsx`, `src/routes.ts`, `src/server.ts` — the framework entry set (`src/entry.server.tsx` is gone: SPA mode
   prerenders `/__spa-fallback.html` through React Router's default entry, renamed to `index.html` by the build);
@@ -41,7 +42,9 @@ primitives in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/a
   `build/client`), `dev-server-ref` (reads the Vite dev server from the `globalThis` slot in dev).
 - `src/seo/` — the typed route-meta factory over `@kobato/catalog/seo` builders (app-owned because it feeds the `meta`
   route export).
-- `src/document/` — document-level behavior mounted once by the root: `use-chunk-error-recovery`, `use-ios-no-zoom`.
+- `src/document/` — document-level behavior mounted once by the root: `use-chunk-error-recovery`, `use-ios-no-zoom`, and
+  `document-facts` (`documentFactsFrom`, the root loader data → `DocumentFacts` mapping the root `Layout` hands the
+  document shell).
 - `src/route-warmup/` — `RouteWarmupScript` renders the inline idle-preload script; the manifest contract lives in
   `@kobato/distribution/warmup-manifest`, wire constants in `@kobato/distribution/route-warmup`. `use-route-warmup` is
   mounted by the root `App` (fetches `/admin/assets/warmup-manifest.json` once per document, tier 1 at root-data time,
@@ -76,13 +79,22 @@ primitives in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/a
   top of the root `App`; the comment composer's activation handoff holds the same lock. Do NOT re-install the hook
   per-form and do NOT rewrite the viewport `<meta>` anywhere else.
 - Chunk-error recovery: `use-chunk-error-recovery` and `useReloadOnChunkError` call `triggerChunkReload` from
-  `@kobato/web-kit/ui/chrome/chunk-reload`, the reload store `ChunkReloadOverlay` subscribes to.
+  `@kobato/ui/lib/chunk-reload`, the reload store `@kobato/ui`'s `ChunkReloadOverlay` (rendered by the document shell)
+  subscribes to.
 - `RouteWarmupScript` imports the virtual module `virtual:kobato-route-warmup`, declared in
   `src/route-warmup/compiled-script.d.ts` and resolved by `routeWarmupPlugin` (`tools/pack/src/vite/route-warmup.ts`,
   invoked from `vite.config.ts` with the workspace tiers: tier-1 `root` + the admin landing, tier-2
   `routes/admin|editor|auth/` — no public tier). Empty in dev, the bundled idle loader in a production build. The id
   must stay unresolvable to a real file — a file behind that import resolves first and silently disables the inline
   script. That idle loader is the one non-React script in the app.
-- The root `Layout` is the static shell: no nonce props (`Scripts` / `ScrollRestoration` run without one — the shell
-  handler injects the nonce into every inline script), no loader-data-dependent preload links. The root
-  `HydrateFallback` is the branded splash prerendered into the SPA fallback document.
+- The root `Layout` renders `@kobato/ui`'s `DocumentShell` — the document element, head (language, theme class, font
+  variables and links, preconnects), `I18nProvider`, and `ChunkReloadOverlay` — over `DocumentFacts` mapped from the
+  root loader data by `documentFactsFrom` (`src/document/document-facts.ts`); it fills the `head` slot with `Meta` +
+  `Links` and the `bodyEnd` slot with `ScrollRestoration` + `Scripts`. The root `App` mounts `@kobato/ui`'s
+  `DocumentProviders` (theme → settings → lazy motion → locale sync) inside `QueryClientProvider`; the workspace hooks
+  that used to read the root loader (`useDocumentClock`, `useDocumentCsrfToken` behind the kit's `useLogout` and the
+  workspace's `AdminInstallForm` / `BackupView`, `useKobatoInklingLabels`) and the fonts controller
+  (`ui/fonts/font-slots.ts`, through the shell's fonts settings context) now read the shell's document facts. The shell
+  is static: no nonce props (`Scripts` / `ScrollRestoration` run without one — the shell handler injects the nonce into
+  every inline script), no loader-data-dependent preload links. The root `HydrateFallback` is the branded splash
+  prerendered into the SPA fallback document.

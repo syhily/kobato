@@ -1,8 +1,8 @@
+import { Image } from '@kobato/ui/components/Image'
 import { LazyAnimatePresence, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useMediaQuery } from '@kobato/ui/lib/use-media-query'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
 import {
   type MouseEvent as ReactMouseEvent,

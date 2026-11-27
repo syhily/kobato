@@ -6,10 +6,10 @@ import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { apiErrorDescriptorKey } from '@kobato/api/client/error'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useDocumentCsrfToken } from '@kobato/ui/lib/use-document-csrf-token'
 import { onMutationError, toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import { BackupEncryptionCard } from '@/ui/settings/backup/BackupEncryptionCard'
@@ -44,8 +44,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const pollAbortRef = useRef<AbortController | null>(null)
 
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
+  const csrfToken = useDocumentCsrfToken()
 
   const [backupFiles, setBackupFiles] = useState<BackupFileDto[] | undefined>(undefined)
   const [nextToken, setNextToken] = useState<string | undefined>()

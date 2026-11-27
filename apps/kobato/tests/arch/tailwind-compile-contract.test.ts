@@ -166,7 +166,6 @@ describe('Tailwind compile contract', () => {
         'packages/inkling/src/comment',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
-        'packages/web/kit/src/ui',
       ],
       inkling: ['packages/inkling/src'],
     }

@@ -1,10 +1,10 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption step 1 and the first of step 2's three commits (the
-  comment surface and the shared composer platform to Inkling, the root-data label hook to the workspace UI) have
-  landed; the rest of step 2 and steps 3–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where
-  the code lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other
-  section of ADR-0009 stands.
+- Status: **accepted** 2026-11-27 and being implemented: adoption step 1 and the first two of step 2's three commits
+  (the comment surface and the shared composer platform to Inkling, the root-data label hook to the workspace UI; the
+  shell modules and the document shell to `@kobato/ui`, both roots onto it) have landed; the last commit of step 2 and
+  steps 3–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the
+  Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -62,28 +62,34 @@ a procedure is a kit module or an app's own.** Nothing else separates the two pa
 What leaves the kit:
 
 - **Document-shell modules → `@kobato/ui`:** `blog-settings-context`, `LocaleSyncProvider` with `locale-sync`,
-  `chunk-error` / `chunk-reload` / `ChunkReloadOverlay`, `BrandLogo`, `Image` with its hooks, and the chrome clock. None
-  imports `@kobato/api`; 27 of sayaka's 40 kit import lines are these.
+  `chunk-error` / `chunk-reload` / `ChunkReloadOverlay`, `BrandLogo`, `Image` with its hooks, and the chrome clock
+  (`use-chrome-clock`, landed as `@kobato/ui/lib/use-document-clock` over the shell's document facts). None imports
+  `@kobato/api`; 27 of sayaka's 40 kit import lines are these.
 - **The comment composer → `@kobato/inkling/comment`** (§2).
 - **The shared composer platform → Inkling's public API, the root-data label hook → the workspace:** what both composers
   need becomes Inkling's deliberately-public API on the React barrel, never a per-host copy — `useEditorSurface` with
   `useEditorBodyReset`, `excludeBaseNodes`, `blockQuoteAsideCycle`, the per-locale label loader `loadInklingLabels`, and
   `InklingHostComposer`, the host-facing composer that binds `@kobato/ui`'s locale and theme and takes `labels` as a
-  prop. Only the root-data label hook `useKobatoInklingLabels` moves to the workspace UI (`ui/shared/`, beside the
-  comment dialogs that read the same payload) — the one module that knows the React Router root loader. Inside Inkling
-  the comment composer mounts `InklingHostComposer` and takes labels as a prop or from `loadInklingLabels` (§2); the
-  workspace hands its page and comment editors the root table through the `labels` prop.
+  prop. Only the label hook `useKobatoInklingLabels` moves to the workspace UI (`ui/shared/`, beside the comment dialogs
+  and the page editor that read the same payload) — the workspace's typed reader of the shell's `labels` fact
+  (`useDocumentLabels`), never a reader of the React Router root loader. Inside Inkling the comment composer mounts
+  `InklingHostComposer` and takes labels as a prop or from `loadInklingLabels` (§2); the workspace hands its page and
+  comment editors the root table through the `labels` prop.
 - **`use-notifications` → `@kobato/api/browser`** (§3).
 
 The kit keeps what calls the wire from both front-ends — the notifications family, `use-logout`, `toast-api-error`:
-about 960 lines in 10 files. sayaka's kit dependency becomes two modules in three import lines; its unread-count hook
-comes from `@kobato/api`.
+about 1,140 lines in 11 source files with the first two of step 2's three commits landed, and about 960 lines in 10
+files once `use-notifications` (180 lines) has moved to `@kobato/api` (§3) with the third. Once the shell modules have
+left, sayaka imports four kit modules in five import lines — `use-logout`, `LazyNotificationsDrawer` (the drawer and its
+chunk warm-up, two lines), `NotificationBadge`, and `use-notifications`; the last moves to `@kobato/api` (§3), leaving
+three modules in four lines.
 
-**The document shell.** `@kobato/ui` gains one module that renders a document and owns root route data: fonts and
-preconnects, theme, locale and messages, the settings contexts, locale sync, and the hooks that hand document facts
-(`nowIso`, the CSRF token, the label payload) to shared modules. A shared hook no longer calls `useRouteLoaderData`. The
-shell takes document facts, never `content.bootstrap`'s DTO — each app maps its bootstrap to them — so `@kobato/ui`
-stays free of `@kobato/api`.
+**The document shell.** `@kobato/ui` gains one family (`components/document-shell/`: `DocumentShell`,
+`DocumentProviders`, the head planner) that renders a document and owns root route data: fonts and preconnects, theme,
+locale and messages, the settings contexts, locale sync, and the hooks that hand document facts (`nowIso`, the CSRF
+token, the label payload) to shared modules. A shared hook no longer calls `useRouteLoaderData`. The shell takes
+document facts, never `content.bootstrap`'s DTO — each app maps its bootstrap to them — so `@kobato/ui` stays free of
+`@kobato/api`.
 
 ### 2. The comment editor belongs to Inkling
 
@@ -98,7 +104,8 @@ external frontend author composes a comment with the public contract and this on
 `use-notifications` is 180 lines of TanStack Query over `public.notifications.*` with the cache patching beside it, and
 imports no UI package. It moves to `src/browser/`. The rule for that directory grows one sentence: **a browser hook
 imports the contract, the client, and TanStack Query — never a UI package, never message copy, never a consumer's route
-data.** `toast-api-error` (sonner, message ids) and `use-chrome-clock` (root data) fail it and stay out.
+data.** `toast-api-error` (sonner, message ids) and the document clock (`use-chrome-clock` when this was written, now
+`@kobato/ui/lib/use-document-clock` over document facts) fail it and stay out.
 
 ### 4. The workspace is a static project; `kobato` mounts the server and serves it
 

@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 
 mockTanstackQuery()
 
-const settingsContextMod = await import('@kobato/web-kit/ui/lib/blog-settings-context')
+const settingsContextMod = await import('@kobato/ui/lib/blog-settings-context')
 vi.spyOn(settingsContextMod, 'useSiteIdentity').mockImplementation((() => ({
   author: { email: 'admin@example.com' },
 })) as never)

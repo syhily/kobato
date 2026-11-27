@@ -1,13 +1,13 @@
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useDocumentClock } from '@kobato/ui/lib/use-document-clock'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useChromeClock } from '@kobato/web-kit/ui/chrome/use-chrome-clock'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()
   const { t } = useI18n()
   const { website, title } = siteIdentity
-  const thisYear = formatLocalDate(useChromeClock(), 'yyyy', siteIdentity)
+  const thisYear = formatLocalDate(useDocumentClock(), 'yyyy', siteIdentity)
   const { icpNo, moeIcpNo, initialYear } = siteIdentity
   const hasIcp = icpNo || moeIcpNo
 

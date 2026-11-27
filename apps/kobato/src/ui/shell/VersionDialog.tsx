@@ -5,10 +5,10 @@ import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/distribution/app'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog'
+import { Image } from '@kobato/ui/components/Image'
 import { GithubIcon } from '@kobato/ui/icons/brand'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertCircleIcon,

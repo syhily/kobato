@@ -4,8 +4,8 @@ import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/pub
 import type { ReactElement, ReactNode } from 'react'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

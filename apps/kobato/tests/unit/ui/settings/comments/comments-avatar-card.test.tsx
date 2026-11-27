@@ -15,7 +15,7 @@ import type { CommentsLoaderShape } from '@kobato/settings/projection'
 import { projectCommentsForAdmin } from '@kobato/settings/projection'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CommentsForm } from '@/ui/settings/comments/CommentsForm'

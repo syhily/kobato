@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys'
+import { useDocumentClock } from '@kobato/ui/lib/use-document-clock'
 import { formatLocalDate, formatShowDate } from '@kobato/utils/site-date'
-import { useChromeClock } from '@kobato/web-kit/ui/chrome/use-chrome-clock'
 import { SearchIcon } from 'lucide-react'
 import { Fragment, memo } from 'react'
 import { Link, useNavigate } from 'react-router'
@@ -28,7 +28,7 @@ interface UsersTableProps {
 
 export function UsersTable({ rows, config, isLoading, sentinelRef }: UsersTableProps) {
   const { t } = useI18n()
-  const now = useChromeClock()
+  const now = useDocumentClock()
   return (
     <Table>
       <TableHeader>

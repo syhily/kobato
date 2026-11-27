@@ -1,10 +1,10 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
+import { Image } from '@kobato/ui/components/Image'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { Tooltip } from '@kobato/ui/components/tooltip'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { Fragment, memo } from 'react'
 import { Link } from 'react-router'

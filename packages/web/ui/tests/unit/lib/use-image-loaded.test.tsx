@@ -1,4 +1,4 @@
-import { useImageLoaded } from '@kobato/web-kit/ui/widgets/use-image-loaded'
+import { useImageLoaded } from '@kobato/ui/lib/use-image-loaded'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
@@ -7,7 +7,7 @@ function LoadedIndicator() {
   return <img ref={ref} data-loaded={loaded} src="/image.png" alt="test" />
 }
 
-describe('ui/public/widgets/use-image-loaded', () => {
+describe('lib/useImageLoaded', () => {
   it('returns loaded false during SSR', () => {
     const html = renderToStaticMarkup(<LoadedIndicator />)
     expect(html).toContain('data-loaded="false"')

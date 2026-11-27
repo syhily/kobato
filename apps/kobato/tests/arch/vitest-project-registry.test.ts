@@ -31,7 +31,6 @@ const PINNED_INLINE_PROJECT_NAMES = [
   'shared-unit',
   'shared-snaps',
   'web-unit',
-  'web-snaps',
   'ui-unit',
   'ui-snaps',
   'db-unit',
@@ -66,7 +65,6 @@ const PINNED_CONFIG_PATH_ENTRIES = [
 
 const VM_THREAD_PROJECTS = [
   'web-unit',
-  'web-snaps',
   'ui-unit',
   'ui-snaps',
   'server-unit',

@@ -8,8 +8,9 @@ part of the product build.
   entry, HashRouter routes) and `src/DemoApp.tsx` shell; `src/components/` demo cards and host integrations;
   `src/content/` fixture documents; `src/hooks/` demo-level React hooks; `src/utils/` demo data/config helpers (no
   hooks).
-- `src/styles/public.css` is the demo's single Tailwind compile; it composes the UI/Inkling/kit partials exactly like
-  the app's public surface (`packages/web/ui/src/styles/AGENTS.md`).
+- `src/styles/public.css` is the demo's single Tailwind compile; it takes the UI token sheet and composes Inkling's
+  `cards.css` like the app surfaces do. It no longer composes the kit partial and the demo does not depend on
+  `@kobato/web-kit`: nothing the demo renders (Inkling + `@kobato/ui`) is a kit module.
 - Internal imports use `@kobato/inkling-demo/...` (resolved through the package `exports` map to `src/`).
   `src/generate-content.ts` regenerates `src/content/content.json` — run `pnpm run demo:content` (the write path is
   anchored on the demo directory, never cwd).

@@ -4,10 +4,12 @@ import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { asRoute } from '@kobato/test/route-test-utils'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
+import { DocumentFactsProvider } from '@kobato/ui/lib/document-facts-context'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
+import { TEST_DOCUMENT_FACTS } from '@kobato/ui/tests/utils/document-facts'
 import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
@@ -94,9 +96,11 @@ function renderNested(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-            <RouterProvider router={router} />
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+              <RouterProvider router={router} />
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

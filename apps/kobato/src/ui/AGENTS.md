@@ -8,16 +8,26 @@ components are explicit-props — no reads from sessions, route params, request 
 ## Component tiers
 
 - **`@kobato/ui/components`** — external design-system primitives, flat so `npx shadcn@latest add/diff` works;
-  `components.json` points there. `@kobato/ui/lib` owns `cn`, `code-languages`, `I18nProvider`, `ThemeProvider`, and
-  generic presentation hooks.
-- **`@kobato/web-kit`** — the cross-surface package (`ui/shared` + `ui/lib` tiers, `Image`); new cross-surface modules
-  go THERE, never into this package. The comment composer is Inkling's (`@kobato/inkling/comment/*`).
+  `components.json` points there; `components/document-shell/` is the document shell the root mounts, and `BrandLogo` /
+  `ChunkReloadOverlay` / `Image` are the shared document modules. `@kobato/ui/lib` owns `cn`, `code-languages`,
+  `I18nProvider`, `ThemeProvider`, the settings contexts (`blog-settings-context`), locale sync, the document facts
+  context and hooks, and generic presentation hooks.
+- **`@kobato/web-kit`** — the cross-surface features that call a procedure (the notifications family, `use-logout`); new
+  cross-surface modules go THERE only when they call the wire — otherwise they are `@kobato/ui`'s (the settings
+  contexts, `Image`, `BrandLogo`, locale sync, the document clock, and the document shell already are). The comment
+  composer is Inkling's (`@kobato/inkling/comment/*`); no module in this tree or in `@kobato/web-kit` reads the root
+  loader for document facts — the root maps it into the document shell (`@kobato/ui/components/document-shell`), and the
+  only `useRouteLoaderData` calls under `apps/kobato/src` and `apps/sayaka/src` are the two roots' own `Layout`s and
+  sayaka's `routes/layout.tsx` (`currentUser`). Workspace modules read the shell's facts instead: `useDocumentCsrfToken`
+  (the kit's `useLogout`, `AdminInstallForm`, `BackupView`), `useDocumentClock` (`UsersTable`), `use-inkling-labels`
+  (the one reader of the `labels` fact), and the settings contexts (`useFontsSettingsOptional` in
+  `ui/fonts/font-slots.ts`).
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
-  modules stay at the root — `use-inkling-labels.ts` (`useKobatoInklingLabels`, the one reader of the root loader's
-  `i18n.inklingLabels`; the page composer and the comment dialogs all reach it through here). `useFileUpload` owns
-  file/field guards, typed-oRPC submission, error unwrap, and toast choreography — never hand-roll a fetch upload.
-  `sortable.tsx` is the one dnd-list adapter (`useSortableRow` — destructure its result; member access trips the
-  react-compiler ref heuristic).
+  modules stay at the root — `use-inkling-labels.ts` (`useKobatoInklingLabels`, the one reader of the document's
+  `labels` fact — the root loader's `i18n.inklingLabels` mapped into the document shell; the page composer and the
+  comment dialogs all reach it through here). `useFileUpload` owns file/field guards, typed-oRPC submission, error
+  unwrap, and toast choreography — never hand-roll a fetch upload. `sortable.tsx` is the one dnd-list adapter
+  (`useSortableRow` — destructure its result; member access trips the react-compiler ref heuristic).
 - `editor/` — the page-body composer glue: `PageBodyEditor` (the only module other admin domains import, mounting
   Inkling's public `InklingHostComposer` with the root-loader label table), `pickers/`, and the platform consumers
   (page-editor nodes/upload/picker/card-config, `music-card-picker.tsx` registering the picker dialog at module scope).
@@ -51,7 +61,7 @@ Token rules (merge groups, dark tiers) live in `packages/web/ui/src/styles/AGENT
   `@kobato/ui/tests/utils/i18n-render.tsx`).
 - Animation is Motion Only: the `@kobato/ui/components/lazy-motion` facade with constants from `@kobato/ui/lib/motion`
   (root `AGENTS.md` holds the full rule).
-- Use `<Image />` from `@kobato/web-kit/ui/widgets/Image` for transformed remote images.
+- Use `<Image />` from `@kobato/ui/components/Image` for transformed remote images.
 - **Shiki is SSR-only** — never import `shiki`/`@shikijs/*` here (Oniguruma `.wasm` violates the strict CSP);
   highlighted code arrives pre-rendered.
 - Stateful orchestrators aim for ≤500 LOC per file; past that, extract.
@@ -64,8 +74,9 @@ Token rules (merge groups, dark tiers) live in `packages/web/ui/src/styles/AGENT
   `useEditorSurface`, `blockQuoteAsideCycle`, and `excludeBaseNodes`, handing it the root-loader table through
   `labels={useKobatoInklingLabels()}`; kobato glue (host cards, `KobatoImageNode`, upload/picker wiring) lives in
   `ui/editor/`. Host hooks sit under `.kobato-page-editor` in `apps/kobato/src/ui/styles/inkling-editor.css`. The
-  locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`), read only through
-  `ui/shared/use-inkling-labels` — never by a shared or Inkling module.
+  locale's Inkling label table arrives as root-loader data (`i18n.inklingLabels`) that the root maps into the document
+  shell's `labels` fact; it is read only through `ui/shared/use-inkling-labels` (over `@kobato/ui`'s
+  `useDocumentLabels`) — never by a shared or Inkling module.
 - Editor copy lives in `admin.editor.*`. The entity noun never crosses a shared boundary as text: configs carry
   `entityLabelId` (`UiMessageId`) resolved via ICU `select`. The comment composer is `@kobato/inkling/comment`
   (`LazyCommentBodyEditor`, `CommentContentHtml`, `comment-body-helpers`); admin dialogs mount it with `eager` and hand

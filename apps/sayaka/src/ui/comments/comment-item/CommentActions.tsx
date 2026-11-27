@@ -13,10 +13,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@kobato/ui/components/alert-dialog'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { commentFlags } from '@sayaka/ui/comments/comment-item/comment-flags'
 import { commentFooterButtonClass } from '@sayaka/ui/comments/comment-item/presentation'
 import { useCommentsActions, useCommentsIdentity } from '@sayaka/ui/comments/comments-context'

@@ -1,3 +1,5 @@
+import { DocumentFactsProvider } from '@kobato/ui/lib/document-facts-context'
+import { documentFactsFor } from '@kobato/ui/tests/utils/document-facts'
 import { renderInRouter, stableHtml } from '@kobato/web-kit/tests/utils/render'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -14,15 +16,22 @@ vi.mock('react-router', async () => {
   return {
     ...actual,
     useNavigation: () => navigationState,
-    useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
+
+function installForm() {
+  return (
+    <DocumentFactsProvider value={documentFactsFor({ csrfToken: 'test-csrf-token' })}>
+      <AdminInstallForm />
+    </DocumentFactsProvider>
+  )
+}
 
 describe('snapshot: AdminInstallForm (install form fields)', () => {
   it('renders the install form with title / name / email / password fields and a CSRF hidden input', () => {
     navigationState.state = 'idle'
     navigationState.formMethod = 'GET'
-    const html = stableHtml(renderInRouter(<AdminInstallForm />, '/setup'))
+    const html = stableHtml(renderInRouter(installForm(), '/setup'))
     expect(html).toContain('id="adminInstallForm"')
     expect(html).toContain('name="intent"')
     expect(html).toContain('value="install"')
@@ -50,7 +59,7 @@ describe('snapshot: AdminInstallForm (install form fields)', () => {
   it('renders the 创建中… submit copy and disables inputs while submitting', () => {
     navigationState.state = 'submitting'
     navigationState.formMethod = 'POST'
-    const html = stableHtml(renderInRouter(<AdminInstallForm />, '/setup'))
+    const html = stableHtml(renderInRouter(installForm(), '/setup'))
     expect(html).toContain('创建中...')
     expect(html).toContain('disabled=""')
     expect(html).toContain('id="install-title"')

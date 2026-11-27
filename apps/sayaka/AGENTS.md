@@ -78,6 +78,14 @@ domain logic.
   viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the `@kobato/web-admin` package is gone
   (its tree is kobato's `apps/kobato/src/ui` now) and the specifier stays banned by
   `apps/sayaka/tests/arch/import-boundary.test.ts`.
+- The root `Layout` renders `@kobato/ui`'s `DocumentShell` over `DocumentFacts` mapped from the root loader data
+  (`documentFactsFrom` in `src/document/document-facts.ts`): the shell owns the document element, head, fonts,
+  preconnects, `I18nProvider`, and the chunk-reload overlay; the `head` slot carries `Meta` / `Links`, the webmention
+  link, and the critical-chunk preloads, the `bodyEnd` slot `ScrollRestoration`, `Scripts`, and `RouteWarmupScript` with
+  the CSP nonce. `App` mounts `@kobato/ui`'s `DocumentProviders` (theme → settings → lazy motion → locale sync) inside
+  `QueryClientProvider`. Public modules read document facts (`Footer` / `Sidebar` via `useDocumentClock`, `UserMenu`'s
+  `useLogout` via its CSRF token) from the shell — never through `useRouteLoaderData` (the public layout route's
+  `currentUser` read in `src/routes/layout.tsx` is the one app-side exception).
 - The two inbound protocols are perimeter handlers, not React Router routes, so raw-body POSTs keep their limits and
   status semantics without the document pipeline's root-loader bootstrap (`createRelayClient` in
   `src/server/relay-client.ts` builds the per-request server client; both handlers key kobato's rate limits on the

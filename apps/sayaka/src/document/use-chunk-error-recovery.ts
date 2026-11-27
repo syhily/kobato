@@ -1,5 +1,5 @@
-import { isChunkLoadError } from '@kobato/web-kit/ui/chrome/chunk-error'
-import { triggerChunkReload } from '@kobato/web-kit/ui/chrome/chunk-reload'
+import { isChunkLoadError } from '@kobato/ui/lib/chunk-error'
+import { triggerChunkReload } from '@kobato/ui/lib/chunk-reload'
 import { useEffect } from 'react'
 
 export function useChunkErrorRecovery(): void {

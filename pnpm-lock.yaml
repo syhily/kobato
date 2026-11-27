@@ -687,9 +687,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../../packages/web/ui
-      '@kobato/web-kit':
-        specifier: workspace:*
-        version: link:../../packages/web/kit
       '@lexical/headless':
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -1719,9 +1716,6 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../../api
-      '@kobato/assets':
-        specifier: workspace:*
-        version: link:../../shared/assets
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n
@@ -1782,6 +1776,9 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.3.3)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@kobato/assets':
+        specifier: workspace:*
+        version: link:../../shared/assets
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n

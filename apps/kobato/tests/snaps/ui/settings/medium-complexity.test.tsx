@@ -38,7 +38,6 @@ vi.mock('react-router', async () => {
   return {
     ...actual,
     useRevalidator: () => ({ revalidate: vi.fn() }),
-    useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
 

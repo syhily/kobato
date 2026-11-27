@@ -3,6 +3,7 @@ import type {
   AssetsSettings,
   BlogSettingsBundle,
   ContentSettings,
+  FontsSettings,
   NavigationSettings,
   SeoSettings,
   SidebarSettings,
@@ -26,6 +27,7 @@ const socialsContext = makeCtx<SocialsSettings>('socialsContext')
 const contentContext = makeCtx<ContentSettings>('contentContext')
 const sidebarContext = makeCtx<SidebarSettings>('sidebarContext')
 const seoContext = makeCtx<SeoSettings>('seoContext')
+const fontsContext = makeCtx<FontsSettings>('fontsContext')
 
 const SECTION_CONTEXTS_ANY: Partial<Record<BundleKey, Context<any>>> = {
   siteIdentity: siteIdentityContext,
@@ -35,6 +37,7 @@ const SECTION_CONTEXTS_ANY: Partial<Record<BundleKey, Context<any>>> = {
   content: contentContext,
   sidebar: sidebarContext,
   seo: seoContext,
+  fonts: fontsContext,
 }
 
 interface BlogSettingsProviderProps {
@@ -106,4 +109,11 @@ export function useSidebarSettings(): SidebarSettings {
 
 export function useSeoSettingsOptional(): SeoSettings | undefined {
   return useSectionOptional(seoContext)
+}
+
+export function useFontsSettings(): FontsSettings {
+  return useSection('useFontsSettings', fontsContext)
+}
+export function useFontsSettingsOptional(): FontsSettings | undefined {
+  return useSectionOptional(fontsContext)
 }

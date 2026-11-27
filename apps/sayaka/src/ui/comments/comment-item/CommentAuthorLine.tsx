@@ -3,9 +3,9 @@ import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/p
 import { avatarImageUrl } from '@kobato/assets/avatar'
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
 import { AvatarSkeleton } from '@kobato/ui/components/avatar'
+import { useAssetsSettingsOptional } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { safeHref } from '@kobato/utils/safe-url'
-import { useAssetsSettingsOptional } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { commentAuthorClass, commentAvatarClass } from '@sayaka/ui/comments/comment-item/presentation'
 import { useEffect, useRef, useState } from 'react'
 

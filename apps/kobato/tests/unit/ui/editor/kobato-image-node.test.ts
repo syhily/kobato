@@ -7,7 +7,7 @@ import {
   normalizeKobatoImageLayout,
 } from '@kobato/inkling/headless/cards/kobato-image'
 import { KobatoImageNode } from '@kobato/inkling/host-cards'
-import { DARK_IMAGE_DIM_CLASS } from '@kobato/web-kit/ui/widgets/Image'
+import { DARK_IMAGE_DIM_CLASS } from '@kobato/ui/components/Image'
 import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it } from 'vitest'
 

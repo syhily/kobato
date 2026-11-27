@@ -1,14 +1,14 @@
 import type { FontSlot } from '@kobato/api/contracts/admin/fonts'
-import type { FontsSettings } from '@kobato/settings/types'
 
 import { arrayMove } from '@dnd-kit/sortable'
 import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { useFontsSettingsOptional } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { toastApiError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useReducer, useRef } from 'react'
-import { useRevalidator, useRouteLoaderData } from 'react-router'
+import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 export const MAX_SLOT_FONTS = 8
@@ -54,8 +54,7 @@ function emptySlots(): SlotState {
 
 export function useFontSlotsController() {
   const { t } = useI18n()
-  const rootData = useRouteLoaderData<{ blogSettings?: { fonts?: FontsSettings } | null }>('root')
-  const serverSlots = rootData?.blogSettings?.fonts
+  const serverSlots = useFontsSettingsOptional()
   const revalidator = useRevalidator()
   const queryClient = useQueryClient()
   const [slots, dispatch] = useReducer(slotsReducer, undefined, emptySlots)

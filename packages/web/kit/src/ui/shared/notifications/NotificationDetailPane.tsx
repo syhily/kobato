@@ -13,9 +13,9 @@ import {
 } from '@kobato/ui/components/alert-dialog'
 import { Button, buttonVariants } from '@kobato/ui/components/button'
 import { Textarea } from '@kobato/ui/components/textarea'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { formatNotificationTime, notificationMeta } from '@kobato/web-kit/ui/shared/notifications/notification-meta'
 import {

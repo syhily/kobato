@@ -3,12 +3,12 @@ import type { ClientTag, SidebarPostLink } from '@kobato/catalog/model'
 import type { ReactNode } from 'react'
 
 import { Tooltip } from '@kobato/ui/components/tooltip'
+import { useSidebarSettings, useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useDocumentClock } from '@kobato/ui/lib/use-document-clock'
 import { safeHref } from '@kobato/utils/safe-url'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useChromeClock } from '@kobato/web-kit/ui/chrome/use-chrome-clock'
-import { useSidebarSettings, useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { SearchBar } from '@sayaka/ui/Search'
 import { Link } from 'react-router'
 
@@ -211,7 +211,7 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
   const { t } = useI18n()
-  const today = useChromeClock()
+  const today = useDocumentClock()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)
   const lightImage = `/images/calendar/${year}/${monthDay}.png`

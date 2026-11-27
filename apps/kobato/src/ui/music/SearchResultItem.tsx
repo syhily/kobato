@@ -1,9 +1,9 @@
 import type { MetingSearchHit } from '@kobato/api/contracts/admin/music'
 
 import { Button } from '@kobato/ui/components/button'
+import { Image } from '@kobato/ui/components/Image'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Loader2Icon, Pause, Play, PlusIcon } from 'lucide-react'
 
 export interface SearchResultItemProps {

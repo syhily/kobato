@@ -3,11 +3,13 @@
 import type { FontsSettings } from '@kobato/settings/types'
 import type { ReactNode } from 'react'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook } from '@testing-library/react'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const routerState = vi.hoisted(() => ({
+const settingsState = vi.hoisted(() => ({
   fonts: undefined as FontsSettings | undefined,
   revalidate: vi.fn(),
 }))
@@ -16,8 +18,7 @@ vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
     ...actual,
-    useRouteLoaderData: () => (routerState.fonts === undefined ? null : { blogSettings: { fonts: routerState.fonts } }),
-    useRevalidator: () => ({ revalidate: routerState.revalidate }),
+    useRevalidator: () => ({ revalidate: settingsState.revalidate }),
   }
 })
 
@@ -127,27 +128,38 @@ describe('useFontSlotsController', () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     })
     return function Wrapper({ children }: { children: ReactNode }) {
-      return <QueryClientProvider client={client}>{wrapWithI18n(children)}</QueryClientProvider>
+      const bundle =
+        settingsState.fonts === undefined ? undefined : { ...TEST_BLOG_SETTINGS_BUNDLE, fonts: settingsState.fonts }
+      return (
+        <QueryClientProvider client={client}>
+          <BlogSettingsProvider value={bundle}>{wrapWithI18n(children)}</BlogSettingsProvider>
+        </QueryClientProvider>
+      )
     }
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
-    routerState.fonts = undefined
+    settingsState.fonts = undefined
     setSlotMock.mockReset()
     setSlotMock.mockResolvedValue({})
   })
 
-  it('seeds the slots from the root loader settings', () => {
-    routerState.fonts = makeFonts({ global: ['a'], post: ['b'] })
+  it('seeds the slots from the document settings fonts section', () => {
+    settingsState.fonts = makeFonts({ global: ['a'], post: ['b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     expect(result.current.slots).toEqual({ global: ['a'], post: ['b'], code: [] })
   })
 
-  it('reseeds when the loader data changes while idle', () => {
-    routerState.fonts = makeFonts({ global: ['a'] })
+  it('leaves the slots empty while the fonts section is absent', () => {
+    const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
+    expect(result.current.slots).toEqual({ global: [], post: [], code: [] })
+  })
+
+  it('reseeds when the settings section changes while idle', () => {
+    settingsState.fonts = makeFonts({ global: ['a'] })
     const { result, rerender } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
-    routerState.fonts = makeFonts({ global: ['a', 'b'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'b'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a', 'b'])
   })
@@ -160,7 +172,7 @@ describe('useFontSlotsController', () => {
           resolveSetSlot = resolve
         }),
     )
-    routerState.fonts = makeFonts({ global: ['a'] })
+    settingsState.fonts = makeFonts({ global: ['a'] })
     const { result, rerender } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -168,14 +180,14 @@ describe('useFontSlotsController', () => {
     })
     expect(result.current.slots.global).toEqual(['a', 'x'])
 
-    routerState.fonts = makeFonts({ global: ['a'] })
+    settingsState.fonts = makeFonts({ global: ['a'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a', 'x'])
 
     await act(async () => {
       resolveSetSlot({})
     })
-    routerState.fonts = makeFonts({ global: ['a', 'x', 'y'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'x', 'y'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a', 'x', 'y'])
   })
@@ -188,7 +200,7 @@ describe('useFontSlotsController', () => {
           rejectSetSlot = reject
         }),
     )
-    routerState.fonts = makeFonts({ global: ['a'] })
+    settingsState.fonts = makeFonts({ global: ['a'] })
     const { result, rerender } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -201,7 +213,7 @@ describe('useFontSlotsController', () => {
     })
     expect(toastMock.error).toHaveBeenCalledWith('槽位更新失败', expect.anything())
 
-    routerState.fonts = makeFonts({ global: ['a'] })
+    settingsState.fonts = makeFonts({ global: ['a'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a'])
   })
@@ -215,7 +227,7 @@ describe('useFontSlotsController', () => {
         resolvers.push(() => resolve({}))
       })
     })
-    routerState.fonts = makeFonts({ global: ['a', 'b', 'c'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'b', 'c'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -250,7 +262,7 @@ describe('useFontSlotsController', () => {
       }
       return Promise.resolve({})
     })
-    routerState.fonts = makeFonts({ global: ['a', 'b'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -271,7 +283,7 @@ describe('useFontSlotsController', () => {
   })
 
   it('persists both slots on a cross-slot move', async () => {
-    routerState.fonts = makeFonts({ global: ['a'], post: ['b'] })
+    settingsState.fonts = makeFonts({ global: ['a'], post: ['b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     await act(async () => {
       result.current.moveToSlot('a', 'post', undefined, 'global')
@@ -282,7 +294,7 @@ describe('useFontSlotsController', () => {
   })
 
   it('rejects a duplicate move with a toast and does not persist', () => {
-    routerState.fonts = makeFonts({ global: ['a'] })
+    settingsState.fonts = makeFonts({ global: ['a'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     act(() => {
       result.current.moveToSlot('a', 'global', undefined)
@@ -293,7 +305,7 @@ describe('useFontSlotsController', () => {
   })
 
   it('rejects moves beyond the slot cap', () => {
-    routerState.fonts = makeFonts({ global: ['1', '2', '3', '4', '5', '6', '7', '8'] })
+    settingsState.fonts = makeFonts({ global: ['1', '2', '3', '4', '5', '6', '7', '8'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     act(() => {
       result.current.moveToSlot('9', 'global', undefined)
@@ -303,7 +315,7 @@ describe('useFontSlotsController', () => {
   })
 
   it('reorder commits and persists the new order', async () => {
-    routerState.fonts = makeFonts({ global: ['a', 'b'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     await act(async () => {
       result.current.reorder('global', 0, 1)
@@ -313,7 +325,7 @@ describe('useFontSlotsController', () => {
   })
 
   it('remove filters the id and persists', async () => {
-    routerState.fonts = makeFonts({ global: ['a', 'b'] })
+    settingsState.fonts = makeFonts({ global: ['a', 'b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
     await act(async () => {
       result.current.remove('global', 'a')

@@ -8,7 +8,7 @@ beforeEach(() => {
   vi.resetModules()
 })
 
-describe('client/hooks/useThumbhashBackground — initial-return gating', () => {
+describe('lib/useThumbhashBackground — initial-return gating', () => {
   it('returns undefined when thumbhash is undefined', async () => {
     const { useThumbhashBackground } = await importModule()
     const style = renderHook(() => useThumbhashBackground(undefined))
@@ -34,7 +34,7 @@ describe('client/hooks/useThumbhashBackground — initial-return gating', () => 
   })
 })
 
-describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
+describe('lib/useThumbhashBackground — decoder determinism', () => {
   it('the shared decoder is deterministic for a given thumbhash', async () => {
     const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
@@ -51,7 +51,7 @@ describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
   })
 })
 
-describe('client/hooks/useThumbhashBackground — decode-failure fallback', () => {
+describe('lib/useThumbhashBackground — decode-failure fallback', () => {
   afterEach(() => {
     vi.doUnmock('@kobato/utils/thumbhash')
   })
@@ -67,7 +67,7 @@ describe('client/hooks/useThumbhashBackground — decode-failure fallback', () =
   })
 })
 
-describe('client/hooks/useThumbhashBackground — input transitions', () => {
+describe('lib/useThumbhashBackground — input transitions', () => {
   it('returns undefined when loaded is true even with a valid thumbhash', async () => {
     const { useThumbhashBackground } = await importModule()
     expect(renderHook(() => useThumbhashBackground(VALID_THUMBHASH_A, true))).toBeUndefined()
@@ -80,7 +80,7 @@ describe('client/hooks/useThumbhashBackground — input transitions', () => {
 })
 
 async function importModule() {
-  return import('@kobato/web-kit/ui/widgets/use-thumbhash-bg')
+  return import('@kobato/ui/lib/use-thumbhash-bg')
 }
 
 function decodeBase64(value: string): Uint8Array {

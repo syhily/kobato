@@ -1,22 +1,18 @@
 import '@sayaka/zod-config'
-import type { ContentBootstrapI18n } from '@kobato/api/contracts/public/content'
 import type { ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { setCsrfToken } from '@kobato/api/browser/client'
 import { makeQueryClient } from '@kobato/api/browser/query-client'
 import { bundleFromMatches, i18nFromMatches, routeMeta } from '@kobato/catalog/seo/meta'
-import { fallbackMessages } from '@kobato/i18n/fallback-messages'
-import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import { isWebmentionReceiveEnabled } from '@kobato/settings/getters'
+import { DocumentProviders } from '@kobato/ui/components/document-shell/DocumentProviders'
+import { DocumentShell } from '@kobato/ui/components/document-shell/DocumentShell'
 import { LazyMotionConfig } from '@kobato/ui/components/lazy-motion'
-import { defaultFontStackFor } from '@kobato/ui/lib/font-stacks'
-import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { defaultTransition } from '@kobato/ui/lib/motion'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
 import { isRecord } from '@kobato/utils/type-guards'
-import { ChunkReloadOverlay } from '@kobato/web-kit/ui/chrome/ChunkReloadOverlay'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
-import { LocaleSyncProvider } from '@kobato/web-kit/ui/lib/LocaleSyncProvider'
+import { documentFactsFrom } from '@sayaka/document/document-facts'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@sayaka/document/use-chunk-error-recovery'
 import { useFocusHash } from '@sayaka/document/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@sayaka/document/use-ios-no-zoom'
@@ -31,8 +27,7 @@ import { ErrorView } from '@sayaka/ui/chrome/ErrorView'
 import { NavigationSplash } from '@sayaka/ui/chrome/NavigationSplash'
 import { RumConsentBanner } from '@sayaka/ui/chrome/RumConsentBanner'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { type ReactNode, Suspense, lazy, useLayoutEffect, useState } from 'react'
-import { preconnect, prefetchDNS } from 'react-dom'
+import { type ReactNode, Suspense, lazy, useLayoutEffect, useMemo, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, redirect, useMatches, useRouteLoaderData } from 'react-router'
 import '@kobato/ui/styles/ui.css'
 
@@ -105,113 +100,38 @@ export function shouldRevalidate({ formAction, defaultShouldRevalidate }: Should
   return false
 }
 
+type RootLoaderData = Route.ComponentProps['loaderData']
+
 export function Layout({ children }: { children: ReactNode }) {
-  const rootData = useRouteLoaderData<{
-    admin?: boolean
-    theme?: 'dark' | 'light' | null
-    blogSettings?: {
-      assets?: { asset?: { host?: string; scheme?: 'http' | 'https' } | null } | null
-      siteIdentity?: { locale?: string } | null
-      webmentions?: { webmention?: { receiveEnabled?: boolean } } | null
-    } | null
-    criticalLinks?: string[]
-    fonts?: {
-      global: { family: string; href: string }[]
-      post: { family: string; href: string }[]
-      code: { family: string; href: string }[]
-    } | null
-    csrfToken?: string
-    cspNonce?: string
-    i18n?: ContentBootstrapI18n | null
-    tier2Chunks?: string[]
-  }>('root')
-  const theme = rootData?.theme ?? null
-  const asset = rootData?.blogSettings?.assets?.asset
-  const fonts = rootData?.fonts
-  const globalFonts = fonts?.global ?? []
-  const postFonts = fonts?.post ?? []
-  const codeFonts = fonts?.code ?? []
-
-  const matches = useMatches()
-  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
-  const activePostFonts = wantsPostFonts ? postFonts : []
-  const activeCodeFonts = wantsPostFonts ? codeFonts : []
-
-  const fontOrigins = new Set<string>()
-  for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
-    if (!f.href) {
-      continue
-    }
-    try {
-      const origin = new URL(f.href).origin
-      if (origin) {
-        fontOrigins.add(origin)
-      }
-    } catch {}
-  }
-
-  const assetOrigin = asset?.host ? `${asset.scheme ?? 'https'}://${asset.host}` : null
-  if (assetOrigin !== null) {
-    fontOrigins.add(assetOrigin)
-    preconnect(assetOrigin, { crossOrigin: 'anonymous' })
-  }
-  for (const origin of fontOrigins) {
-    preconnect(origin)
-    prefetchDNS(origin)
-  }
-
-  const criticalLinks = rootData?.criticalLinks ?? []
-  const tier2Chunks = rootData?.tier2Chunks ?? []
-
-  const i18n = rootData?.i18n ?? null
-  const locale: AppLocale = i18n?.locale ?? DEFAULT_LOCALE
-  const messages = i18n?.messages ?? fallbackMessages
-
-  const htmlStyle: Record<string, string> = {}
-  const defaultFonts = defaultFontStackFor(locale)
-  if (globalFonts.length > 0) {
-    const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-body'] = `${stack}, ${defaultFonts.body}`
-  }
-  if (activePostFonts.length > 0) {
-    const stack = activePostFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-serif'] = `${stack}, ${defaultFonts.serif}`
-  }
-  if (activeCodeFonts.length > 0) {
-    const stack = activeCodeFonts.map((f) => `'${f.family}'`).join(', ')
-    htmlStyle['--font-code'] = `${stack}, ${defaultFonts.code}`
-  }
+  const rootData = useRouteLoaderData<RootLoaderData>('root')
+  const facts = useMemo(() => documentFactsFrom(rootData), [rootData])
+  const wantsPostFonts = useMatches().some((m) => isRecord(m.handle) && m.handle.postFonts === true)
+  const nonce = rootData?.cspNonce
 
   return (
-    <html
-      lang={locale}
-      className={theme ?? undefined}
-      style={Object.keys(htmlStyle).length > 0 ? htmlStyle : undefined}
+    <DocumentShell
+      facts={facts}
+      postFonts={wantsPostFonts}
+      head={
+        <>
+          <Meta />
+          <Links />
+          {isWebmentionReceiveEnabled(rootData?.blogSettings) && <link rel="webmention" href="/webmention" />}
+          {(rootData?.criticalLinks ?? []).map((href) => (
+            <link key={href} rel="modulepreload" href={href} />
+          ))}
+        </>
+      }
+      bodyEnd={
+        <>
+          <ScrollRestoration nonce={nonce} />
+          <Scripts nonce={nonce} />
+          <RouteWarmupScript chunks={rootData?.tier2Chunks ?? []} nonce={nonce} />
+        </>
+      }
     >
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content={theme ?? 'light dark'} />
-        {globalFonts.map((f) => (f.href ? <link key={`g-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
-        {activePostFonts.map((f) => (f.href ? <link key={`p-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
-        {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
-        <Meta />
-        <Links />
-        {isWebmentionReceiveEnabled(rootData?.blogSettings) && <link rel="webmention" href="/webmention" />}
-        {criticalLinks.map((href) => (
-          <link key={href} rel="modulepreload" href={href} />
-        ))}
-      </head>
-      <body>
-        <I18nProvider locale={locale} messages={messages}>
-          {children}
-          <ChunkReloadOverlay />
-          <ScrollRestoration nonce={rootData?.cspNonce} />
-          <Scripts nonce={rootData?.cspNonce} />
-          <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
-        </I18nProvider>
-      </body>
-    </html>
+      {children}
+    </DocumentShell>
   )
 }
 
@@ -236,22 +156,13 @@ export default function App({ loaderData }: Route.ComponentProps) {
   useChunkErrorRecovery()
   const [queryClient] = useState(() => makeQueryClient())
 
-  const i18n = loaderData.i18n
-  const locale = i18n?.locale ?? DEFAULT_LOCALE
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
-        <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-          <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
-            <LocaleSyncProvider locale={locale} revision={i18n?.revision}>
-              <NavigationSplash />
-              <Outlet />
-              {showConsentBanner ? <RumConsentBanner onAccept={consent.accept} onDecline={consent.decline} /> : null}
-            </LocaleSyncProvider>
-          </LazyMotionConfig>
-        </BlogSettingsProvider>
-      </ThemeProvider>
+      <DocumentProviders>
+        <NavigationSplash />
+        <Outlet />
+        {showConsentBanner ? <RumConsentBanner onAccept={consent.accept} onDecline={consent.decline} /> : null}
+      </DocumentProviders>
     </QueryClientProvider>
   )
 }

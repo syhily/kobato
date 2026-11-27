@@ -2,10 +2,10 @@ import type { MySessionItem } from '@kobato/api/contracts/account/self'
 
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { LogOutIcon, MonitorIcon } from 'lucide-react'
 
 import { maskIp } from '@/ui/shared/mask'

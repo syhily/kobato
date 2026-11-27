@@ -4,8 +4,8 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpc } from '@kobato/api/browser/client'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
+import { BrandLogo } from '@kobato/ui/components/BrandLogo'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { BrandLogo } from '@kobato/web-kit/ui/chrome/BrandLogo'
 import { useState } from 'react'
 import { data, redirect, useNavigation } from 'react-router'
 

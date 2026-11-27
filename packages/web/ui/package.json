@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@base-ui/react": "catalog:",
+    "@kobato/assets": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",

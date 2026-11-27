@@ -1,10 +1,10 @@
+import { useDocumentFacts } from '@kobato/ui/lib/document-facts-context'
 import { useEffect, useState } from 'react'
-import { useRouteLoaderData } from 'react-router'
 
 const REFRESH_MS = 60_000
 
-export function useChromeClock(): Date {
-  const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
+export function useDocumentClock(): Date {
+  const nowIso = useDocumentFacts().nowIso
   const [fallbackNow] = useState(() => new Date())
   const [mountedNow, setMountedNow] = useState<Date | null>(null)
   useEffect(() => {

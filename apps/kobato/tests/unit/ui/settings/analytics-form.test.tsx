@@ -12,7 +12,7 @@ function renderUi(ui: ReactElement) {
 import type { AnalyticsSettings } from '@kobato/settings/types'
 
 import { mockTanstackQuery } from '@kobato/test/mock-react-query'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UseFileUploadOptions } from '@/ui/shared/use-file-upload'

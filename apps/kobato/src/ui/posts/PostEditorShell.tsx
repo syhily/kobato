@@ -9,7 +9,7 @@ import type { NavigateFunction } from 'react-router'
 import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
-import { useContentSettings } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { useContentSettings } from '@kobato/ui/lib/blog-settings-context'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { EditorScreen } from '@/ui/editor-shell/EditorScreen'

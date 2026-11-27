@@ -3,6 +3,8 @@
 import type { ComponentProps } from 'react'
 
 import { asRoute } from '@kobato/test/route-test-utils'
+import { DocumentFactsProvider } from '@kobato/ui/lib/document-facts-context'
+import { documentFactsFor } from '@kobato/ui/tests/utils/document-facts'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
@@ -16,7 +18,6 @@ vi.mock('react-router', async (importOriginal) => {
     ...actual,
     Form: (props: ComponentProps<'form'>) => <form {...props} />,
     useNavigation: () => ({ state: 'idle', formMethod: null }),
-    useRouteLoaderData: () => undefined,
   }
 })
 
@@ -25,7 +26,9 @@ const AdminInstallRoute = asRoute(AdminInstallRouteRaw)
 function setupPage(setupTokenVerified: boolean) {
   return wrapWithI18n(
     <MemoryRouter>
-      <AdminInstallRoute loaderData={{ setupTokenVerified, csrfToken: 'csrf-setup' }} />
+      <DocumentFactsProvider value={documentFactsFor()}>
+        <AdminInstallRoute loaderData={{ setupTokenVerified, csrfToken: 'csrf-setup' }} />
+      </DocumentFactsProvider>
     </MemoryRouter>,
   )
 }

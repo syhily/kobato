@@ -1,10 +1,10 @@
 import type { ImgHTMLAttributes, Ref, CSSProperties } from 'react'
 
 import { getImageSrcset, getImageUrl } from '@kobato/assets/images'
+import { useAssetsSettings, useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
-import { useAssetsSettings, useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
-import { useImageLoaded } from '@kobato/web-kit/ui/widgets/use-image-loaded'
-import { useThumbhashBackground } from '@kobato/web-kit/ui/widgets/use-thumbhash-bg'
+import { useImageLoaded } from '@kobato/ui/lib/use-image-loaded'
+import { useThumbhashBackground } from '@kobato/ui/lib/use-thumbhash-bg'
 
 export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'width' | 'height' | 'ref'> {
   src: string

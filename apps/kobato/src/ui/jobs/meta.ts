@@ -3,8 +3,8 @@ import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BadgeProps } from '@kobato/ui/components/badge'
 
+import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { formatLocalDate } from '@kobato/utils/site-date'
-import { useSiteIdentity } from '@kobato/web-kit/ui/lib/blog-settings-context'
 
 export type TaskKey = JobSummaryDto['taskKey']
 

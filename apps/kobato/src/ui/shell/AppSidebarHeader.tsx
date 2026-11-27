@@ -1,7 +1,7 @@
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
 import { SidebarHeader } from '@kobato/ui/components/sidebar'
+import { useAssetsSettingsOptional } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useAssetsSettingsOptional } from '@kobato/web-kit/ui/lib/blog-settings-context'
 import { SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'

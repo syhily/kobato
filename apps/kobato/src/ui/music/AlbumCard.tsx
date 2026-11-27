@@ -1,9 +1,9 @@
 import type { AdminMusicDto } from '@kobato/api/contracts/admin/music'
 import type { MouseEvent } from 'react'
 
+import { Image } from '@kobato/ui/components/Image'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { Play, Pause } from 'lucide-react'
 
 import { Equalizer } from '@/ui/music/Equalizer'

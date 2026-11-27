@@ -14,7 +14,7 @@ import type { MailLoaderShape } from '@kobato/settings/projection'
 import { projectMailForAdmin } from '@kobato/settings/projection'
 import { mailDefaults } from '@kobato/settings/sections/mail'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MailForm } from '@/ui/settings/mail/MailForm'

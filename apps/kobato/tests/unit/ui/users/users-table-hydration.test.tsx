@@ -1,7 +1,9 @@
 import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { DocumentFactsProvider } from '@kobato/ui/lib/document-facts-context'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
+import { documentFactsFor } from '@kobato/ui/tests/utils/document-facts'
 // @vitest-environment jsdom
 import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
@@ -25,13 +27,15 @@ function tree(nowIso: string) {
       id: 'root',
       path: '*',
       element: (
-        <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-          <UsersTable rows={rows} config={config} isLoading={false} />
-        </I18nProvider>
+        <DocumentFactsProvider value={documentFactsFor({ nowIso })}>
+          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+            <UsersTable rows={rows} config={config} isLoading={false} />
+          </I18nProvider>
+        </DocumentFactsProvider>
       ),
     },
   ]
-  return <RouterProvider router={createMemoryRouter(routes, { hydrationData: { loaderData: { root: { nowIso } } } })} />
+  return <RouterProvider router={createMemoryRouter(routes)} />
 }
 
 const mounted: HTMLElement[] = []

@@ -4,7 +4,7 @@ import { LOCALE_DISPLAY_NAMES, SUPPORTED_LOCALES, type AppLocale } from '@kobato
 import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@kobato/ui/components/combobox'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@kobato/ui/components/select'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { useLocaleSyncPublish } from '@kobato/web-kit/ui/lib/LocaleSyncProvider'
+import { useLocaleSyncPublish } from '@kobato/ui/lib/LocaleSyncProvider'
 import { useEffect, useMemo, useRef } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
 

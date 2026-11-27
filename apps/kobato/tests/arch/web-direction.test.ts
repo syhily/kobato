@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
@@ -76,5 +77,19 @@ describe('web direction', () => {
 
   it('keeps route title/meta resolution in the app layer: no web package or workspace UI module imports @kobato/catalog/seo', () => {
     expect(offendersImporting([KIT_ROOT, UI_ROOT, WORKSPACE_UI_ROOT], ['@kobato/catalog/seo'])).toEqual([])
+  })
+
+  it('keeps root route data behind the document shell: no web package module reads useRouteLoaderData', () => {
+    const files: string[] = []
+    for (const root of [KIT_ROOT, UI_ROOT]) {
+      walk(`${REPO_ROOT}/${root}`, files)
+    }
+
+    const offenders = files
+      .filter((file) => /\buseRouteLoaderData\b/.test(stripComments(readFileSync(file, 'utf8'))))
+      .map((file) => relative(REPO_ROOT, file))
+      .sort()
+
+    expect(offenders, 'a shared hook takes document facts from @kobato/ui/lib/document-facts-context').toEqual([])
   })
 })

@@ -13,8 +13,9 @@ runtime state):
   (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
   editor with a React-free `/headless/` document model and the `/comment/` comment surface), the two front-end packages
-  under `packages/web/` — `ui` (`@kobato/ui`, the design system) and `kit` (`web-kit`, the cross-surface kit; the admin
-  UI lives in `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves under `packages/shared/*`.
+  under `packages/web/` — `ui` (`@kobato/ui`, the design system and the document shell both app roots mount) and `kit`
+  (`web-kit`, the procedure-calling cross-surface features; the admin UI lives in `apps/kobato/src/ui` per ADR-0009) —
+  and eight isomorphic React-free leaves under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 
@@ -85,14 +86,17 @@ section pins the direction graph only — package composition rules live in each
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
-- Web direction: `packages/web` holds two packages, `@kobato/ui` (`packages/web/ui`, the design system) and
-  `@kobato/web-kit` (`packages/web/kit`) — the admin UI lives in `apps/kobato/src/ui` and the public UI in
-  `apps/sayaka/src/ui` (ADR-0009). The kit imports neither app, neither consuming UI tree, nor a shared leaf beyond its
-  declarations. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit; kobato's `src/ui`
-  imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato allows it tests-only). The
-  browser oRPC client is typed exclusively through `@kobato/api`.
-- `@kobato/ui` → `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`, `sanitize`,
-  `utils`.
+- Web direction: `packages/web` holds two packages, `@kobato/ui` (`packages/web/ui`, the design system and the document
+  shell) and `@kobato/web-kit` (`packages/web/kit`, the features both front-ends render that call a procedure) — the
+  admin UI lives in `apps/kobato/src/ui` and the public UI in `apps/sayaka/src/ui` (ADR-0009). `@kobato/ui` imports no
+  `@kobato/api` module and no React Router: a front-end module that calls a procedure is a kit module or an app's own,
+  and root route data reaches shared modules only as document facts through the document shell
+  (`packages/web/ui/src/components/document-shell`, ADR-0011 §1). The kit imports neither app, neither consuming UI
+  tree, nor a shared leaf beyond its declarations. The public site is `apps/sayaka` — an app, not a leaf — and may
+  import the kit; kobato's `src/ui` imports the kit and never sayaka. Web packages never import `@kobato/server` (kobato
+  allows it tests-only). The browser oRPC client is typed exclusively through `@kobato/api`.
+- `@kobato/ui` → `assets`, `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`,
+  `sanitize`, `utils`.
 - `apps/kobato/src/routes/*` wire only: extract request context, call orchestrators, render.
 - `apps/sayaka` is the public-front-end split (ADR-0009): it never imports `@kobato/server` or `@kobato/db` and never
   touches the database — it reaches `kobato` exclusively over oRPC (`createKobatoServerClient` from `@kobato/api`) and

@@ -7,10 +7,11 @@ import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { useDocumentCsrfToken } from '@kobato/ui/lib/use-document-csrf-token'
 import { formatBytes } from '@kobato/utils/format'
 import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { type ChangeEvent, type SyntheticEvent, useEffect, useRef, useState } from 'react'
-import { Form, useNavigation, useRouteLoaderData } from 'react-router'
+import { Form, useNavigation } from 'react-router'
 
 import { useFileUpload } from '@/ui/shared/use-file-upload'
 
@@ -19,17 +20,12 @@ const inputClasses =
 
 type InstallMode = 'install' | 'restore'
 
-function useCsrfToken(): string | undefined {
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  return rootData?.csrfToken
-}
-
 export function AdminInstallForm({ locale: selectedLocale = DEFAULT_LOCALE }: { locale?: AppLocale }) {
   const { locale, t } = useI18n()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
-  const csrfToken = useCsrfToken()
+  const csrfToken = useDocumentCsrfToken()
 
   const [mode, setMode] = useState<InstallMode>('install')
   const [restoreError, setRestoreError] = useState<string | null>(null)

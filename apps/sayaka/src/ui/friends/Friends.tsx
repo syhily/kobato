@@ -1,8 +1,8 @@
 import type { Friend } from '@kobato/catalog/model'
 
+import { Image } from '@kobato/ui/components/Image'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { shuffle } from '@kobato/utils/sampling'
-import { Image } from '@kobato/web-kit/ui/widgets/Image'
 import { useMemo } from 'react'
 
 export interface FriendsProps {

@@ -4,9 +4,11 @@ import type { ReactElement, ReactNode } from 'react'
 import { uiMessagesFor } from '@kobato/i18n/catalog'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { BlogSettingsProvider } from '@kobato/ui/lib/blog-settings-context'
+import { DocumentFactsProvider } from '@kobato/ui/lib/document-facts-context'
 import { I18nProvider } from '@kobato/ui/lib/I18nProvider'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
-import { BlogSettingsProvider } from '@kobato/web-kit/ui/lib/blog-settings-context'
+import { TEST_DOCUMENT_FACTS } from '@kobato/ui/tests/utils/document-facts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
@@ -25,9 +27,11 @@ export function renderToHtml(element: ReactElement): string {
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-            {element}
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+              {element}
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -46,9 +50,11 @@ export function renderInRouter(
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale={locale} messages={locale === 'zh-CN' ? uiMessagesZhCN : uiMessagesFor(locale)}>
-            <RouterProvider router={router} />
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale={locale} messages={locale === 'zh-CN' ? uiMessagesZhCN : uiMessagesFor(locale)}>
+              <RouterProvider router={router} />
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -68,9 +74,11 @@ export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, o
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-            <RouterProvider router={router} />
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+              <RouterProvider router={router} />
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -82,9 +90,11 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-            {element}
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+              {element}
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,
@@ -103,9 +113,11 @@ export async function prerenderInRouter(node: ReactNode, initialPath: string = '
     <QueryClientProvider client={testQueryClient}>
       <ThemeProvider>
         <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-          <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
-            <RouterProvider router={router} />
-          </I18nProvider>
+          <DocumentFactsProvider value={TEST_DOCUMENT_FACTS}>
+            <I18nProvider locale="zh-CN" messages={uiMessagesZhCN}>
+              <RouterProvider router={router} />
+            </I18nProvider>
+          </DocumentFactsProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>,

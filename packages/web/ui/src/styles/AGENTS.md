@@ -10,8 +10,9 @@ additional product styles here).
 ## Generic styles
 
 - `ui.css` is the design system's own compilation entry (tokens/typeset; scans only `components/`, `icons/`, `lib/`).
-  The kobato app imports it once per document, eagerly from `apps/kobato/src/root.tsx` — route-level re-imports are
-  forbidden; other consumers import it directly.
+  Every utility the document shell, `BrandLogo`, `Image`, the locale-sync notice, and the reload overlay use is emitted
+  here — the apps import it once per document, eagerly from `apps/kobato/src/root.tsx` and `apps/sayaka/src/root.tsx` —
+  route-level re-imports are forbidden; other consumers import it directly.
 - `dark-variant.css` — the single `dark` variant (`.dark` class, or `prefers-color-scheme` when unset); import it
   unlayered before any utility compile. Partials composed into app surfaces must not re-declare it
   (`apps/kobato/tests/arch/tailwind-source-ownership.test.ts`).
@@ -41,7 +42,8 @@ additional product styles here).
 
 `tailwind.css` owns the default `--font-body` / `--font-serif` chains: zh-CN at `:root`, `:lang(en-US)` / `:lang(zh-TW)`
 / `:lang(zh-HK)` overrides — keep them in lockstep with `DEFAULT_FONT_STACKS` in
-`packages/web/ui/src/lib/font-stacks.ts`.
+`packages/web/ui/src/lib/font-stacks.ts`, the map the document shell's head planner appends to the configured font
+stacks (`components/document-shell/document-head.ts`).
 
 ## Shadow tiers
 

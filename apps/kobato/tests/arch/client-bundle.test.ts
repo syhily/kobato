@@ -359,6 +359,7 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
 
 const INKLING_LABEL_LOADER = 'packages/inkling/src/labels/load-inkling-labels.ts'
 const ROOT_LABEL_READER = 'apps/kobato/src/ui/shared/use-inkling-labels.ts'
+const DOCUMENT_LABEL_READER = 'packages/web/ui/src/lib/use-document-labels.ts'
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {
     expect(collectServerOnlyImportViolations(collectScannedFiles(), INKLING_LABEL_RULE)).toEqual([])
@@ -372,11 +373,17 @@ describe('inkling label bundle boundary', () => {
     }
   })
 
-  it('the workspace label hook reads the root payload and never a table', () => {
+  it('the workspace label hook reads the document-shell payload and never a table or the route loader', () => {
     const source = readFileSync(join(PROJECT_ROOT, ROOT_LABEL_READER), 'utf-8')
-    expect(source).toContain("from 'react-router'")
-    expect(source).toContain('useRouteLoaderData')
+    expect(source).toContain("from '@kobato/ui/lib/use-document-labels'")
+    expect(source).not.toContain("from 'react-router'")
+    expect(source).not.toContain('useRouteLoaderData')
     expect(source).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
+
+    const documentReader = readFileSync(join(PROJECT_ROOT, DOCUMENT_LABEL_READER), 'utf-8')
+    expect(documentReader).toContain("from '@kobato/ui/lib/document-facts-context'")
+    expect(documentReader).not.toContain('useRouteLoaderData')
+    expect(documentReader).not.toMatch(/^import (?!type\b).*inkling-labels\//m)
   })
 
   it('tripwire: reports a table import and ignores the type-only key import', () => {
