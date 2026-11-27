@@ -1,4 +1,6 @@
-import { resolve } from 'node:path'
+import { realpathSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
 
 export type SeaApp = 'kobato' | 'sayaka'
 
@@ -7,9 +9,20 @@ export const SEA_APPS: readonly SeaApp[] = ['kobato', 'sayaka']
 export const repoRoot = resolve(import.meta.dirname, '..', '..', '..', '..')
 
 export const OBSERVABILITY_SOURCE_ASSETS_DIR = 'packages/server/src/domains/observability/assets'
+const KOBATO_APP_PACKAGE = 'apps/kobato/package.json'
+const WORKSPACE_PACKAGE = '@kobato/web-admin'
 
 export function observabilitySourceAssetsDir(): string {
   return resolve(repoRoot, OBSERVABILITY_SOURCE_ASSETS_DIR)
+}
+
+export function adminPackageDir(): string {
+  const requireFromKobato = createRequire(resolve(repoRoot, KOBATO_APP_PACKAGE))
+  return realpathSync(dirname(requireFromKobato.resolve(`${WORKSPACE_PACKAGE}/package.json`)))
+}
+
+export function adminClientBuildDir(): string {
+  return resolve(adminPackageDir(), 'build', 'client')
 }
 
 export const SEA_SENTINEL_FUSE = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'

@@ -3,7 +3,7 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const CLIENT_DIR = join(PROJECT_ROOT, 'apps/kobato/build/client')
+const CLIENT_DIR = join(PROJECT_ROOT, 'packages/web/admin/build/client')
 const SERVER_DIR = join(PROJECT_ROOT, 'apps/kobato/build/server')
 
 const RUM_SDK_MARKERS = ['o2-api-key', 'x-openobserve-trace-id', 'o2-evp-origin'] as const
@@ -49,7 +49,7 @@ const required = process.env.KOBATO_REQUIRE_PRODUCTION_BUILD === '1'
 
 if (required && !available) {
   throw new Error(
-    'KOBATO_REQUIRE_PRODUCTION_BUILD=1 but build/client or build/server is missing; the production guard must not silently skip.',
+    'KOBATO_REQUIRE_PRODUCTION_BUILD=1 but the workspace build/client or the backend build/server is missing; the production guard must not silently skip.',
   )
 }
 

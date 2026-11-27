@@ -2,10 +2,9 @@ import { COMMENT_EDITOR_NODES } from '@kobato/inkling/comment/editor/comment-edi
 import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schema'
 import { COMMENT_NODE_TYPES, FULL_EDITOR_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { PAGE_EDITOR_NODES } from '@kobato/web-admin/ui/editor/page-editor-nodes'
 import { ARTICLE_COMPOSER_NODE_TYPES, COMMENT_COMPOSER_NODE_TYPES } from '@tests/arch/composer-nodes'
 import { describe, expect, it } from 'vitest'
-
-import { PAGE_EDITOR_NODES } from '@/ui/editor/page-editor-nodes'
 
 function element(type: string, children: unknown[] = [], extra: Record<string, unknown> = {}) {
   return { type, version: 1, children, direction: 'ltr', format: '', indent: 0, ...extra }

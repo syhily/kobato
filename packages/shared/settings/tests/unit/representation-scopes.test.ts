@@ -139,7 +139,7 @@ describe('settings/representation-scopes — dependency table', () => {
       'packages/server/src/render',
       'packages/server/src/http/loaders',
       'apps/sayaka/src/server/site-files.ts',
-      'apps/kobato/src/root.tsx',
+      'packages/web/admin/src/root.tsx',
     ]
     const files: string[] = []
     for (const root of roots) {

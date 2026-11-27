@@ -33,10 +33,9 @@ const SHUTDOWN_TIMEOUT_MS = 15_000
 const VERSION_TIMEOUT_MS = 30_000
 const SEA_MODE = process.argv.includes('--sea')
 const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url))
-const kobatoCwd = join(repoRoot, 'apps/kobato')
 const kobatoBinary = join(repoRoot, 'dist-sea/kobato')
 const sayakaBinary = join(repoRoot, 'dist-sea/sayaka')
-const kobatoNodeEntry = join(kobatoCwd, 'build/server/index.js')
+const kobatoNodeEntry = join(repoRoot, 'apps/kobato/build/server/index.js')
 const sayakaNodeEntry = join(repoRoot, 'apps/sayaka/build/server/index.js')
 const kobatoCommand = SEA_MODE ? kobatoBinary : process.execPath
 const sayakaCommand = SEA_MODE ? sayakaBinary : process.execPath
@@ -597,9 +596,7 @@ function smokeLexicalBody(): Record<string, unknown> {
 }
 
 async function main(): Promise<void> {
-  for (const artifact of SEA_MODE
-    ? [kobatoBinary, sayakaBinary]
-    : [join(kobatoCwd, 'build/server/index.js'), sayakaNodeEntry]) {
+  for (const artifact of SEA_MODE ? [kobatoBinary, sayakaBinary] : [kobatoNodeEntry, sayakaNodeEntry]) {
     await stat(artifact).catch(() => {
       throw new Error(`${artifact} not found — run ${SEA_MODE ? 'pnpm run sea:build' : 'pnpm run build'} first`)
     })
@@ -669,7 +666,7 @@ async function main(): Promise<void> {
       kobatoBaseArgs,
       ['--config', configPath],
       {},
-      SEA_MODE ? dirs.cwd : kobatoCwd,
+      dirs.cwd,
       kobatoPort,
       kobatoLog,
     )
@@ -790,7 +787,7 @@ async function main(): Promise<void> {
       kobatoBaseArgs,
       ['--config', configPath],
       {},
-      SEA_MODE ? dirs.cwd : kobatoCwd,
+      dirs.cwd,
       kobatoPort,
       kobatoLog,
     )
@@ -1917,7 +1914,7 @@ async function main(): Promise<void> {
       kobatoBaseArgs,
       ['--config', configPath],
       {},
-      SEA_MODE ? dirs.cwd : kobatoCwd,
+      dirs.cwd,
       kobatoPort,
       kobatoLog,
     )

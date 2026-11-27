@@ -756,30 +756,9 @@ importers:
 
   apps/kobato:
     devDependencies:
-      '@dnd-kit/core':
-        specifier: 'catalog:'
-        version: 6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@dnd-kit/modifiers':
-        specifier: 'catalog:'
-        version: 9.0.0(@dnd-kit/core@6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
-      '@dnd-kit/sortable':
-        specifier: 'catalog:'
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
-      '@dnd-kit/utilities':
-        specifier: 'catalog:'
-        version: 3.2.2(react@19.3.1)
       '@kobato/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@kobato/assets':
-        specifier: workspace:*
-        version: link:../../packages/shared/assets
-      '@kobato/auth':
-        specifier: workspace:*
-        version: link:../../packages/shared/auth
-      '@kobato/catalog':
-        specifier: workspace:*
-        version: link:../../packages/shared/catalog
       '@kobato/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -795,9 +774,6 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../tools/pack
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../../packages/shared/sanitize
       '@kobato/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -816,150 +792,36 @@ importers:
       '@kobato/utils':
         specifier: workspace:*
         version: link:../../packages/shared/utils
-      '@kobato/web-kit':
+      '@kobato/web-admin':
         specifier: workspace:*
-        version: link:../../packages/web/kit
-      '@lexical/react':
-        specifier: 'catalog:'
-        version: 0.53.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)(yjs@13.6.33)
-      '@napi-rs/canvas':
-        specifier: 'catalog:'
-        version: 1.2.1
-      '@number-flow/react':
-        specifier: 'catalog:'
-        version: 0.6.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.10.0
-      '@opentelemetry/sdk-trace':
-        specifier: 'catalog:'
-        version: 3.1.1(@opentelemetry/api@1.10.0)
-      '@orpc/client':
-        specifier: 'catalog:'
-        version: 1.16.6(@opentelemetry/api@1.10.0)
+        version: link:../../packages/web/admin
       '@orpc/server':
         specifier: 'catalog:'
         version: 1.16.6(@opentelemetry/api@1.10.0)(ws@8.23.0)
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.65.1
-      '@react-router/dev':
-        specifier: 'catalog:'
-        version: 8.5.3(react-router@8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-      '@react-router/node':
-        specifier: 'catalog:'
-        version: 8.5.3(react-router@8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)
-      '@simplewebauthn/browser':
-        specifier: 'catalog:'
-        version: 14.0.0
       '@tailwindcss/node':
         specifier: 'catalog:'
         version: 4.3.5
       '@tailwindcss/oxide':
         specifier: 'catalog:'
         version: 4.3.5
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.5(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.108.4(@types/react@19.3.3)(react@19.3.1)
-      '@testing-library/react':
-        specifier: 'catalog:'
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@types/diff-match-patch':
-        specifier: 'catalog:'
-        version: 1.0.36
-      '@types/jsdom':
-        specifier: 'catalog:'
-        version: 30.0.0
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.11
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.3.3
-      '@types/react-dom':
-        specifier: 'catalog:'
-        version: 19.3.0(@types/react@19.3.3)
-      '@unovis/react':
-        specifier: 'catalog:'
-        version: 1.8.1(@unovis/ts@1.8.1(@types/react@19.3.3)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@unovis/ts':
-        specifier: 'catalog:'
-        version: 1.8.1(@types/react@19.3.3)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1))
       bcryptjs:
         specifier: 'catalog:'
         version: 3.0.3
-      date-fns:
-        specifier: 'catalog:'
-        version: 4.4.0
-      diff-match-patch:
-        specifier: 'catalog:'
-        version: 1.0.5
       drizzle-orm:
         specifier: 1.0.0-rc.6
         version: 1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7)
-      fake-indexeddb:
-        specifier: 'catalog:'
-        version: 6.2.8
-      happy-dom:
-        specifier: 'catalog:'
-        version: 21.0.4
-      hono:
-        specifier: 'catalog:'
-        version: 4.13.22
-      idb:
-        specifier: 'catalog:'
-        version: 8.0.4
-      jsdom:
-        specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.2.1)
-      lexical:
-        specifier: 'catalog:'
-        version: 0.53.0(typescript@7.0.2)
-      lucide-react:
-        specifier: 'catalog:'
-        version: 1.81.0(@types/react@19.3.3)(react@19.3.1)
-      motion:
-        specifier: 'catalog:'
-        version: 14.14.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      nodemailer:
-        specifier: 'catalog:'
-        version: 10.6.1
-      react:
-        specifier: 'catalog:'
-        version: 19.3.1
-      react-day-picker:
-        specifier: 'catalog:'
-        version: 10.0.2(@types/react@19.3.3)(react@19.3.1)
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.3.1(react@19.3.1)
-      react-hook-form:
-        specifier: 'catalog:'
-        version: 7.92.0(@types/react@19.3.3)(react@19.3.1)
-      react-router:
-        specifier: 'catalog:'
-        version: 8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      sonner:
-        specifier: 'catalog:'
-        version: 2.0.8(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.5
       vite:
         specifier: 'catalog:'
         version: 8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
-      vite-plugin-svgr:
-        specifier: 'catalog:'
-        version: 5.2.0(typescript@7.0.2)(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
 
   apps/sayaka:
     devDependencies:
@@ -1701,6 +1563,186 @@ importers:
       sharp:
         specifier: 'catalog:'
         version: 0.35.5(@types/node@26.6.11)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+
+  packages/web/admin:
+    devDependencies:
+      '@dnd-kit/core':
+        specifier: 'catalog:'
+        version: 6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@dnd-kit/modifiers':
+        specifier: 'catalog:'
+        version: 9.0.0(@dnd-kit/core@6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+      '@dnd-kit/sortable':
+        specifier: 'catalog:'
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+      '@dnd-kit/utilities':
+        specifier: 'catalog:'
+        version: 3.2.2(react@19.3.1)
+      '@kobato/api':
+        specifier: workspace:*
+        version: link:../../api
+      '@kobato/assets':
+        specifier: workspace:*
+        version: link:../../shared/assets
+      '@kobato/auth':
+        specifier: workspace:*
+        version: link:../../shared/auth
+      '@kobato/catalog':
+        specifier: workspace:*
+        version: link:../../shared/catalog
+      '@kobato/db':
+        specifier: workspace:*
+        version: link:../../db
+      '@kobato/distribution':
+        specifier: workspace:*
+        version: link:../../shared/distribution
+      '@kobato/i18n':
+        specifier: workspace:*
+        version: link:../../shared/i18n
+      '@kobato/inkling':
+        specifier: workspace:*
+        version: link:../../inkling
+      '@kobato/pack':
+        specifier: workspace:*
+        version: link:../../../tools/pack
+      '@kobato/sanitize':
+        specifier: workspace:*
+        version: link:../../shared/sanitize
+      '@kobato/server':
+        specifier: workspace:*
+        version: link:../../server
+      '@kobato/settings':
+        specifier: workspace:*
+        version: link:../../shared/settings
+      '@kobato/test':
+        specifier: workspace:*
+        version: link:../../../tools/test
+      '@kobato/tsconfig':
+        specifier: workspace:*
+        version: link:../../../tools/tsconfig
+      '@kobato/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@kobato/utils':
+        specifier: workspace:*
+        version: link:../../shared/utils
+      '@kobato/web-kit':
+        specifier: workspace:*
+        version: link:../kit
+      '@lexical/react':
+        specifier: 'catalog:'
+        version: 0.53.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@7.0.2)(yjs@13.6.33)
+      '@number-flow/react':
+        specifier: 'catalog:'
+        version: 0.6.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.16.6(@opentelemetry/api@1.10.0)
+      '@react-router/dev':
+        specifier: 'catalog:'
+        version: 8.5.3(react-router@8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      '@react-router/node':
+        specifier: 'catalog:'
+        version: 8.5.3(react-router@8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@7.0.2)
+      '@simplewebauthn/browser':
+        specifier: 'catalog:'
+        version: 14.0.0
+      '@tailwindcss/node':
+        specifier: 'catalog:'
+        version: 4.3.5
+      '@tailwindcss/oxide':
+        specifier: 'catalog:'
+        version: 4.3.5
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.5(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.108.4(@types/react@19.3.3)(react@19.3.1)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/diff-match-patch':
+        specifier: 'catalog:'
+        version: 1.0.36
+      '@types/jsdom':
+        specifier: 'catalog:'
+        version: 30.0.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.11
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.3
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.3)
+      '@unovis/react':
+        specifier: 'catalog:'
+        version: 1.8.1(@unovis/ts@1.8.1(@types/react@19.3.3)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1)))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@unovis/ts':
+        specifier: 'catalog:'
+        version: 1.8.1(@types/react@19.3.3)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1))
+      date-fns:
+        specifier: 'catalog:'
+        version: 4.4.0
+      diff-match-patch:
+        specifier: 'catalog:'
+        version: 1.0.5
+      fake-indexeddb:
+        specifier: 'catalog:'
+        version: 6.2.8
+      happy-dom:
+        specifier: 'catalog:'
+        version: 21.0.4
+      idb:
+        specifier: 'catalog:'
+        version: 8.0.4
+      jsdom:
+        specifier: 'catalog:'
+        version: 31.0.1(@napi-rs/canvas@1.2.1)
+      lexical:
+        specifier: 'catalog:'
+        version: 0.53.0(typescript@7.0.2)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.81.0(@types/react@19.3.3)(react@19.3.1)
+      motion:
+        specifier: 'catalog:'
+        version: 14.14.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react:
+        specifier: 'catalog:'
+        version: 19.3.1
+      react-day-picker:
+        specifier: 'catalog:'
+        version: 10.0.2(@types/react@19.3.3)(react@19.3.1)
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.1(react@19.3.1)
+      react-hook-form:
+        specifier: 'catalog:'
+        version: 7.92.0(@types/react@19.3.3)(react@19.3.1)
+      react-router:
+        specifier: 'catalog:'
+        version: 8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      sonner:
+        specifier: 'catalog:'
+        version: 2.0.8(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.5
+      vite:
+        specifier: 'catalog:'
+        version: 8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1)
+      vite-plugin-svgr:
+        specifier: 'catalog:'
+        version: 5.2.0(typescript@7.0.2)(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))

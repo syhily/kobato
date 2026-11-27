@@ -1,10 +1,10 @@
 build/
-apps/kobato/build/
+packages/web/admin/build/
 dist/
 dist-sea/
 
 .react-router/
-apps/kobato/.react-router/
+packages/web/admin/.react-router/
 .source/
 
 .vite/

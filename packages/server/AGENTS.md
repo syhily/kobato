@@ -188,8 +188,6 @@ canonical-path, frozen-key tested; eligibility is never inferred from the HTTP m
 SSR output products (`seo/`, `feed/`, `og/`, `calendar/`, `warmup/`, `canvas-fonts.ts`, `pretext-layout.ts`) produce
 strings, `Buffer`s, or `Response`s and never persist. `feed`/`calendar` cache keys include locale + `APP_VERSION` +
 their scope revision; renderers receive the request context's PINNED `settings` bundle, never a second snapshot read.
-Route prewarming: `tools/pack/src/vite/route-warmup.ts` tiers ~500 client chunks; `render/warmup/manifest.ts` emits
-critical preloads + idle tiers via inline script.
 
 ## Sessions & request context
 

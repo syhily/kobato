@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const css = readFileSync(resolve(process.cwd(), 'apps/kobato/src/ui/styles/inkling-editor.css'), 'utf8')
+const css = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/ui/styles/inkling-editor.css'), 'utf8')
 const commentCss = readFileSync(resolve(process.cwd(), 'packages/inkling/src/styles/comment-editor.css'), 'utf8')
 
 describe('page editor canvas scope contract', () => {

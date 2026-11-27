@@ -28,7 +28,7 @@ vi.mock('@kobato/api/browser/client', async () => {
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
-vi.mock('@/ui/analytics/PostAnalyticsView', () => ({
+vi.mock('@kobato/web-admin/ui/analytics/PostAnalyticsView', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,
 }))
@@ -38,8 +38,8 @@ const db = getTestDb()
 analytics.handle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analytics.handle)
 
-const adminRoute = await import('@/routes/admin/posts/analytics')
-const editorRoute = await import('@/routes/editor/post/analytics')
+const adminRoute = await import('@kobato/web-admin/routes/admin/posts/analytics')
+const editorRoute = await import('@kobato/web-admin/routes/editor/post/analytics')
 
 const request = new Request('http://localhost/analytics?startAt=1000&endAt=2000')
 

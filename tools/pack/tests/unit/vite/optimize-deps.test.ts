@@ -2,7 +2,7 @@ import { appOptimizeDeps } from '@kobato/pack/vite/optimize-deps'
 import { describe, expect, it } from 'vitest'
 
 describe('appOptimizeDeps', () => {
-  const { include, exclude } = appOptimizeDeps()
+  const { include, exclude } = appOptimizeDeps('packages/web/admin')
 
   it('keeps app-declared entries bare', () => {
     for (const entry of ['zod', 'jsdom', 'react/compiler-runtime']) {
@@ -34,6 +34,13 @@ describe('appOptimizeDeps', () => {
     for (const entry of ['lexical', '@lexical/react/LexicalComposerContext']) {
       expect(include).toContain(entry)
     }
+  })
+
+  it('maps entries the named app does not declare through their workspace owner', () => {
+    const kobato = appOptimizeDeps('apps/kobato')
+    expect(kobato.include).toContain('@kobato/web-admin > react-dom/server')
+    expect(kobato.include).toContain('@kobato/web-admin > zod')
+    expect(kobato.include).not.toContain('zod')
   })
 
   it('excludes the native modules', () => {

@@ -4,10 +4,20 @@ import type { SayakaRequestContext } from '@sayaka/server/request-context'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { loader } from '@sayaka/root'
 import { createSayakaRequestContext, sayakaRequestContext } from '@sayaka/server/request-context'
+import { getWarmupManifest } from '@sayaka/server/warmup-manifest'
 import { RouterContextProvider } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('virtual:kobato-route-warmup', () => ({ default: '' }))
+
+vi.mock('@sayaka/server/warmup-manifest', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sayaka/server/warmup-manifest')>()
+  return { ...actual, getWarmupManifest: vi.fn(actual.getWarmupManifest) }
+})
+
+afterEach(() => {
+  vi.mocked(getWarmupManifest).mockReset()
+})
 
 type LoaderArgs = Parameters<typeof loader>[0]
 
@@ -63,5 +73,27 @@ describe('root loader', () => {
       csrfToken: 'csrf-token',
       installState: 'installed',
     })
+  })
+
+  it('preloads the manifest tier1 and hands tier2, minus the preloads, to the inline idle script', async () => {
+    vi.mocked(getWarmupManifest).mockReturnValue({
+      version: 1,
+      tier1: ['/assets/root.js', '/assets/home.js'],
+      tier2: ['/assets/home.js', '/assets/archives.js', '/assets/archives.js'],
+    })
+    const { args } = makeArgs({})
+
+    const result = await loader(args)
+
+    expect(result.criticalLinks).toEqual(['/assets/root.js', '/assets/home.js'])
+    expect(result.tier2Chunks).toEqual(['/assets/archives.js'])
+  })
+
+  it('renders no idle chunks when the build carries no warmup manifest', async () => {
+    const { args } = makeArgs({})
+
+    const result = await loader(args)
+
+    expect(result.tier2Chunks).toEqual([])
   })
 })

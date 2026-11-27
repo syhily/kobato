@@ -80,7 +80,7 @@ hard floor: React-free at the runtime-closure level (`tests/unit/headless/headle
 - `loadInklingLabels(locale)` is the ONE sanctioned dynamic import of a kobato overlay table
   (`@kobato/i18n/inkling-labels/<locale>`): one chunk per locale, no static table import anywhere in the client
   (`apps/kobato/tests/arch/client-bundle.test.ts`). Reading the same tables off a consumer's root route is host glue and
-  lives in the host (`apps/kobato/src/ui/shared/use-inkling-labels`).
+  lives in the host (`packages/web/admin/src/ui/shared/use-inkling-labels`).
 
 ### Card pipeline
 
@@ -148,7 +148,7 @@ model; the feed downgrade + defensive host-card substitution live server-side
   load-bearing `index.ts` (registers every card at module scope). Card chrome i18n reads `admin.editor.cards.*` through
   `@kobato/ui`'s `useI18n()`.
 - The music card ships WITHOUT a picker — the dialog is host data flow; the admin editor registers it via
-  `registerCardPicker(MUSIC_PLAYER_NODE_TYPE, ...)` in `apps/kobato/src/ui/editor/music-card-picker.tsx`.
+  `registerCardPicker(MUSIC_PLAYER_NODE_TYPE, ...)` in `packages/web/admin/src/ui/editor/music-card-picker.tsx`.
 - `defineCard` (`src/nodes/cards/host-cards.ts`) validates, assembles, registers, and stores the raw spec
   (`host-card-registry.ts`). Type preservation: `CardSpecFieldMap`/`CardSpecAccessorMap`; base classes interface-merge
   (no hand-written `declare __*`).
@@ -197,7 +197,7 @@ model; the feed downgrade + defensive host-card substitution live server-side
   composed by every surface entry: it scans the host cards and `src/comment`, whose product-token chrome (`border-line`,
   `border-brand`, `ring-brand/40`) has no theme token in Inkling's own compile. `src/styles/comment-editor.css` is the
   comment canvas host rules (no zoom), imported by `CommentBodyEditor`; the page canvas twin is the workspace's
-  `apps/kobato/src/ui/styles/inkling-editor.css`.
+  `packages/web/admin/src/ui/styles/inkling-editor.css`.
 - Chrome arbitrary values are authored in rem, never px (canvas runs `zoom: 2/3` on a 15px root); web's host adapters
   bridge tokens (`--inkling-accent-color` ← `--brand`).
 - `@kobato/inkling/headless` is the server bundle's ONLY editor import; the barrel's shared contract is single-sourced

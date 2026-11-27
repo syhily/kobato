@@ -1,27 +1,29 @@
 # App test conventions
 
-Test trees for the deployable app, the workspace admin UI (absorbed into `src/ui` per ADR-0009), the cross-package
-architecture guards, and the two live-instance suites. Vitest trees import app source through `@/...` and helpers
-through `@tests/...`, plus the canonical product helpers cross-package (DB/session/mail/request-context from
-`@kobato/server/tests/utils/`, the SSR render helper from `@kobato/web-kit/tests/utils/render.tsx` (ThemeProvider →
-settings contexts → `DocumentFactsProvider` → `I18nProvider` over the test facts), i18n render from
-`@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the `DocumentFacts` fixture from
-`@kobato/ui/tests/utils/document-facts.ts` for tests that mount their own stack); React Router's `./+types/*` stays
-relative. The Playwright tree is the one runner-level exception: its config/support imports stay relative because
-Playwright loads them before any tsconfig-path resolver.
+Test trees for the backend deployable (`apps/kobato`) and the cross-package architecture guards, plus the two
+live-instance suites. The workspace's own unit and snapshot trees live with their source in `packages/web/admin/tests`
+(`packages/web/admin/AGENTS.md`). Vitest trees import app source through `@/...`, helpers through `@tests/...`, and the
+workspace through `@kobato/web-admin/...`, plus the canonical product helpers cross-package
+(DB/session/mail/request-context from `@kobato/server/tests/utils/`, the SSR render helper from
+`@kobato/web-kit/tests/utils/render.tsx`, i18n render from `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, and the
+`DocumentFacts` fixture from `@kobato/ui/tests/utils/document-facts.ts` for tests that mount their own stack); React
+Router's `./+types/*` stays relative. The Playwright tree is the one runner-level exception: its config/support imports
+stay relative because Playwright loads them before any tsconfig-path resolver.
 
-- **`tests/{unit,it,snaps}/`** — tests mirroring `apps/kobato/src/` (`routes/`, `ui/`, `seo/`, `document/`,
-  `route-warmup/`, `lib/`, `server/`): `src/ui/posts/filter-fields.ts` → `tests/unit/ui/posts/filter-fields.test.ts`.
-  Each tree is one project, defined in `@kobato/test/projects/kobato-app-projects.ts`; `tests/arch/` is its own
-  `app-arch` project. `app-unit` and `app-snaps` run on vmThreads (a fresh VM context per file, worker reused), while
-  `app-it` and `app-duckdb` keep `isolate: true` because every file boots a server perimeter. Unit/it setup wrappers
-  live under `tests/utils/setup/` (they own the settings-mutation mock and the blog-settings bundle reset);
-  DOM-rendering tests declare their environment per file (`@vitest-environment happy-dom` / `jsdom` — the projects
-  default to node), and `tests/utils/dialog.tsx` stays the leaf-local `@kobato/ui` dialog stub the snap suites use. The
-  runtime-`TZ` write test (`unit/ui/analytics/time-labels.test.ts`) runs alone in the `app-tz-unit` forks project —
-  never under `app-unit`.
-- **`tests/arch/`** — the architecture/contract guards (package DAG, client-bundle, i18n boundaries, log-message
-  literals, the Vitest project registry itself); runs in `app-arch`.
+- **`tests/{unit,it}/`** — tests mirroring the backend: `src/server/client-assets-root.ts` →
+  `tests/unit/server/client-assets-root.test.ts`, the server middlewares the app pins → `tests/unit/http/`, and the
+  route-level integration trees under `tests/it/` (`routes/auth/*`, `routes/admin/*`, `post-analytics-parity`) that
+  drive the workspace route modules' `clientLoader` / `clientAction` (`@kobato/web-admin/routes/...`) against a real
+  database through `@kobato/server`'s test harnesses. Each tree is one project, defined in
+  `@kobato/test/projects/kobato-app-projects.ts`; `tests/arch/` is its own `app-arch` project. `app-unit` runs on
+  vmThreads (a fresh VM context per file, worker reused), while `app-it` and `app-duckdb` keep `isolate: true` because
+  every file boots a server perimeter. Unit/it setup wrappers live under `tests/utils/setup/` (they own the
+  blog-settings bundle reset), and `tests/utils/{context,orpc-client-mock}.ts` are the route-context stubs the `it` tree
+  shares. DOM-rendering tests declare their environment per file (`@vitest-environment happy-dom` / `jsdom` — the
+  projects default to node).
+- **`tests/arch/`** — the architecture/contract guards (package DAG, client bundle, i18n boundaries, log-message
+  literals, the Tailwind compile and source-ownership contracts, the Vitest project registry itself) spanning every
+  package, the workspace tree included; runs in `app-arch` on the product-free Node setup.
 - **DuckDB** — every file that spins up the real DuckDB engine lives in `tests/it/` named `*.duckdb.test.ts`; the suffix
   routes it into the `app-duckdb` project. Membership is by filename, never a manual list (pinned by
   `tests/arch/duckdb-project-files.test.ts`). Run with `pnpm test:duckdb`; the files also run under `pnpm test`.
@@ -53,5 +55,5 @@ report land under the ignored `tmp/`.
 pnpm run test:duckdb
 pnpm test apps/kobato/tests/unit apps/kobato/tests/arch
 pnpm run test:browser
-pnpm run sea:browser dist-sea/kobato
+pnpm sea:browser dist-sea/kobato
 ```

@@ -6,7 +6,7 @@ const REPO_ROOT = process.cwd()
 
 const KIT_ROOT = 'packages/web/kit/src'
 const UI_ROOT = 'packages/web/ui/src'
-const WORKSPACE_UI_ROOT = 'apps/kobato/src/ui'
+const WORKSPACE_UI_ROOT = 'packages/web/admin/src/ui'
 const API_BROWSER_ROOT = 'packages/api/src/browser'
 
 function walk(root: string, out: string[]): void {
@@ -56,27 +56,27 @@ function offendersImporting(roots: string[], banned: readonly string[]): string[
 }
 
 describe('web direction', () => {
-  it('keeps packages/web at exactly the design system and the cross-surface kit', () => {
+  it('keeps packages/web at exactly the design system, the cross-surface kit, and the workspace', () => {
     const leaves = readdirSync(`${REPO_ROOT}/packages/web`, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .sort()
 
-    expect(leaves, 'sayaka is the public site — an app under apps/; the admin UI lives in apps/kobato/src/ui').toEqual([
-      'kit',
-      'ui',
-    ])
+    expect(
+      leaves,
+      'sayaka is the public site — an app under apps/; the workspace (admin, editor, auth SPA) is @kobato/web-admin',
+    ).toEqual(['admin', 'kit', 'ui'])
   })
 
-  it('keeps the kit below every consumer: no kit module imports @kobato/server or the sayaka app', () => {
-    expect(offendersImporting([KIT_ROOT], ['@kobato/server', '@sayaka/'])).toEqual([])
+  it('keeps the kit below every consumer: no kit module imports @kobato/server, the sayaka app, or the workspace', () => {
+    expect(offendersImporting([KIT_ROOT], ['@kobato/server', '@sayaka/', '@kobato/web-admin'])).toEqual([])
   })
 
-  it('keeps the workspace UI tree off the sayaka app: no apps/kobato/src/ui module imports @sayaka/', () => {
-    expect(offendersImporting([WORKSPACE_UI_ROOT], ['@sayaka/'])).toEqual([])
+  it('keeps the workspace UI tree off the sayaka app and the backend: no packages/web/admin/src/ui module imports @sayaka/ or @kobato/server', () => {
+    expect(offendersImporting([WORKSPACE_UI_ROOT], ['@sayaka/', '@kobato/server'])).toEqual([])
   })
 
-  it('keeps route title/meta resolution in the app layer: no web package, workspace UI module, or api browser hook imports @kobato/catalog/seo', () => {
+  it('keeps route title/meta resolution in the app layer: no web package, workspace module, or api browser hook imports @kobato/catalog/seo', () => {
     expect(
       offendersImporting([KIT_ROOT, UI_ROOT, WORKSPACE_UI_ROOT, API_BROWSER_ROOT], ['@kobato/catalog/seo']),
     ).toEqual([])

@@ -80,6 +80,24 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/ui': ['@kobato/assets', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
 
   '@kobato/web-kit': ['@kobato/ui', '@kobato/api', '@kobato/utils', '@kobato/i18n', '@kobato/settings', '@kobato/test'],
+  '@kobato/web-admin': [
+    '@kobato/api',
+    '@kobato/assets',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/db',
+    '@kobato/distribution',
+    '@kobato/i18n',
+    '@kobato/inkling',
+    '@kobato/pack',
+    '@kobato/sanitize',
+    '@kobato/server',
+    '@kobato/settings',
+    '@kobato/test',
+    '@kobato/ui',
+    '@kobato/utils',
+    '@kobato/web-kit',
+  ],
   '@kobato/test': [],
 
   kobato: INTERNAL_SCOPES,
@@ -137,6 +155,21 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/utils',
     '@kobato/i18n',
     '@kobato/settings',
+  ],
+  '@kobato/web-admin': [
+    '@kobato/web-admin',
+    '@kobato/ui',
+    '@kobato/web-kit',
+    '@kobato/api',
+    '@kobato/utils',
+    '@kobato/i18n',
+    '@kobato/settings',
+    '@kobato/auth',
+    '@kobato/catalog',
+    '@kobato/assets',
+    '@kobato/distribution',
+    '@kobato/sanitize',
+    '@kobato/inkling',
   ],
   '@kobato/test': ['@kobato/test'],
   kobato: [
@@ -707,6 +740,7 @@ describe('package DAG', () => {
       '@kobato/server',
       '@kobato/ui',
       '@kobato/web-kit',
+      '@kobato/web-admin',
       '@kobato/inkling',
       '@kobato/test',
       '@kobato/pack',
@@ -730,7 +764,7 @@ describe('package DAG', () => {
   })
 
   it('the private inkling alias stays inside the editor package except its white-box host pin', () => {
-    const whiteBoxHostPin = 'apps/kobato/tests/unit/ui/editor/cards/host-cards.test.tsx'
+    const whiteBoxHostPin = 'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx'
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
       if (file.startsWith('packages/inkling/') || file === whiteBoxHostPin) {

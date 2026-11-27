@@ -1,4 +1,5 @@
 import '@sayaka/zod-config'
+import type { WarmupManifest } from '@kobato/distribution/warmup-manifest'
 import type { ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { setCsrfToken } from '@kobato/api/browser/client'
@@ -39,10 +40,10 @@ const PublicErrorLayout = lazy(() =>
 
 import type { Route } from './+types/root'
 
-function collectTier2Chunks(manifest: { tier2_public: string[] }, criticalSet: Set<string>): string[] {
+function collectTier2Chunks(manifest: Pick<WarmupManifest, 'tier2'>, criticalSet: Set<string>): string[] {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const chunk of manifest.tier2_public) {
+  for (const chunk of manifest.tier2) {
     if (!seen.has(chunk) && !criticalSet.has(chunk)) {
       seen.add(chunk)
       result.push(chunk)

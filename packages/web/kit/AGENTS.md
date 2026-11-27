@@ -8,19 +8,19 @@ not in either consumer. Two rules bound it from either side: `@kobato/ui` import
 module that calls a procedure is a kit module or an app's own (ADR-0011 §1) — and a procedure-calling hook that needs no
 UI package, no message copy, and no route data is not a kit module but the contract's own
 (`@kobato/api/browser/use-notifications`, ADR-0011 §3). The kit may import `@kobato/ui`, `@kobato/api`, and the shared
-leaves it declares — never `@kobato/inkling`, `@kobato/catalog/seo`, `@kobato/server`, the sayaka app (`@sayaka/*`),
-either consuming surface's own tree (`apps/kobato/src/ui`, `apps/sayaka/src/ui`), or Node-only APIs. Both consumers
-import it — the workspace admin tree (`apps/kobato/src/ui`) and the public tree (`apps/sayaka/src/ui`)
-(`packages/web/AGENTS.md`).
+leaves it declares — never `@kobato/inkling`, `@kobato/catalog/seo`, `@kobato/server`, the sayaka app (`@sayaka/*`), the
+workspace (`@kobato/web-admin`), either consuming surface's own tree (`packages/web/admin/src/ui`,
+`apps/sayaka/src/ui`), or Node-only APIs. Both consumers import it — the workspace admin tree
+(`packages/web/admin/src/ui`) and the public tree (`apps/sayaka/src/ui`) (`packages/web/AGENTS.md`).
 
 What is no longer a kit module: the comment surface is `@kobato/inkling/comment/*` and the editor platform is Inkling's
 public barrel API (ADR-0011 §2); the document-shell modules — the settings contexts (`blog-settings-context`), locale
 sync (`LocaleSyncProvider` + `locale-sync`), the chunk-recovery family, `BrandLogo`, `Image` with its hooks, and the
 document clock — are `@kobato/ui`'s (`packages/web/ui/AGENTS.md`), together with the document shell both roots mount;
-the root-data label hook `useKobatoInklingLabels` is the workspace's (`apps/kobato/src/ui/AGENTS.md`); the notifications
-data hooks (`useUnreadNotificationCount`, `useInvalidateNotifications`, `usePatchNotificationReadState` with the
-read-state cache patch beside them) are `@kobato/api/browser/use-notifications`'s — the family below consumes them and
-never owns them.
+the root-data label hook `useKobatoInklingLabels` is the workspace's (`packages/web/admin/src/ui/AGENTS.md`); the
+notifications data hooks (`useUnreadNotificationCount`, `useInvalidateNotifications`, `usePatchNotificationReadState`
+with the read-state cache patch beside them) are `@kobato/api/browser/use-notifications`'s — the family below consumes
+them and never owns them.
 
 ## Structure
 
@@ -36,9 +36,10 @@ never owns them.
 ## Styles
 
 `src/styles/kit.css` is the kit's one partial (never compiled alone): it scans the package `../ui` tree and is composed
-by BOTH surface entries (`apps/kobato/src/styles/admin.css` directly, sayaka's `apps/sayaka/src/ui/styles/public.css`
-transitively). The exact `@source` sets are pinned by `apps/kobato/tests/arch/tailwind-source-ownership.test.ts`.
-`inkling-demo` no longer composes it: nothing the demo renders is a kit module.
+by BOTH surface entries (`packages/web/admin/src/styles/admin.css` directly, sayaka's
+`apps/sayaka/src/ui/styles/public.css` transitively). The exact `@source` sets are pinned by
+`apps/kobato/tests/arch/tailwind-source-ownership.test.ts`. `inkling-demo` no longer composes it: nothing the demo
+renders is a kit module.
 
 ## Rules
 

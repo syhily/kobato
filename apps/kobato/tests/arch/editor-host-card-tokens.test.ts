@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const editorCss = readFileSync(resolve(process.cwd(), 'apps/kobato/src/ui/styles/inkling-editor.css'), 'utf8')
+const editorCss = readFileSync(resolve(process.cwd(), 'packages/web/admin/src/ui/styles/inkling-editor.css'), 'utf8')
 const inklingCss = readFileSync(resolve(process.cwd(), 'packages/inkling/src/styles/index.css'), 'utf8')
 const tailwindCss = readFileSync(resolve(process.cwd(), 'packages/web/ui/src/styles/tailwind.css'), 'utf8')
 
@@ -44,7 +44,7 @@ function kobatoTextValue(token: string): string {
 
 describe('host-card text-scale restore contract', () => {
   it('the restore rule exists and covers every host card type', () => {
-    expect(restoreRule, 'restore rule missing from src/styles/inkling-editor.css').not.toBeNull()
+    expect(restoreRule, 'restore rule missing from src/ui/styles/inkling-editor.css').not.toBeNull()
     const selector = /(\.kobato-page-editor\s+\[data-inkling-card[^{]+)\{/.exec(editorCss)![1]
     for (const type of KOBATO_HOST_CARD_NODE_TYPES) {
       expect(selector).toContain(`[data-inkling-card='${type}']`)

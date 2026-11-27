@@ -1,4 +1,4 @@
-import { VITE_DEV_SERVER_SLOT } from '@kobato/pack/vite/react-router-hono-server'
+import { VITE_DEV_SERVER_SLOT } from '@kobato/pack/vite/hono-dev-host'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { getViteDevServer } from '@/server/dev-server-ref'

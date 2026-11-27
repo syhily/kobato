@@ -22,7 +22,8 @@ in the product; `font-split` is the ONE exception.
   do), never the reverse (`apps/kobato/tests/arch/package-dag.test.ts`).
 - Product **tests** import tools freely (`@kobato/test`, the live-instance clients under
   `@kobato/pack/instance/client`), declared in each package's devDependencies.
-- Build-time configs reach `pack` through its package specifier (declared by the root and `apps/kobato`).
+- Build-time configs reach `pack` through its package specifier (declared by the root, `apps/kobato`, `apps/sayaka`, and
+  `packages/web/admin`).
 - Tools packages declare every import in their own package.json, self-import through `@kobato/<name>/...`, and expose
   source wildcard exports with `.ts`/`.tsx` fallback targets so packages run directly by `node` resolve without a
   bundler.

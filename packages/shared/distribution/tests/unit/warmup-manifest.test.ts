@@ -129,10 +129,7 @@ describe('distribution/warmup-manifest — isWarmupManifest', () => {
       isWarmupManifest({
         version: 1,
         tier1: ['/assets/root.js'],
-        tier2_public: [],
-        tier2_admin: ['/assets/dashboard.js'],
-        tier2_editor: [],
-        tier2_auth: [],
+        tier2: ['/assets/archives.js'],
       }),
     ).toBe(true)
   })
@@ -142,7 +139,7 @@ describe('distribution/warmup-manifest — isWarmupManifest', () => {
     expect(isWarmupManifest('warmup-manifest')).toBe(false)
   })
 
-  it('rejects a missing tier field', () => {
+  it('rejects the retired four-bucket shape: a missing tier field', () => {
     expect(
       isWarmupManifest({
         version: 1,
@@ -150,8 +147,11 @@ describe('distribution/warmup-manifest — isWarmupManifest', () => {
         tier2_public: [],
         tier2_admin: [],
         tier2_editor: [],
+        tier2_auth: [],
       }),
     ).toBe(false)
+    expect(isWarmupManifest({ version: 1, tier1: [], tier2: [] })).toBe(true)
+    expect(isWarmupManifest({ version: 1, tier2: [] })).toBe(false)
   })
 
   it('rejects a non-string-array tier field', () => {
@@ -159,10 +159,14 @@ describe('distribution/warmup-manifest — isWarmupManifest', () => {
       isWarmupManifest({
         version: 1,
         tier1: ['/ok', 42],
-        tier2_public: [],
-        tier2_admin: [],
-        tier2_editor: [],
-        tier2_auth: [],
+        tier2: [],
+      }),
+    ).toBe(false)
+    expect(
+      isWarmupManifest({
+        version: 1,
+        tier1: [],
+        tier2: '/assets/chunk.js',
       }),
     ).toBe(false)
   })
@@ -172,10 +176,7 @@ describe('distribution/warmup-manifest — isWarmupManifest', () => {
       isWarmupManifest({
         version: '1',
         tier1: [],
-        tier2_public: [],
-        tier2_admin: [],
-        tier2_editor: [],
-        tier2_auth: [],
+        tier2: [],
       }),
     ).toBe(false)
   })

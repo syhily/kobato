@@ -6,18 +6,18 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
-const nodeRequire = createRequire(resolve(REPO_ROOT, 'apps/kobato/vite.config.ts'))
+const nodeRequire = createRequire(resolve(REPO_ROOT, 'packages/web/admin/vite.config.ts'))
 
 const ENTRIES = {
   root: 'packages/web/ui/src/styles/ui.css',
-  admin: 'apps/kobato/src/styles/admin.css',
+  admin: 'packages/web/admin/src/styles/admin.css',
   sayaka: 'apps/sayaka/src/styles/public.css',
   demo: 'apps/inkling-demo/src/styles/public.css',
   inkling: 'packages/inkling/src/styles/index.css',
 } as const
 
 const SOURCE_ROOTS = [
-  'apps/kobato/src',
+  'packages/web/admin/src',
   'apps/sayaka/src',
   'apps/inkling-demo/src',
   'packages/web/ui/src',
@@ -26,7 +26,7 @@ const SOURCE_ROOTS = [
 ] as const
 
 const BRIDGE_SHEETS = {
-  admin: ['apps/kobato/src/ui/styles/inkling-editor.css'],
+  admin: ['packages/web/admin/src/ui/styles/inkling-editor.css'],
   public: ['packages/inkling/src/styles/comment-editor.css'],
   demo: [],
 } as const
@@ -139,14 +139,14 @@ describe('Tailwind compile contract', () => {
     const expected: Record<string, string[]> = {
       root: ['packages/web/ui/src/components', 'packages/web/ui/src/icons', 'packages/web/ui/src/lib'],
       admin: [
-        'apps/kobato/src/root.tsx',
-        'apps/kobato/src/routes/admin',
-        'apps/kobato/src/routes/auth',
-        'apps/kobato/src/routes/editor',
-        'apps/kobato/src/ui',
         'packages/inkling/src/comment',
         'packages/inkling/src/headless/cards',
         'packages/inkling/src/host-cards',
+        'packages/web/admin/src/root.tsx',
+        'packages/web/admin/src/routes/admin',
+        'packages/web/admin/src/routes/auth',
+        'packages/web/admin/src/routes/editor',
+        'packages/web/admin/src/ui',
         'packages/web/kit/src/ui',
       ],
       sayaka: [

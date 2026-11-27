@@ -4,7 +4,8 @@ import type { BrowserContext, Page } from '@playwright/test'
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/pack/instance/client/http'
 import { callE2eRpc } from '@kobato/pack/instance/client/rpc'
 import {
-  bootDevServer,
+  bootAdminDevServer,
+  bootBackendDevServer,
   bootSayakaDevServer,
   stopDevServer,
   writeDevConfig,
@@ -497,10 +498,10 @@ async function loginAsAdmin(page: Page, fx: SmokeFixtures): Promise<void> {
   ])
 }
 
-async function uploadLargeImage(page: Page, kobatoOrigin: string, jpeg: Buffer): Promise<number> {
+async function uploadLargeImage(page: Page, adminOrigin: string, jpeg: Buffer): Promise<number> {
   const base64 = jpeg.toString('base64')
   const clientModulePath = resolveFromRepo('packages/api/src/browser/client.ts')
-  await page.goto(`${kobatoOrigin}/admin`, { waitUntil: 'networkidle' })
+  await page.goto(`${adminOrigin}/admin`, { waitUntil: 'networkidle' })
   const started = Date.now()
   await page.evaluate((encoded: string) => {
     const script = document.createElement('script')
@@ -799,13 +800,16 @@ async function main(): Promise<void> {
   await mkdir(dataDir, { recursive: true })
   const configPath = join(tempRoot, 'kobato.config.json')
   const serverLog = join(tempRoot, 'kobato-dev.log')
+  const adminLog = join(tempRoot, 'admin-dev.log')
   const sayakaLog = join(tempRoot, 'sayaka-dev.log')
 
   const o2Port = await pickFreePort()
   const appPort = await pickFreePort()
+  const adminPort = await pickFreePort()
   const sayakaPort = await pickFreePort()
   const origin = `http://127.0.0.1:${sayakaPort}`
   const kobatoOrigin = `http://127.0.0.1:${appPort}`
+  const adminOrigin = `http://127.0.0.1:${adminPort}`
   const fx = fixtures()
   const suffix = randomBytes(4).toString('hex')
   const state = buildState({
@@ -819,6 +823,7 @@ async function main(): Promise<void> {
   })
 
   let server: DevServer | null = null
+  let admin: DevServer | null = null
   let sayaka: DevServer | null = null
   let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null
 
@@ -831,7 +836,7 @@ async function main(): Promise<void> {
     await writeDevConfig(configPath, appPort, dataDir)
 
     log('==> booting DEV server (migrations)')
-    server = await bootDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+    server = await bootBackendDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
     await stopDevServerOrFail(server)
     server = null
 
@@ -843,13 +848,21 @@ async function main(): Promise<void> {
     )
 
     log('==> booting DEV server (installed)')
-    server = await bootDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+    server = await bootBackendDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+
+    log('==> booting admin DEV server (workspace over the backend)')
+    admin = await bootAdminDevServer({
+      repoRoot: REPO_ROOT,
+      port: adminPort,
+      backendUrl: kobatoOrigin,
+      logPath: adminLog,
+    })
 
     log('==> booting sayaka DEV server (public perimeter)')
     sayaka = await bootSayakaDevServer({
       repoRoot: REPO_ROOT,
       port: sayakaPort,
-      kobatoRpcUrl: `${kobatoOrigin}/rpc`,
+      kobatoRpcUrl: `${adminOrigin}/rpc`,
       logPath: sayakaLog,
     })
     const staged = await stagePost(origin, fx)
@@ -933,7 +946,7 @@ async function main(): Promise<void> {
     await page.waitForURL(/\/admin\/posts/, { timeout: 20_000 })
     await saveFromEditor(page, staged.post.id, fx)
     const jpeg = await makeLargeJpeg()
-    const imageUploadMs = await uploadLargeImage(page, kobatoOrigin, jpeg)
+    const imageUploadMs = await uploadLargeImage(page, adminOrigin, jpeg)
     const failedResponse = await page.goto(`/posts/${encodeURIComponent(fx.search)}-missing`, {
       waitUntil: 'networkidle',
     })
@@ -1648,7 +1661,7 @@ async function main(): Promise<void> {
     const o2RestartAt = Date.now()
     await check('OpenObserve restart accepts only new traces and logs', async () => {
       await restartOpenObserve(state)
-      server = await bootDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+      server = await bootBackendDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
       await fetch(`${origin}/`, { signal: AbortSignal.timeout(10_000) })
       const after = (await waitForRows(
         ctx,
@@ -1696,7 +1709,7 @@ async function main(): Promise<void> {
       docker(['stop', state.containerName])
       assert(server !== null, 'DEV server is not running')
       await stopDevServerOrFail(server)
-      server = await bootDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
+      server = await bootBackendDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
       const res = await fetch(origin, { signal: AbortSignal.timeout(10_000) })
       assert(res.ok, `public page returned ${res.status} while O2 was offline`)
       const html = await res.text()
@@ -1857,6 +1870,9 @@ async function main(): Promise<void> {
     await browser?.close().catch(() => undefined)
     if (sayaka !== null) {
       await stopDevServerOrFail(sayaka).catch(() => undefined)
+    }
+    if (admin !== null) {
+      await stopDevServerOrFail(admin).catch(() => undefined)
     }
     if (server !== null) {
       await stopDevServerOrFail(server).catch(() => undefined)

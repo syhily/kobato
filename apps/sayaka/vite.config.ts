@@ -52,7 +52,7 @@ export default defineConfig(({ command }) => ({
     tailwindcss(),
     routeWarmupPlugin({
       tier1Routes: ['root', 'routes/layout', 'routes/home'],
-      tier2Prefixes: [['routes/', 'public']],
+      tier2Prefixes: ['routes/'],
       warmupEntry: fileURLToPath(new URL('./src/route-warmup/idle-script.entry.ts', import.meta.url)),
     }),
   ] as PluginOption[],

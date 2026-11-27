@@ -1,3 +1,4 @@
+import { adminProjects } from '@kobato/test/projects/admin-projects'
 import { apiProjects } from '@kobato/test/projects/api-projects'
 import { dbProjects } from '@kobato/test/projects/db-projects'
 import { kobatoAppProjects } from '@kobato/test/projects/kobato-app-projects'
@@ -22,6 +23,7 @@ export const allTestProjects = [
   ...dbProjects,
   ...serverProjects,
   ...apiProjects,
+  ...adminProjects,
   ...kobatoAppProjects,
   ...sayakaAppProjects,
   inklingUnitConfigPath,

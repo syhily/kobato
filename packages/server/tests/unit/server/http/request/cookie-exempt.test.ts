@@ -15,7 +15,7 @@ describe('isExempt', () => {
     ['/api/rum/intake/rum/v1/default/rum', false],
     ['/assets/main.js', false],
     ['/admin/assets/entry-abc.js', true],
-    ['/admin/assets/warmup-manifest.json', true],
+    ['/admin/assets/root-BEoV0Dgy.css', true],
     ['/sitemap.xml', false],
     ['/images/og/posts/hello.png', false],
     ['/', false],

@@ -1,5 +1,4 @@
 import { REPO_ROOT } from '@kobato/test/repo-root'
-import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
 import path from 'node:path'
@@ -11,7 +10,6 @@ const SNAPS_SETUP = path.resolve(REPO_ROOT, 'packages/web/ui/tests/utils/setup/s
 export const uiProjects = [
   defineConfig({
     root: REPO_ROOT,
-    plugins: [routeWarmupScriptStubPlugin()],
     resolve: { tsconfigPaths: true },
     define: testDefine,
     test: {
@@ -26,7 +24,6 @@ export const uiProjects = [
   }),
   defineConfig({
     root: REPO_ROOT,
-    plugins: [routeWarmupScriptStubPlugin()],
     resolve: { tsconfigPaths: true },
     define: testDefine,
     test: {

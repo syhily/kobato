@@ -1,14 +1,12 @@
 import type { Config as ReactRouterConfig } from '@react-router/dev/config'
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, UserConfig, ViteDevServer } from 'vite'
 
-import honoDevServer, { type DevServerOptions } from '@hono/vite-dev-server'
+import honoDevServer from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
+import { exposeViteDevServer, forceDevMode, remoteAddressMiddleware } from '@kobato/pack/vite/hono-dev-host'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import fs from 'node:fs'
 import path from 'node:path'
-
-export const VITE_DEV_SERVER_SLOT = Symbol.for('kobato.vite-dev-server')
 
 interface ReactRouterHonoServerEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
@@ -22,10 +20,6 @@ type MetaEnv<T> = {
 
 type ReactRouterHonoServerPluginOptions = {
   serverEntryPoint?: string
-  dev?: {
-    exclude?: DevServerOptions['exclude']
-    export?: DevServerOptions['export']
-  }
 }
 
 export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOptions = {}): Plugin {
@@ -111,7 +105,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
     async configureServer(server) {
       forceDevMode()
 
-      Reflect.set(globalThis, VITE_DEV_SERVER_SLOT, server)
+      exposeViteDevServer(server)
 
       if (!pluginConfig) {
         return
@@ -125,7 +119,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
         adapter: nodeAdapter,
         injectClientScript: false,
         entry: pluginConfig.serverEntryPoint,
-        export: options.dev?.export || 'default',
+        export: 'default',
         exclude: [
           new RegExp(
             `^(?=\\/${pluginConfig.appDirectory.replace(/^[/\\]+|[/\\]+$/g, '').replaceAll(/[/\\]+/g, '/')}\\/)((?!.*\\.data(\\?|$)).*\\..*(\\?.*)?$)`,
@@ -148,16 +142,10 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
               .replace(/[/\\]+/g, '/')
               .split('/')[0]
           }/**/.*/**)`,
-          ...(pluginConfig.dev?.exclude || []),
         ],
       })
 
-      server.middlewares.use((req: IncomingMessage, _res: ServerResponse, next: () => void) => {
-        req.rawHeaders.push('x-remote-address', req.socket.remoteAddress || 'unknown')
-        req.rawHeaders.push('x-remote-port', String(req.socket.remotePort || 'unknown'))
-        req.rawHeaders.push('x-remote-family', req.socket.remoteFamily || 'unknown')
-        next()
-      })
+      server.middlewares.use(remoteAddressMiddleware())
 
       if (typeof devServerPlugin.configureServer === 'function') {
         await unsafeCast<(server: ViteDevServer) => void | Promise<void>>(devServerPlugin.configureServer)(server)
@@ -200,7 +188,6 @@ function resolvePluginConfig(config: UserConfig, options: ReactRouterHonoServerP
     isSsrBuild,
     assetsDir,
     serverEntryPoint,
-    dev: options.dev,
     serverBuildFile,
     basename,
     future,
@@ -208,12 +195,6 @@ function resolvePluginConfig(config: UserConfig, options: ReactRouterHonoServerP
 }
 
 type PluginConfig = ReturnType<typeof resolvePluginConfig>
-
-function forceDevMode(): void {
-  if (process.env.NODE_ENV !== 'test') {
-    process.env.NODE_ENV = 'development'
-  }
-}
 
 function findDefaultServerEntry(rootDirectory: string, appDirectory: string): string {
   const fileWay = `${appDirectory}/server.ts`

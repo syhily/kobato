@@ -5,13 +5,12 @@ import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
 const CLIENT_LAYERS = [
-  'apps/kobato/src/ui',
-  'apps/kobato/src/document',
-  'apps/kobato/src/lib',
-  'apps/kobato/src/route-warmup',
+  'packages/web/admin/src/ui',
+  'packages/web/admin/src/document',
+  'packages/web/admin/src/lib',
   'packages/web/kit/src',
   'packages/web/ui/src',
-  'apps/kobato/src/routes',
+  'packages/web/admin/src/routes',
   'apps/sayaka/src/document',
   'apps/sayaka/src/route-warmup',
   'apps/sayaka/src/routes',
@@ -250,17 +249,16 @@ function collectServerOnlyImportViolations(filePaths: readonly string[], rule: S
 }
 
 const I18N_SCANNED_ROOTS = [
-  'apps/kobato/src/ui',
-  'apps/kobato/src/document',
-  'apps/kobato/src/lib',
-  'apps/kobato/src/route-warmup',
+  'packages/web/admin/src/ui',
+  'packages/web/admin/src/document',
+  'packages/web/admin/src/lib',
   'apps/sayaka/src/document',
   'apps/sayaka/src/route-warmup',
   'apps/sayaka/src/routes',
   'apps/sayaka/src/ui',
   'packages/web/kit/src',
   'packages/web/ui/src',
-  'apps/kobato/src/routes',
+  'packages/web/admin/src/routes',
   'packages/api/src/contracts',
   'packages/api/src/browser',
   'packages/shared/catalog/src/seo',
@@ -272,7 +270,7 @@ const I18N_SCANNED_ROOTS = [
   'packages/shared/sanitize/src',
 ]
 
-const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx', 'apps/sayaka/src/root.tsx']
+const I18N_SCANNED_ROOT_FILES = ['packages/web/admin/src/root.tsx', 'apps/sayaka/src/root.tsx']
 
 function collectScannedFiles(): string[] {
   const files: string[] = []
@@ -358,7 +356,7 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
 }
 
 const INKLING_LABEL_LOADER = 'packages/inkling/src/labels/load-inkling-labels.ts'
-const ROOT_LABEL_READER = 'apps/kobato/src/ui/shared/use-inkling-labels.ts'
+const ROOT_LABEL_READER = 'packages/web/admin/src/ui/shared/use-inkling-labels.ts'
 const DOCUMENT_LABEL_READER = 'packages/web/ui/src/lib/use-document-labels.ts'
 describe('inkling label bundle boundary', () => {
   it('client layers and the root route never value-import an Inkling label table', () => {

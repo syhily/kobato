@@ -1,0 +1,111 @@
+import { makeAdminUser } from '@kobato/api/tests/utils/catalog'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { InviteAuthorDialog } from '@kobato/web-admin/ui/users/InviteAuthorDialog'
+import { UsersTable } from '@kobato/web-admin/ui/users/UsersTable'
+import { UsersToolbar } from '@kobato/web-admin/ui/users/UsersToolbar'
+import { UsersView } from '@kobato/web-admin/ui/users/UsersView'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
+import { describe, expect, it } from 'vitest'
+
+describe('snapshot: UsersView', () => {
+  it('renders the loading state', () => {
+    const html = stableHtml(renderInRouter(<UsersView />))
+    expect(html).toContain('用户管理')
+    expect(html).toContain('搜索用户名或邮箱')
+    expect(html).toContain('邀请作者')
+  })
+})
+
+describe('snapshot: UsersTable', () => {
+  it('renders rows', () => {
+    const rows = [
+      makeAdminUser({
+        id: 'user-1',
+        name: 'Alice',
+        email: 'alice@example.com',
+        role: 'admin',
+      }),
+      makeAdminUser({
+        id: 'user-2',
+        name: 'Bob',
+        email: 'bob@example.com',
+        role: 'author',
+        isMuted: true,
+      }),
+      makeAdminUser({
+        id: 'user-3',
+        name: 'Carol',
+        email: 'carol@example.com',
+        role: 'visitor',
+        deletedAt: '2024-03-01T00:00:00.000Z',
+      }),
+    ]
+    const html = stableHtml(
+      renderInRouter(<UsersTable rows={rows} config={TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!} isLoading={false} />),
+    )
+    expect(html).toContain('Alice')
+    expect(html).toContain('Bob')
+    expect(html).toContain('Carol')
+    expect(html).toContain('/admin/security/users/user-1')
+    expect(html).toContain('已禁言')
+    expect(html).toContain('已删除')
+  })
+
+  it('renders loading skeleton', () => {
+    const html = stableHtml(
+      renderInRouter(<UsersTable rows={[]} config={TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!} isLoading={true} />),
+    )
+    expect(html).toContain('skeleton')
+  })
+
+  it('renders empty state', () => {
+    const html = stableHtml(
+      renderInRouter(<UsersTable rows={[]} config={TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!} isLoading={false} />),
+    )
+    expect(html).toContain('未找到用户')
+  })
+})
+
+describe('snapshot: UsersToolbar', () => {
+  it('renders default state', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <UsersToolbar
+          role="all"
+          sortBy="recent"
+          includeDeleted={false}
+          onRoleChange={() => {}}
+          onSortByChange={() => {}}
+          onIncludeDeletedChange={() => {}}
+        />,
+      ),
+    )
+    expect(html).toContain('筛选')
+    expect(html).toContain('lucide-funnel')
+  })
+
+  it('renders active filter state', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <UsersToolbar
+          role="admin"
+          sortBy="commentCount"
+          includeDeleted={true}
+          onRoleChange={() => {}}
+          onSortByChange={() => {}}
+          onIncludeDeletedChange={() => {}}
+        />,
+      ),
+    )
+    expect(html).toContain('筛选')
+    expect(html).toContain('border-foreground/30')
+    expect(html).toContain('bg-secondary')
+  })
+})
+
+describe('snapshot: InviteAuthorDialog', () => {
+  it('renders closed', () => {
+    const html = stableHtml(renderToHtml(<InviteAuthorDialog open={false} onClose={() => {}} onInvited={() => {}} />))
+    expect(html).toBe('')
+  })
+})

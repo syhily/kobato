@@ -18,7 +18,7 @@ The isomorphic settings model and its single source of truth.
   identity schema is `sections/observability.ts`) and the OpenObserve stream/metric/pipeline identity. The intake path
   and SDK proxy URL builder belong to `@kobato/api`; runtime SDK adapters stay with their consumers. No OpenTelemetry
   SDK, OpenObserve client, Docker, retention mutation, or server config.
-- Admin navigation display metadata belongs to the workspace admin UI (`apps/kobato/src/ui`), not this package.
+- Admin navigation display metadata belongs to the workspace admin UI (`packages/web/admin/src/ui`), not this package.
 - `cache-registry.ts` + `cache-bucket.ts` are the cache DECLARATION layer, never a storage plane: one `CacheDeclaration`
   per bucket (stable `id` = the directory under `<storage.data>/cache`, UI-message-id `labelId`/`descriptionId`, default
   prefix/TTL, `tunable` flag); `cache-bucket.ts` derives the `CacheBucketId` union, `CACHE_BUCKET_IDS`, tunable

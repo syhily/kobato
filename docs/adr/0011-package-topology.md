@@ -1,12 +1,14 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 3 have landed (the comment surface and the
+- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 4 have landed (the comment surface and the
   shared composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document
   shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned;
   `startKobato` in `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry
-  thinned to the call); steps 4–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code
-  lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other section of
-  ADR-0009 stands.
+  thinned to the call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router
+  SPA project with no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client
+  build located through the package). Steps 5–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1
+  "Where the code lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every
+  other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -56,7 +58,8 @@ workspace carries one piece of public-site machinery it does not need.
 | `@kobato/web-admin` (`web/admin`) | the workspace: the admin, editor, and auth SPA            | the two rows above and the shared leaves           |
 
 `@kobato/ui` moves from `packages/ui`; its name and its import specifiers do not change. `@kobato/web-admin` is new
-(§4). `@kobato/web-admin` imports neither sayaka nor `@kobato/server`, as today's pins already require.
+(§4). `@kobato/web-admin` imports neither sayaka nor `@kobato/server` in production source, as today's pins already
+require; its test tree is the one exception (Consequences).
 
 The rule that replaces the judgment call: **`@kobato/ui` imports no `@kobato/api` module. A front-end module that calls
 a procedure is a kit module or an app's own.** Nothing else separates the two packages.
@@ -120,9 +123,9 @@ tree under the `/admin/` base. It lives under `packages/` because it is not depl
 `<project root>/.react-router/types/<app directory>` and types a route outside the app directory as `unknown`, so the
 workspace has to be its own project; the single dev server that served both the workspace and the Hono app ends.
 `pnpm dev` is the backend — a Vite SSR host for the Hono app, with server HMR. `pnpm dev:admin` is the workspace, on
-today's port and URLs, proxying the backend's path families (`/rpc/*`, `/health`, `/ready`). `pnpm dev:public` is sayaka
-(today's `dev:sayaka`); its forwarding keeps a single target, the workspace origin, which serves both the workspace and
-`/rpc/*`, and `SAYAKA_KOBATO_RPC_URL` still points it at the backend directly when the workspace is not needed.
+today's port and URLs, proxying the backend's path families (`/rpc/*`, `/health`, `/ready`). `pnpm dev:public` is
+sayaka; its forwarding keeps a single target, the workspace origin, which serves both the workspace and `/rpc/*`, and
+`SAYAKA_KOBATO_RPC_URL` still points it at the backend directly when the workspace is not needed.
 
 **The workspace has no route warmup.** sayaka keeps its inline idle script and the manifest that feeds it. The workspace
 drops `useRouteWarmup`, its idle script, and its tiers; the manifest contract and the Vite plugin shrink to the public
@@ -207,12 +210,19 @@ language-backed concepts.
   its sayaka side and loses its kobato-side React Router glue.
 - A first navigation into each workspace section waits on its chunk with no pending state — the workspace never had one.
   A pending indicator is the fix if that ever reads as a dead click.
-- Paths pinned in tools move with the workspace: the SEA asset collection (`apps/kobato/build/client`). Two stale pins
-  are corrected on the way — `components.json` and `oxfmt.config.ts` name `apps/kobato/src/styles/public.css`, which has
-  lived in sayaka since ADR-0009. The kobato build no longer produces a client tree.
+- Paths pinned in tools move with the workspace: the SEA asset collection (`apps/kobato/build/client`). Three stale pins
+  are corrected on the way — `components.json` (`tailwind.css`, the sheet the shadcn CLI reads), `oxfmt.config.ts`
+  (`sortTailwindcss.stylesheet`, the sheet oxfmt resolves the theme from to sort classes), and `.vscode/settings.json`
+  (`tailwindCSS.experimental.configFile`) — named `apps/kobato/src/styles/public.css`, which has lived in sayaka since
+  ADR-0009; each now names `packages/web/ui/src/styles/ui.css`, the design system's compilation entry — it carries
+  `@import 'tailwindcss'` over the token partial and scans the shadcn components, so all three consumers resolve the
+  same theme. The kobato build no longer produces a client tree.
 - Tests move with the source they mirror: about 230 files (29,000 lines) to `packages/web/admin/tests`, their own Vitest
   projects, and the workspace arch pins beside them; cross-package pins stay in `apps/kobato/tests/arch`.
-  `web-direction` and sayaka's `frozen-admin-set` change their scan roots.
+  `web-direction` changes its scan root to `packages/web/admin/src/ui`; sayaka's `frozen-admin-set` is untouched — it
+  never scanned the workspace, and its roots last changed in step 2, when `packages/api/src/browser` joined. Five moved
+  tests keep their `@kobato/server` / `@kobato/db` imports as the documented test-only exception
+  (`packages/web/admin/AGENTS.md`): the package declares both as test dependencies and its `src/` imports neither.
 - The workspace's `@/` imports (946 in source, 480 in tests) switch to its package specifier; `@/` remains the backend
   app's alias.
 - The shared merge rewrites the path table from eight leaves to four and about 45 documentation mentions of the five
@@ -237,8 +247,12 @@ Each step is green on its own — `pnpm run fmt`, `pnpm run lint`, `pnpm test`, 
    it; `use-notifications` to `@kobato/api/browser`. Pin §1's rule.
 3. **`startKobato`** and the workspace-serving module land in `@kobato/server`; `apps/kobato/src/server.ts` thins to the
    call.
-4. **The workspace moves** to `packages/web/admin`: source, tests, and arch pins; its own Vite and React Router project;
-   the dev commands; the SEA asset path; the route warmup leaves it; the Vitest projects.
+4. **The workspace moves** to `packages/web/admin`, in one commit: source, tests, and arch pins (the workspace-only ones
+   beside it, the cross-package ones in `apps/kobato/tests/arch`); its own Vite and React Router project; the dev
+   commands; the SEA asset path; the route warmup leaving it (`src/route-warmup/` and its tests go, the root stops
+   mounting `useRouteWarmup` / `RouteWarmupScript`, and the manifest contract and the Vite plugin shrink to the public
+   site — `tier1`, one tier-2 list, a cap keyed on the hrefs the manifest carries); the three stale stylesheet pins
+   (`oxfmt.config.ts`, `components.json`, `.vscode/settings.json`); the Vitest projects.
 5. **The shared leaves merge** into `base`: the prefix rewrite, the path table, the directory-level DAG pin, the
    documents.
 6. **`tools/` regroups**: `font-split` into `packages/`; the instance driver, the browser support, and

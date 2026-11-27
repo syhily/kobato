@@ -2,7 +2,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-const UI_ROOTS = [resolve(process.cwd(), 'apps/kobato/src/ui/'), resolve(process.cwd(), 'apps/kobato/src/routes/')]
+const UI_ROOTS = [
+  resolve(process.cwd(), 'packages/web/admin/src/ui/'),
+  resolve(process.cwd(), 'packages/web/admin/src/routes/'),
+]
 
 const SELECT_CHILDREN = [
   'Content',

@@ -11,6 +11,10 @@ import { join } from 'node:path'
 const BOOT_TIMEOUT_MS = 120_000
 const POLL_INTERVAL_MS = 400
 const HEALTH_FETCH_TIMEOUT_MS = 1_500
+const BACKEND_PACKAGE = 'kobato'
+const ADMIN_PACKAGE = '@kobato/web-admin'
+const SAYAKA_PACKAGE = 'sayaka'
+const ADMIN_BACKEND_URL_ENV = 'KOBATO_DEV_BACKEND_URL'
 
 export interface DevServer {
   child: ChildProcess
@@ -19,10 +23,17 @@ export interface DevServer {
   logPath: string
 }
 
-export interface BootDevServerOptions {
+export interface BootBackendDevServerOptions {
   repoRoot: string
   configPath: string
   port: number
+  logPath: string
+}
+
+export interface BootAdminDevServerOptions {
+  repoRoot: string
+  port: number
+  backendUrl: string
   logPath: string
 }
 
@@ -49,7 +60,7 @@ export async function writeDevConfig(path: string, port: number, dataDir: string
 
 function spawnDevServer(
   repoRoot: string,
-  appName: string,
+  packageName: string,
   port: number,
   env: Record<string, string>,
   logPath: string,
@@ -58,7 +69,7 @@ function spawnDevServer(
     'pnpm',
     [
       '--filter',
-      appName,
+      packageName,
       'run',
       'dev',
       '--host',
@@ -105,10 +116,10 @@ async function waitForDevServer(server: DevServer, probePath: string): Promise<D
   throw new Error(`DEV server did not answer ${probePath} within ${BOOT_TIMEOUT_MS / 1000}s; see ${server.logPath}`)
 }
 
-export async function bootDevServer(options: BootDevServerOptions): Promise<DevServer> {
+export async function bootBackendDevServer(options: BootBackendDevServerOptions): Promise<DevServer> {
   const server = spawnDevServer(
     options.repoRoot,
-    'kobato',
+    BACKEND_PACKAGE,
     options.port,
     { KOBATO_CONFIG_FILE: options.configPath },
     options.logPath,
@@ -116,10 +127,21 @@ export async function bootDevServer(options: BootDevServerOptions): Promise<DevS
   return waitForDevServer(server, '/health')
 }
 
+export async function bootAdminDevServer(options: BootAdminDevServerOptions): Promise<DevServer> {
+  const server = spawnDevServer(
+    options.repoRoot,
+    ADMIN_PACKAGE,
+    options.port,
+    { [ADMIN_BACKEND_URL_ENV]: options.backendUrl },
+    options.logPath,
+  )
+  return waitForDevServer(server, '/admin/signin')
+}
+
 export async function bootSayakaDevServer(options: BootSayakaDevServerOptions): Promise<DevServer> {
   const server = spawnDevServer(
     options.repoRoot,
-    'sayaka',
+    SAYAKA_PACKAGE,
     options.port,
     {
       SAYAKA_HOST: '127.0.0.1',

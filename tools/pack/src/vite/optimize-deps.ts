@@ -1,7 +1,6 @@
 import type { UserConfig } from 'vite'
 
 import { repoRoot } from '@kobato/pack/sea/paths'
-import { readAppPackage } from '@kobato/pack/vite/app-metadata'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { z } from 'zod'
@@ -13,6 +12,7 @@ const workspacePackageSchema = z.object({
 })
 
 const WORKSPACE_PACKAGE_DIRS = [
+  'packages/web/admin',
   'packages/api',
   'packages/db',
   'packages/web/kit',
@@ -170,8 +170,8 @@ function depOwnerMap(appDeclared: ReadonlySet<string>): Map<string, string> {
   return depOwner
 }
 
-export function appOptimizeDeps(): NonNullable<UserConfig['optimizeDeps']> {
-  const pkg = readAppPackage()
+export function appOptimizeDeps(appDir: string): NonNullable<UserConfig['optimizeDeps']> {
+  const pkg = workspacePackageSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, appDir, 'package.json'), 'utf-8')))
   const appDeclared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])
   const depOwner = depOwnerMap(appDeclared)
   return {

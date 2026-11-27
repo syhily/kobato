@@ -1,13 +1,18 @@
 import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup'
 import { routeWarmupPlugin } from '@kobato/pack/vite/route-warmup'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+
+const WARMUP_ENTRY = fileURLToPath(
+  new URL('../../../../../apps/sayaka/src/route-warmup/idle-script.entry.ts', import.meta.url),
+)
 
 const VIRTUAL = 'virtual:kobato-route-warmup'
 const RESOLVED = `\0${VIRTUAL}`
 
 describe('routeWarmupPlugin — virtual module hooks', () => {
   function makePlugin() {
-    return routeWarmupPlugin() as {
+    return routeWarmupPlugin({ warmupEntry: WARMUP_ENTRY }) as {
       config?: (config: unknown, env: { command: 'serve' | 'build'; mode: string }) => void
       resolveId?: (id: string) => string | undefined
       load?: (id: string) => Promise<string | undefined>
@@ -31,7 +36,7 @@ describe('routeWarmupPlugin — virtual module hooks', () => {
     await expect(plugin.load?.('/some/real/id.js')).resolves.toBeUndefined()
   })
 
-  it('bundles the app idle entry on the build path and keeps the chunk sentinel', async () => {
+  it('bundles the configured idle entry on the build path and keeps the chunk sentinel', async () => {
     const plugin = makePlugin()
     plugin.config?.({}, { command: 'build', mode: 'production' })
     const code = await plugin.load?.(RESOLVED)

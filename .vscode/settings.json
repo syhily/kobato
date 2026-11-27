@@ -40,7 +40,7 @@
     "*.css": "tailwindcss"
   },
   "npm.scriptRunner": "pnpm",
-  "tailwindCSS.experimental.configFile": "apps/kobato/src/styles/public.css",
+  "tailwindCSS.experimental.configFile": "packages/web/ui/src/styles/ui.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {
     "mdx": "html"

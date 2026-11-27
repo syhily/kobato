@@ -5,63 +5,30 @@ import { collectManifestChunks, parseClientManifest, type WarmupManifest } from 
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
-export const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
+export const TIER1_ROUTES = ['root', 'routes/layout', 'routes/home']
 
-const TIER2_PREFIXES = [
-  ['routes/public/', 'public'],
-  ['routes/admin/', 'admin'],
-  ['routes/editor/', 'editor'],
-  ['routes/auth/', 'auth'],
-] as const
+export const TIER2_PREFIXES = ['routes/']
 
-export type Tier2Bucket = (typeof TIER2_PREFIXES)[number][1]
+export const IDLE_SIZE_LIMIT = 100 * 1024
 
 export interface RouteWarmupTiering {
   tier1Routes?: readonly string[]
-  tier2Prefixes?: ReadonlyArray<readonly [string, Tier2Bucket]>
+  tier2Prefixes?: readonly string[]
 }
 
 export interface RouteWarmupPluginOptions extends RouteWarmupTiering {
-  warmupEntry?: string
+  warmupEntry: string
 }
 
-export function tier2BucketForRouteId(
-  id: string,
-  tier2Prefixes: ReadonlyArray<readonly [string, Tier2Bucket]> = TIER2_PREFIXES,
-): Tier2Bucket | null {
-  for (const [prefix, bucket] of tier2Prefixes) {
-    if (id.startsWith(prefix)) {
-      return bucket
-    }
-  }
-  return null
-}
-
-export function deriveTier2RouteIds(
-  manifest: RouteManifest,
-  tiering: RouteWarmupTiering = {},
-): Record<Tier2Bucket, string[]> {
+export function deriveTier2RouteIds(manifest: RouteManifest, tiering: RouteWarmupTiering = {}): string[] {
   const tier1 = new Set<string>(tiering.tier1Routes ?? TIER1_ROUTES)
-  const tier2Prefixes = tiering.tier2Prefixes ?? TIER2_PREFIXES
-  const buckets: Record<Tier2Bucket, string[]> = { public: [], admin: [], editor: [], auth: [] }
-  for (const id of Object.keys(manifest.routes)) {
-    if (tier1.has(id)) {
-      continue
-    }
-    const bucket = tier2BucketForRouteId(id, tier2Prefixes)
-    if (bucket) {
-      buckets[bucket].push(id)
-    }
-  }
-  return buckets
+  const prefixes = tiering.tier2Prefixes ?? TIER2_PREFIXES
+  return Object.keys(manifest.routes).filter((id) => !tier1.has(id) && prefixes.some((prefix) => id.startsWith(prefix)))
 }
 
 const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(p))
-
-const IDLE_SIZE_LIMIT = 100 * 1024
 
 function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   try {
@@ -85,15 +52,27 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
-const DEFAULT_WARMUP_ENTRY = fileURLToPath(
-  new URL('../../../../apps/kobato/src/route-warmup/idle-script.entry.ts', import.meta.url),
-)
+function loadChunkSizes(clientAssetsDir: string, manifest: RouteManifest): Map<string, number> {
+  const sizes = new Map<string, number>()
+  for (const href of collectManifestChunks(manifest, ['entry', ...Object.keys(manifest.routes)])) {
+    const file = href.split('/').pop()
+    if (file === undefined) {
+      continue
+    }
+    const path = join(clientAssetsDir, file)
+    if (existsSync(path)) {
+      sizes.set(href, statSync(path).size)
+    }
+  }
+  return sizes
+}
+
 const VIRTUAL_ID = 'virtual:kobato-route-warmup'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
-export function routeWarmupPlugin(options: RouteWarmupPluginOptions = {}): Plugin {
+export function routeWarmupPlugin(options: RouteWarmupPluginOptions): Plugin {
   const tiering: RouteWarmupTiering = { tier1Routes: options.tier1Routes, tier2Prefixes: options.tier2Prefixes }
-  const warmupEntry = options.warmupEntry ?? DEFAULT_WARMUP_ENTRY
+  const warmupEntry = options.warmupEntry
   let isServe = false
   let compiledWarmupPromise: Promise<string> | null = null
 
@@ -190,27 +169,7 @@ export function routeWarmupPlugin(options: RouteWarmupPluginOptions = {}): Plugi
           return
         }
 
-        const chunkSizes = new Map<string, number>()
-        for (const file of readdirSync(clientAssetsDir)) {
-          if (!file.endsWith('.js')) {
-            continue
-          }
-          const stat = statSync(join(clientAssetsDir, file))
-          chunkSizes.set(`/assets/${file}`, stat.size)
-        }
-
-        const tier2Ids = deriveTier2RouteIds(manifest, tiering)
-        const t1Raw = collectManifestChunks(manifest, [...(tiering.tier1Routes ?? TIER1_ROUTES)])
-        const t2PubRaw = collectManifestChunks(manifest, tier2Ids.public)
-        const t2AdminRaw = collectManifestChunks(manifest, tier2Ids.admin)
-        const t2EditorRaw = collectManifestChunks(manifest, tier2Ids.editor)
-        const t2AuthRaw = collectManifestChunks(manifest, tier2Ids.auth)
-
-        for (const imp of manifest.entry.imports) {
-          t1Raw.push(imp)
-        }
-
-        const tier1Set = new Set(t1Raw)
+        const chunkSizes = loadChunkSizes(clientAssetsDir, manifest)
 
         const filterTier = (chunks: string[], isIdle: boolean, excludeAlreadyIn: Set<string>): string[] => {
           const result: string[] = []
@@ -222,40 +181,30 @@ export function routeWarmupPlugin(options: RouteWarmupPluginOptions = {}): Plugi
             if (EXCLUDED_PATTERNS.some((p) => p.test(name))) {
               continue
             }
-            if (isIdle) {
-              const size = chunkSizes.get(c) ?? 0
-              if (size > IDLE_SIZE_LIMIT) {
-                continue
-              }
+            if (isIdle && (chunkSizes.get(c) ?? 0) > IDLE_SIZE_LIMIT) {
+              continue
             }
             result.push(c)
           }
           return [...new Set(result)]
         }
 
-        const tier1 = filterTier([...tier1Set], false, new Set())
-        const tier1FilteredSet = new Set(tier1)
+        const t1Raw = collectManifestChunks(manifest, [...(tiering.tier1Routes ?? TIER1_ROUTES)])
+        for (const imp of manifest.entry.imports) {
+          t1Raw.push(imp)
+        }
 
-        const tier2_public = filterTier(t2PubRaw, true, tier1FilteredSet)
-        const tier2_admin = filterTier(t2AdminRaw, true, new Set([...tier1FilteredSet, ...tier2_public]))
-        const tier2_editor = filterTier(
-          t2EditorRaw,
+        const tier1 = filterTier(t1Raw, false, new Set())
+        const tier2 = filterTier(
+          collectManifestChunks(manifest, deriveTier2RouteIds(manifest, tiering)),
           true,
-          new Set([...tier1FilteredSet, ...tier2_public, ...tier2_admin]),
-        )
-        const tier2_auth = filterTier(
-          t2AuthRaw,
-          true,
-          new Set([...tier1FilteredSet, ...tier2_public, ...tier2_admin, ...tier2_editor]),
+          new Set(tier1),
         )
 
         const warmupManifest: WarmupManifest = {
           version: 1,
           tier1,
-          tier2_public,
-          tier2_admin,
-          tier2_editor,
-          tier2_auth,
+          tier2,
         }
 
         const manifestPath = join(clientAssetsDir, 'warmup-manifest.json')
@@ -265,14 +214,7 @@ export function routeWarmupPlugin(options: RouteWarmupPluginOptions = {}): Plugi
           const totalKb = arr.reduce((sum, c) => sum + (chunkSizes.get(c) ?? 0), 0) / 1024
           return `${arr.length} chunks (~${totalKb.toFixed(0)} KB)`
         }
-        console.warn(
-          `[route-warmup] Manifest written:\n` +
-            `  tier1:        ${fmt(tier1)}\n` +
-            `  tier2_public: ${fmt(tier2_public)}\n` +
-            `  tier2_admin:  ${fmt(tier2_admin)}\n` +
-            `  tier2_editor: ${fmt(tier2_editor)}\n` +
-            `  tier2_auth:   ${fmt(tier2_auth)}`,
-        )
+        console.warn(`[route-warmup] Manifest written:\n  tier1: ${fmt(tier1)}\n  tier2: ${fmt(tier2)}`)
       },
     },
   }

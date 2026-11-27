@@ -29,7 +29,7 @@ const db = getTestDb()
 
 const flows = await import('@kobato/server/domains/auth/services/setup')
 const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@kobato/server/infra/rate-limit')
-const route = await import('@/routes/auth/setup/index')
+const route = await import('@kobato/web-admin/routes/auth/setup/index')
 
 function routeContext(options: Record<string, unknown> = {}) {
   return makeRouteContext({ db, session: csrfSession(), ...options })

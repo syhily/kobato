@@ -1,14 +1,12 @@
 import { REPO_ROOT } from '@kobato/test/repo-root'
-import { routeWarmupScriptStubPlugin } from '@kobato/test/virtual-modules'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { testDefine } from '@kobato/test/vitest.define'
 import path from 'node:path'
 import { configDefaults, defineConfig } from 'vitest/config'
 
+const NODE_SETUP = path.resolve(REPO_ROOT, 'tools/test/src/setup/node.ts')
 const UNIT_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/unit.ts')
 const IT_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/it.ts')
-const SNAPS_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/snaps.ts')
-const TZ_TEST = 'apps/kobato/tests/unit/ui/analytics/time-labels.test.ts'
 
 export const kobatoAppProjects = [
   defineConfig({
@@ -20,7 +18,7 @@ export const kobatoAppProjects = [
       name: 'app-arch',
       include: ['apps/kobato/tests/arch/**/*.test.{ts,tsx}'],
       exclude: [...configDefaults.exclude],
-      setupFiles: [UNIT_SETUP],
+      setupFiles: [NODE_SETUP],
     },
   }),
   defineConfig({
@@ -32,13 +30,12 @@ export const kobatoAppProjects = [
       name: 'app-unit',
       pool: 'vmThreads',
       include: ['apps/kobato/tests/unit/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude, 'apps/kobato/tests/unit/**/*.duckdb.test.{ts,tsx}', TZ_TEST],
+      exclude: [...configDefaults.exclude, 'apps/kobato/tests/unit/**/*.duckdb.test.{ts,tsx}'],
       setupFiles: [UNIT_SETUP],
     },
   }),
   defineConfig({
     root: REPO_ROOT,
-    plugins: [routeWarmupScriptStubPlugin()],
     resolve: { tsconfigPaths: true },
     define: testDefine,
     test: {
@@ -54,7 +51,6 @@ export const kobatoAppProjects = [
   }),
   defineConfig({
     root: REPO_ROOT,
-    plugins: [routeWarmupScriptStubPlugin()],
     resolve: { tsconfigPaths: true },
     define: testDefine,
     test: {
@@ -66,33 +62,6 @@ export const kobatoAppProjects = [
       setupFiles: [IT_SETUP],
       testTimeout: 30_000,
       hookTimeout: 120_000,
-    },
-  }),
-  defineConfig({
-    root: REPO_ROOT,
-    resolve: { tsconfigPaths: true },
-    define: testDefine,
-    test: {
-      ...vitestTestBase,
-      name: 'app-tz-unit',
-      pool: 'forks',
-      environment: 'happy-dom',
-      setupFiles: [UNIT_SETUP],
-      include: [TZ_TEST],
-    },
-  }),
-  defineConfig({
-    root: REPO_ROOT,
-    plugins: [routeWarmupScriptStubPlugin()],
-    resolve: { tsconfigPaths: true },
-    define: testDefine,
-    test: {
-      ...vitestTestBase,
-      name: 'app-snaps',
-      pool: 'vmThreads',
-      include: ['apps/kobato/tests/snaps/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude],
-      setupFiles: [SNAPS_SETUP],
     },
   }),
 ]

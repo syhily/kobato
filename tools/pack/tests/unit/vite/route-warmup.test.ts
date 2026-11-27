@@ -1,38 +1,37 @@
 import type { RouteManifest } from '@kobato/distribution/route-warmup'
 
-import { deriveTier2RouteIds, routeWarmupPlugin, TIER1_ROUTES } from '@kobato/pack/vite/route-warmup'
+import { deriveTier2RouteIds, IDLE_SIZE_LIMIT, routeWarmupPlugin, TIER1_ROUTES } from '@kobato/pack/vite/route-warmup'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-function buildManifest(prefix: string): string {
+const WARMUP_ENTRY = fileURLToPath(
+  new URL('../../../../../apps/sayaka/src/route-warmup/idle-script.entry.ts', import.meta.url),
+)
+
+function buildManifest(prefix: string, assetBase = '/assets/'): string {
+  const asset = (name: string) => `${assetBase}${name}.js`
   return `${prefix}${JSON.stringify(
     {
-      entry: { module: '/assets/entry.js', imports: ['/assets/runtime.js'] },
+      entry: { module: asset('entry'), imports: [asset('runtime')] },
       routes: {
-        root: { id: 'root', module: '/assets/root.js', imports: [] },
-        'routes/public/home': {
-          id: 'routes/public/home',
-          module: '/assets/home.js',
-          imports: ['/assets/shared.js'],
-          clientLoaderModule: '/assets/home-loader.js',
+        root: { id: 'root', module: asset('root'), imports: [] },
+        'routes/layout': { id: 'routes/layout', module: asset('layout'), imports: [asset('layout-shared')] },
+        'routes/home': {
+          id: 'routes/home',
+          module: asset('home'),
+          imports: [asset('shared')],
+          clientLoaderModule: asset('home-loader'),
         },
-        'routes/admin/dashboard': {
-          id: 'routes/admin/dashboard',
-          module: '/assets/dashboard.js',
-          imports: ['/assets/admin-shared.js'],
+        'routes/archives': { id: 'routes/archives', module: asset('archives'), imports: [asset('shared')] },
+        'routes/post/detail': {
+          id: 'routes/post/detail',
+          module: asset('post-detail'),
+          imports: [asset('canvas-hl')],
         },
-        'routes/editor/post/new': {
-          id: 'routes/editor/post/new',
-          module: '/assets/editor-post.js',
-          imports: ['/assets/editor-shared.js'],
-        },
-        'routes/auth/signin': {
-          id: 'routes/auth/signin',
-          module: '/assets/signin.js',
-          imports: ['/assets/canvas-hl.js'],
-        },
+        'home-page': { id: 'home-page', module: asset('home'), imports: [] },
       },
     },
     null,
@@ -80,14 +79,18 @@ function buildPluginContext() {
 }
 
 async function invokeWriteBundle(ctx: ReturnType<typeof buildPluginContext>['ctx']): Promise<void> {
-  const plugin = routeWarmupPlugin()
+  const plugin = routeWarmupPlugin({ warmupEntry: WARMUP_ENTRY })
   const writeBundle = (plugin as { writeBundle: { handler: (o: unknown, b: unknown) => Promise<void> } }).writeBundle
   await writeBundle.handler.call(ctx, ctx.options, {})
 }
 
+function readWarmupManifest(): Record<string, string[]> {
+  return JSON.parse(readFileSync(manifestPath(), 'utf8')) as Record<string, string[]>
+}
+
 describe('route-warmup plugin — writeBundle handler', () => {
   it('is a Vite plugin with the expected shape', () => {
-    const plugin = routeWarmupPlugin()
+    const plugin = routeWarmupPlugin({ warmupEntry: WARMUP_ENTRY })
     expect(plugin.name).toBe('route-warmup')
     expect(plugin.enforce).toBe('post')
     expect(plugin.writeBundle).toBeDefined()
@@ -135,21 +138,20 @@ describe('route-warmup plugin — writeBundle handler', () => {
     expect(existsSync(manifestPath())).toBe(false)
   })
 
-  it('writes a warmup-manifest.json that tiers, dedupes, and filters chunks', async () => {
+  it('writes a warmup-manifest.json with a tier1 and one tier2 that tier, dedupe, and filter chunks', async () => {
     addManifestFile(buildManifest('window.__reactRouterManifest='))
 
     for (const name of [
       'entry',
       'runtime',
       'root',
+      'layout',
+      'layout-shared',
       'home',
       'shared',
       'home-loader',
-      'dashboard',
-      'admin-shared',
-      'editor-post',
-      'editor-shared',
-      'signin',
+      'archives',
+      'post-detail',
       'canvas-hl',
     ]) {
       addChunk(name)
@@ -158,11 +160,14 @@ describe('route-warmup plugin — writeBundle handler', () => {
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    const manifest = JSON.parse(readFileSync(manifestPath(), 'utf8'))
+    const manifest = readWarmupManifest()
+    expect(Object.keys(manifest).sort()).toEqual(['tier1', 'tier2', 'version'])
 
     expect(manifest.tier1).toEqual(
       expect.arrayContaining([
         '/assets/root.js',
+        '/assets/layout.js',
+        '/assets/layout-shared.js',
         '/assets/home.js',
         '/assets/home-loader.js',
         '/assets/runtime.js',
@@ -170,31 +175,32 @@ describe('route-warmup plugin — writeBundle handler', () => {
       ]),
     )
 
-    expect(manifest.tier2_public).toEqual([])
+    expect(manifest.tier2).toContain('/assets/archives.js')
+    expect(manifest.tier2).toContain('/assets/post-detail.js')
+    expect(manifest.tier2).not.toContain('/assets/shared.js')
+    expect(manifest.tier2).not.toContain('/assets/home.js')
 
-    expect(manifest.tier2_admin).toContain('/assets/dashboard.js')
-    expect(manifest.tier2_admin).not.toContain('/assets/editor-shared.js')
-    expect(manifest.tier2_editor).toContain('/assets/editor-post.js')
-    expect(manifest.tier2_editor).toContain('/assets/editor-shared.js')
-
-    for (const tier of ['tier1', 'tier2_public', 'tier2_admin', 'tier2_editor', 'tier2_auth']) {
+    for (const tier of ['tier1', 'tier2']) {
       expect(manifest[tier]).not.toContain('/assets/canvas-hl.js')
     }
   })
 
-  it('excludes chunks larger than IDLE_SIZE_LIMIT from idle tiers', async () => {
-    addManifestFile(buildManifest('window.__reactRouterManifest='))
+  it('keys the idle cap on the hrefs the manifest carries: an oversized chunk under a base prefix is excluded', async () => {
+    addManifestFile(buildManifest('window.__reactRouterManifest=', '/admin/assets/'))
 
-    for (const name of ['entry', 'runtime', 'root', 'home', 'shared', 'admin-shared']) {
+    for (const name of ['entry', 'runtime', 'root', 'layout', 'home', 'shared', 'home-loader', 'post-detail']) {
       addChunk(name)
     }
-    addChunk('dashboard', 200 * 1024)
+    addChunk('archives', IDLE_SIZE_LIMIT + 1)
+    addChunk('layout-shared', IDLE_SIZE_LIMIT + 1)
 
     const { ctx } = buildPluginContext()
     await invokeWriteBundle(ctx)
 
-    const manifest = JSON.parse(readFileSync(manifestPath(), 'utf8'))
-    expect(manifest.tier2_admin).not.toContain('/assets/dashboard.js')
+    const manifest = readWarmupManifest()
+    expect(manifest.tier2).toContain('/admin/assets/post-detail.js')
+    expect(manifest.tier2).not.toContain('/admin/assets/archives.js')
+    expect(manifest.tier1).toContain('/admin/assets/layout-shared.js')
   })
 })
 
@@ -204,30 +210,32 @@ describe('route-warmup tier derivation', () => {
     routes: Object.fromEntries(ids.map((id) => [id, { id, module: `/assets/${id}.js`, imports: [] }])),
   })
 
-  it('buckets route IDs by prefix and skips unprefixed IDs', () => {
+  it('defaults to the public tiers: every prefixed id outside tier 1, skipping tier 1 and custom ids', () => {
     const manifest = manifestOf([
       'root',
-      'routes/public/layout',
-      'routes/public/home',
-      'routes/public/archives',
-      'routes/admin/dashboard',
-      'routes/editor/post/new',
-      'routes/auth/signin',
+      'routes/layout',
+      'routes/home',
+      'routes/archives',
+      'routes/post/detail',
       'home-page',
-      'category-list-page',
+      'branding-logo',
     ])
-    expect(deriveTier2RouteIds(manifest)).toEqual({
-      public: ['routes/public/archives'],
-      admin: ['routes/admin/dashboard'],
-      editor: ['routes/editor/post/new'],
-      auth: ['routes/auth/signin'],
-    })
+    expect(deriveTier2RouteIds(manifest)).toEqual(['routes/archives', 'routes/post/detail'])
   })
 
-  it('excludes TIER1 members from prefix buckets even when they carry a prefix', () => {
+  it('honours the tiering it is given', () => {
+    const manifest = manifestOf(['root', 'routes/public/home', 'routes/admin/dashboard', 'routes/editor/post/new'])
+    expect(
+      deriveTier2RouteIds(manifest, {
+        tier1Routes: ['root', 'routes/public/home'],
+        tier2Prefixes: ['routes/admin/', 'routes/editor/'],
+      }),
+    ).toEqual(['routes/admin/dashboard', 'routes/editor/post/new'])
+  })
+
+  it('never places a tier-1 route in tier 2', () => {
     for (const id of TIER1_ROUTES) {
-      const buckets = deriveTier2RouteIds(manifestOf([id]))
-      expect(Object.values(buckets).flat(), `TIER1 route "${id}" leaked into a tier-2 bucket`).toEqual([])
+      expect(deriveTier2RouteIds(manifestOf([id])), `TIER1 route "${id}" leaked into tier 2`).toEqual([])
     }
   })
 })

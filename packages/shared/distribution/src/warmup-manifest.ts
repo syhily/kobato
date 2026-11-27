@@ -7,10 +7,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export interface WarmupManifest {
   version: number
   tier1: string[]
-  tier2_public: string[]
-  tier2_admin: string[]
-  tier2_editor: string[]
-  tier2_auth: string[]
+  tier2: string[]
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -21,14 +18,7 @@ export function isWarmupManifest(value: unknown): value is WarmupManifest {
   if (!isRecord(value)) {
     return false
   }
-  return (
-    typeof value.version === 'number' &&
-    isStringArray(value.tier1) &&
-    isStringArray(value.tier2_public) &&
-    isStringArray(value.tier2_admin) &&
-    isStringArray(value.tier2_editor) &&
-    isStringArray(value.tier2_auth)
-  )
+  return typeof value.version === 'number' && isStringArray(value.tier1) && isStringArray(value.tier2)
 }
 
 function isRouteManifestRoute(value: unknown): value is RouteManifestRoute {

@@ -3,7 +3,7 @@
 `packages/web/ui/src/styles/` contains only host-agnostic design-system partials. Product compilation entries and
 `@source` graphs belong to the consuming app; Inkling host chrome lives outside this tree — the comment canvas chrome is
 Inkling's own `packages/inkling/src/styles/comment-editor.css`, and only the page-editor host chrome
-(`apps/kobato/src/ui/styles/inkling-editor.css`) is the workspace's
+(`packages/web/admin/src/ui/styles/inkling-editor.css`) is the workspace's
 (`packages/web/ui/tests/unit/contract/style-ownership.test.ts` forbids product imports, product scan graphs, and
 additional product styles here).
 
@@ -11,8 +11,8 @@ additional product styles here).
 
 - `ui.css` is the design system's own compilation entry (tokens/typeset; scans only `components/`, `icons/`, `lib/`).
   Every utility the document shell, `BrandLogo`, `Image`, the locale-sync notice, and the reload overlay use is emitted
-  here — the apps import it once per document, eagerly from `apps/kobato/src/root.tsx` and `apps/sayaka/src/root.tsx` —
-  route-level re-imports are forbidden; other consumers import it directly.
+  here — the apps import it once per document, eagerly from `packages/web/admin/src/root.tsx` and
+  `apps/sayaka/src/root.tsx` — route-level re-imports are forbidden; other consumers import it directly.
 - `dark-variant.css` — the single `dark` variant (`.dark` class, or `prefers-color-scheme` when unset); import it
   unlayered before any utility compile. Partials composed into app surfaces must not re-declare it
   (`apps/kobato/tests/arch/tailwind-source-ownership.test.ts`).

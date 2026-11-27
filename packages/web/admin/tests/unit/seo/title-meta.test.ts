@@ -1,0 +1,53 @@
+import type { BlogSettingsBundle } from '@kobato/settings/types'
+import type { MetaDescriptor } from 'react-router'
+
+import { fallbackMessages } from '@kobato/i18n/fallback-messages'
+import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
+import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
+import { titleMeta } from '@kobato/web-admin/seo/title-meta'
+import { describe, expect, it } from 'vitest'
+
+type MetaEntry = MetaDescriptor & Record<string, unknown>
+
+function findByName(meta: MetaEntry[], name: string) {
+  return meta.find((m) => m.name === name) as MetaEntry | undefined
+}
+
+const rootMatchWithI18n = (
+  locale: 'zh-CN' | 'zh-TW',
+  bundle: BlogSettingsBundle | null = TEST_BLOG_SETTINGS_BUNDLE,
+) => [{ id: 'root', loaderData: { blogSettings: bundle, i18n: { locale, messages: MESSAGES[locale] } } }]
+
+const MESSAGES = {
+  'zh-CN': uiMessagesZhCN,
+  'zh-TW': uiMessagesZhTW,
+}
+
+describe('seo/title-meta — titleMeta', () => {
+  it('resolves through matches on client navigation without any snapshot', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.signin')({ matches: rootMatchWithI18n('zh-CN') }) as MetaEntry[]
+
+    expect(meta[0]?.title).toBe(`用户登陆 - ${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}`)
+  })
+
+  it('uses the shared fallback module for the pre-install title without matches', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({ matches: [] }) as MetaEntry[]
+
+    expect(meta[0]).toMatchObject({ title: fallbackMessages['meta.preinstall'] })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+
+  it('localizes the pre-install title through matches', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = titleMeta('meta.title.auth.setup')({
+      matches: rootMatchWithI18n('zh-TW', null),
+    }) as MetaEntry[]
+
+    expect(meta).toHaveLength(3)
+    expect(meta[0]).toMatchObject({ title: '建立網站' })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+})

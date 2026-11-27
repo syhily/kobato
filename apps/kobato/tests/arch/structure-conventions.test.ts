@@ -36,7 +36,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-const WEB_SRC_ROOTS = ['apps/kobato/src/ui', 'packages/web/kit/src', 'packages/api/src/browser']
+const WEB_SRC_ROOTS = ['packages/web/admin/src/ui', 'packages/web/kit/src', 'packages/api/src/browser']
 
 function packageDirs(): string[] {
   const out: string[] = []
@@ -80,7 +80,7 @@ describe('structure conventions', () => {
     expect(offenders, 'config lives at the package root; tests live under tests/').toEqual([])
   })
 
-  it('names every hook use-kebab-case across the workspace UI, the kit, and the api browser assembly', () => {
+  it('names every hook use-kebab-case across the web packages and the api browser assembly', () => {
     const offenders: string[] = []
     for (const root of WEB_SRC_ROOTS) {
       for (const file of walk(`${REPO_ROOT}/${root}`)) {
@@ -109,7 +109,6 @@ describe('structure conventions', () => {
   it('contains no doubled directory segment under any src tree', () => {
     const roots = [
       'packages/server/src',
-      'apps/kobato/src/ui',
       'packages/web/kit/src',
       'packages/web/ui/src',
       'packages/inkling/src',
@@ -141,14 +140,6 @@ describe('structure conventions', () => {
     expect(offenders, 'a context/hook pair lives in packages/web/ui/src/lib, never in components/').toEqual([])
   })
 
-  it('lets a settings section directory own its view or form file', () => {
-    const root = `${REPO_ROOT}/apps/kobato/src/ui/settings`
-    expect(statSync(`${root}/cache/CacheView.tsx`).isFile()).toBe(true)
-    expect(statSync(`${root}/rate-limit/ThresholdForm.tsx`).isFile()).toBe(true)
-    expect(statSync(`${root}/backup/BackupView.tsx`).isFile()).toBe(true)
-    expect(statSync(`${root}/mail/MailForm.tsx`).isFile()).toBe(true)
-  })
-
   it('keeps inkling test helpers out of test trees and tests out of helper dirs', () => {
     const helperRoot = `${REPO_ROOT}/packages/inkling/tests/utils`
     const testFiles = walk(helperRoot).filter((file) => /\.test\.tsx?$/.test(file))
@@ -161,47 +152,6 @@ describe('structure conventions', () => {
       /(?:^|\/)(?:test-utils|utils\/utils)$/.test(dir),
     )
     expect(strayTestDirs, 'tree-local helpers are one `test-helpers.ts`, never a test-utils/ dir').toEqual([])
-  })
-
-  it('keeps the canonical admin UI domain directories', () => {
-    const root = `${REPO_ROOT}/apps/kobato/src/ui`
-    const actual = readdirSync(root, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort()
-
-    const expected = [
-      'account',
-      'analytics',
-      'audit',
-      'auth',
-      'branding',
-      'categories',
-      'comments',
-      'dashboard',
-      'editor',
-      'editor-meta',
-      'editor-shell',
-      'fonts',
-      'friends',
-      'images',
-      'jobs',
-      'music',
-      'pages',
-      'posts',
-      'sessions',
-      'settings',
-      'shared',
-      'shell',
-      'styles',
-      'tags',
-      'users',
-      'webmentions',
-    ]
-    expect(
-      actual,
-      'a new admin domain directory joins this table with its API/server counterpart (styles/ holds the ui style adapters)',
-    ).toEqual(expected)
   })
 
   it('prefixes every admin route metadata path with /admin', () => {

@@ -1,10 +1,13 @@
 import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
 import { seaVfsRoot } from '@kobato/server/infra/sea/sea'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 
 export function clientAssetsRoot(): string {
-  const diskRoot = fileURLToPath(new URL('../client', import.meta.url))
   const vfsRoot = seaVfsRoot()
-  return vfsRoot === null ? diskRoot : join(vfsRoot, SEA_CLIENT_ASSET_PREFIX.replace(/\/$/, ''))
+  if (vfsRoot !== null) {
+    return join(vfsRoot, SEA_CLIENT_ASSET_PREFIX.replace(/\/$/, ''))
+  }
+  const require = createRequire(import.meta.url)
+  return join(dirname(require.resolve('@kobato/web-admin/package.json')), 'build', 'client')
 }

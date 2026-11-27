@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 const PROJECT_ROOT = process.cwd()
 const SOURCE_DIRS = [
   'apps/kobato/src',
+  'packages/web/admin/src',
   'apps/sayaka/src',
   'packages/inkling/src',
   'packages/db/src',

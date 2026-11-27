@@ -67,7 +67,7 @@ async function main() {
   ensureNodeVersion()
   console.log(`==> SEA build (${process.platform}-${process.arch}, node ${process.versions.node})`)
 
-  console.log('==> react-router build')
+  console.log('==> pnpm run build (workspace, backend, sayaka)')
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
 
   console.log('==> vite bundles')

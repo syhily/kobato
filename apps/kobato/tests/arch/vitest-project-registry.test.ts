@@ -44,12 +44,14 @@ const PINNED_INLINE_PROJECT_NAMES = [
   'server-duckdb',
   'api-unit',
   'api-iso-unit',
+  'admin-arch',
+  'admin-unit',
+  'admin-snaps',
+  'admin-tz-unit',
   'app-arch',
   'app-unit',
   'app-it',
   'app-duckdb',
-  'app-tz-unit',
-  'app-snaps',
   'sayaka-unit',
   'sayaka-it',
   'sayaka-snaps',
@@ -69,8 +71,9 @@ const VM_THREAD_PROJECTS = [
   'ui-snaps',
   'server-unit',
   'server-it',
+  'admin-unit',
+  'admin-snaps',
   'app-unit',
-  'app-snaps',
   'sayaka-unit',
   'sayaka-snaps',
 ] as const
@@ -318,7 +321,7 @@ describe('vitest project registry', () => {
       expect(project.test?.isolate, `${name}: ${ISOLATE_CONSTRAINT}`).toBe(false)
       if ((VM_THREAD_PROJECTS as readonly string[]).includes(name)) {
         expect(project.test?.pool, `${name} pool`).toBe('vmThreads')
-      } else if (name === 'app-tz-unit') {
+      } else if (name === 'admin-tz-unit') {
         expect(project.test?.pool, `${name} pool`).toBe('forks')
       } else {
         expect(project.test?.pool, `${name} pool`).toBe('threads')

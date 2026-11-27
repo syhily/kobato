@@ -69,16 +69,14 @@ domain logic.
   and cannot grow without a deliberate edit to its pin (`tests/arch/frozen-admin-set.test.ts`), which scans `src/**`,
   `packages/web/kit/src/**`, and the api browser hooks both import (`packages/api/src/browser/**`) and fails on any
   other `admin` touch.
-- Never imports `@/...`, `@tests/...`, `@kobato/server/*`, `@kobato/db/*`, or anything under `apps/kobato` (the
-  workspace admin UI in `apps/kobato/src/ui` included — it is reached through the forwarded `/admin` perimeter, never
-  imported); `src/` never imports `@kobato/pack` (vite.config may). Pinned by
-  `apps/sayaka/tests/arch/import-boundary.test.ts`.
+- Never imports `@/...`, `@tests/...`, `@kobato/server/*`, `@kobato/db/*`, `@kobato/web-admin`, or anything under
+  `apps/kobato` (the workspace is reached through the forwarded `/admin` perimeter, never imported); `src/` never
+  imports `@kobato/pack` (vite.config may). Pinned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - Sayaka owns the public UI layer in `src/ui/**` (the former `@kobato/web-public` tree, dissolved and deleted per
   ADR-0009) and MAY import `@kobato/web-kit`; the public comment composer is Inkling's comment surface
   (`@kobato/inkling/comment/*`: `LazyCommentBodyEditor`, `CommentContentHtml`, `comment-body-helpers`, and the iOS
-  viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the `@kobato/web-admin` package is gone
-  (its tree is kobato's `apps/kobato/src/ui` now) and the specifier stays banned by
-  `apps/sayaka/tests/arch/import-boundary.test.ts`.
+  viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the workspace is `@kobato/web-admin`
+  (`packages/web/admin`) and the specifier stays banned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - The root `Layout` renders `@kobato/ui`'s `DocumentShell` over `DocumentFacts` mapped from the root loader data
   (`documentFactsFrom` in `src/document/document-facts.ts`): the shell owns the document element, head, fonts,
   preconnects, `I18nProvider`, and the chunk-reload overlay; the `head` slot carries `Meta` / `Links`, the webmention
@@ -144,13 +142,16 @@ domain logic.
   pipeline, not the app: `tools/pack/src/sea/sayaka-sea-cli.ts` + `tools/pack/src/sea/sayaka-sea-vfs-fs-patch.ts`,
   reached only by the injected main `tools/pack/src/sea/sayaka-entry.ts`, never imported from `src/` and never part of
   the node build (`@kobato/pack` stays a build-tooling devDependency only; pack does not depend on sayaka). The
-  build-time dev plugin is NOT vendored here — it is the shared `@kobato/pack/vite/react-router-hono-server`, which
-  hands the Vite dev server to the app through a `globalThis` slot (`dev-server-ref.ts` reads it, dev only).
+  build-time dev plugin is NOT vendored here — it is `@kobato/pack/vite/react-router-hono-server` (sayaka's; the
+  backend's Vite host uses `@kobato/pack/vite/hono-dev-host` beside it), which hands the Vite dev server to the app
+  through a `globalThis` slot (`dev-server-ref.ts` reads it, dev only).
 - No comments in source, no `any`/`as` (`@kobato/utils/unsafe-cast`), kebab-case modules, no barrels.
 
 ## Commands
 
-- `pnpm dev:sayaka` (root) — dev server on 4322, expects kobato on 4321.
+- `pnpm dev:public` (root) — dev server on 4322; it forwards to the workspace origin on 4321 by default
+  (`pnpm dev:admin`, which proxies `/rpc/*` to the backend on 4320) or straight to the backend through
+  `SAYAKA_KOBATO_RPC_URL`.
 - `pnpm -C apps/sayaka build` / `node apps/sayaka/build/server/index.js` (needs `SAYAKA_KOBATO_RPC_URL`).
 - `pnpm run sea:build` (root) builds the sayaka SEA binary too: `dist-sea/sayaka` (+ `sayaka.sha256`) embeds
   `build/client/**` under the `sayaka-client/` VFS key and is covered by `pnpm run split:smoke --sea` together with

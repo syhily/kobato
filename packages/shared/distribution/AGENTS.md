@@ -10,7 +10,8 @@ dependencies; no Node runtime, filesystem, packaging implementation, RPC DTOs, o
   `natives-meta/`, observability `observability/`, and the embedded worker bundles `worker/`.
 - `route-warmup.ts` — client-manifest shape, sentinel, and warmup exclusion patterns shared by build, SSR, and browser
   idle loading.
-- `warmup-manifest.ts` — the `warmup-manifest.json` contract (parse/validate/chunk walk) consumed by the build plugin in
-  `tools/pack` and the SSR reader in `@kobato/server/render/warmup`.
+- `warmup-manifest.ts` — the `warmup-manifest.json` contract, `{ version, tier1, tier2 }` (parse/validate/chunk walk),
+  written by the build plugin in `tools/pack` and read by the public site's SSR reader
+  (`apps/sayaka/src/server/warmup-manifest.ts`); the workspace warms no routes.
 - Tests: `tests/unit/` (`shared-unit`). SEA writer/reader pins live in `tools/pack/tests/unit/sea/`; asset-key pins in
   `apps/kobato/tests/arch/`.
