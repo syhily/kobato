@@ -56,6 +56,10 @@ dichen
 dinesh
 dompurify
 dotum
+<<<<<<< Updated upstream
+=======
+dtolnay
+>>>>>>> Stashed changes
 duckdb
 duoshuo
 eliostruyf
@@ -290,6 +294,7 @@ rivo
 rollup
 samp
 sauvignon
+sayaka
 scalafmt
 scann
 sched
@@ -320,6 +325,7 @@ srem
 stylesheet
 suus
 svgr
+swatinem
 tabindex
 tablename
 tagcloud
