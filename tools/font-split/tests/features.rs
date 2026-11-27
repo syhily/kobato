@@ -19,8 +19,8 @@ use kobato_font_split::pre_subset::features::cmap::inject_unicode_glyph_id_map;
 use kobato_font_split::pre_subset::features::gpos::{collect_gpos_relations, collect_pair_adjustment_glyphs};
 use kobato_font_split::pre_subset::features::gsub::{collect_gsub_relations, collect_ligature_glyph_sets};
 use kobato_font_split::pre_subset::features::opentype::{
-    MAX_EXTENSION_DEPTH, collect_glyph_id_from_class, collect_glyph_id_from_format_1_and_2, expand_extension,
-    subtables_with_positions,
+    MAX_EXTENSION_DEPTH, TableError, collect_glyph_id_from_class, collect_glyph_id_from_format_1_and_2,
+    expand_extension, subtables_with_positions,
 };
 use kobato_font_split::pre_subset::features::{move_feature_set_to_front, turn_indices_to_unicode_set};
 
@@ -257,6 +257,22 @@ fn subtable_positions_stay_inside_the_font() {
         let position = position.expect("GSUB is present in the table directory");
         assert!(position < sfnt.len() as u64);
     }
+}
+
+#[test]
+fn table_error_names_the_table_its_location_and_the_cause() {
+    let sfnt = decompress(FONT_FIXTURE).expect("fixture decodes");
+    let mut font_file = Cursor::new(&sfnt[..]);
+    let font = opentype::Font::read(&mut font_file).expect("fixture reads");
+    let gsub = font.offsets.records.iter().find(|record| record.tag.0 == *b"GSUB").expect("fixture has GSUB");
+
+    let error = TableError::read(&font, b"GSUB", "GSUB", "boom");
+
+    assert_eq!(
+        error.to_string(),
+        format!("failed to read the GSUB table (offset={}, size={}): boom", gsub.offset, gsub.size)
+    );
+    assert_eq!(TableError::read(&font, b"ZZZZ", "ZZZZ", "boom").to_string(), "failed to read the ZZZZ table: boom");
 }
 
 #[test]

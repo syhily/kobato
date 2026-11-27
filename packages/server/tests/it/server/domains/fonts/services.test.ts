@@ -1,16 +1,25 @@
 import type { FontRow } from '@kobato/db/sqlite/schema/font'
+import type { FontSplitOutputFile } from '@kobato/server/domains/fonts/vendor/napi-split'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { setting } from '@kobato/db/sqlite/schema/config'
 import { font } from '@kobato/db/sqlite/schema/font'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
+import { uploadFont } from '@kobato/server/domains/fonts/services/upload'
+import { fontSplit } from '@kobato/server/domains/fonts/vendor/napi-split'
 import { __clearSectionChangeHandlersForTests } from '@kobato/server/domains/settings/services/section-changes'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@kobato/server/infra/storage/registry'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { makeMemoryBackend } from '@kobato/server/tests/utils/memory-storage'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { createHash } from 'node:crypto'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@kobato/server/domains/fonts/vendor/napi-split', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@kobato/server/domains/fonts/vendor/napi-split')>()
+  return { ...actual, fontSplit: vi.fn(), fontSplitAlgorithmVersion: vi.fn(() => 'algo-1') }
+})
 
 const mem = makeMemoryBackend({ driver: 'local' })
 
@@ -56,6 +65,21 @@ function seedFontPackage(hash: string): void {
 
 function packageKeys(hash: string): string[] {
   return [...mem.store.keys()].filter((key) => key.startsWith(`fonts/${hash}/`))
+}
+
+const FONT_BYTES = new Uint8Array([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+const FONT_HASH = createHash('sha256').update(FONT_BYTES).digest('hex')
+
+function slicedPackage(family: string): FontSplitOutputFile[] {
+  const css = `@font-face{font-family:"${family}";src:url("./abc.woff2")format("woff2");}`
+  return [
+    { name: 'result.css', data: new TextEncoder().encode(css) },
+    { name: 'abc.woff2', data: new Uint8Array([0x77, 0x4f, 0x46, 0x32]) },
+  ]
+}
+
+function storedCss(cssKey: string): string {
+  return mem.store.get(cssKey)?.body.toString() ?? ''
 }
 
 async function readFontsSettingsData(): Promise<Record<string, unknown> | null> {
@@ -130,5 +154,55 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect((error as DomainError).message).not.toContain('code')
     const remaining = await sqliteOf(db).select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(1)
+  })
+})
+
+describe('fonts/services/upload — uploadFont', () => {
+  beforeEach(() => {
+    __setStorageBackendForTests('s3', mem.backend)
+    vi.mocked(fontSplit).mockReset()
+    vi.mocked(fontSplit).mockImplementation(async ({ css }) => slicedPackage(css?.fontFamily ?? 'default'))
+  })
+
+  it('slices a new font under its sha256 and the requested family name', async () => {
+    const uploaded = await uploadFont(db, { buffer: FONT_BYTES, sourceName: 'serif.ttf', familyName: 'Serif A' })
+
+    expect(uploaded.familyName).toBe('Serif A')
+    expect(uploaded.hash).toBe(FONT_HASH)
+    expect(uploaded.cssKey).toBe(`fonts/${FONT_HASH}/algo-1/result.css`)
+    expect(uploaded.chunkCount).toBe(1)
+    expect(uploaded.totalBytes).toBe(slicedPackage('Serif A').reduce((total, file) => total + file.data.length, 0))
+    expect(storedCss(uploaded.cssKey)).toContain('font-family:"Serif A"')
+  })
+
+  it('returns the stored font untouched when the same bytes arrive under the same family', async () => {
+    const first = await uploadFont(db, { buffer: FONT_BYTES, sourceName: 'serif.ttf', familyName: 'Serif A' })
+    mem.putKeys.length = 0
+
+    const again = await uploadFont(db, { buffer: FONT_BYTES, sourceName: 'copy.ttf', familyName: 'Serif A' })
+
+    expect(again.id).toBe(first.id)
+    expect(fontSplit).toHaveBeenCalledTimes(1)
+    expect(mem.putKeys).toEqual([])
+  })
+
+  it('re-slices under the new family name when the same bytes arrive renamed, keeping the font id', async () => {
+    const first = await uploadFont(db, { buffer: FONT_BYTES, sourceName: 'serif.ttf', familyName: 'Serif A' })
+
+    const renamed = await uploadFont(db, { buffer: FONT_BYTES, sourceName: 'serif.ttf', familyName: 'Serif B' })
+
+    expect(renamed.id).toBe(first.id)
+    expect(renamed.familyName).toBe('Serif B')
+    expect(fontSplit).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(fontSplit).mock.calls[1]?.[0].css?.fontFamily).toBe('Serif B')
+    const rows = await sqliteOf(db).select().from(font).where(eq(font.hash, FONT_HASH))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.familyName).toBe('Serif B')
+    expect(storedCss(renamed.cssKey)).toContain('font-family:"Serif B"')
+    expect(storedCss(renamed.cssKey)).not.toContain('Serif A')
+    const expectedEtag = createHash('sha256')
+      .update(Buffer.from(slicedPackage('Serif B')[0]!.data))
+      .digest('hex')
+    expect(renamed.etag).toBe(expectedEtag)
   })
 })

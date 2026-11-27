@@ -23,6 +23,7 @@ where
     pub face: &'a mut Owned<Face<'b>>,
     pub callback: &'a dyn Fn(OutputFile),
     pub fvar_table: Option<FvarTable>,
+    pub warnings: Vec<String>,
 }
 
 pub fn create_context<'a, 'b, 'c, F: Fn(OutputFile)>(
@@ -42,10 +43,11 @@ pub fn create_context<'a, 'b, 'c, F: Fn(OutputFile)>(
         callback,
         face,
         fvar_table: None,
+        warnings: vec![],
     }
 }
 
-pub fn font_split<F: Fn(OutputFile)>(config: FontSplitConfig, callback: F) {
+pub fn font_split<F: Fn(OutputFile)>(config: FontSplitConfig, callback: F) -> Vec<String> {
     let binary = smart_load_woff2(&config.input);
     let mut face = Face::from_bytes(&binary, 0);
     let mut ctx = create_context(&config, &binary, &mut face, &callback);
@@ -53,4 +55,5 @@ pub fn font_split<F: Fn(OutputFile)>(config: FontSplitConfig, callback: F) {
     for process in [pre_subset, run_subset, link_subset] {
         process(&mut ctx)
     }
+    ctx.warnings
 }

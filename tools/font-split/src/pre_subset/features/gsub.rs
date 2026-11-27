@@ -1,29 +1,22 @@
-use log::error;
 use opentype::Font;
 use opentype::layout::{ChainedContext, Coverage};
 use opentype::tables::GlyphSubstitution;
 use opentype::tables::glyph_substitution::{LigatureSubstitution, Type};
 use std::io::Cursor;
 
-use super::opentype::{collect_glyph_id_from_format_1_and_2, expand_extension, subtables_with_positions};
+use super::opentype::{TableError, collect_glyph_id_from_format_1_and_2, expand_extension, subtables_with_positions};
 
-pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>> {
+pub fn analyze_gsub(font: &Font, font_file: &mut Cursor<&[u8]>) -> Result<Vec<Vec<u16>>, TableError> {
     let data: GlyphSubstitution = match font.take(font_file) {
         Ok(Some(data)) => data,
-        Ok(None) => {
-            error!("Font without GSUB table");
-            return vec![];
-        }
-        Err(e) => {
-            error!("{e}");
-            return vec![];
-        }
+        Ok(None) => return Ok(vec![]),
+        Err(e) => return Err(TableError::read(font, b"GSUB", "GSUB", e.to_string())),
     };
     let mut relations: Vec<Vec<u16>> = vec![];
     for (table, position) in subtables_with_positions(font, b"GSUB", data.lookup_offset, &data.lookups) {
         relations.extend(collect_gsub_relations(table, position, font_file, 0).into_iter().filter(|i| !i.is_empty()));
     }
-    relations
+    Ok(relations)
 }
 
 pub fn collect_gsub_relations(

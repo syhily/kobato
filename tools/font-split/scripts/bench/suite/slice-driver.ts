@@ -9,7 +9,7 @@ interface OutputFile {
 }
 
 interface Addon {
-  fontSplit(input: Buffer, options?: unknown): Promise<OutputFile[]>
+  fontSplit(input: Buffer, options?: unknown): Promise<{ files: OutputFile[] }>
   fontSplitAlgorithmVersion(): string
 }
 
@@ -22,7 +22,7 @@ if (addonPath === undefined || fontPath === undefined || family === undefined) {
 const addon = unsafeCast<Addon>(createRequire(import.meta.url)(addonPath))
 const input = readFileSync(fontPath)
 const started = performance.now()
-const files = await addon.fontSplit(input, { css: { fontFamily: family, commentBase: false } })
+const { files } = await addon.fontSplit(input, { css: { fontFamily: family, commentBase: false } })
 const ms = performance.now() - started
 
 const chunks = files.filter((file) => file.name.endsWith('.woff2'))

@@ -51,6 +51,21 @@ fn mini_font() -> Vec<u8> {
     woff::version2::decompress(&woff2).expect("mini font decodes")
 }
 
+fn split_collecting_warnings(input: &[u8]) -> (Vec<String>, Vec<String>) {
+    let names = std::cell::RefCell::new(Vec::new());
+    let warnings = font_split(FontSplitConfig { input: input.to_vec(), ..Default::default() }, |file: OutputFile| {
+        names.borrow_mut().push(file.name)
+    });
+    (names.into_inner(), warnings)
+}
+
+fn layout_table_pointing_past_the_file(sfnt: &mut [u8], tag: &[u8; 4]) {
+    let record = table_record(sfnt, tag).unwrap_or_else(|| panic!("the mini font carries a {tag:?} table"));
+    let start = u32_at(sfnt, record + 8);
+    let distance = u16::try_from(sfnt.len() - start).expect("the table starts within 64 KiB of the end of the file");
+    sfnt[start + 8..start + 10].copy_from_slice(&distance.to_be_bytes());
+}
+
 #[test]
 fn a_small_font_slices_into_a_complete_package() {
     let names = split(&mini_font(), None);
@@ -125,4 +140,28 @@ fn font_with_an_unreadable_cmap_is_rejected() {
     sfnt[cmap + 8..cmap + 12].copy_from_slice(&0xFFFF_FF00_u32.to_be_bytes());
 
     split(&sfnt, None);
+}
+
+#[test]
+fn font_with_an_unreadable_gsub_still_slices_and_warns() {
+    let mut sfnt = mini_font();
+    layout_table_pointing_past_the_file(&mut sfnt, b"GSUB");
+
+    let (names, warnings) = split_collecting_warnings(&sfnt);
+
+    assert_complete_package(&names);
+    assert_eq!(warnings.len(), 1, "{warnings:?}");
+    assert!(warnings[0].starts_with("failed to read the GSUB table (offset="), "{warnings:?}");
+}
+
+#[test]
+fn font_with_an_unreadable_gpos_still_slices_and_warns() {
+    let mut sfnt = mini_font();
+    layout_table_pointing_past_the_file(&mut sfnt, b"GPOS");
+
+    let (names, warnings) = split_collecting_warnings(&sfnt);
+
+    assert_complete_package(&names);
+    assert_eq!(warnings.len(), 1, "{warnings:?}");
+    assert!(warnings[0].starts_with("failed to read the GPOS table (offset="), "{warnings:?}");
 }

@@ -4,11 +4,13 @@ use opentype::truetype::tables::character_mapping::{Encoding, Encoding0, Encodin
 use std::collections::HashMap;
 use std::io::Cursor;
 
-pub fn analyze_cmap(font: &Font, font_file: &mut Cursor<&[u8]>) -> HashMap<u16, u32> {
-    let data: Option<CharacterMapping> =
-        font.take(font_file).expect("cn-font-split | features | read cmap table error");
-    let Some(data) = data else {
-        panic!("cn-font-split | features | font without cmap table");
+use super::opentype::TableError;
+
+pub fn analyze_cmap(font: &Font, font_file: &mut Cursor<&[u8]>) -> Result<HashMap<u16, u32>, TableError> {
+    let data: CharacterMapping = match font.take(font_file) {
+        Ok(Some(data)) => data,
+        Ok(None) => return Err(TableError::read(font, b"cmap", "cmap", "the font has no cmap table")),
+        Err(e) => return Err(TableError::read(font, b"cmap", "cmap", e.to_string())),
     };
     let mut cmap: HashMap<u16, u32> = HashMap::new();
     data.encodings.iter().for_each(|e| match e {
@@ -19,7 +21,7 @@ pub fn analyze_cmap(font: &Font, font_file: &mut Cursor<&[u8]>) -> HashMap<u16, 
         Encoding::Format14(_e) => {}
         Encoding::Unknown(_e) => {}
     });
-    cmap
+    Ok(cmap)
 }
 
 pub fn inject_unicode_glyph_id_map(map: HashMap<u32, u16>, cmap: &mut HashMap<u16, u32>) {

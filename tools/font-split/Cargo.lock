@@ -217,7 +217,7 @@ dependencies = [
 
 [[package]]
 name = "kobato-font-split"
-version = "7.6.8"
+version = "7.4.3"
 dependencies = [
  "chrono",
  "harfbuzz_rs_now",

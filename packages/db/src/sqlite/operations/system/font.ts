@@ -38,6 +38,7 @@ export async function deleteFontRowById(db: Database, id: string): Promise<void>
 }
 
 export interface FontPackageUpdate {
+  familyName: string
   cssKey: string
   storageDriver: StorageDriver
   chunkCount: number

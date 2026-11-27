@@ -1,5 +1,8 @@
+import { getLogger } from '@kobato/server/infra/logger'
 import { FONT_SPLIT_ADDON_SPEC, nativeRequire } from '@kobato/server/infra/sea/native-require'
 import { unsafeCast } from '@kobato/utils/unsafe-cast'
+
+const log = getLogger('fonts.napi-split')
 
 export interface FontSplitCssProps {
   fontFamily?: string
@@ -30,8 +33,13 @@ interface NativeFontSplitOptions {
   css?: Omit<FontSplitCssProps, 'fontWeight'> & { fontWeight?: string }
 }
 
+interface NativeFontSplitResult {
+  files: FontSplitOutputFile[]
+  warnings: string[]
+}
+
 interface NativeBinding {
-  fontSplit(input: Buffer, options?: NativeFontSplitOptions): Promise<FontSplitOutputFile[]>
+  fontSplit(input: Buffer, options?: NativeFontSplitOptions): Promise<NativeFontSplitResult>
   fontSplitAlgorithmVersion(): string
 }
 
@@ -63,13 +71,16 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
         }
       : undefined,
   }
-  let outputs: FontSplitOutputFile[]
+  let result: NativeFontSplitResult
   try {
-    outputs = await native.fontSplit(Buffer.from(input), options)
+    result = await native.fontSplit(Buffer.from(input), options)
   } catch (error) {
     throw new FontSplitRejectedError({ cause: error })
   }
-  return outputs.map((file) => ({ name: file.name, data: new Uint8Array(file.data) }))
+  for (const warning of result.warnings) {
+    log.warn('fontSplit sliced the font without a table it could not read', { warning })
+  }
+  return result.files.map((file) => ({ name: file.name, data: new Uint8Array(file.data) }))
 }
 
 export function fontSplitAlgorithmVersion(): string {

@@ -25,6 +25,7 @@ where
     font: &'a opentype::Font,
     font_file: &'a mut Cursor<&'c [u8]>,
     subset_languages: Vec<Option<String>>,
+    warnings: Vec<String>,
 }
 
 pub const DEFAULT_PREDICT_BYTES_PER_SUBSET: u32 = 1024 * 70;
@@ -55,6 +56,7 @@ pub fn pre_subset(ctx: &mut Context) {
         font: &font,
         font_file: &mut font_file,
         subset_languages: Vec::new(),
+        warnings: Vec::new(),
     };
 
     type ProcessFn = fn(&mut Vec<IndexSet<u32>>, &mut BTreeSet<u32>, &mut PreSubsetContext<'_, '_, '_>);
@@ -88,5 +90,8 @@ pub fn pre_subset(ctx: &mut Context) {
         }
     }
 
+    let warnings = context.warnings;
+
     ctx.name_table = name_table::analyze_name_table(&font, &mut font_file);
+    ctx.warnings = warnings;
 }

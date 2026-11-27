@@ -1,7 +1,7 @@
 [package]
 name = "kobato-font-split"
 description = "Fork of KonghaYao/cn-font-split (release @ 1650af13): protobuf removed, trimmed to the Kobato font slicing pipeline, packaged as a Node-API addon."
-version = "7.6.8"
+version = "7.4.3"
 edition = "2024"
 license = "Apache-2.0"
 publish = false

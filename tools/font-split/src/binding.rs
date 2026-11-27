@@ -38,6 +38,12 @@ pub struct FontSplitOutputFile {
     pub data: Buffer,
 }
 
+#[napi(object)]
+pub struct FontSplitResult {
+    pub files: Vec<FontSplitOutputFile>,
+    pub warnings: Vec<String>,
+}
+
 impl From<FontSplitCss> for CssProperties {
     fn from(css: FontSplitCss) -> Self {
         CssProperties {
@@ -61,15 +67,15 @@ pub struct FontSplitTask {
 
 #[napi]
 impl Task for FontSplitTask {
-    type Output = Vec<OutputFile>;
-    type JsValue = Vec<FontSplitOutputFile>;
+    type Output = (Vec<OutputFile>, Vec<String>);
+    type JsValue = FontSplitResult;
 
     fn compute(&mut self) -> Result<Self::Output> {
         let config = self.config.clone();
         let result = catch_unwind(AssertUnwindSafe(|| {
             let outputs = RefCell::new(Vec::new());
-            core_font_split(config, |file| outputs.borrow_mut().push(file));
-            outputs.into_inner()
+            let warnings = core_font_split(config, |file| outputs.borrow_mut().push(file));
+            (outputs.into_inner(), warnings)
         }));
         result.map_err(|panic| {
             let reason = panic
@@ -82,7 +88,14 @@ impl Task for FontSplitTask {
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
-        Ok(output.into_iter().map(|file| FontSplitOutputFile { name: file.name, data: file.data.into() }).collect())
+        let (files, warnings) = output;
+        Ok(FontSplitResult {
+            files: files
+                .into_iter()
+                .map(|file| FontSplitOutputFile { name: file.name, data: file.data.into() })
+                .collect(),
+            warnings,
+        })
     }
 }
 

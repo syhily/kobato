@@ -4,19 +4,21 @@ use opentype::tables::glyph_positioning::{self, Type};
 use std::io::Cursor;
 
 use super::opentype::{
-    collect_glyph_id_from_class, collect_glyph_id_from_format_1_and_2, expand_extension, subtables_with_positions,
+    TableError, collect_glyph_id_from_class, collect_glyph_id_from_format_1_and_2, expand_extension,
+    subtables_with_positions,
 };
 
-pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Vec<Vec<u16>> {
-    let data: Option<GlyphPositioning> = font.take(font_file).ok().and_then(|nested_option| nested_option);
-    let Some(data) = data else {
-        return vec![];
+pub fn analyze_gpos(font: &Font, font_file: &mut Cursor<&[u8]>) -> Result<Vec<Vec<u16>>, TableError> {
+    let data: GlyphPositioning = match font.take(font_file) {
+        Ok(Some(data)) => data,
+        Ok(None) => return Ok(vec![]),
+        Err(e) => return Err(TableError::read(font, b"GPOS", "GPOS", e.to_string())),
     };
     let mut relation_list: Vec<Vec<u16>> = vec![];
     for (table, position) in subtables_with_positions(font, b"GPOS", data.lookup_offset, &data.lookups) {
         collect_gpos_relations(table, position, font_file, &mut relation_list, 0);
     }
-    relation_list
+    Ok(relation_list)
 }
 
 pub fn collect_gpos_relations(

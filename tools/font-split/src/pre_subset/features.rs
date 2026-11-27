@@ -15,14 +15,22 @@ pub fn features_plugin(
     _remaining_chars_set: &mut BTreeSet<u32>,
     ctx: &mut PreSubsetContext,
 ) {
-    let cmap = analyze_cmap(ctx.font, ctx.font_file);
-    let sub_map = analyze_gsub(ctx.font, ctx.font_file);
+    let cmap =
+        analyze_cmap(ctx.font, ctx.font_file).unwrap_or_else(|error| panic!("cn-font-split | features | {error}"));
+    let sub_map = relations_or_empty(analyze_gsub(ctx.font, ctx.font_file), ctx);
     let sub_map = turn_indices_to_unicode_set(sub_map, &cmap);
     move_feature_set_to_front(&sub_map, subsets);
 
-    let pos_map = analyze_gpos(ctx.font, ctx.font_file);
+    let pos_map = relations_or_empty(analyze_gpos(ctx.font, ctx.font_file), ctx);
     let pos_map = turn_indices_to_unicode_set(pos_map, &cmap);
     move_feature_set_to_front(&pos_map, subsets);
+}
+
+fn relations_or_empty(read: Result<Vec<Vec<u16>>, opentype::TableError>, ctx: &mut PreSubsetContext) -> Vec<Vec<u16>> {
+    read.unwrap_or_else(|error| {
+        ctx.warnings.push(error.to_string());
+        vec![]
+    })
 }
 
 pub fn move_feature_set_to_front(feature_map: &[IndexSet<u32>], subsets: &mut [IndexSet<u32>]) {

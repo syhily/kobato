@@ -11,8 +11,11 @@ addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`. Product src never statical
 A rejection by the addon is rethrown by the seam as `FontSplitRejectedError`; `sliceFont` turns it into
 `DomainError('BAD_REQUEST', 'fonts.error.unreadable')` and logs the native reason. A font that passes the magic and
 table-bounds pre-validation but cannot be read is the uploader's problem, while an unavailable addon or a missing
-`result.css` stays an internal error. `sliceFont` also asks for a reproducible stylesheet (`commentBase: false` drops
-the generation timestamp), so re-slicing the same font yields byte-identical CSS and a stable ETag.
+`result.css` stays an internal error. The addon resolves to `{ files, warnings }`: a warning names a table the slicer
+proceeded without (an unreadable GSUB or GPOS — the package then carries no relation from that table), and the seam logs
+every one at warn level under `fonts.napi-split` instead of dropping it. `sliceFont` also asks for a reproducible
+stylesheet (`commentBase: false` drops the generation timestamp), so re-slicing the same font yields byte-identical CSS
+and a stable ETag.
 
 ## Sliced-package storage
 
@@ -21,8 +24,11 @@ the generation timestamp), so re-slicing the same font yields byte-identical CSS
   size), so an algorithm change derives new keys and never mixes with stale slices. The row's `cssKey` embeds the
   version — no schema column.
 - Re-uploading the same bytes under a new algorithm version re-slices, repoints the row, and removes the stale package
-  best-effort. Font source bytes are not stored. Concurrent uploads of identical bytes coalesce process-locally on the
-  sha256 (`inFlightUploads` in `services/upload.ts`).
+  best-effort. The family name is part of the package (it is the CSS `font-family` and its `local()` source): the same
+  bytes under another family name re-slice into the same prefix and rename the row in place, so the id and its slot
+  references stay valid; under the same version and family name the upload is a no-op. Font source bytes are not stored.
+  Concurrent uploads of identical bytes coalesce process-locally on the sha256 (`inFlightUploads` in
+  `services/upload.ts`).
 - The addon is compiled, not vendored as a binary: `pnpm --filter @kobato/font-split run build` must run once per
   machine before `pnpm dev` or any test touching `sliceFont`, and in CI before `sea:build` — `vendor/napi-split.ts`
   throws an actionable error when it is missing. Updating: take upstream fixes into `tools/font-split/` by hand

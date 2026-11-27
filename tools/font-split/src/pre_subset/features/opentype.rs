@@ -2,7 +2,40 @@ use opentype::Font;
 use opentype::layout::{Class, Coverage, Lookups};
 use opentype::tape::Read as _;
 use opentype::walue;
+use std::fmt;
 use std::io::{Cursor, Seek, SeekFrom};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TableError {
+    table: &'static str,
+    offset: Option<u32>,
+    size: Option<u32>,
+    message: String,
+}
+
+impl TableError {
+    pub fn read(font: &Font, tag: &[u8; 4], table: &'static str, message: impl Into<String>) -> Self {
+        let record = font.offsets.records.iter().find(|record| record.tag.0 == *tag);
+        Self {
+            table,
+            offset: record.map(|record| record.offset),
+            size: record.map(|record| record.size),
+            message: message.into(),
+        }
+    }
+}
+
+impl fmt::Display for TableError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "failed to read the {} table", self.table)?;
+        if let (Some(offset), Some(size)) = (self.offset, self.size) {
+            write!(f, " (offset={offset}, size={size})")?;
+        }
+        write!(f, ": {}", self.message)
+    }
+}
+
+impl std::error::Error for TableError {}
 
 pub const MAX_EXTENSION_DEPTH: usize = 8;
 

@@ -1,4 +1,4 @@
-import type { FontSplitOptions, FontSplitOutputFile } from '@kobato/font-split/binding'
+import type { FontSplitOptions, FontSplitResult } from '@kobato/font-split/binding'
 
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
@@ -29,6 +29,6 @@ export function fontSplitAlgorithmVersion(): string {
   return loadNativeBinding().fontSplitAlgorithmVersion()
 }
 
-export async function fontSplit(input: Buffer, options?: FontSplitOptions | null): Promise<FontSplitOutputFile[]> {
+export async function fontSplit(input: Buffer, options?: FontSplitOptions | null): Promise<FontSplitResult> {
   return loadNativeBinding().fontSplit(input, options)
 }

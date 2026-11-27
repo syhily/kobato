@@ -1,7 +1,7 @@
 /* oxlint-disable no-duplicate-type-constituents */
 /* oxfmt-ignore */
 
-export declare function fontSplit(input: Buffer, options?: FontSplitOptions | undefined | null): Promise<Array<FontSplitOutputFile>>
+export declare function fontSplit(input: Buffer, options?: FontSplitOptions | undefined | null): Promise<FontSplitResult>
 
 export declare function fontSplitAlgorithmVersion(): string
 
@@ -32,4 +32,9 @@ export interface FontSplitOptions {
 export interface FontSplitOutputFile {
   name: string
   data: Buffer
+}
+
+export interface FontSplitResult {
+  files: Array<FontSplitOutputFile>
+  warnings: Array<string>
 }

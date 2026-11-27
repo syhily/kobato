@@ -105,7 +105,7 @@ async function uploadFontExclusive(
   const algorithmVersion = fontSplitAlgorithmVersion()
 
   const existing = await findFontByHash(db, hash)
-  if (existing && existing.cssKey === fontCssKey(hash, algorithmVersion)) {
+  if (existing && existing.cssKey === fontCssKey(hash, algorithmVersion) && existing.familyName === trimmedFamily) {
     return toAdminFontDto(existing)
   }
 
@@ -126,6 +126,7 @@ async function uploadFontExclusive(
 
   if (existing) {
     await updateFontPackage(db, existing.id, {
+      familyName: trimmedFamily,
       cssKey,
       etag,
       chunkCount: sliced.chunkCount,
