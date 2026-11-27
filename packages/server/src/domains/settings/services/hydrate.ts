@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { BundleKey, SettingsSection } from '@kobato/settings/sections'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@kobato/server/domains/settings/sections/registry'
 import { migrateLegacySiteIdentityLocale } from '@kobato/server/domains/settings/services/locale-migration'
@@ -11,7 +12,6 @@ import { SECRET_FIELDS } from '@kobato/settings/secrets'
 import { BUNDLE_KEYS, SETTINGS_SECTIONS } from '@kobato/settings/sections'
 import { sectionFromScope, SETTINGS_SCOPE_PREFIX } from '@kobato/settings/sections/registry'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/settings/snapshot'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('settings.snapshot')
 

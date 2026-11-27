@@ -1,4 +1,4 @@
-import { sanitizeHtml } from '@kobato/sanitize/sanitize-html'
+import { sanitizeHtml } from '@kobato/base/sanitize/sanitize-html'
 import { useMemo } from 'react'
 
 export function CommentContentHtml({ content, className }: { content: string | null; className?: string }) {

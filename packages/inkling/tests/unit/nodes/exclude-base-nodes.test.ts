@@ -1,5 +1,5 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { EDITOR_BASE_NODES, excludeBaseNodes } from '@kobato/inkling'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { describe, expect, it } from 'vitest'
 
 type Entry = { getType?: () => string; replace?: { getType?: () => string } }

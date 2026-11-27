@@ -1,6 +1,7 @@
 import type { Stage, SuiteOptions } from '@kobato/font-split/scripts/bench/suite/options'
 import type { BenchmarkResults, ResolvedFont, SuiteContext } from '@kobato/font-split/scripts/bench/suite/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { runCommand } from '@kobato/font-split/scripts/bench/command'
 import { measureLoadingTime } from '@kobato/font-split/scripts/bench/suite/loading-time'
 import { STAGES } from '@kobato/font-split/scripts/bench/suite/options'
@@ -10,7 +11,6 @@ import { measureRendering } from '@kobato/font-split/scripts/bench/suite/renderi
 import { renderBenchmark } from '@kobato/font-split/scripts/bench/suite/report'
 import { measureShaping } from '@kobato/font-split/scripts/bench/suite/shaping'
 import { measureSlicingTime } from '@kobato/font-split/scripts/bench/suite/slicing-time'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { arch, cpus, platform } from 'node:os'

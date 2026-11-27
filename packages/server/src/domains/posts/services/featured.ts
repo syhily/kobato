@@ -3,6 +3,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { PostMetaRow } from '@kobato/db/sqlite/types'
 import type { SidebarSettings } from '@kobato/settings/types'
 
+import { shuffle } from '@kobato/base/utils/sampling'
 import { toSidebarPostLink } from '@kobato/catalog/projection'
 import {
   listLiveVisiblePostIds,
@@ -17,7 +18,6 @@ import { hydratePostImages, hydratePostList } from '@kobato/server/domains/posts
 import { toClientPostFromMeta } from '@kobato/server/domains/posts/repos/shared'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { getSidebarWidgetCount } from '@kobato/settings/presentation'
-import { shuffle } from '@kobato/utils/sampling'
 
 const FEATURE_POST_COUNT = 3
 

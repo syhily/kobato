@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { type OgWarmTarget, wireContentRenderWarmup } from '@kobato/server/domains/content/render-warmup'
 import { through } from '@kobato/server/infra/cache/registry'
 import { getLogger } from '@kobato/server/infra/logger'

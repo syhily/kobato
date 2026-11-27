@@ -2,9 +2,9 @@ import type { auditLog } from '@kobato/db/sqlite/schema/config'
 import type { z } from 'zod'
 
 import { auditLogItemDto } from '@kobato/api/contracts/admin/audit'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { maskIp, maskUserAgent, stripL3Markers } from '@kobato/server/domains/audit/privacy'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { isRecord } from '@kobato/utils/type-guards'
 
 export function parseDate(dateStr: string | undefined): Date | undefined {
   if (!dateStr) {

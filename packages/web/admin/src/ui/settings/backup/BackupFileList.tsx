@@ -3,6 +3,7 @@ import type { AppLocale } from '@kobato/i18n/locales'
 
 import { serializeKobatoRpcQueryInput } from '@kobato/api/client/rpc-serialization'
 import { ADMIN_BACKUP_DOWNLOAD_RPC_PATH } from '@kobato/api/rpc/admin/backup'
+import { formatBytes, formatDateTime } from '@kobato/base/utils/format'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +17,6 @@ import {
 import { Button } from '@kobato/ui/components/button'
 import { Input } from '@kobato/ui/components/input'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatBytes, formatDateTime } from '@kobato/utils/format'
 import { SettingGroup } from '@kobato/web-admin/ui/settings/shell/SettingGroup'
 import { type ConfirmState, ConfirmDialog } from '@kobato/web-admin/ui/shared/ConfirmDialog'
 import { LockIcon } from 'lucide-react'

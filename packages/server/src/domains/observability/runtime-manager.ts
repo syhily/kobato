@@ -2,6 +2,7 @@ import type { ObservabilitySettingsSlice } from '@kobato/server/domains/observab
 import type { TraceConfigResolution } from '@kobato/server/infra/trace/config'
 import type { ExportFailure } from '@kobato/server/infra/trace/export-health'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import {
   observabilityConnectionFingerprint,
   observabilityRuntimeFingerprint,
@@ -12,7 +13,6 @@ import { getLogger } from '@kobato/server/infra/logger'
 import { logTraceDiagnostics, resolveTraceConfig, traceEnvironment } from '@kobato/server/infra/trace/config'
 import { lastExportFailure } from '@kobato/server/infra/trace/export-health'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('observability')
 

@@ -1,8 +1,16 @@
 import type { Plugin } from 'vite'
 
-import { CHUNKS_SENTINEL, WARMUP_GLOBAL_EXCLUDED_PATTERNS, type RouteManifest } from '@kobato/distribution/route-warmup'
-import { collectManifestChunks, parseClientManifest, type WarmupManifest } from '@kobato/distribution/warmup-manifest'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import {
+  CHUNKS_SENTINEL,
+  WARMUP_GLOBAL_EXCLUDED_PATTERNS,
+  type RouteManifest,
+} from '@kobato/base/distribution/route-warmup'
+import {
+  collectManifestChunks,
+  parseClientManifest,
+  type WarmupManifest,
+} from '@kobato/base/distribution/warmup-manifest'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { build } from 'vite'

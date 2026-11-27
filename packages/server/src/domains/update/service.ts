@@ -1,6 +1,6 @@
 import type { UpdateCheckResult } from '@kobato/api/contracts/admin/update'
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { startUpdateJob } from '@kobato/server/domains/update/job'
 import { fetchLatestRelease } from '@kobato/server/domains/update/release'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'

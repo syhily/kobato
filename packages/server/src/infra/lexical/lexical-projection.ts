@@ -1,6 +1,7 @@
 import type { LexicalStateToHtmlOptions } from '@kobato/inkling/headless'
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { generateDecoratorNode, lexicalStateToHtml, lexicalStateToPlainText } from '@kobato/inkling/headless'
 import { FEED_VARIANT_META_KIND } from '@kobato/inkling/headless/cards/card-html'
 import {
@@ -33,7 +34,6 @@ import { toProjectionState } from '@kobato/server/infra/lexical/projection-state
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { resolveFootnotesSectionTitle } from '@kobato/settings/presentation'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import katex from 'katex'
 
 export interface BodyProjections {

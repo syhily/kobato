@@ -2,6 +2,7 @@ import type { AdminImageDto, UploadKind } from '@kobato/api/contracts/admin/imag
 import type { LockedAspect } from '@kobato/web-admin/ui/shared/image-edit/ImageEditorCanvas'
 
 import { orpc } from '@kobato/api/browser/client'
+import { formatBytes } from '@kobato/base/utils/format'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
@@ -14,7 +15,6 @@ import {
 import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatBytes } from '@kobato/utils/format'
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import {
   type SubmitEventHandler,

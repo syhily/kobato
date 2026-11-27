@@ -1,7 +1,7 @@
 import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
 import type { FragmentInstance, Ref } from 'react'
 
-import { getImageUrl } from '@kobato/assets/images'
+import { getImageUrl } from '@kobato/base/assets/images'
 import { LazyMotionButton, LazyMotionDiv } from '@kobato/ui/components/lazy-motion'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

@@ -1,8 +1,8 @@
 import type { HomeExtra } from '@kobato/api/contracts/public/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { metaWithFallback } from '@kobato/catalog/seo/meta'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { getSayakaContext } from '@sayaka/server/request-context'
 import { listingHeaders } from '@sayaka/server/route-cache-headers'
 import { sinkUnhandledRejection, unwrapListing } from '@sayaka/server/unwrap'

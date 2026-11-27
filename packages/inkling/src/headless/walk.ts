@@ -1,6 +1,6 @@
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling-internal/headless/schema'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 export function visitLexicalNodes(state: LexicalEditorState, visit: (node: LexicalNodeJson) => void): void {
   const stack: LexicalNodeJson[] = []

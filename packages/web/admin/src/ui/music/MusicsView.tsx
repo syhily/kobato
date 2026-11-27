@@ -1,6 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,6 @@ import {
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useInfiniteScrollSentinel } from '@kobato/ui/lib/use-infinite-scroll-sentinel'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { AlbumCard } from '@kobato/web-admin/ui/music/AlbumCard'
 import { MusicLibraryHero } from '@kobato/web-admin/ui/music/MusicLibraryHero'
 import { useMusicPlayerActions } from '@kobato/web-admin/ui/music/player/music-player-context'

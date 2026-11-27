@@ -1,8 +1,8 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { makeCommentBody } from '@kobato/api/tests/utils/catalog'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { canonicalizeCommentBody } from '@kobato/server/domains/comments/services/canonicalize'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { describe, expect, it } from 'vitest'
 
 function linkedCommentBody(url: string): CommentEditorState {

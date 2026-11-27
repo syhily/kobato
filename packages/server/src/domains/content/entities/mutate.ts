@@ -8,6 +8,7 @@ import type {
   UpsertMetaInputBase,
 } from '@kobato/server/domains/content/entities/descriptor'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   createEntityWithSlug,
   restoreEntityReclaimingSlug,
@@ -21,7 +22,6 @@ import { rethrowSlugConflict } from '@kobato/server/domains/content/slug-conflic
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
   create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>

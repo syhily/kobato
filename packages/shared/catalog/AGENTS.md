@@ -14,7 +14,7 @@ the server's feed/OG renderers.
   `src/seo/`, plus the server's feed/OG renderers. web-kit, the apps' UI trees, and sayaka never import it — route title
   resolution stays in the app layer.
 - Does not own oRPC inputs, mutation DTOs, database rows, React, or server queries; never depends on the api contracts.
-- Allowed deps: `@kobato/settings`, `@kobato/i18n`, `@kobato/utils` (values); `@kobato/inkling` (headless, TYPE-ONLY)
-  and `MetaDescriptor` (type-only). Runtime-isomorphic and React-free like every shared leaf.
+- Allowed deps: `@kobato/settings`, `@kobato/i18n`, `@kobato/base` (values); `@kobato/inkling` (headless, TYPE-ONLY) and
+  `MetaDescriptor` (type-only). Runtime-isomorphic and React-free like every shared leaf.
 - Tests: `tests/unit/` + `tests/snaps/` (`shared-unit` / `shared-snaps`). The workspace-canonical content fixture lives
   in `@kobato/api/tests/utils/catalog.ts`.

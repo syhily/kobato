@@ -2,6 +2,7 @@ import type { Env } from '@kobato/server/http/hono-env'
 import type { RequestContext } from '@kobato/server/http/request-context'
 
 import { getClientAddress } from '@kobato/api/client/client-address'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { getDb } from '@kobato/server/bootstrap/db-lifecycle'
 import {
   buildCsrfCookieHeader,
@@ -19,7 +20,6 @@ import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/r
 import { serverConfig } from '@kobato/server/infra/config'
 import { parseCookieValue } from '@kobato/server/infra/http/cookie'
 import { createLazyAppSnapshot } from '@kobato/settings/app-localization'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createMiddleware } from 'hono/factory'
 import { randomBytes } from 'node:crypto'
 

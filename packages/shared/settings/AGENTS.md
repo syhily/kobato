@@ -25,7 +25,7 @@ The isomorphic settings model and its single source of truth.
   fallbacks, and the reserved read-only buckets from the registry — never hand-synced. No file store, L1 memory store,
   eviction, or lifecycle logic here — those live in `@kobato/server/src/infra/cache`. The admin `cache` Section
   (`sections/cache.ts`) and the admin clear-cache contract read the declarations.
-- Allowed deps: `@kobato/i18n`, `@kobato/assets`, `@kobato/utils`. Never `@kobato/api`, server, db, web, UI, or React.
+- Allowed deps: `@kobato/i18n`, `@kobato/base`. Never `@kobato/api`, server, db, web, UI, or React.
 - Tests: `tests/unit/` (`shared-unit`). `tests/utils/blog-settings.ts` is the WORKSPACE-canonical settings fixture —
   import it cross-package, never keep a copy. `tests/utils/setup/{unit,snaps}.ts` owns the shared projects' settings
   reset wrappers. Server write/hydration/secret tests remain in `packages/server/tests`.

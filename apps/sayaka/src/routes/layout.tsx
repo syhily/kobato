@@ -1,7 +1,7 @@
 import type { RouteHandle } from '@sayaka/root'
 
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { useReloadOnChunkError } from '@sayaka/document/use-chunk-error-recovery'
 import { useDeviceEnvBeacon } from '@sayaka/document/use-device-env-beacon'
 import { documentHeaders } from '@sayaka/server/headers'

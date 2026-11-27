@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { StagedBackup } from '@kobato/server/domains/backup/services/restore'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   claimEncryptedUploadForDecrypt,
   endDecryptClaim,
@@ -24,7 +25,6 @@ import {
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createReadStream, rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
 

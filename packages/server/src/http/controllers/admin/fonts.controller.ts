@@ -1,4 +1,5 @@
 import { adminFontsContract } from '@kobato/api/rpc/admin/fonts'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { uploadCanvasFont } from '@kobato/server/domains/fonts/services/canvas-upload'
 import { deleteFont, setFontSlot } from '@kobato/server/domains/fonts/services/mutate'
@@ -7,7 +8,6 @@ import { uploadFont } from '@kobato/server/domains/fonts/services/upload'
 import { implementAdmin } from '@kobato/server/http/orpc-base'
 import { getLogger } from '@kobato/server/infra/logger'
 import { resetCanvasFont, resetFontCache } from '@kobato/server/render/canvas-fonts'
-import { idFromString } from '@kobato/utils/id'
 
 const log = getLogger('fonts.controller')
 

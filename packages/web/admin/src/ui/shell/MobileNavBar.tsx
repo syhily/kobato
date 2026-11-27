@@ -1,7 +1,7 @@
 import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 import type { ReactNode } from 'react'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useSidebar } from '@kobato/ui/lib/sidebar-context'

@@ -1,4 +1,4 @@
-import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/distribution/sea-assets'
+import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@kobato/base/distribution/sea-assets'
 import {
   isDrizzleSnapshotArtifact,
   packAssetBytes,

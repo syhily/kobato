@@ -17,7 +17,7 @@ const fileStoreMock = vi.hoisted(() => ({
 
 vi.mock('@kobato/server/infra/cache/file-store', () => fileStoreMock)
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
 import {
   __resetCacheCountersForTests,

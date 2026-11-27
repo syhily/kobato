@@ -1,4 +1,5 @@
 import { commentsTokenContract } from '@kobato/api/rpc/public/comments'
+import { idFromString } from '@kobato/base/utils/id'
 import { findCommentsByIds } from '@kobato/db/sqlite/operations/engagement/comment'
 import { asCommentItemsWire } from '@kobato/server/domains/comments/projection'
 import { parseComments } from '@kobato/server/domains/comments/services/public-query'
@@ -8,7 +9,6 @@ import {
   verifyCommentOwnership,
 } from '@kobato/server/domains/comments/services/token-store'
 import { commentTokenCookie, implementPublic } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(commentsTokenContract)
 

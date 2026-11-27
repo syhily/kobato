@@ -1,9 +1,9 @@
 import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@kobato/server/domains/music/providers/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { z } from 'zod'
 
 const log = getLogger('music.tencent')

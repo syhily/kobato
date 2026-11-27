@@ -1,6 +1,7 @@
 import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { ContentEntityAdapter, ForceOverwriteEntry } from '@kobato/server/domains/content/lifecycle'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
@@ -15,7 +16,6 @@ import {
   lexicalParagraph,
   stubMusicResolver,
 } from '@kobato/server/tests/utils/lexical'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { asc, eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

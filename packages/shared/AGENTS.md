@@ -1,6 +1,6 @@
 # Shared umbrella conventions
 
-`packages/shared/` is an umbrella of eight workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`), not a
+`packages/shared/` is an umbrella of four workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`), not a
 package: no umbrella package.json, test directory, barrel, or way to import "shared" as one unit. Its test projects
 (`shared-unit`, `shared-snaps`) are defined in `tools/test/src/projects/`.
 
@@ -8,28 +8,32 @@ package: no umbrella package.json, test directory, barrel, or way to import "sha
 
 - **Runtime-isomorphic, React-free.** No `node:*` value imports, no DOM-only APIs, no direct `process.env`, no
   `console.*`, no React (components, hooks, JSX, or `react`/`react-dom` value OR type imports) —
-  `apps/kobato/tests/arch/shared-react-free.test.ts`. The one sanctioned node dependency is `@kobato/sanitize`'s
+  `apps/kobato/tests/arch/shared-react-free.test.ts`. The one sanctioned node dependency is `@kobato/base/sanitize`'s
   `engine.node.ts` (jsdom), swapped to `engine.browser.ts` in the client bundle.
 - **Junk-drawer guard.** A module lands in a leaf only with a REAL cross-package consumer (two or more product packages)
   or inside that leaf's already-cohesive family. A single-consumer module belongs to that consumer.
-- **Direct source imports, no barrels.** Consumers import `@kobato/<leaf>/<module>.ts`; no re-exports, no leaf-level
-  `index.ts`.
+- **Direct source imports, no barrels.** Consumers import `@kobato/<leaf>/<module>.ts`
+  (`@kobato/base/<directory>/<module>.ts` inside `base`); no re-exports, no leaf-level `index.ts`.
 - **Error handling.** No logger here: throw, and let the boundary catch and log.
 
-## The eight leaves
+## The four leaves
 
-`utils` (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, network
-SSRF/CIDR + passkey RP checks), `i18n` (locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`,
-`inkling-labels`), `catalog` (public content read model + projections, `seo/`), `settings` (Section
-schema/default/secret registry, admin projections, `snapshot` slot, representation scopes, cache bucket declarations,
-RUM client identity, `telemetry/`), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror), `sanitize`
-(isomorphic DOMPurify stack, `escape-html`), `distribution` (`__APP_*__` identity, SEA asset keys, route-warmup manifest
-contract). Wire vocabulary (per-domain Zod schemas + DTOs) lives in `@kobato/api/contracts`.
+- `base` — five directories that keep the names of the leaves they were (`packages/shared/base/AGENTS.md`): `utils`
+  (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, network
+  SSRF/CIDR + passkey RP checks), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror),
+  `distribution` (`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `sanitize` (isomorphic
+  DOMPurify stack, `escape-html`).
+- `i18n` — locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`, `inkling-labels`.
+- `settings` — Section schema/default/secret registry, admin projections, `snapshot` slot, representation scopes, cache
+  bucket declarations, RUM client identity, `telemetry/`.
+- `catalog` — public content read model + projections, `seo/`.
 
-Dependency direction: `utils` → i18n; `auth` → i18n; `catalog` → settings + i18n + utils + inkling headless (type-only);
-`settings` → i18n + assets + utils (never `@kobato/api`). Outside the umbrella, Inkling (`@kobato/inkling`) → ui +
-i18n + distribution + assets + `sanitize` (the comment surface's stored-body renderer) + utils. Pinned by
-`apps/kobato/tests/arch/package-dag.test.ts`.
+Wire vocabulary (per-domain Zod schemas + DTOs) lives in `@kobato/api/contracts`.
+
+Dependency direction is a line — `i18n` ← `base` ← `settings` ← `catalog` — and inside `base` the direction is pinned at
+directory level (`packages/shared/base/AGENTS.md`). So: `settings` → i18n + base (never `@kobato/api`); `catalog` →
+settings + i18n + base + inkling headless (type-only). Outside the umbrella, Inkling (`@kobato/inkling`) → ui + i18n +
+base. Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage
 

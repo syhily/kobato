@@ -17,7 +17,7 @@ import {
   SEA_SAYAKA_CLIENT_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   type SeaAssetCodec,
-} from '@kobato/distribution/sea-assets'
+} from '@kobato/base/distribution/sea-assets'
 import { fail } from '@kobato/pack/process'
 import { run } from '@kobato/pack/sea/exec'
 import {

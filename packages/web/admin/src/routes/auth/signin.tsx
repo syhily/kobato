@@ -3,10 +3,10 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpc } from '@kobato/api/browser/client'
 import { AUTH_ACTION_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
+import { safeRedirectPath } from '@kobato/base/utils/safe-url'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { BrandLogo } from '@kobato/ui/components/BrandLogo'
 import { useI18n, type I18nValue } from '@kobato/ui/lib/I18nProvider'
-import { safeRedirectPath } from '@kobato/utils/safe-url'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   authErrorPayload,
   authMessagePayload,

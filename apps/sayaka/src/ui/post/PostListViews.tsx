@@ -1,12 +1,12 @@
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@kobato/catalog/model'
 import type { ReactNode } from 'react'
 
+import { formatShowDate } from '@kobato/base/utils/site-date'
 import { Button } from '@kobato/ui/components/button'
 import { Image } from '@kobato/ui/components/Image'
 import { useSidebarSettings, useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatShowDate } from '@kobato/utils/site-date'
 import { Pagination } from '@sayaka/ui/post/Pagination'
 import { postTitleClass } from '@sayaka/ui/post/postChrome'
 import { Sidebar, type SidebarData } from '@sayaka/ui/Sidebar'

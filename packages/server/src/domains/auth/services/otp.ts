@@ -1,6 +1,7 @@
 import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { BlogSession, PendingOtpUser } from '@kobato/server/domains/auth/session-storage'
 
+import { idFromString } from '@kobato/base/utils/id'
 import { findUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEvent } from '@kobato/server/domains/audit/services/record'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
@@ -21,7 +22,6 @@ import {
   tryOtpVerifyByEmailRateLimit,
   tryOtpVerifyRateLimit,
 } from '@kobato/server/infra/rate-limit'
-import { idFromString } from '@kobato/utils/id'
 
 const log = getLogger('auth.signin')
 

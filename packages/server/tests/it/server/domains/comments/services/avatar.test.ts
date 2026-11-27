@@ -1,7 +1,7 @@
-import type { AvatarSource } from '@kobato/assets/avatar'
+import type { AvatarSource } from '@kobato/base/assets/avatar'
 
-import { GRAVATAR_MIRROR_URLS } from '@kobato/assets/gravatar'
-import { encodedEmail } from '@kobato/auth/security'
+import { GRAVATAR_MIRROR_URLS } from '@kobato/base/assets/gravatar'
+import { encodedEmail } from '@kobato/base/auth/security'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { user } from '@kobato/db/sqlite/schema/user'
 import {

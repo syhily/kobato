@@ -1,10 +1,10 @@
 import type { BlogSettingsBundle, CustomQuote, DailyQuoteSource } from '@kobato/settings/types'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { getLogger } from '@kobato/server/infra/logger'
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
 import { LOCAL_QUOTES } from '@kobato/server/render/calendar/local-quotes'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { isRecord } from '@kobato/utils/type-guards'
 import { format } from 'date-fns'
 
 const log = getLogger('calendar')

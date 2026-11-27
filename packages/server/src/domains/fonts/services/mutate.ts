@@ -3,6 +3,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { FontRow } from '@kobato/db/sqlite/schema/font'
 import type { FontsSettings } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { deleteFontRowById, findFontById, findFontRowsByIds } from '@kobato/db/sqlite/operations/system/font'
 import { findSettingByScope } from '@kobato/db/sqlite/operations/system/setting'
 import { deleteFontPackage } from '@kobato/server/domains/fonts/storage'
@@ -10,7 +11,6 @@ import { updateBlogSettingsSection } from '@kobato/server/domains/settings/servi
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 async function readCurrentFonts(db: Database): Promise<FontsSettings> {
   const row = findSettingByScope(db, SECTION_REGISTRY.fonts.scope)

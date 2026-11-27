@@ -1,5 +1,5 @@
+import { tryParseUrl } from '@kobato/base/utils/safe-url'
 import { DomainError } from '@kobato/server/infra/http/errors'
-import { tryParseUrl } from '@kobato/utils/safe-url'
 
 const ANCHOR_HREF_RE = /<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi
 const TITLE_RE = /<title\b[^>]*>([\s\S]*?)<\/title>/i

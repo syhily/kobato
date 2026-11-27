@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { loader as sitemapLoader } from '@sayaka/routes/sitemap-xml'
 import { createStubKobato, makeSayakaLoaderArgs, stubCallsFor } from '@sayaka/tests/utils/stub-kobato'

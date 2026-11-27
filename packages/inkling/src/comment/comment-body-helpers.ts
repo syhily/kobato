@@ -1,7 +1,7 @@
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling/headless/walk'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export function commentBodyPlainText(body: unknown): string {
   const state = unsafeCast<LexicalEditorState>(body)

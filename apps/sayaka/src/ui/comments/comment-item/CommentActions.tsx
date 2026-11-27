@@ -1,6 +1,7 @@
 import type { CommentItemWire as CommentItemType } from '@kobato/api/contracts/public/comments'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { warmCommentEditorChunks } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import {
   AlertDialog,
@@ -16,7 +17,6 @@ import {
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatLocalDate } from '@kobato/utils/site-date'
 import { commentFlags } from '@sayaka/ui/comments/comment-item/comment-flags'
 import { commentFooterButtonClass } from '@sayaka/ui/comments/comment-item/presentation'
 import { useCommentsActions, useCommentsIdentity } from '@sayaka/ui/comments/comments-context'

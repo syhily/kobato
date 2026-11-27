@@ -6,6 +6,7 @@ import type {
   ViewsDto,
   ViewsPoint as WireViewsPoint,
 } from '@kobato/api/contracts/admin/analytics'
+import type { Assert, Equals } from '@kobato/base/utils/type-equals'
 import type {
   CountersSummary,
   HeatmapCell,
@@ -14,7 +15,6 @@ import type {
   ViewsPoint,
   ViewsSeries,
 } from '@kobato/db/duckdb/queries/types'
-import type { Assert, Equals } from '@kobato/utils/type-equals'
 
 import { LOGIN_METHODS as WIRE_LOGIN_METHODS } from '@kobato/api/contracts/account/self'
 import { METRIC_TYPES as WIRE_METRIC_TYPES } from '@kobato/api/contracts/admin/analytics'

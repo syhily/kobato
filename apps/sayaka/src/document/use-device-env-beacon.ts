@@ -1,6 +1,6 @@
 import { serializeKobatoRpcInput } from '@kobato/api/client/rpc-serialization'
 import { PUBLIC_ANALYTICS_RECORD_DEVICE_ENV_RPC_PATH } from '@kobato/api/rpc/public/analytics'
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { buildDeviceEnvBeacon } from '@sayaka/document/device-env'
 import { useEffect } from 'react'
 import { useMatches } from 'react-router'

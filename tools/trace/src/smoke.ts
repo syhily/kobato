@@ -1,6 +1,7 @@
 import type { O2Context, TraceState } from '@kobato/trace/lib'
 import type { BrowserContext, Page } from '@playwright/test'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/pack/instance/client/http'
 import { callE2eRpc } from '@kobato/pack/instance/client/rpc'
 import {
@@ -41,7 +42,6 @@ import {
   warn,
 } from '@kobato/trace/lib'
 import { applyRetention } from '@kobato/trace/provision'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { chromium } from '@playwright/test'
 import bcrypt from 'bcryptjs'
 import { randomBytes } from 'node:crypto'

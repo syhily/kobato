@@ -3,14 +3,14 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { BlogSettingsBundle, SiteAssetBranding } from '@kobato/settings/types'
 import type { MetaDescriptor } from 'react-router'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
+import { joinUrl } from '@kobato/base/utils/urls'
 import { ogImagePathForSlug } from '@kobato/catalog/seo/og-image'
 import { fallbackMessages } from '@kobato/i18n/fallback-messages'
 import { isSupportedLocale, toOpenGraphLocale } from '@kobato/i18n/locales'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
 import { brandingVersionSuffix, extractXHandle } from '@kobato/settings/presentation'
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
-import { joinUrl } from '@kobato/utils/urls'
 
 export interface SeoI18n {
   locale: AppLocale

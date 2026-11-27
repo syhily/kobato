@@ -3,12 +3,12 @@ import type { ContentEntityAdapter, SaveBodyOutcome, SaveBodyResult } from '@kob
 import type { ContractImplementer } from '@kobato/server/http/contract-implementation'
 import type { AuthedHandlerContext, HandlerContext } from '@kobato/server/http/orpc-base'
 
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { saveBody } from '@kobato/server/domains/content/lifecycle'
 import { getPublicMusicMetasByIds } from '@kobato/server/domains/music/services/read'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
-import { idFromString } from '@kobato/utils/id'
 
 export interface RevisionRouterAudit {
   resourceType: string

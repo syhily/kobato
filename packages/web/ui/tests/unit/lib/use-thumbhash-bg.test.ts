@@ -36,7 +36,7 @@ describe('lib/useThumbhashBackground — initial-return gating', () => {
 
 describe('lib/useThumbhashBackground — decoder determinism', () => {
   it('the shared decoder is deterministic for a given thumbhash', async () => {
-    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash')
+    const { thumbHashToDataURL } = await import('@kobato/base/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     const b = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     expect(a).toBe(b)
@@ -44,7 +44,7 @@ describe('lib/useThumbhashBackground — decoder determinism', () => {
   })
 
   it('the shared decoder produces distinct output for distinct thumbhashes', async () => {
-    const { thumbHashToDataURL } = await import('@kobato/utils/thumbhash')
+    const { thumbHashToDataURL } = await import('@kobato/base/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
     const b = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_B))
     expect(a).not.toBe(b)
@@ -53,11 +53,11 @@ describe('lib/useThumbhashBackground — decoder determinism', () => {
 
 describe('lib/useThumbhashBackground — decode-failure fallback', () => {
   afterEach(() => {
-    vi.doUnmock('@kobato/utils/thumbhash')
+    vi.doUnmock('@kobato/base/utils/thumbhash')
   })
 
   it('a throwing decoder does not propagate from the hook (returns undefined)', async () => {
-    vi.doMock('@kobato/utils/thumbhash', () => ({
+    vi.doMock('@kobato/base/utils/thumbhash', () => ({
       thumbHashToDataURL: vi.fn(() => {
         throw new Error('decode exploded')
       }),

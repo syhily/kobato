@@ -1,6 +1,6 @@
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { hasAtLeast, type Role } from '@kobato/base/auth/roles'
 import { ActionFailure, ErrorMessages } from '@kobato/server/infra/http/errors'
 
 export interface ViewerIdentity {

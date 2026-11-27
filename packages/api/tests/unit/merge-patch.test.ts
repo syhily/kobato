@@ -1,5 +1,5 @@
 import { clearable, mergePatchInput, splitMergePatch } from '@kobato/api/contracts/primitives'
-import { optionalHttpUrlSchema } from '@kobato/utils/url-schema'
+import { optionalHttpUrlSchema } from '@kobato/base/utils/url-schema'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

@@ -4,7 +4,7 @@ import {
   type NotificationTab,
   NOTIFICATION_TABS,
 } from '@kobato/api/contracts/public/notifications'
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import {
   type InfiniteData,
   type QueryClient,

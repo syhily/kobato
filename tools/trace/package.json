@@ -17,12 +17,12 @@
     "trace:up": "node src/up.ts"
   },
   "devDependencies": {
+    "@kobato/base": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",

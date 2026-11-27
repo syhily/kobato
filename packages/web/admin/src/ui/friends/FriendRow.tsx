@@ -1,10 +1,10 @@
 import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
+import { safeHref } from '@kobato/base/utils/safe-url'
 import { Badge } from '@kobato/ui/components/badge'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { Tooltip } from '@kobato/ui/components/tooltip'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { safeHref } from '@kobato/utils/safe-url'
 import { ExternalLinkIcon, EyeIcon, EyeOffIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 

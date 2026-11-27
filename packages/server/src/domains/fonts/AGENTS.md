@@ -6,7 +6,7 @@ AGENTS.md (layout, toolchain pins, corpus, commands). The binding runs on the li
 blocked. `vendor/napi-split.ts` is the binding seam: `fontSplit(props)` + `fontSplitAlgorithmVersion()`, loading the
 addon through `nativeRequire(FONT_SPLIT_ADDON_SPEC)`. Product src never statically imports `@kobato/font-split`
 (`package-dag.test.ts`): dev resolves the workspace package's `./font-split.node` export, SEA the extracted
-`natives/font-split.node` (asset key owned by `@kobato/distribution/sea-assets`).
+`natives/font-split.node` (asset key owned by `@kobato/base/distribution/sea-assets`).
 
 A rejection by the addon is rethrown by the seam as `FontSplitRejectedError`; `sliceFont` turns it into
 `DomainError('BAD_REQUEST', 'fonts.error.unreadable')` and logs the native reason. A font that passes the magic and

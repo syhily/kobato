@@ -12,14 +12,10 @@ const SOURCE_DIRS = [
   'packages/db/src',
   'packages/server/src',
   'packages/api/src/contracts',
-  'packages/shared/auth/src',
+  'packages/shared/base/src',
   'packages/shared/catalog/src',
-  'packages/shared/distribution/src',
-  'packages/shared/utils/src',
   'packages/shared/i18n/src',
   'packages/shared/settings/src',
-  'packages/shared/assets/src',
-  'packages/shared/sanitize/src',
   'packages/web/ui/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 

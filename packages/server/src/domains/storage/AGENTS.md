@@ -23,7 +23,7 @@ connectivity-probed (`validateS3Config`) before persisting.
 
 - Asset URLs are site-owned: content stores origin-relative `/storage/<key>` references; `resolveAssetUrl`
   (`infra/storage/public-url.ts`) emits `${siteIdentity.website}/storage/<key>` for BOTH drivers — never the CDN base.
-  Both directions share the path grammar owned by `packages/shared/assets/src/asset-url.ts`.
+  Both directions share the path grammar owned by `packages/shared/base/src/assets/asset-url.ts`.
 - With S3 primary, the `storage.object` and `fonts.embedded` procedures answer the `redirect` envelope to
   `getPublicBaseUrl()` via `s3StorageRedirect` (`domains/storage/redirect.ts`; an unconfigured public base is the
   `'unavailable'` signal, which the controllers translate into `SERVICE_UNAVAILABLE`); the CDN transform template is

@@ -1,7 +1,7 @@
 import type { DatabaseHandle } from '@kobato/db/sqlite/database'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('batcher-registry')
 

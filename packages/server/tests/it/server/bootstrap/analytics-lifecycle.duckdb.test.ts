@@ -1,6 +1,7 @@
 import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
 import type { AnalyticsHandle, DuckDbEngine } from '@kobato/db/duckdb/connection'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { engineOf } from '@kobato/db/duckdb/connection'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import {
@@ -13,7 +14,6 @@ import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
 import { flushAccessLog, pushAccessEvent } from '@kobato/server/domains/analytics/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

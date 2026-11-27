@@ -1,5 +1,5 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { isSea } from '@kobato/server/infra/sea/sea'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import fs from 'node:fs'
 import { isMainThread } from 'node:worker_threads'
 

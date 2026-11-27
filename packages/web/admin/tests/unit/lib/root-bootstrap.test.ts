@@ -1,5 +1,5 @@
 import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/content'
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
 import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'

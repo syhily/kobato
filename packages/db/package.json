@@ -34,11 +34,11 @@
   "devDependencies": {
     "@duckdb/node-api": "catalog:",
     "@duckdbfan/drizzle-duckdb": "catalog:",
+    "@kobato/base": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@types/node": "catalog:",
     "bcryptjs": "catalog:",
     "drizzle-kit": "1.0.0-rc.6",

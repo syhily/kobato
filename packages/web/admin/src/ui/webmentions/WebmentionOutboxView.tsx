@@ -2,12 +2,12 @@ import type { AdminWebmentionOutboxWire } from '@kobato/api/contracts/admin/webm
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { Badge, type BadgeProps } from '@kobato/ui/components/badge'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatLocalDate } from '@kobato/utils/site-date'
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { AdminListPage } from '@kobato/web-admin/ui/shared/list/AdminListPage'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'

@@ -20,11 +20,9 @@ function toPosix(path: string): string {
 const PACKAGE_SRC_ROOTS: Record<string, string> = {
   server: 'packages/server/src',
   api: 'packages/api/src',
-  utils: 'packages/shared/utils/src',
+  base: 'packages/shared/base/src',
   i18n: 'packages/shared/i18n/src',
   settings: 'packages/shared/settings/src',
-  assets: 'packages/shared/assets/src',
-  sanitize: 'packages/shared/sanitize/src',
 }
 
 function resolveSpecifier(fromFile: string, specifier: string): string | null {

@@ -1,5 +1,5 @@
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '@kobato/api/client/request-timeout'
-import { isValidTrustedProxyEntry } from '@kobato/auth/trusted-proxy'
+import { isValidTrustedProxyEntry } from '@kobato/base/auth/trusted-proxy'
 import { z } from 'zod'
 
 const DEV_KOBATO_RPC_URL = 'http://127.0.0.1:4321/rpc'

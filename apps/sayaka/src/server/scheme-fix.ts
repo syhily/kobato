@@ -1,6 +1,6 @@
 import type { Env } from '@sayaka/server/hono-env'
 
-import { matchesTrustedProxy } from '@kobato/auth/trusted-proxy'
+import { matchesTrustedProxy } from '@kobato/base/auth/trusted-proxy'
 import { sayakaConfig } from '@sayaka/server/config'
 import { getDirectRemoteAddress, isLoopbackAddress } from '@sayaka/server/visitor-address'
 import { createMiddleware } from 'hono/factory'

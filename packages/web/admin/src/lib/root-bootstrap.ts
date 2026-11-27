@@ -1,8 +1,8 @@
 import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/content'
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { orpc } from '@kobato/api/browser/client'
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { formatUiMessage } from '@kobato/i18n/format-message'
 import { data, redirect } from 'react-router'
 

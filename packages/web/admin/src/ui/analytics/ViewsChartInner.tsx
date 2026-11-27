@@ -1,10 +1,10 @@
 import type { ViewsPoint } from '@kobato/api/contracts/admin/analytics'
-import type { TimeUnit } from '@kobato/utils/date-range'
+import type { TimeUnit } from '@kobato/base/utils/date-range'
 
-import { escapeHtml } from '@kobato/sanitize/escape-html'
+import { escapeHtml } from '@kobato/base/sanitize/escape-html'
+import { formatNumber } from '@kobato/base/utils/format'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatNumber } from '@kobato/utils/format'
 import { formatTimeLabel, parseTimeLabel } from '@kobato/web-admin/ui/analytics/time-labels'
 import { getClientTimezone } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { VisArea, VisAxis, VisCrosshair, VisGroupedBar, VisLine, VisTooltip, VisXYContainer } from '@unovis/react'

@@ -3,8 +3,8 @@ import type { ErrorMessageDescriptor, ErrorMessageParams } from '@kobato/api/con
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { formatUiMessage, type UiMessageTable } from '@kobato/i18n/format-message'
-import { isRecord } from '@kobato/utils/type-guards'
 import { ORPCError } from '@orpc/client'
 import { data, redirect } from 'react-router'
 

@@ -3,9 +3,9 @@ import type { SidebarSelection } from '@kobato/server/domains/posts/services/fea
 import type { AppLocalization } from '@kobato/settings/app-localization'
 import type { SidebarSettings } from '@kobato/settings/types'
 
+import { sampleSize } from '@kobato/base/utils/sampling'
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { getSidebarWidgetCount } from '@kobato/settings/presentation'
-import { sampleSize } from '@kobato/utils/sampling'
-import { formatLocalDate } from '@kobato/utils/site-date'
 
 export interface SidebarSeedInput {
   scope: string

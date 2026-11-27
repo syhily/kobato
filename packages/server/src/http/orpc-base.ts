@@ -9,7 +9,7 @@ import type { BlogSettingsBundle, RateLimitBucket, RateLimitSettings } from '@ko
 import type { AnyContractRouter } from '@orpc/contract'
 import type { z } from 'zod'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { hasAtLeast, type Role } from '@kobato/base/auth/roles'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import {
   parseCommentTokensCookie,

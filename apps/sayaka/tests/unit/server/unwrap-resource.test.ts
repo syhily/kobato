@@ -1,7 +1,7 @@
 import type { KobatoResourceStream } from '@kobato/api/client/resource-stream'
 import type { MediaResourceOutput } from '@kobato/api/contracts/primitives'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { unwrapResource } from '@sayaka/server/unwrap'
 import { describe, expect, it, vi } from 'vitest'

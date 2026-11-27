@@ -1,4 +1,4 @@
-import { avatarImageUrl } from '@kobato/assets/avatar'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
 import {
   DropdownMenu,

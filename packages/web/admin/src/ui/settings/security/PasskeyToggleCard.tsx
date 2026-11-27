@@ -1,6 +1,6 @@
 import type { SecuritySettings } from '@kobato/settings/types'
 
-import { isValidPasskeyDomain } from '@kobato/auth/network'
+import { isValidPasskeyDomain } from '@kobato/base/auth/network'
 import { FieldLabel } from '@kobato/ui/components/field'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

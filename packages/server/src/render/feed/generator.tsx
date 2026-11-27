@@ -3,9 +3,10 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { sanitizeHtmlString } from '@kobato/base/sanitize/sanitize-html'
+import { joinUrl } from '@kobato/base/utils/urls'
 import { ogImagePathForSlug } from '@kobato/catalog/seo/og-image'
 import { findCategoriesByNames } from '@kobato/db/sqlite/operations/taxonomy/category'
-import { sanitizeHtmlString } from '@kobato/sanitize/sanitize-html'
 import { resolveBodyHtmlFeed } from '@kobato/server/domains/content/services/body-html'
 import { selectFeedPosts } from '@kobato/server/domains/posts/services/feed'
 import {
@@ -16,7 +17,6 @@ import { getTagsByNames, resolveTagBySlugOrName } from '@kobato/server/domains/t
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
-import { joinUrl } from '@kobato/utils/urls'
 import { Feed } from 'feed'
 
 export interface FeedOptions {

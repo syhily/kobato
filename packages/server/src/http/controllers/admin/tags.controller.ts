@@ -1,8 +1,8 @@
 import { adminTagsContract } from '@kobato/api/rpc/admin/tags'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@kobato/server/domains/taxonomies/tags/service'
 import { implementAdmin, implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const authorImpl = implementAuthor(adminTagsContract)
 const adminImpl = implementAdmin(adminTagsContract)

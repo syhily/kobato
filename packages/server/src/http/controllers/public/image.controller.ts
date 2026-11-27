@@ -8,7 +8,8 @@ import type {
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { imagesContract } from '@kobato/api/rpc/public/images'
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
+import { joinUrl } from '@kobato/base/utils/urls'
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { resolveImageRef } from '@kobato/server/domains/images/services/resolve'
 import { findPublicPageMetaBySlug } from '@kobato/server/domains/pages/services/public-query'
@@ -18,12 +19,11 @@ import { contentNotFound } from '@kobato/server/http/content-not-found'
 import { implementPublic, rateLimitByIp, resourceRateLimit } from '@kobato/server/http/orpc-base'
 import { through } from '@kobato/server/infra/cache/registry'
 import { contentEtag, etagHeaderMatches } from '@kobato/server/infra/http/etag'
-import { renderCalendar } from '@kobato/server/render/calendar/render'
 import '@kobato/server/render/warmup/content-cache'
+import { renderCalendar } from '@kobato/server/render/calendar/render'
 import { drawOpenGraph } from '@kobato/server/render/og/render'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { brandingVersionSuffix } from '@kobato/settings/presentation'
-import { joinUrl } from '@kobato/utils/urls'
 import { isValid, parse, format } from 'date-fns'
 
 const impl = implementPublic(imagesContract)

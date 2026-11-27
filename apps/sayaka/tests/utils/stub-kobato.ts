@@ -3,7 +3,7 @@ import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/conten
 import type { SayakaRequestContext } from '@sayaka/server/request-context'
 
 import { createKobatoServerClient } from '@kobato/api/client/create-server-client'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { os } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { createSayakaRequestContext, sayakaRequestContext } from '@sayaka/server/request-context'

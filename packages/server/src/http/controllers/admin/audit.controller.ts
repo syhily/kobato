@@ -1,6 +1,7 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { adminAuditContract } from '@kobato/api/rpc/admin/audit'
+import { idFromString } from '@kobato/base/utils/id'
 import {
   countAuditLogs,
   fetchAuditLogActorMap,
@@ -12,7 +13,6 @@ import { buildAuditLogCsv } from '@kobato/server/domains/audit/export-csv'
 import { highlightAuditLogDetails } from '@kobato/server/domains/audit/highlight'
 import { clampDateToRetention, parseDate, toAuditLogItemDto } from '@kobato/server/domains/audit/projection'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 interface AuditLogFilterInput {
   action?: string

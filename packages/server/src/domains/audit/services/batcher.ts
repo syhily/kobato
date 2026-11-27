@@ -2,6 +2,8 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { NewAuditLog } from '@kobato/db/sqlite/types'
 import type { AuditEventInput } from '@kobato/server/domains/audit/types'
 
+import { idFromString } from '@kobato/base/utils/id'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { databaseOf } from '@kobato/db/sqlite/database'
 import { insertAuditLogRows } from '@kobato/db/sqlite/operations/system/audit-log'
 import { AUDIT_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
@@ -15,8 +17,6 @@ import {
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher'
 import { getLogger } from '@kobato/server/infra/logger'
-import { idFromString } from '@kobato/utils/id'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('audit.batcher')
 

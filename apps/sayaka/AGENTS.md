@@ -145,7 +145,7 @@ domain logic.
   build-time dev plugin is NOT vendored here — it is `@kobato/pack/vite/react-router-hono-server` (sayaka's; the
   backend's Vite host uses `@kobato/pack/vite/hono-dev-host` beside it), which hands the Vite dev server to the app
   through a `globalThis` slot (`dev-server-ref.ts` reads it, dev only).
-- No comments in source, no `any`/`as` (`@kobato/utils/unsafe-cast`), kebab-case modules, no barrels.
+- No comments in source, no `any`/`as` (`@kobato/base/utils/unsafe-cast`), kebab-case modules, no barrels.
 
 ## Commands
 

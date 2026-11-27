@@ -2,6 +2,7 @@ import type { DeviceEnvBeacon } from '@kobato/api/contracts/public/analytics'
 import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvClientRow } from '@kobato/db/duckdb/device-env'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { appendDeviceEnvClientRows, existingDeviceEnvEventIds } from '@kobato/db/duckdb/device-env'
 import { ANALYTICS_ENV_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
 import { getBatcher, registerBatcher, requireBatcher } from '@kobato/server/infra/db/batcher-registry'
@@ -14,7 +15,6 @@ import {
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const BATCHER_NAME = 'DeviceEnvBeaconBatcher'
 

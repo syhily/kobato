@@ -1,3 +1,4 @@
+import { formatDuration } from '@kobato/base/utils/format'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import {
   INTL_LOCALE_EXPECTATIONS,
@@ -6,7 +7,6 @@ import {
   probeIntlLocale,
   runIntlProbe,
 } from '@kobato/server/infra/sea/intl-probe'
-import { formatDuration } from '@kobato/utils/format'
 import { describe, expect, it } from 'vitest'
 
 describe('server/infra/sea/intl-probe', () => {

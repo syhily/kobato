@@ -3,6 +3,7 @@ import type { Page } from '@kobato/catalog/model'
 import type { NewPageMeta, PageMetaRow } from '@kobato/db/sqlite/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   findEntityMetaById,
   findEntityMetaBySlug,
@@ -18,7 +19,6 @@ import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { toAdminPageDto, toCmsPage } from '@kobato/server/domains/pages/projection'
 import { assertPageExists, type PageMetaWriteInput } from '@kobato/server/domains/pages/services/shared'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 function pageOgTarget(meta: PageMetaRow) {
   return {

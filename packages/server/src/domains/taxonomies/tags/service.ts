@@ -4,7 +4,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { TagRow } from '@kobato/db/sqlite/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import {
   type AdminTagsListFilters,
   countAdminTags,

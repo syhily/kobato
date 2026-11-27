@@ -1,7 +1,7 @@
 import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 import type { MailTransport, SendOptions, SendResult } from '@kobato/server/infra/email/types'
 
-import { escapeHtml } from '@kobato/sanitize/escape-html'
+import { escapeHtml } from '@kobato/base/sanitize/escape-html'
 import { render } from '@kobato/server/infra/email/render'
 import AuthorInvite from '@kobato/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@kobato/server/infra/email/templates/PasswordReset'

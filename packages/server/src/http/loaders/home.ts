@@ -6,6 +6,7 @@ import type { AppLocale } from '@kobato/i18n/locales'
 import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { selectFeaturePosts, selectSidebarPosts } from '@kobato/server/domains/posts/services/featured'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@kobato/server/domains/posts/services/public-query'
 import { getCategoryLinks } from '@kobato/server/domains/taxonomies/categories/services/query'
@@ -15,7 +16,6 @@ import { loadSidebarData } from '@kobato/server/http/loaders/sidebar'
 import { selectSidebarTags, sidebarSelectionSeed } from '@kobato/server/http/loaders/sidebar-select'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { isSidebarWidgetEnabled } from '@kobato/settings/presentation'
-import { formatLocalDate } from '@kobato/utils/site-date'
 
 function homeMergeTailWhenLessThan(homePageSize: number): number {
   return Math.max(0, homePageSize - 2)

@@ -1,6 +1,6 @@
 import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuBadge } from '@kobato/ui/components/sidebar'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { NavMenuItem } from '@kobato/web-admin/ui/shell/NavMenuItem'

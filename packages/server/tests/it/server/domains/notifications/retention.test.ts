@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { NOTIFICATION_RETENTION_DAYS, pruneNotifications } from '@kobato/db/sqlite/operations/engagement/notification'

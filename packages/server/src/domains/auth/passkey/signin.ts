@@ -1,12 +1,12 @@
 import type { AuthFlowResult, SigninFlowContext } from '@kobato/server/domains/auth/services/shared'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
 import { verifyAuthenticationResponse } from '@kobato/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@kobato/server/domains/auth/primitives'
 import { authFlowError } from '@kobato/server/domains/auth/services/shared'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { tryPasskeyAuthFinishRateLimit } from '@kobato/server/infra/rate-limit'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export async function signInWithPasskey(
   ctx: SigninFlowContext,

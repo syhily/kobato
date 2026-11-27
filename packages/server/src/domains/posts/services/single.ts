@@ -2,6 +2,7 @@ import type { Post } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { PostMetaRow } from '@kobato/db/sqlite/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   findEntityMetaById,
   findEntityMetaBySlug,
@@ -15,7 +16,6 @@ import { findCategoryNamesByIds } from '@kobato/db/sqlite/operations/taxonomy/ca
 import { findTagNamesByPostId } from '@kobato/db/sqlite/operations/taxonomy/tag'
 import { toCmsPost } from '@kobato/server/domains/posts/projection'
 import { hydratePostImages } from '@kobato/server/domains/posts/repos/hydrate'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const findPostMetaById = (db: Database, id: number): PostMetaRow | null =>
   unsafeCast<PostMetaRow | null>(findEntityMetaById(db, 'post', id))

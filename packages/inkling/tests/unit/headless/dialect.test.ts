@@ -1,6 +1,6 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { compactLexicalEditorState } from '@kobato/inkling-internal/headless/dialect'
 import { lexicalEditorStateSchema, type LexicalEditorState } from '@kobato/inkling-internal/headless/schema'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { describe, expect, it } from 'vitest'
 
 function text(value: string, extra: Record<string, unknown> = {}) {

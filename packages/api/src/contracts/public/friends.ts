@@ -1,6 +1,6 @@
 import { honeypotField, okDto } from '@kobato/api/contracts/primitives'
-import { isHttpUrl } from '@kobato/utils/safe-url'
-import { HTTP_URL_MESSAGE } from '@kobato/utils/url-schema'
+import { isHttpUrl } from '@kobato/base/utils/safe-url'
+import { HTTP_URL_MESSAGE } from '@kobato/base/utils/url-schema'
 import { z } from 'zod'
 
 const optionalText = (max: number) =>

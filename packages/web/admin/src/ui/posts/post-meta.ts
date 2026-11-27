@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 export interface PostMetaDraft {
   slug: string

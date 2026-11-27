@@ -1,4 +1,4 @@
-import { thumbHashToDataURL } from '@kobato/utils/thumbhash'
+import { thumbHashToDataURL } from '@kobato/base/utils/thumbhash'
 import { type RefObject, useEffect } from 'react'
 
 const decodedUrlCache = new Map<string, string>()

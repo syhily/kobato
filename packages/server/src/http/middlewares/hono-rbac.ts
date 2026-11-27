@@ -1,6 +1,6 @@
 import type { Env } from '@kobato/server/http/hono-env'
 
-import { hasAtLeast, type Role } from '@kobato/auth/roles'
+import { hasAtLeast, type Role } from '@kobato/base/auth/roles'
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception'
 import { createMiddleware } from 'hono/factory'
 

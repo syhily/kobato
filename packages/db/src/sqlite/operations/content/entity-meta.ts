@@ -2,10 +2,10 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { EntityType } from '@kobato/db/sqlite/target'
 import type { NewPageMeta, NewPostMeta, PageMetaRow, PostMetaRow } from '@kobato/db/sqlite/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { page as pageMetaTable } from '@kobato/db/sqlite/schema/page'
 import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 
 export type AnyNewMeta = NewPostMeta & NewPageMeta

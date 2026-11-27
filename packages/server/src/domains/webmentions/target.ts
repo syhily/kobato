@@ -1,11 +1,11 @@
 import type { Database } from '@kobato/db/sqlite/database'
 
+import { tryParseUrl } from '@kobato/base/utils/safe-url'
 import { entityPermalink } from '@kobato/server/domains/content/urls'
 import { findLivePageBySlug } from '@kobato/server/domains/pages/services/public-query'
 import { findLivePostBySlug } from '@kobato/server/domains/posts/services/single'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { tryParseUrl } from '@kobato/utils/safe-url'
 
 export interface WebmentionTarget {
   type: 'post' | 'page'

@@ -1,4 +1,4 @@
-import { isValidIp, matchesTrustedProxy } from '@kobato/auth/trusted-proxy'
+import { isValidIp, matchesTrustedProxy } from '@kobato/base/auth/trusted-proxy'
 
 function sanitizeIp(raw: string): string | null {
   const trimmed = raw.trim()

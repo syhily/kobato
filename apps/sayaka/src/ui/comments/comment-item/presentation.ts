@@ -1,8 +1,8 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
+import { formatDuration } from '@kobato/base/utils/format'
 import { cn } from '@kobato/ui/lib/cn'
-import { formatDuration } from '@kobato/utils/format'
 
 export function asKey(value: number | string): string {
   return String(value)

@@ -3,7 +3,7 @@ import type { AvatarImageInput, AvatarImageOutput } from '@kobato/api/contracts/
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { avatarContract } from '@kobato/api/rpc/public/avatar'
-import { avatarImageUrl } from '@kobato/assets/avatar'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
 import {
   defaultAvatarPath,
   resolveAvatarForEmail,

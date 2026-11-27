@@ -1,7 +1,7 @@
 import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/content'
 import type { SayakaRequestContext } from '@sayaka/server/request-context'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader } from '@sayaka/root'
 import { createSayakaRequestContext, sayakaRequestContext } from '@sayaka/server/request-context'
 import { getWarmupManifest } from '@sayaka/server/warmup-manifest'

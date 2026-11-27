@@ -1,8 +1,8 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 import type { LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 type MutableNode = Record<string, unknown> & { type: string; children?: LexicalNodeJson[] }
 

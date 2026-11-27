@@ -3,7 +3,7 @@
 `@kobato/ui` is the design system and the document shell: design tokens, base styles, shadcn/Base UI primitives, static
 icons, theme and i18n providers, the document shell, the shared document modules (settings contexts, locale sync, chunk
 recovery, `BrandLogo`, `Image`), and generic presentation hooks. Production sources depend only on `@kobato/settings`,
-`@kobato/i18n`, `@kobato/utils`, and `@kobato/assets` (`Image`) — never `@kobato/web-kit`, `@kobato/web-admin`, the
+`@kobato/i18n`, and `@kobato/base` (`utils`, `assets` for `Image`) — never `@kobato/web-kit`, `@kobato/web-admin`, the
 public UI tree (`apps/sayaka/src/ui`), or `@kobato/server`.
 
 **`@kobato/ui` imports no `@kobato/api` module** (ADR-0011 §1): a front-end module that calls a procedure is a kit

@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { awaitRootBootstrap, requireRoleFromBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 

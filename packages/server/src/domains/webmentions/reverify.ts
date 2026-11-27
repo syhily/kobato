@@ -3,6 +3,7 @@ import type { WebmentionRow } from '@kobato/db/sqlite/types'
 import type { WebmentionType } from '@kobato/server/domains/webmentions/classify'
 import type { SourceMetadata } from '@kobato/server/domains/webmentions/verify'
 
+import { idFromString } from '@kobato/base/utils/id'
 import { findWebmentionById } from '@kobato/db/sqlite/operations/engagement/webmention'
 import {
   applyWebmentionReverifyFailure,
@@ -17,7 +18,6 @@ import { resolveWebmentionTarget } from '@kobato/server/domains/webmentions/targ
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { idFromString } from '@kobato/utils/id'
 
 const log = getLogger('webmentions.reverify')
 

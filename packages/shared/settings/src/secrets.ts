@@ -1,9 +1,9 @@
+import type { Assert, Equals } from '@kobato/base/utils/type-equals'
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { BlogSettingsBundle, SecretMasks } from '@kobato/settings/types'
-import type { Assert, Equals } from '@kobato/utils/type-equals'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { SECTION_TO_BUNDLE_KEY } from '@kobato/settings/sections'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface SecretFieldConfig {
   section: SettingsSection

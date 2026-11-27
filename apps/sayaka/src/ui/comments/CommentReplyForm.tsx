@@ -8,7 +8,7 @@ import type { CommentFormUser } from '@kobato/catalog/model'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { avatarImageUrl } from '@kobato/assets/avatar'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
 import { commentBodyPlainText } from '@kobato/inkling/comment/comment-body-helpers'
 import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'

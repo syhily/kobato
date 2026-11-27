@@ -1,8 +1,8 @@
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling-internal/headless/schema'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { SERVER_FILLED_NODE_FIELDS } from '@kobato/inkling-internal/headless/artifacts'
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
 

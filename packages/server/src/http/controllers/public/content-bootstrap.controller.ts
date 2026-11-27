@@ -1,6 +1,7 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
 import { contentBootstrapContract } from '@kobato/api/rpc/public/content'
+import { parseThemeCookie } from '@kobato/base/utils/theme-cookie'
 import { uiMessagesForScope } from '@kobato/i18n/catalog'
 import { inklingLabelsFor } from '@kobato/i18n/inkling-labels'
 import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render'
@@ -8,7 +9,6 @@ import { getInstallState } from '@kobato/server/domains/settings/install-gate'
 import { redactSecretsFromBundle } from '@kobato/server/domains/settings/services/masks'
 import { implementPublic } from '@kobato/server/http/orpc-base'
 import { activeFrontendRum } from '@kobato/server/infra/trace/config'
-import { parseThemeCookie } from '@kobato/utils/theme-cookie'
 
 function projectSettingsForDocument(bundle: BlogSettingsBundle): BlogSettingsBundle {
   return { ...redactSecretsFromBundle(bundle), observability: null }

@@ -1,7 +1,7 @@
 import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { extractFriendHostSafe, retargetFriendPosterUrl } from '@kobato/assets/images'
+import { extractFriendHostSafe, retargetFriendPosterUrl } from '@kobato/base/assets/images'
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'
 import {

@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { AnyMetaRow } from '@kobato/db/sqlite/operations/content/entity-meta'
 import type { PageMetaRow, PostMetaRow } from '@kobato/db/sqlite/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { likeEscape } from '@kobato/db/sqlite/like-escape'
 import { promotedEntityWhere } from '@kobato/db/sqlite/operations/content/entity-meta'
@@ -10,7 +11,6 @@ import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
 import { postTag } from '@kobato/db/sqlite/schema/post-tag'
 import { tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
 import { user } from '@kobato/db/sqlite/schema/user'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { and, asc, desc, eq, getColumns, isNotNull, isNull, not, or, sql, type SQL } from 'drizzle-orm'
 
 export interface EntityListFiltersBase {

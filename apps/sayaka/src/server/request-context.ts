@@ -4,7 +4,7 @@ import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/conten
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { createContext } from 'react-router'
 
 export interface SayakaRequestContext {

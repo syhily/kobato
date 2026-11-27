@@ -1,7 +1,7 @@
 import type { AdminSessionItem } from '@kobato/api/contracts/admin/users'
 
 import { orpc } from '@kobato/api/browser/client'
-import { compareDisplayText } from '@kobato/utils/format'
+import { compareDisplayText } from '@kobato/base/utils/format'
 import { awaitRootBootstrap, requireRoleFromBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 import { titleMeta } from '@kobato/web-admin/seo/title-meta'
 import { SessionsView } from '@kobato/web-admin/ui/sessions/SessionsView'

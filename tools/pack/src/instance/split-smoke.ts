@@ -1,12 +1,12 @@
 import type { ExitState } from '@kobato/pack/process'
 import type { ChildProcess } from 'node:child_process'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { waitForHttp } from '@kobato/pack/instance/sea-instance'
 import { seedInstalledInstance } from '@kobato/pack/instance/seed'
 import { makeTempDirs, smokeDatabases } from '@kobato/pack/instance/temp'
 import { fetchManual, pickFreePort, raceChildExit, scrubbedParentEnv, watchChildExit } from '@kobato/pack/process'
 import { rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
-import { isRecord } from '@kobato/utils/type-guards'
 import bcrypt from 'bcryptjs'
 import { spawn, spawnSync, execSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'

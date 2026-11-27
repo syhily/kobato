@@ -1,13 +1,13 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 
+import { isHttpUrl, redactUrlForLog } from '@kobato/base/utils/safe-url'
 import { compressImage } from '@kobato/server/infra/image/compress'
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
 import { ensureCanvasFont, type FontSlot } from '@kobato/server/render/canvas-fonts'
 import { logoDark } from '@kobato/server/render/og/assets'
 import { layoutCanvasLines } from '@kobato/server/render/pretext-layout'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { isHttpUrl, redactUrlForLog } from '@kobato/utils/safe-url'
 import { Canvas, loadImage } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 

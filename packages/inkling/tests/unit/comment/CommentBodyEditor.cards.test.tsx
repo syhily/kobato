@@ -1,12 +1,12 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loadPasteDialect } from '@kobato/inkling-internal/markdown/lazy-paste-dialect'
 import { CommentBodyEditor } from '@kobato/inkling/comment/CommentBodyEditor'
 import { lexicalBodyWith } from '@kobato/inkling/tests/utils/lexical'
 import { stubMatchMedia } from '@kobato/inkling/tests/utils/stub-match-media'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { render, waitFor } from '@testing-library/react'
 import { beforeAll, describe, expect, it } from 'vitest'
 

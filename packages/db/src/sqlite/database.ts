@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { drizzle, type NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'

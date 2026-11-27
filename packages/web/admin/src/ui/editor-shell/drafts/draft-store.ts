@@ -1,4 +1,4 @@
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 const DB_NAME = 'kobato-drafts'

@@ -1,4 +1,4 @@
-import { MIN_PASSWORD_LENGTH } from '@kobato/auth/security'
+import { MIN_PASSWORD_LENGTH } from '@kobato/base/auth/security'
 import { Button } from '@kobato/ui/components/button'
 import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'

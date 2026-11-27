@@ -1,3 +1,4 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { createHeadlessEditor } from '@kobato/inkling'
 import { COMMENT_EDITOR_NODES } from '@kobato/inkling/comment/editor/comment-editor-nodes'
 import { downgradeLegacyCommentMath } from '@kobato/inkling/comment/editor/comment-legacy-math'
@@ -7,7 +8,6 @@ import {
   type CommentEditorState,
 } from '@kobato/inkling/headless/comment-schema'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { describe, expect, it } from 'vitest'
 
 const RICH_COMMENT = unsafeCast<CommentEditorState>({

@@ -1,8 +1,8 @@
 import { adminFriendsContract } from '@kobato/api/rpc/admin/friends'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@kobato/server/domains/friends/service'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminFriendsContract)
 

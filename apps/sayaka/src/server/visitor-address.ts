@@ -1,5 +1,5 @@
 import { getClientAddress } from '@kobato/api/client/client-address'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 export function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
   const env = unsafeCast<Record<string, unknown> | undefined>(c.env)

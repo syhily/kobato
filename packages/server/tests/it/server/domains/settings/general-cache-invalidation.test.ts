@@ -1,5 +1,5 @@
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { sqliteOf } from '@kobato/db/sqlite/database'
-import { APP_VERSION } from '@kobato/distribution/app'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@kobato/server/domains/settings/services/hydrate'
 import { buildInstallSectionRows, seedInstallSections } from '@kobato/server/domains/settings/services/install-flow'

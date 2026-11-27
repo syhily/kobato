@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import { isMainThread } from 'node:worker_threads'

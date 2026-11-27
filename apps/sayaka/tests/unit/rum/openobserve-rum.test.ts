@@ -1,6 +1,6 @@
 import type { FrontendRumBootstrap } from '@kobato/settings/telemetry/rum'
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import {
   __pollRumStatusForTests,
   __resetRumForTests,

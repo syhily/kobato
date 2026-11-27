@@ -3,7 +3,7 @@ import type { ContentBootstrapOutput } from '@kobato/api/contracts/public/conten
 import type { ListingPageLoaderData } from '@kobato/catalog/listing'
 import type { SayakaRequestContext } from '@sayaka/server/request-context'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader as rootLoader } from '@sayaka/root'
 import { loader as homeLoader } from '@sayaka/routes/home'
 import { createSayakaRequestContext, sayakaRequestContext } from '@sayaka/server/request-context'

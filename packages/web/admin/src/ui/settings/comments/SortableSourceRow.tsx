@@ -1,4 +1,4 @@
-import type { AvatarSource } from '@kobato/assets/avatar'
+import type { AvatarSource } from '@kobato/base/assets/avatar'
 
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { AVATAR_SOURCE_LABEL_IDS } from '@kobato/web-admin/ui/settings/comments/model'

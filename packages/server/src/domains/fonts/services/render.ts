@@ -1,4 +1,4 @@
-import type { ResolvedFont, ResolvedFonts } from '@kobato/assets/fonts'
+import type { ResolvedFont, ResolvedFonts } from '@kobato/base/assets/fonts'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { FontsSettings } from '@kobato/settings/types'
 

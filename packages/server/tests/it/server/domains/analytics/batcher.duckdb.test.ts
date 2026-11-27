@@ -1,5 +1,6 @@
 import type { AnalyticsHandle, DuckDbEngine } from '@kobato/db/duckdb/connection'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { engineOf } from '@kobato/db/duckdb/connection'
 import {
   __adoptAnalyticsHandleForTests,
@@ -8,7 +9,6 @@ import {
 import { replayDeadLetterAccessLog } from '@kobato/server/domains/analytics/services/batcher'
 import { initAllBatchers } from '@kobato/server/infra/db/batcher-registry'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '@kobato/server/tests/utils/analytics-db'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

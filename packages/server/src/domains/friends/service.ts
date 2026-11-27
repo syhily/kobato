@@ -3,8 +3,12 @@ import type { Friend } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { FriendRow } from '@kobato/db/sqlite/types'
 
-import { isOnSiteOrigin } from '@kobato/assets/asset-url'
-import { extractFriendHostSafe, friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
+import { isOnSiteOrigin } from '@kobato/base/assets/asset-url'
+import {
+  extractFriendHostSafe,
+  friendPosterStoragePath,
+  friendPosterStoragePathFromUrl,
+} from '@kobato/base/assets/images'
 import { findImagesByStoragePaths, updateImageStoragePath } from '@kobato/db/sqlite/operations/content/image'
 import {
   type AdminFriendsListFilters,

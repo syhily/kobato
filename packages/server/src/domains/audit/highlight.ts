@@ -1,5 +1,5 @@
+import { createPromiseMemo } from '@kobato/base/utils/memo'
 import { SHIKI_THEMES, createShikiHighlighter } from '@kobato/server/infra/lexical/shiki'
-import { createPromiseMemo } from '@kobato/utils/memo'
 
 const getHighlighter = createPromiseMemo(() => createShikiHighlighter())
 

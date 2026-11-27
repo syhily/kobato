@@ -1,4 +1,4 @@
-import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/assets/asset-url'
+import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@kobato/base/assets/asset-url'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'

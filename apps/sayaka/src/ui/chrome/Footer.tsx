@@ -1,7 +1,7 @@
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useDocumentClock } from '@kobato/ui/lib/use-document-clock'
-import { formatLocalDate } from '@kobato/utils/site-date'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()

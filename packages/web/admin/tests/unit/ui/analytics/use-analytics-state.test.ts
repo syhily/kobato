@@ -1,7 +1,7 @@
-import type { DateRange, PresetKey } from '@kobato/utils/date-range'
+import type { DateRange, PresetKey } from '@kobato/base/utils/date-range'
 
+import { PRESET_KEYS, computeDateRange } from '@kobato/base/utils/date-range'
 import { renderHook } from '@kobato/ui/tests/utils/hook'
-import { PRESET_KEYS, computeDateRange } from '@kobato/utils/date-range'
 import { buildAnalyticsInput, useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

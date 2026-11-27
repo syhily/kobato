@@ -1,14 +1,15 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 4 have landed (the comment surface and the
+- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 to 5 have landed (the comment surface and the
   shared composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document
   shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned;
   `startKobato` in `@kobato/server/bootstrap` with the workspace-serving module in `@kobato/server/http`, the app entry
   thinned to the call; the workspace — source, tests, and arch pins — in `packages/web/admin` as its own React Router
   SPA project with no route warmup, `apps/kobato` the backend behind a Vite SSR dev host, three dev commands, the client
-  build located through the package). Steps 5–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1
-  "Where the code lives" and the Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every
-  other section of ADR-0009 stands.
+  build located through the package; the five floor leaves merged into `@kobato/base` — the prefix rewrite, the path
+  table, the directory-level DAG pin, the documents). Step 6 follows. It amends
+  [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
+  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -159,7 +160,7 @@ never serves under different options than a cold boot.
 
 `i18n`, `base`, `settings`, `catalog`. **`base`** is today's `utils`, `auth`, `assets`, `distribution`, and `sanitize`
 as five directories that keep their names; the specifier `@kobato/<leaf>/<module>` becomes
-`@kobato/base/<leaf>/<module>` (about 600 import lines, a prefix rewrite). The dependency direction is a line — `i18n` ←
+`@kobato/base/<leaf>/<module>` (584 import lines, a prefix rewrite). The dependency direction is a line — `i18n` ←
 `base` ← `settings` ← `catalog` — and the direction inside `base` is pinned at directory level by the DAG test that
 pinned the leaves. No module changes leaf. The name is `base`, not `core`: CONTEXT.md reserves **Core domain** for the
 language-backed concepts.
@@ -225,8 +226,8 @@ language-backed concepts.
   (`packages/web/admin/AGENTS.md`): the package declares both as test dependencies and its `src/` imports neither.
 - The workspace's `@/` imports (946 in source, 480 in tests) switch to its package specifier; `@/` remains the backend
   app's alias.
-- The shared merge rewrites the path table from eight leaves to four and about 45 documentation mentions of the five
-  directories.
+- The shared merge rewrites the path table from eight leaves to four (sixteen rows to eight), 584 import lines, and
+  every documentation mention of the five directories.
 - The app e2e and browser trees import `@kobato/test/instance/*` and `@kobato/test/browser/*`; `tools/test` gains the
   driver's dependencies; `@kobato/font-split`'s path-table rows follow its directory.
 - ADR-0009 is amended as above; the `AGENTS.md` tree follows each step (root, `apps/kobato`, `packages/web` and its

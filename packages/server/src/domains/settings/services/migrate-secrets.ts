@@ -1,12 +1,12 @@
 import type { Database } from '@kobato/db/sqlite/database'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { findSettingsByScopePrefix, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { isVitest } from '@kobato/server/infra/config'
 import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@kobato/server/infra/crypto/secret-encryption'
 import { getLogger } from '@kobato/server/infra/logger'
 import { SECRET_FIELDS } from '@kobato/settings/secrets'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
-import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('settings.migrate-secrets')
 

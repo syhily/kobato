@@ -1,6 +1,7 @@
 import type { CommentReq } from '@kobato/api/contracts/public/comments'
 
 import { commentsPublicContract } from '@kobato/api/rpc/public/comments'
+import { idFromString } from '@kobato/base/utils/id'
 import { findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asCommentItemWire, asCommentItemsWire } from '@kobato/server/domains/comments/projection'
@@ -24,7 +25,6 @@ import {
 import { getLogger } from '@kobato/server/infra/logger'
 import { tryCommentPostRateLimitByEmail } from '@kobato/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(commentsPublicContract)
 

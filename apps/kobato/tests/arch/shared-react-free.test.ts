@@ -111,9 +111,14 @@ walk(join(PROJECT_ROOT, 'packages/api/src/contracts'), (filePath) => contractsFi
 describe('arch: the shared leaf packages and the api SDK are UI-runtime-free outside the browser assembly', () => {
   it('discovers the shared leaf src trees automatically', () => {
     expect(
-      SHARED_SRC_ROOTS.length,
-      'expected at least the eight documented leaves — the umbrella collapsed or moved',
-    ).toBeGreaterThanOrEqual(8)
+      SHARED_SRC_ROOTS.map((dir) => relativePath(dir)).sort(),
+      'expected exactly the four documented leaves (ADR-0011 §6) — the umbrella collapsed, grew, or moved',
+    ).toEqual([
+      'packages/shared/base/src',
+      'packages/shared/catalog/src',
+      'packages/shared/i18n/src',
+      'packages/shared/settings/src',
+    ])
   })
 
   it('has no .tsx source files', () => {

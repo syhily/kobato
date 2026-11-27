@@ -2,6 +2,7 @@ import type { Page } from '@kobato/catalog/model'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { PageMetaRow } from '@kobato/db/sqlite/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { findPublicEntityMetaBySlug } from '@kobato/db/sqlite/operations/content/entity-meta'
 import { findContentById } from '@kobato/db/sqlite/operations/content/entity-revision'
 import {
@@ -12,7 +13,6 @@ import {
 import { isLive } from '@kobato/server/domains/content/schemas/live-gate'
 import { hydrateImageRefs } from '@kobato/server/domains/images/services/enhance'
 import { toCmsPage } from '@kobato/server/domains/pages/projection'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const findPublicPageMetaBySlug = (db: Database, slug: string): PageMetaRow | null =>
   unsafeCast<PageMetaRow | null>(findPublicEntityMetaBySlug(db, 'page', slug))

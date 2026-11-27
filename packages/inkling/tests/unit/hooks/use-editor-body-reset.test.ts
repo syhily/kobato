@@ -1,8 +1,8 @@
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { createHeadlessEditor, type SerializedEditorState, useEditorBodyReset } from '@kobato/inkling'
 import { COMMENT_EDITOR_NODES } from '@kobato/inkling/comment/editor/comment-editor-nodes'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 

@@ -3,7 +3,7 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/distribution/app'
+import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@kobato/base/distribution/app'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@kobato/ui/components/dialog'
 import { Image } from '@kobato/ui/components/Image'
 import { GithubIcon } from '@kobato/ui/icons/brand'

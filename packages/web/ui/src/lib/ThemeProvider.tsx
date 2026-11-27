@@ -1,6 +1,6 @@
+import { THEME_COOKIE } from '@kobato/base/utils/theme-cookie'
 import { getLogger } from '@kobato/ui/lib/logger'
 import { transitionViewIfSupported } from '@kobato/ui/lib/view-transition'
-import { THEME_COOKIE } from '@kobato/utils/theme-cookie'
 import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 

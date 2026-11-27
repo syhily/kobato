@@ -1,5 +1,7 @@
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
+import { createPromiseMemo } from '@kobato/base/utils/memo'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { visitLexicalNodes } from '@kobato/inkling/headless/walk'
 import { KATEX_OPTIONS } from '@kobato/server/infra/lexical/katex'
 import {
@@ -9,8 +11,6 @@ import {
   shikiTransformers,
 } from '@kobato/server/infra/lexical/shiki'
 import { getLogger } from '@kobato/server/infra/logger'
-import { createPromiseMemo } from '@kobato/utils/memo'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import katex from 'katex'
 
 const log = getLogger('lexical.prerender')

@@ -18,14 +18,10 @@ const WORKSPACE_PACKAGE_DIRS = [
   'packages/web/kit',
   'packages/web/ui',
   'packages/server',
-  'packages/shared/utils',
-  'packages/shared/auth',
+  'packages/shared/base',
   'packages/shared/catalog',
-  'packages/shared/distribution',
   'packages/shared/i18n',
   'packages/shared/settings',
-  'packages/shared/assets',
-  'packages/shared/sanitize',
   'packages/inkling',
 ]
 

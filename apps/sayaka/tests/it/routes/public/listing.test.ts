@@ -1,6 +1,6 @@
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { loader as categoryLoader } from '@sayaka/routes/category/list'
 import { loader as searchLoader } from '@sayaka/routes/search/list'

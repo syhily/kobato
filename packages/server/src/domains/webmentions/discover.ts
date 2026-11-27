@@ -1,8 +1,8 @@
 import type { SafeFetchFailure } from '@kobato/server/infra/safe-fetch'
 
+import { isHttpUrl } from '@kobato/base/utils/safe-url'
 import { isHtmlContentType } from '@kobato/server/domains/webmentions/content-type'
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
-import { isHttpUrl } from '@kobato/utils/safe-url'
 
 const MAX_DISCOVERY_BYTES = 1024 * 1024
 

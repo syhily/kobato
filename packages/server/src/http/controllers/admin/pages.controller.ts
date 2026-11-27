@@ -1,4 +1,5 @@
 import { adminPagesContract } from '@kobato/api/rpc/admin/pages'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   listPagesForAdmin,
@@ -17,7 +18,6 @@ import { makeRevisionRouter } from '@kobato/server/http/controllers/admin/revisi
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
 import { formatWarningDescriptors } from '@kobato/server/http/translate-domain-error'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminPagesContract)
 

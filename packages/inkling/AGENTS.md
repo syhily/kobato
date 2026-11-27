@@ -4,8 +4,8 @@
 
 - `packages/inkling/src/` is kobato's rich-text editor (Lexical 0.53, React 19). It owns the stored document model
   (`src/headless/`, React-free), the comment surface beside that model (`src/comment/`), and the kobato host cards
-  (`src/host-cards/`). It imports only `@kobato/ui`, `@kobato/i18n`, `@kobato/distribution`, `@kobato/assets`,
-  `@kobato/sanitize`, `@kobato/utils` — never contracts, server, db, or web.
+  (`src/host-cards/`). It imports only `@kobato/ui`, `@kobato/i18n`, and `@kobato/base` (`distribution`, `assets`,
+  `sanitize`, `utils`) — never contracts, server, db, or web.
 - Four public entry surfaces (`apps/kobato/tests/arch/package-dag.test.ts`): `@kobato/inkling` (React barrel
   `src/index.ts`), `@kobato/inkling/headless` + per-file imports (`src/headless/`, React-free — the only editor surface
   `server`/`db`/`contracts`/`catalog` may use), `@kobato/inkling/host-cards` (side-effect registration + image node +
@@ -135,8 +135,8 @@ model; the feed downgrade + defensive host-card substitution live server-side
   `LazyCommentBodyEditor` (placeholder, hover prefetch, `eager` / `focusOnMount`, the iOS zoom lock around the focus
   handoff, an optional host `labels` table that spares the chunk and wins over a table the chunk loaded).
   `warmCommentEditorChunks(locale)` is the hover prefetch hosts call from an action row.
-- `CommentContentHtml` renders the stored `content` HTML through `@kobato/sanitize`'s `'comment'` preset (the one reason
-  Inkling depends on `sanitize`); `comment-body-helpers` is the plain-text reader (`commentBodyPlainText`).
+- `CommentContentHtml` renders the stored `content` HTML through `@kobato/base/sanitize`'s `'comment'` preset (the one
+  reason Inkling depends on `base/sanitize`); `comment-body-helpers` is the plain-text reader (`commentBodyPlainText`).
 - `viewport-zoom-lock.ts` is the refcounted iOS viewport lock (`acquireViewportZoomLock` / `releaseViewportZoomLock` /
   `isIosWebKit`) both apps' `useIosNoZoomOnFocus` hooks and the composer hold.
 - The surface imports Inkling internals through the private alias, never the barrel, so the island stays a lazy chunk.

@@ -1,10 +1,10 @@
 import type { LexicalEditorState } from '@kobato/inkling-internal/headless/schema'
 import type { MarkdownHeading } from '@kobato/inkling-internal/headless/toc'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { lexicalNodeTextContent, visitLexicalNodes } from '@kobato/inkling-internal/headless/walk'
 import { createHeadingIdTracker as createHeadingSlugTracker } from '@kobato/inkling-internal/utils/heading-id-tracker'
 import { slugify as slugifyHeadingText } from '@kobato/inkling-internal/utils/slugify'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export function collectLexicalHeadings(state: LexicalEditorState): MarkdownHeading[] {
   const track = createHeadingSlugTracker()

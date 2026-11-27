@@ -2,12 +2,12 @@ import type { AppLocale } from '@kobato/i18n/locales'
 import type { InklingComposerProps } from '@kobato/inkling'
 import type { ComponentProps } from 'react'
 
+import { THEME_COOKIE } from '@kobato/base/utils/theme-cookie'
 import { InklingHostComposer } from '@kobato/inkling'
 import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
 import { stubMatchMedia } from '@kobato/inkling/tests/utils/stub-match-media'
 import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
 import { wrapWithI18n } from '@kobato/ui/tests/utils/i18n-render'
-import { THEME_COOKIE } from '@kobato/utils/theme-cookie'
 import { render, screen } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { AVATAR_SOURCES } from '@kobato/assets/avatar'
-import { isAllowedMirrorUrl } from '@kobato/assets/gravatar'
+import { AVATAR_SOURCES } from '@kobato/base/assets/avatar'
+import { isAllowedMirrorUrl } from '@kobato/base/assets/gravatar'
 import { z } from 'zod'
 
 export const commentsValidationMessages = {

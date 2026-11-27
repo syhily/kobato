@@ -1,6 +1,6 @@
+import { SLUG_MAX } from '@kobato/base/utils/slug'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { RESERVED_SLUGS, resolveSlug } from '@kobato/server/infra/slug/resolve'
-import { SLUG_MAX } from '@kobato/utils/slug'
 import { describe, expect, it } from 'vitest'
 
 function expectSlugFailure(fn: () => unknown): DomainError {

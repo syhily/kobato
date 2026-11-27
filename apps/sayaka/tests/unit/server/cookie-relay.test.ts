@@ -2,7 +2,7 @@
 import type { Env } from '@sayaka/server/hono-env'
 import type { SayakaRequestContext } from '@sayaka/server/request-context'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { cookieRelay, isHtmlContentType } from '@sayaka/server/cookie-relay'
 import { createSayakaRequestContext } from '@sayaka/server/request-context'
 import { Hono } from 'hono'

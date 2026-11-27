@@ -25,7 +25,7 @@ import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
 import type { MetricReader } from '@opentelemetry/sdk-metrics'
 import type { SpanExporter } from '@opentelemetry/sdk-trace'
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger } from '@kobato/server/infra/logger'
 import { clearLogSink, setLogSink } from '@kobato/server/infra/logger/sink'

@@ -2,7 +2,7 @@ import type { RumBeforeSend, RumEvent, RumEventDomainContext } from '@openobserv
 import type { RumBudgetStore } from '@sayaka/rum/rum-budget'
 import type { RumRouteContext } from '@sayaka/rum/rum-route'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { createRumSessionBudget } from '@sayaka/rum/rum-budget'
 import { sanitizeResourceUrl } from '@sayaka/rum/rum-url-policy'
 

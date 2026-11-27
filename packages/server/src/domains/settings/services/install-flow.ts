@@ -3,13 +3,13 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { DEFAULT_LOCALE, type AppLocale } from '@kobato/i18n/locales'
 import { buildDefaultSectionPayloads } from '@kobato/server/domains/settings/sections/registry'
 import { descriptorFor, messageDescriptor } from '@kobato/server/infra/http/error-descriptor'
 import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@kobato/settings/sections/assets'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface InstallSeedInput {
   title: string

@@ -3,7 +3,7 @@ import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { RESOURCE_STREAM_HEADER } from '@kobato/api/client/resource-stream'
 import { fontsContract } from '@kobato/api/rpc/public/fonts'
-import { EMBEDDED_FONT_ROUTE_PREFIX, parseAssetUrlPath } from '@kobato/assets/asset-url'
+import { EMBEDDED_FONT_ROUTE_PREFIX, parseAssetUrlPath } from '@kobato/base/assets/asset-url'
 import { lookupStoredLocalObject } from '@kobato/server/domains/storage/local-object'
 import { s3StorageRedirect } from '@kobato/server/domains/storage/redirect'
 import { contentNotFound } from '@kobato/server/http/content-not-found'

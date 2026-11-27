@@ -1,6 +1,6 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import {
   __resetCacheCountersForTests,
   bumpCounter,

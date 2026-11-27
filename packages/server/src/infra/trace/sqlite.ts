@@ -1,8 +1,8 @@
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { isVitest } from '@kobato/server/infra/config'
 import { redactBoundValues } from '@kobato/server/infra/db/query-diagnostics'
 import { activeTraceIds, isTraceActive, startSpan } from '@kobato/server/infra/trace/facade'
 import { recordDbOperation } from '@kobato/server/infra/trace/metrics'
-import { isRecord } from '@kobato/utils/type-guards'
 import diagnostics_channel from 'node:diagnostics_channel'
 
 const SQLITE_QUERY_CHANNEL = 'sqlite.db.query'

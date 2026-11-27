@@ -3,6 +3,7 @@ import type { JsonValue } from '@kobato/server/infra/json'
 import type { CacheBucketId } from '@kobato/settings/cache-bucket'
 import type { ZodType } from 'zod'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   bumpGeneration,
   getItemRawWithExpiry,
@@ -28,7 +29,6 @@ import { recordCacheLookup } from '@kobato/server/infra/trace/metrics'
 import { isTunableCacheBucket } from '@kobato/settings/cache-bucket'
 import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
 import { getBlogSettingsBundleSync } from '@kobato/settings/getters'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 

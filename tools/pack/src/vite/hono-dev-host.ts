@@ -3,7 +3,7 @@ import type { Plugin, ViteDevServer } from 'vite'
 
 import honoDevServer from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 export const VITE_DEV_SERVER_SLOT = Symbol.for('kobato.vite-dev-server')
 

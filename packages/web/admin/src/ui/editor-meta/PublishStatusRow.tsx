@@ -4,12 +4,12 @@ import type {
   SidebarSaveStatus,
 } from '@kobato/web-admin/ui/editor-shell/editor-shell-types'
 
+import { formatDateTime } from '@kobato/base/utils/format'
 import { Badge } from '@kobato/ui/components/badge'
 import { Label } from '@kobato/ui/components/label'
 import { RadioGroup } from '@kobato/ui/components/radio-group'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatDateTime } from '@kobato/utils/format'
 import { DateTimePicker } from '@kobato/web-admin/ui/editor-meta/DateTimePicker'
 import { dateToLocalInputValue } from '@kobato/web-admin/ui/editor-shell/editor-datetime'
 import { LabelledRadioCard } from '@kobato/web-admin/ui/shared/form/LabelledRadio'

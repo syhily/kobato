@@ -1,5 +1,5 @@
 import { idString, isoDateTime } from '@kobato/api/contracts/primitives'
-import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
+import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/base/assets/images'
 import { z } from 'zod'
 
 export const adminFriendDto = z.object({

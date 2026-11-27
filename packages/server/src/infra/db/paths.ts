@@ -1,5 +1,5 @@
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/base/distribution/sea-assets'
 import { resolveStoragePath } from '@kobato/db/sqlite/database'
-import { SEA_DRIZZLE_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
 import { serverConfig } from '@kobato/server/infra/config'
 import { seaAssetPath } from '@kobato/server/infra/sea/sea'
 

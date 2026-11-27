@@ -164,9 +164,9 @@ Everything that drives a kobato instance as a REAL separate process — two halv
 and `apps/sayaka`'s two suites import `@kobato/pack/instance/client/*` and `@kobato/pack/browser/*`. The trace smoke
 boots all three dev servers through `dev-instance.ts` and drives the admin through the workspace origin.
 
-- `src/process.ts` and the driver import only `@kobato/settings`, `@kobato/utils`, and their own modules — they drive
-  built artifacts and running processes, never a source graph, and never reach `src/sea`, `src/vite`, or `src/browser`
-  (pinned by `apps/kobato/tests/arch/package-dag.test.ts`).
+- `src/process.ts` and the driver import only `@kobato/settings`, `@kobato/base/utils`, and their own modules — they
+  drive built artifacts and running processes, never a source graph, and never reach `src/sea`, `src/vite`, or
+  `src/browser` (pinned by `apps/kobato/tests/arch/package-dag.test.ts`).
 - The config file always lives inside the per-run temp root; config vars never come from the parent env (env > file
   would silently override the converged file); seeding only touches a STOPPED database; every boot pairs with a stop
   (`stopDevServer`, `stopSuiteInstance`) that SIGTERMs the child and removes the temp root — entry scripts call it from

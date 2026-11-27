@@ -1,11 +1,11 @@
-import type { DateRange } from '@kobato/utils/date-range'
+import type { DateRange } from '@kobato/base/utils/date-range'
 import type { SQL } from 'drizzle-orm'
 
+import { computeDateRange } from '@kobato/base/utils/date-range'
 import { index1Of } from '@kobato/db/duckdb/access-events'
 import { METRIC_DIMENSIONS, dimensionWhere } from '@kobato/db/duckdb/queries/metric-dimensions'
 import { METRIC_TYPES, type AnalyticsRangeInput, type ResolvedAnalyticsQuery } from '@kobato/db/duckdb/queries/types'
 import { analyticsIdentifier } from '@kobato/db/duckdb/query'
-import { computeDateRange } from '@kobato/utils/date-range'
 import { sql } from 'drizzle-orm'
 
 export function buildAnalyticsFilter(query: ResolvedAnalyticsQuery): SQL<boolean> {

@@ -3,7 +3,7 @@ import type { FeedOutput } from '@kobato/api/contracts/public/feeds'
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { feedsContract } from '@kobato/api/rpc/public/feeds'
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { resolveCategoryBySlugOrName } from '@kobato/server/domains/taxonomies/categories/services/query'
 import { resolveTagBySlugOrName } from '@kobato/server/domains/taxonomies/tags/service'
 import { contentNotFound } from '@kobato/server/http/content-not-found'

@@ -1,6 +1,7 @@
 import type { Database } from '@kobato/db/sqlite/database'
 import type { BrandingObjectRef } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { findSettingByScope, upsertSetting } from '@kobato/db/sqlite/operations/system/setting'
 import { type BinarySlot } from '@kobato/server/assets/defaults'
 import { generateFaviconPack } from '@kobato/server/domains/assets/generate'
@@ -16,7 +17,6 @@ import { ActionFailure } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 import { activeBackend } from '@kobato/server/infra/storage/registry'
 import { SECTION_REGISTRY } from '@kobato/settings/sections/registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('branding.management')
 

@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export interface DateFilterValue {
   from: string

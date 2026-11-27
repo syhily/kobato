@@ -1,7 +1,7 @@
 import type { MusicPlayerCardProps } from '@kobato/ui/components/music-player/music-player'
 
+import { isHttpUrl } from '@kobato/base/utils/safe-url'
 import { I18nProvider, type I18nMessages, useI18n } from '@kobato/ui/lib/I18nProvider'
-import { isHttpUrl } from '@kobato/utils/safe-url'
 import { type RefObject, useContext, useEffect, useEffectEvent } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IntlContext } from 'react-intl'

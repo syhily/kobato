@@ -1,11 +1,11 @@
+import type { TimeUnit } from '@kobato/base/utils/date-range'
 import type { AnalyticsReader } from '@kobato/db/duckdb/connection'
 import type { ResolvedAnalyticsQuery, ViewsPoint, ViewsSeries } from '@kobato/db/duckdb/queries/types'
-import type { TimeUnit } from '@kobato/utils/date-range'
 
+import { pickTimeUnit } from '@kobato/base/utils/date-range'
 import { visitorsAggregate } from '@kobato/db/duckdb/queries/aggregates'
 import { buildAnalyticsFilter, getSafeTimezone } from '@kobato/db/duckdb/queries/query-filter'
 import { analyticsIdentifier, createAnalyticsQuery, runAnalyticsQuery } from '@kobato/db/duckdb/query'
-import { pickTimeUnit } from '@kobato/utils/date-range'
 import { sql } from 'drizzle-orm'
 
 const UNIT_FORMAT: Record<TimeUnit, string> = {

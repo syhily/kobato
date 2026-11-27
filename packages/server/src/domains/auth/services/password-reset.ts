@@ -6,7 +6,7 @@ import {
   MIN_PASSWORD_LENGTH,
   PASSWORD_COMPLEXITY_RE,
   passwordWithinBcryptLimit,
-} from '@kobato/auth/security'
+} from '@kobato/base/auth/security'
 import {
   findUserByEmail,
   findUserById,

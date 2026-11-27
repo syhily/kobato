@@ -1,11 +1,11 @@
 import type { AnalyticsHandle } from '@kobato/db/duckdb/connection'
 import type { DuckDBLogger } from '@kobato/db/duckdb/logger'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ACCESS_EVENTS_RETENTION_DAYS } from '@kobato/db/duckdb/access-events'
 import { engineOf } from '@kobato/db/duckdb/connection'
 import { checkpointAnalyticsDatabase } from '@kobato/db/duckdb/database'
 import { ANALYTICS_TABLES } from '@kobato/db/duckdb/schema'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { stat } from 'node:fs/promises'
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {

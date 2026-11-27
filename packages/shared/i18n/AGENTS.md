@@ -7,7 +7,7 @@ the message-id types; the other three `satisfies` them), `catalog` + `catalog-sc
 server translator, fed from the bootstrap payload's `i18n.messages`), and `inkling-labels/*` (the editor chrome's flat
 label tables).
 
-- Allowed deps: none. No React, no display formatting (that is `@kobato/utils/format`).
+- Allowed deps: none. No React, no display formatting (that is `@kobato/base/utils/format`).
 - `uiMessagesForScope(locale, scope)` is memoized and frozen; public scope is the `PUBLIC_MESSAGE_PREFIXES` allowlist
   (`apps/kobato/tests/arch/public-message-namespaces.test.ts`). The `inkling-labels` aggregator is a server-only value
   import; no client module statically imports a table (`apps/kobato/tests/arch/client-bundle.test.ts`).

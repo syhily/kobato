@@ -3,6 +3,7 @@ import type { Env } from '@kobato/server/http/hono-env'
 
 import { serve } from '@hono/node-server'
 import { createKobatoServerClient } from '@kobato/api/client/create-server-client'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { auditLog } from '@kobato/db/sqlite/schema/config'
 import { user as userTable } from '@kobato/db/sqlite/schema/user'
@@ -21,7 +22,6 @@ import {
   setBlogSettingsBundleForTests,
   TEST_BLOG_SETTINGS_BUNDLE,
 } from '@kobato/settings/tests/utils/blog-settings'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'

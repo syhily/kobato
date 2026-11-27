@@ -1,9 +1,9 @@
 import type { Database } from '@kobato/db/sqlite/database'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { toJsonSafe } from '@kobato/server/infra/json'
 import { registerShutdownHook, unregisterShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger, type Logger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 
 export interface InsertBatcherOptions {

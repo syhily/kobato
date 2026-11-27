@@ -1,4 +1,4 @@
-import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
+import { SEA_CLIENT_ASSET_PREFIX } from '@kobato/base/distribution/sea-assets'
 import { seaVfsRoot } from '@kobato/server/infra/sea/sea'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'

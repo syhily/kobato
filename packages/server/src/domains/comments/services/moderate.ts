@@ -3,6 +3,7 @@ import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema
 import type { AuditContext } from '@kobato/server/domains/audit/types'
 import type { ViewerIdentity } from '@kobato/server/domains/auth/rbac'
 
+import { idFromString } from '@kobato/base/utils/id'
 import { countApprovedRepliesOfComment, findCommentWithUserById } from '@kobato/db/sqlite/operations/engagement/comment'
 import { findCommentWithUserAndTarget } from '@kobato/db/sqlite/operations/engagement/comment-admin'
 import {
@@ -29,7 +30,6 @@ import { fireAndForgetNotify } from '@kobato/server/infra/email/admin-notificati
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { idFromString } from '@kobato/utils/id'
 
 const adminLog = getLogger('comments.admin')
 

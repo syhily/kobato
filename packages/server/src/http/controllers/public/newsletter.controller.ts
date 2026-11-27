@@ -1,8 +1,8 @@
 import { newsletterContract } from '@kobato/api/rpc/public/newsletter'
+import { idFromString } from '@kobato/base/utils/id'
 import { confirm, subscribe, unsubscribe } from '@kobato/server/domains/newsletter/service'
 import { implementPublic, localizedOrpcError, resourceRateLimit } from '@kobato/server/http/orpc-base'
 import { tryNewsletterSubscribeByEmailRateLimit } from '@kobato/server/infra/rate-limit'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(newsletterContract).use(resourceRateLimit)
 

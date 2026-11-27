@@ -4,6 +4,7 @@ import type {
   CommentTokenCookieEntry,
 } from '@kobato/server/domains/comments/services/comment-token'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import {
   findLiveOneTimeTokenPayloads,
   insertOneTimeToken,
@@ -11,7 +12,6 @@ import {
 } from '@kobato/db/sqlite/operations/identity/otp'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { isRecord } from '@kobato/utils/type-guards'
 import { randomUUID } from 'node:crypto'
 
 const log = getLogger('comments.token')

@@ -1,6 +1,6 @@
+import type { Assert, Equals } from '@kobato/base/utils/type-equals'
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { SecretMasks, SettingsBundle } from '@kobato/settings/types'
-import type { Assert, Equals } from '@kobato/utils/type-equals'
 
 import {
   projectAssetsForAdmin,

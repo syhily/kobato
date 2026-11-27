@@ -1,6 +1,8 @@
 import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
 import { accountSelfContract } from '@kobato/api/rpc/account/self'
+import { idFromString } from '@kobato/base/utils/id'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { findSafeUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
@@ -29,8 +31,6 @@ import {
   tryPasskeySetForceRateLimit,
   tryRateLimit,
 } from '@kobato/server/infra/rate-limit'
-import { idFromString } from '@kobato/utils/id'
-import { isRecord } from '@kobato/utils/type-guards'
 
 const impl = implementAuthed(accountSelfContract)
 

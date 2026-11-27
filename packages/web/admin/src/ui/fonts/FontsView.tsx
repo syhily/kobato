@@ -14,10 +14,10 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatBytes } from '@kobato/base/utils/format'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatBytes } from '@kobato/utils/format'
 import {
   isDragData,
   isSlotDropData,

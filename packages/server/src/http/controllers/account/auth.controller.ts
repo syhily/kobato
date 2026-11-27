@@ -3,6 +3,7 @@ import type { AuthFlowResult } from '@kobato/server/domains/auth/services/shared
 
 import { AUTH_SIGNIN_VIEW_ACTIONS, AUTH_STATUS_REDIRECT_FALLBACK } from '@kobato/api/contracts/account/auth'
 import { accountAuthContract } from '@kobato/api/rpc/account/auth'
+import { safeRedirectPath } from '@kobato/base/utils/safe-url'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { logout } from '@kobato/server/domains/auth/primitives'
 import { handleCredentialLogin } from '@kobato/server/domains/auth/services/credential'
@@ -27,7 +28,6 @@ import {
 } from '@kobato/server/http/controllers/account/auth-shared'
 import { implementPublic } from '@kobato/server/http/orpc-base'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
-import { safeRedirectPath } from '@kobato/utils/safe-url'
 
 const VIEW_ACTIONS: readonly string[] = AUTH_SIGNIN_VIEW_ACTIONS
 

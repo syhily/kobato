@@ -1,8 +1,8 @@
 import type { Env } from '@kobato/server/http/hono-env'
 import type { MiddlewareHandler } from 'hono'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { localizedHttpException } from '@kobato/server/http/localized-http-exception'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const DEFAULT_TIMEOUT_MS = 30_000
 

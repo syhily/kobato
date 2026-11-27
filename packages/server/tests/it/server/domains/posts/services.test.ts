@@ -2,6 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { SidebarSelection } from '@kobato/server/domains/posts/services/featured'
 import type { SidebarSettings } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteEngineOf, sqliteOf } from '@kobato/db/sqlite/database'
 import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { post as postMetaTable } from '@kobato/db/sqlite/schema/post'
@@ -17,7 +18,6 @@ import {
 } from '@kobato/server/tests/utils/lexical'
 import { adminUser } from '@kobato/server/tests/utils/session'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

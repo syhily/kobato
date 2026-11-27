@@ -1,7 +1,7 @@
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/base/utils/slug'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { deriveSlug } from '@kobato/server/infra/slug/derive'
-import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@kobato/utils/slug'
 
 export const RESERVED_SLUGS = new Set<string>([
   'posts',

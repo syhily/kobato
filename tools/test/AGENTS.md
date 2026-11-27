@@ -30,13 +30,15 @@ purpose + the `*.duckdb.test.ts` / `*.iso.test.ts` suffixes).
 
 `projects/registry.ts` exports `allTestProjects`, the ordered table the root `vitest.config.ts` spreads into
 `test.projects` (pinned by `apps/kobato/tests/arch/vitest-project-registry.test.ts`). Placement: multi-leaf projects
-glob every leaf (`packages/shared/*/tests/unit/**` — a new leaf joins automatically); each module group has ONE
-multi-project owner (`{api,db,server}-projects.ts`, which also owns its `*-duckdb` and `-iso-*` twins); single-project
-packages keep a package-local `tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path. Each app owns its
-projects in `projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — the sayaka projects
-point their setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings
-bundle, no server/db seams), and the workspace owns `projects/admin-projects.ts` (`admin-arch` on the product-free Node
-setup, `admin-unit` / `admin-snaps` on vmThreads over `packages/web/admin/tests/utils/setup/{unit,snaps}.ts`, and the
+glob every leaf (`packages/shared/*/tests/{unit,snaps}/**` — a new leaf joins automatically; `base`'s tests sit one
+directory deeper, under `tests/<directory>/`, so the same projects also glob
+`packages/shared/*/tests/*/{unit,snaps}/**`); each module group has ONE multi-project owner
+(`{api,db,server}-projects.ts`, which also owns its `*-duckdb` and `-iso-*` twins); single-project packages keep a
+package-local `tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path. Each app owns its projects in
+`projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — the sayaka projects point their
+setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings bundle, no
+server/db seams), and the workspace owns `projects/admin-projects.ts` (`admin-arch` on the product-free Node setup,
+`admin-unit` / `admin-snaps` on vmThreads over `packages/web/admin/tests/utils/setup/{unit,snaps}.ts`, and the
 forks-pool `admin-tz-unit` for the one runtime-`TZ` write).
 
 `projects/iso-project.ts` is the twin factory: `isoTestGlob(tree)` is the one spelling of `**/*.iso.test.{ts,tsx}` — a

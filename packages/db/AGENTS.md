@@ -2,7 +2,7 @@
 
 `@kobato/db` owns SQLite content persistence and the DuckDB analytics sidecar: connections, schemas, row types, semantic
 operations, migrations, and error classification. It depends on `@kobato/settings`, `@kobato/inkling` (headless), and
-`@kobato/utils`; never on `@kobato/api`, `@kobato/server`, web, or UI packages.
+`@kobato/base`; never on `@kobato/api`, `@kobato/server`, web, or UI packages.
 
 - Import source modules directly as `@kobato/db/<path>.ts` (internal imports too); there is no barrel.
 - `src/sqlite/` and `src/duckdb/` are separate engine planes. `sqlite/database.ts` owns the shared `:memory:` sentinels,

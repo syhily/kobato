@@ -1,7 +1,7 @@
 import type { HomeExtra } from '@kobato/api/contracts/public/content'
 import type { PublicListingLoaderData } from '@kobato/catalog/listing'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader } from '@sayaka/routes/home'
 import {
   createStubKobato,

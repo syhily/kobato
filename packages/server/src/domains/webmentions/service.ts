@@ -9,6 +9,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { WebmentionOutboxStatus, WebmentionStatus } from '@kobato/db/sqlite/schema/webmention'
 import type { EntityTarget } from '@kobato/db/sqlite/target'
 
+import { idFromString } from '@kobato/base/utils/id'
 import {
   countWebmentions,
   countWebmentionsByStatus,
@@ -30,7 +31,6 @@ import {
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { idFromString } from '@kobato/utils/id'
 
 export interface AdminWebmentionList {
   mentions: AdminWebmentionWire[]

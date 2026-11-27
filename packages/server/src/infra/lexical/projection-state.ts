@@ -1,8 +1,8 @@
 import type { LexicalEditorState, LexicalNodeJson } from '@kobato/inkling/headless/schema'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { MUSIC_PLAYER_PROJECTION_PLACEHOLDER } from '@kobato/inkling/headless/cards/music-player'
 import { KOBATO_HOST_CARD_NODE_TYPES } from '@kobato/inkling/headless/node-whitelist'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface ProjectionStateOptions {
   feed: boolean

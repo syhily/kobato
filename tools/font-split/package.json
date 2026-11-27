@@ -36,9 +36,9 @@
     "test": "cargo test"
   },
   "devDependencies": {
+    "@kobato/base": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@napi-rs/cli": "catalog:",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",

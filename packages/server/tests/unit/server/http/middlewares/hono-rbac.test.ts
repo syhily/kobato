@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { SessionUser } from '@kobato/server/domains/auth/session-storage'
 

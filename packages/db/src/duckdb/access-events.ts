@@ -11,8 +11,8 @@ import {
   UUID,
   VARCHAR,
 } from '@duckdb/node-api'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { writerConnection } from '@kobato/db/duckdb/connection'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const ACCESS_EVENTS_RETENTION_DAYS = 180
 

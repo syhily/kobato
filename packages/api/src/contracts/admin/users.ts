@@ -1,8 +1,8 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { loginMethodSchema, type AccountSessionDto } from '@kobato/api/contracts/account/self'
 import { clearable, idString, isoDateTime, mergePatchInput } from '@kobato/api/contracts/primitives'
-import { optionalHttpUrlSchema } from '@kobato/utils/url-schema'
+import { optionalHttpUrlSchema } from '@kobato/base/utils/url-schema'
 import { z } from 'zod'
 
 export const adminUserDto = z.object({

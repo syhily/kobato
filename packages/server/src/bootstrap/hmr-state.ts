@@ -1,4 +1,4 @@
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export function readHmrFlag(key: string): boolean {
   const data: unknown = import.meta.hot?.data

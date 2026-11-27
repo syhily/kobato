@@ -3,7 +3,8 @@ import type { ActiveFilter, FilterPillsAction } from '@kobato/web-admin/ui/share
 import type { ReactNode } from 'react'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { avatarImageUrl } from '@kobato/assets/avatar'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { CommentContentHtml } from '@kobato/inkling/comment/CommentContentHtml'
 import { commentEditorStateSchema } from '@kobato/inkling/headless/comment-schema'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
@@ -14,7 +15,6 @@ import { Skeleton } from '@kobato/ui/components/skeleton'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys'
-import { formatLocalDate } from '@kobato/utils/site-date'
 import {
   buildMyCommentFilterFields,
   MY_STATUS_OPTIONS,

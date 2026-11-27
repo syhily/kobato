@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { loader } from '@sayaka/routes/post/detail'
 import {

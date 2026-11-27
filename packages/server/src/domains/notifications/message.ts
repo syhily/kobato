@@ -2,10 +2,10 @@ import type { NotificationRow } from '@kobato/db/sqlite/types'
 import type { ServerMessageId } from '@kobato/i18n/messages/server/en-US'
 import type { MessageParams, ServerTranslator } from '@kobato/server/infra/i18n'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { BASE_LOCALE } from '@kobato/i18n/locales'
 import { createServerTranslator, isServerMessageId } from '@kobato/server/infra/i18n'
 import { getLogger } from '@kobato/server/infra/logger'
-import { isRecord } from '@kobato/utils/type-guards'
 
 const log = getLogger('notifications.message')
 

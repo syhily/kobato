@@ -143,7 +143,7 @@ not rewrite one of them into a different set of synonyms just to create a region
 | `common.datetime.hourOption`                   | Hour {hour}          | {hour} 时      | {hour} 時      | {hour} 時      | The placeholder must be preserved      |
 | `common.sort.loginTime`                        | Signed in            | 登录时间       | 登入時間       | 登入時間       | Both Traditional locales use 「登入」  |
 
-Date display is not catalog copy; it is produced by `packages/shared/utils/src/format.ts` through
+Date display is not catalog copy; it is produced by `packages/shared/base/src/utils/format.ts` through
 `Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })`. `timeFormat: null` means "follow
 the language"; only custom mode substitutes by placeholder. Sample `dateStyle/timeStyle: short` output for 2026-11-08
 14:30 (Asia/Shanghai): en-US `11/8/26, 2:30 PM`, zh-CN `2026/11/8 14:30`, zh-HK `8/11/2026 下午2:30`, zh-TW

@@ -1,6 +1,6 @@
 import type { ResourceOk } from '@kobato/api/contracts/primitives'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { loader as categoryFeedLoader } from '@sayaka/routes/category/feed'
 import { loader as categoryAtomLoader } from '@sayaka/routes/category/feed-atom'

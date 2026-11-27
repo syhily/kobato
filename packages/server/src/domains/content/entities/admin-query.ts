@@ -9,6 +9,7 @@ import type {
 import type { LimitOffset } from '@kobato/server/domains/content/pagination'
 import type { AdminListEngagement, AdminListResult } from '@kobato/server/domains/content/services/admin-list'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   findContentById,
   findLatestRevision,
@@ -16,7 +17,6 @@ import {
 } from '@kobato/db/sqlite/operations/content/entity-revision'
 import { toAdminRevisionDto } from '@kobato/server/domains/content/projection'
 import { listForAdmin } from '@kobato/server/domains/content/services/admin-list'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset> {
   listMetas: (

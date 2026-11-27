@@ -2,6 +2,7 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { idStr } from '@kobato/base/utils/id'
 import { LazyCommentBodyEditor } from '@kobato/inkling/comment/LazyCommentBodyEditor'
 import { EMPTY_COMMENT_EDITOR_STATE, isCommentEditorStateBlank } from '@kobato/inkling/headless/comment-schema'
 import { Button } from '@kobato/ui/components/button'
@@ -15,7 +16,6 @@ import {
 } from '@kobato/ui/components/dialog'
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { idStr } from '@kobato/utils/id'
 import { useKobatoInklingLabels } from '@kobato/web-admin/ui/shared/use-inkling-labels'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'

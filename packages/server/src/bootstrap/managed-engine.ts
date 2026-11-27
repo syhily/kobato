@@ -1,6 +1,6 @@
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export interface EngineAdapter<THandle> {
   open(): THandle | Promise<THandle>

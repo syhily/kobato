@@ -3,8 +3,8 @@ import type { Plugin, UserConfig, ViteDevServer } from 'vite'
 
 import honoDevServer from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { exposeViteDevServer, forceDevMode, remoteAddressMiddleware } from '@kobato/pack/vite/hono-dev-host'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import fs from 'node:fs'
 import path from 'node:path'
 

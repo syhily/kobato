@@ -1,6 +1,6 @@
 import type { I18nValue } from '@kobato/ui/lib/I18nProvider'
 
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export interface TextFilterOperatorOption {
   value: string

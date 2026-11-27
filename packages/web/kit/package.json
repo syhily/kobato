@@ -13,12 +13,12 @@
   },
   "devDependencies": {
     "@kobato/api": "workspace:*",
+    "@kobato/base": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@orpc/client": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/jest-dom": "catalog:",

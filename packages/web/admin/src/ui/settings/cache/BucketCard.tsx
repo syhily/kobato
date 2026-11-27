@@ -3,11 +3,11 @@ import type { CacheBucketId } from '@kobato/settings/cache-bucket'
 import type { CacheSettings } from '@kobato/settings/types'
 import type { ClearStatus } from '@kobato/web-admin/ui/settings/cache/cache-status'
 
+import { formatBytes } from '@kobato/base/utils/format'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { Button } from '@kobato/ui/components/button'
 import { Input } from '@kobato/ui/components/input'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatBytes } from '@kobato/utils/format'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@kobato/web-admin/ui/settings/cache/cache-constants'
 import { clamp, formatTtl, hoursToSeconds } from '@kobato/web-admin/ui/settings/cache/cache-formatters'
 import {

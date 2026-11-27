@@ -1,11 +1,11 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { content as contentTable } from '@kobato/db/sqlite/schema/content'
 import { post as postTable } from '@kobato/db/sqlite/schema/post'
 import { postTag } from '@kobato/db/sqlite/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
-import { APP_VERSION } from '@kobato/distribution/app'
 import { countEntryFiles, wipeCache } from '@kobato/server/infra/cache/file-store'
 import { __resetMemoryCacheForTests } from '@kobato/server/infra/cache/memory-store'
 import { get, resetCacheCounterMemo } from '@kobato/server/infra/cache/registry'

@@ -6,6 +6,7 @@ import type { MetricTarget } from '@kobato/server/domains/comments/services/shar
 import type { CommentAndUser } from '@kobato/server/domains/comments/types'
 import type { RequestFacts } from '@kobato/server/infra/http/request-facts'
 
+import { idFromString } from '@kobato/base/utils/id'
 import {
   findCommentRootId,
   findCommentWithSourceUser,
@@ -30,7 +31,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { idFromString } from '@kobato/utils/id'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.loader')

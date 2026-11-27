@@ -1,5 +1,5 @@
 import { DuckDBInstance } from '@duckdb/node-api'
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export async function scanAccessEvents(analyticsPath: string): Promise<{ rows: number; paths: number }> {
   const instance = await DuckDBInstance.create(analyticsPath)

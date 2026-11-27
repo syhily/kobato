@@ -1,4 +1,4 @@
-import type { RouteManifest } from '@kobato/distribution/route-warmup'
+import type { RouteManifest } from '@kobato/base/distribution/route-warmup'
 
 import { deriveTier2RouteIds, IDLE_SIZE_LIMIT, routeWarmupPlugin, TIER1_ROUTES } from '@kobato/pack/vite/route-warmup'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

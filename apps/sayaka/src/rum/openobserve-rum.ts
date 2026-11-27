@@ -5,7 +5,7 @@ import type { RumRouteContext } from '@sayaka/rum/rum-route'
 
 import { orpc } from '@kobato/api/browser/client'
 import { createRumIntakeProxyUrl } from '@kobato/api/client/rum-intake'
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { RUM_RELAY_CLIENT_TOKEN } from '@kobato/settings/telemetry/rum'
 import { getLogger } from '@kobato/ui/lib/logger'
 import { createRumEventPolicy } from '@sayaka/rum/rum-sanitizer'

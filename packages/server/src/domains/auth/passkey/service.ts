@@ -9,7 +9,10 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
 
-import { isValidPasskeyDomain } from '@kobato/auth/network'
+import { isValidPasskeyDomain } from '@kobato/base/auth/network'
+import { tryParseUrl } from '@kobato/base/utils/safe-url'
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { isUniqueConstraintError } from '@kobato/db/sqlite/errors'
 import { consumeLiveOneTimeToken, upsertOneTimeToken } from '@kobato/db/sqlite/operations/identity/otp'
 import {
@@ -26,9 +29,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsBundle } from '@kobato/settings/getters'
-import { tryParseUrl } from '@kobato/utils/safe-url'
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   generateAuthenticationOptions as swaGenerateAuthenticationOptions,
   generateRegistrationOptions as swaGenerateRegistrationOptions,

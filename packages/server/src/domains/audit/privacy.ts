@@ -1,5 +1,5 @@
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { L3_KEYS } from '@kobato/server/infra/logger'
-import { isRecord } from '@kobato/utils/type-guards'
 
 const L3_OPEN = '{E}'
 const L3_CLOSE = '{/E}'

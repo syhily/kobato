@@ -26,26 +26,27 @@ const IGNORE_DIRS = new Set([
   'tmp',
 ])
 
-const SHARED_SPLIT = [
-  '@kobato/utils',
-  '@kobato/i18n',
-  '@kobato/auth',
-  '@kobato/catalog',
-  '@kobato/distribution',
-  '@kobato/settings',
-  '@kobato/assets',
-  '@kobato/sanitize',
-] as const
+const SHARED_SPLIT = ['@kobato/base', '@kobato/catalog', '@kobato/i18n', '@kobato/settings'] as const
 
 const API_SHARED_DEPS = [
-  '@kobato/auth',
+  '@kobato/base',
   '@kobato/catalog',
   '@kobato/settings',
   '@kobato/i18n',
-  '@kobato/utils',
   '@kobato/inkling',
-  '@kobato/assets',
 ] as const
+
+const BASE_TREES = [
+  ['src', 'packages/shared/base/src'],
+  ['tests', 'packages/shared/base/tests'],
+] as const
+const BASE_DIRECTORY_TARGETS: Record<string, readonly string[]> = {
+  auth: ['@kobato/i18n'],
+  assets: [],
+  distribution: [],
+  sanitize: [],
+  utils: ['@kobato/i18n'],
+}
 
 const INTERNAL_SCOPES = REPO_PACKAGES.map((pkg) => pkg.name)
 
@@ -53,49 +54,32 @@ const PACK_INTERNAL_SCOPES = INTERNAL_SCOPES.filter((scope) => scope !== 'sayaka
 
 const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/tsconfig': [],
-  '@kobato/inkling': [
-    '@kobato/i18n',
-    '@kobato/distribution',
-    '@kobato/assets',
-    '@kobato/utils',
-    '@kobato/ui',
-    '@kobato/sanitize',
-    '@kobato/test',
-  ],
+  '@kobato/inkling': ['@kobato/base', '@kobato/i18n', '@kobato/ui', '@kobato/test'],
 
-  '@kobato/utils': ['@kobato/i18n', '@kobato/test'],
-  '@kobato/auth': ['@kobato/i18n', '@kobato/test'],
-  '@kobato/catalog': ['@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
-  '@kobato/distribution': ['@kobato/test'],
+  '@kobato/base': ['@kobato/i18n', '@kobato/test'],
+  '@kobato/catalog': ['@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/base', '@kobato/test'],
   '@kobato/i18n': ['@kobato/test'],
-  '@kobato/settings': ['@kobato/i18n', '@kobato/assets', '@kobato/utils', '@kobato/test'],
-  '@kobato/assets': ['@kobato/test'],
-
-  '@kobato/sanitize': ['@kobato/test'],
+  '@kobato/settings': ['@kobato/i18n', '@kobato/base', '@kobato/test'],
 
   '@kobato/api': [...API_SHARED_DEPS, '@kobato/test'],
-  '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/utils'],
+  '@kobato/db': ['@kobato/settings', '@kobato/inkling', '@kobato/test', '@kobato/base'],
 
   '@kobato/server': ['@kobato/api', '@kobato/db', '@kobato/inkling', '@kobato/test', ...SHARED_SPLIT],
-  '@kobato/ui': ['@kobato/assets', '@kobato/settings', '@kobato/i18n', '@kobato/utils', '@kobato/test'],
+  '@kobato/ui': ['@kobato/base', '@kobato/settings', '@kobato/i18n', '@kobato/test'],
 
-  '@kobato/web-kit': ['@kobato/ui', '@kobato/api', '@kobato/utils', '@kobato/i18n', '@kobato/settings', '@kobato/test'],
+  '@kobato/web-kit': ['@kobato/ui', '@kobato/api', '@kobato/base', '@kobato/i18n', '@kobato/settings', '@kobato/test'],
   '@kobato/web-admin': [
     '@kobato/api',
-    '@kobato/assets',
-    '@kobato/auth',
+    '@kobato/base',
     '@kobato/catalog',
     '@kobato/db',
-    '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
     '@kobato/pack',
-    '@kobato/sanitize',
     '@kobato/server',
     '@kobato/settings',
     '@kobato/test',
     '@kobato/ui',
-    '@kobato/utils',
     '@kobato/web-kit',
   ],
   '@kobato/test': [],
@@ -103,56 +87,40 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   kobato: INTERNAL_SCOPES,
   sayaka: [
     '@kobato/api',
-    '@kobato/assets',
-    '@kobato/auth',
+    '@kobato/base',
     '@kobato/catalog',
-    '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
     '@kobato/pack',
-    '@kobato/sanitize',
     '@kobato/settings',
     '@kobato/test',
     '@kobato/ui',
-    '@kobato/utils',
     '@kobato/web-kit',
   ],
   '@kobato/pack': PACK_INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
-  '@kobato/font-split': ['@kobato/test', '@kobato/utils'],
+  '@kobato/font-split': ['@kobato/test', '@kobato/base'],
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {
-  '@kobato/inkling': [
-    '@kobato/inkling',
-    '@kobato/ui',
-    '@kobato/i18n',
-    '@kobato/sanitize',
-    '@kobato/distribution',
-    '@kobato/assets',
-    '@kobato/utils',
-  ],
+  '@kobato/inkling': ['@kobato/inkling', '@kobato/ui', '@kobato/i18n', '@kobato/base'],
   '@kobato/inkling-demo': ['@kobato/inkling-demo', '@kobato/inkling', '@kobato/ui'],
-  '@kobato/utils': ['@kobato/utils', '@kobato/i18n'],
-  '@kobato/auth': ['@kobato/auth', '@kobato/i18n'],
-  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
-  '@kobato/distribution': ['@kobato/distribution'],
+  '@kobato/base': ['@kobato/base', '@kobato/i18n'],
+  '@kobato/catalog': ['@kobato/catalog', '@kobato/inkling', '@kobato/settings', '@kobato/i18n', '@kobato/base'],
   '@kobato/i18n': ['@kobato/i18n'],
-  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/assets', '@kobato/utils'],
-  '@kobato/assets': ['@kobato/assets'],
-  '@kobato/sanitize': ['@kobato/sanitize'],
+  '@kobato/settings': ['@kobato/settings', '@kobato/i18n', '@kobato/base'],
 
   '@kobato/api': ['@kobato/api', ...API_SHARED_DEPS],
-  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/utils'],
+  '@kobato/db': ['@kobato/db', '@kobato/settings', '@kobato/inkling', '@kobato/base'],
   '@kobato/server': ['@kobato/server', '@kobato/api', '@kobato/db', '@kobato/inkling', ...SHARED_SPLIT],
-  '@kobato/ui': ['@kobato/ui', '@kobato/assets', '@kobato/settings', '@kobato/i18n', '@kobato/utils'],
+  '@kobato/ui': ['@kobato/ui', '@kobato/base', '@kobato/settings', '@kobato/i18n'],
 
   '@kobato/web-kit': [
     '@kobato/web-kit',
     '@kobato/ui',
     '@kobato/api',
-    '@kobato/utils',
+    '@kobato/base',
     '@kobato/i18n',
     '@kobato/settings',
   ],
@@ -161,46 +129,34 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/ui',
     '@kobato/web-kit',
     '@kobato/api',
-    '@kobato/utils',
+    '@kobato/base',
     '@kobato/i18n',
     '@kobato/settings',
-    '@kobato/auth',
     '@kobato/catalog',
-    '@kobato/assets',
-    '@kobato/distribution',
-    '@kobato/sanitize',
     '@kobato/inkling',
   ],
   '@kobato/test': ['@kobato/test'],
   kobato: [
     'kobato',
     '@kobato/api',
-    '@kobato/assets',
-    '@kobato/auth',
+    '@kobato/base',
     '@kobato/catalog',
-    '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
-    '@kobato/sanitize',
     '@kobato/server',
     '@kobato/settings',
     '@kobato/ui',
-    '@kobato/utils',
     '@kobato/web-kit',
   ],
   sayaka: [
     'sayaka',
     '@kobato/api',
-    '@kobato/assets',
-    '@kobato/auth',
+    '@kobato/base',
     '@kobato/catalog',
-    '@kobato/distribution',
     '@kobato/i18n',
     '@kobato/inkling',
-    '@kobato/sanitize',
     '@kobato/settings',
     '@kobato/ui',
-    '@kobato/utils',
     '@kobato/web-kit',
   ],
 
@@ -444,13 +400,52 @@ describe('package DAG', () => {
     expect(offenders).toEqual([])
   })
 
+  it('the directories inside base import workspace packages only along the pinned direction', () => {
+    const offenders: string[] = []
+    for (const [tree, root] of BASE_TREES) {
+      const seen = new Set<string>()
+      for (const file of sourceFiles(root)) {
+        const directory = file.slice(root.length + 1).split('/')[0]!
+        seen.add(directory)
+        const allowed = BASE_DIRECTORY_TARGETS[directory]
+        if (allowed === undefined) {
+          offenders.push(`${file}: not under a pinned base directory`)
+          continue
+        }
+        for (const specifier of importSpecifiers(readSource(file))) {
+          if (specifier === `@kobato/base/${directory}` || specifier.startsWith(`@kobato/base/${directory}/`)) {
+            continue
+          }
+          const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
+          if (target !== undefined && !allowed.includes(target)) {
+            offenders.push(
+              `${file}: ${specifier} (base/${directory} may import only ${allowed.length > 0 ? allowed.join(', ') : 'its own modules'})`,
+            )
+          }
+        }
+      }
+      expect([...seen].sort(), `every pinned base directory has a ${tree} tree`).toEqual(
+        Object.keys(BASE_DIRECTORY_TARGETS).sort(),
+      )
+    }
+    expect(
+      offenders,
+      'base holds five directories that keep their names: auth and utils reach only i18n, assets, distribution, and ' +
+        'sanitize reach no workspace package, and none of them, in src or tests, reaches another directory of base, ' +
+        'settings, catalog, the api, or anything above the floor',
+    ).toEqual([])
+  })
+
   it('the instance driver and process primitives stay product-light and off the build pipeline', () => {
-    const allowed = new Set(['@kobato/settings', '@kobato/utils'])
+    const allowed = new Set(['@kobato/settings'])
     const offenders: string[] = []
     for (const file of [...sourceFiles('tools/pack/src/instance'), 'tools/pack/src/process.ts']) {
       for (const specifier of importSpecifiers(readSource(file))) {
         const target = INTERNAL_SCOPES.find((scope) => specifier === scope || specifier.startsWith(`${scope}/`))
         if (target === undefined || allowed.has(target)) {
+          continue
+        }
+        if (target === '@kobato/base' && /^@kobato\/base\/utils(?:\/|$)/.test(specifier)) {
           continue
         }
         if (target === '@kobato/pack' && /^@kobato\/pack\/(?:instance\/|process$)/.test(specifier)) {
@@ -461,7 +456,8 @@ describe('package DAG', () => {
     }
     expect(
       offenders,
-      'src/instance/ and src/process.ts drive running processes: they import only settings, utils, and their own modules',
+      'src/instance/ and src/process.ts drive running processes: they import only @kobato/settings, @kobato/base/utils, ' +
+        'and their own modules',
     ).toEqual([])
   })
 

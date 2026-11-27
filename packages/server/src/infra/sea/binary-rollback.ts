@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { rename, rm } from 'node:fs/promises'

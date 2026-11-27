@@ -1,6 +1,6 @@
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 function identitySeed<TBody>(body: TBody): TBody {

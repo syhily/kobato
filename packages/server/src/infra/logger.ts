@@ -1,6 +1,6 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@kobato/server/infra/config'
 import { pushLogLine } from '@kobato/server/infra/logger/sink'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Writable } from 'node:stream'
 import pino from 'pino'
 

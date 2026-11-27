@@ -1,10 +1,10 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatNumber } from '@kobato/base/utils/format'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatNumber } from '@kobato/utils/format'
 import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context'
 import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
 import { HEATMAP_METRIC_LABEL_IDS } from '@kobato/web-admin/ui/analytics/metric-labels'

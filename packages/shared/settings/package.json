@@ -11,11 +11,10 @@
     ]
   },
   "devDependencies": {
-    "@kobato/assets": "workspace:*",
+    "@kobato/base": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

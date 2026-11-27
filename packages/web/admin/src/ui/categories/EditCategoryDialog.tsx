@@ -1,7 +1,7 @@
 import type { AdminCategoryDto } from '@kobato/api/contracts/admin/categories'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { isSafeImageSegment } from '@kobato/assets/images'
+import { isSafeImageSegment } from '@kobato/base/assets/images'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,

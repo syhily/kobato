@@ -1,4 +1,4 @@
-import type { AdminImageKind } from '@kobato/assets/images'
+import type { AdminImageKind } from '@kobato/base/assets/images'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { ActiveImageFilter, ImageFilterField } from '@kobato/web-admin/ui/images/use-images-reducer'
 

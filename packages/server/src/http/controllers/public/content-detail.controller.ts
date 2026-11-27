@@ -2,6 +2,7 @@ import type { EntityTarget } from '@kobato/db/sqlite/target'
 
 import { isContentRedirectSignal } from '@kobato/api/contracts/public/content'
 import { contentDetailContract } from '@kobato/api/rpc/public/content'
+import { idFromString } from '@kobato/base/utils/id'
 import { resolveBodyHtml } from '@kobato/server/domains/content/services/body-html'
 import { listAllFriends } from '@kobato/server/domains/friends/service'
 import { selectSidebarPosts } from '@kobato/server/domains/posts/services/featured'
@@ -13,7 +14,6 @@ import { selectSidebarTags, sidebarSelection } from '@kobato/server/http/loaders
 import { implementPublic } from '@kobato/server/http/orpc-base'
 import { etagHeaderMatches, pageEtag, postEtag, representationFromLocalization } from '@kobato/server/infra/http/etag'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementPublic(contentDetailContract)
 

@@ -1,7 +1,7 @@
 import type { DuckDBConnection, DuckDBInstance } from '@duckdb/node-api'
 import type { Query, SQLWrapper } from 'drizzle-orm'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 
 declare const analyticsHandleBrand: unique symbol
 declare const analyticsWriterBrand: unique symbol

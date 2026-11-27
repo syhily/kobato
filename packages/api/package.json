@@ -11,14 +11,12 @@
     ]
   },
   "devDependencies": {
-    "@kobato/assets": "workspace:*",
-    "@kobato/auth": "workspace:*",
+    "@kobato/base": "workspace:*",
     "@kobato/catalog": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/settings": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "@orpc/react-query": "catalog:",

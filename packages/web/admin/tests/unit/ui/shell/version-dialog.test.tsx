@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockFetch = installFetch()
 
-vi.mock('@kobato/distribution/app', () => ({
+vi.mock('@kobato/base/distribution/app', () => ({
   APP_NAME: 'kobato',
   APP_VERSION: '6.4.0',
   APP_DESCRIPTION: 'a test blog',

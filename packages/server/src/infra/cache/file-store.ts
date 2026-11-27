@@ -1,10 +1,10 @@
 import type { JsonValue } from '@kobato/server/infra/json'
 import type { Dirent } from 'node:fs'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { isInMemoryPath } from '@kobato/db/sqlite/database'
 import { serverConfig } from '@kobato/server/infra/config'
 import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Buffer } from 'node:buffer'
 import { createHash, randomBytes } from 'node:crypto'
 import {

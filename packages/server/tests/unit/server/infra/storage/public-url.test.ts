@@ -1,4 +1,4 @@
-import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@kobato/base/assets/asset-url'
 import { ActionFailure } from '@kobato/server/infra/http/errors'
 import {
   getPublicBaseUrl,

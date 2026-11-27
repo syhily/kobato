@@ -1,6 +1,6 @@
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { isVitest } from '@kobato/server/infra/config'
 import { getLogger, root } from '@kobato/server/infra/logger'
-import { isRecord } from '@kobato/utils/type-guards'
 import diagnostics_channel from 'node:diagnostics_channel'
 
 const log = getLogger('db.query')

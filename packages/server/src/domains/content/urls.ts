@@ -1,5 +1,5 @@
+import { joinUrl } from '@kobato/base/utils/urls'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { joinUrl } from '@kobato/utils/urls'
 
 export function searchRootPath(query: string): string {
   return `/search/${encodeURIComponent(query)}`

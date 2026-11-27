@@ -1,9 +1,9 @@
 import type { AdminFriendDto } from '@kobato/api/contracts/admin/friends'
 
-import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/assets/images'
+import { friendPosterStoragePath, friendPosterStoragePathFromUrl } from '@kobato/base/assets/images'
+import { safeHref } from '@kobato/base/utils/safe-url'
 import { Badge } from '@kobato/ui/components/badge'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { safeHref } from '@kobato/utils/safe-url'
 import { CheckIcon, ExternalLinkIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 

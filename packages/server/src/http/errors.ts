@@ -6,6 +6,7 @@ import type { DomainErrorIssue } from '@kobato/server/infra/http/errors'
 import type { ServerTranslator } from '@kobato/server/infra/i18n'
 import type { Context } from 'hono'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import {
   apiErrorData,
@@ -23,7 +24,6 @@ import {
 import { ActionFailure, DomainError, ErrorMessages } from '@kobato/server/infra/http/errors'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { HTTPException } from 'hono/http-exception'
 import { ZodError } from 'zod'
 

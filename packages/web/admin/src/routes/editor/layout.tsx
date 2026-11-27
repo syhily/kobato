@@ -1,6 +1,6 @@
 import type { RouteHandle } from '@kobato/web-admin/root'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { awaitRootBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
 import { data, Outlet, redirect } from 'react-router'

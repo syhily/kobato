@@ -12,6 +12,7 @@ import {
   type StorageMigrationStatus,
   type StorageMigrationVerification,
 } from '@kobato/api/contracts/admin/storage'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   cancelStorageMigrationRow,
   completeStorageMigrationRow,
@@ -37,7 +38,6 @@ import {
 import { contentTypeForKey, visibilityForKey } from '@kobato/server/infra/storage/key-policy'
 import { backendFor } from '@kobato/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('storage.migration.task')
 

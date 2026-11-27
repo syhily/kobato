@@ -1,7 +1,7 @@
 import { orpc } from '@kobato/api/browser/client'
+import { formatNumber } from '@kobato/base/utils/format'
 import { Card, CardContent } from '@kobato/ui/components/card'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatNumber } from '@kobato/utils/format'
 import { awaitRootBootstrap, requireRoleFromBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 import { DateRangePicker } from '@kobato/web-admin/ui/analytics/DateRangePicker'
 import { useAnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'

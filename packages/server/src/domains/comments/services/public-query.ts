@@ -5,7 +5,8 @@ import type { BlogSession } from '@kobato/server/domains/auth/session-storage'
 import type { CommentAndUser, CommentItem, Comments } from '@kobato/server/domains/comments/types'
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
+import { idFromString } from '@kobato/base/utils/id'
 import {
   commentFingerprintRows,
   countApprovedCommentsByUser,
@@ -24,7 +25,6 @@ import { ensureCommentPage } from '@kobato/server/domains/comments/services/shar
 import { getLogger } from '@kobato/server/infra/logger'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
 import { getSidebarWidgetCount } from '@kobato/settings/presentation'
-import { idFromString } from '@kobato/utils/id'
 import { createHash } from 'node:crypto'
 
 const log = getLogger('comments.parse')

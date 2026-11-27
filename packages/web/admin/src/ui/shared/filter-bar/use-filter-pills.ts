@@ -9,7 +9,7 @@ import type {
   SearchFilterField,
 } from '@kobato/web-admin/ui/shared/filter-bar/types'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   type DateFilterValue,
   parseDateFilter,

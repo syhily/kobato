@@ -1,11 +1,11 @@
 import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/admin/comments'
 import type { ActiveFilter } from '@kobato/web-admin/ui/shared/filter-bar/filter-pills-reducer'
 
+import { idStr } from '@kobato/base/utils/id'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@kobato/ui/components/empty'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { skeletonKeys } from '@kobato/ui/lib/skeleton-keys'
-import { idStr } from '@kobato/utils/id'
 import { AdminCommentRow } from '@kobato/web-admin/ui/comments/AdminCommentRow'
 import { EditCommentDialog } from '@kobato/web-admin/ui/comments/EditCommentDialog'
 import { EditUserDialog } from '@kobato/web-admin/ui/comments/EditUserDialog'

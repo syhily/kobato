@@ -1,4 +1,4 @@
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export interface AdminCredentials {
   baseUrl: string

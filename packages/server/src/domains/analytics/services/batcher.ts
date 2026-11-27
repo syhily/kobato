@@ -2,6 +2,7 @@ import type { EnrichedAccessEvent } from '@kobato/db/duckdb/access-events'
 import type { AnalyticsWriter } from '@kobato/db/duckdb/connection'
 import type { DeviceEnvServerRow } from '@kobato/db/duckdb/device-env'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { appendAccessEvents } from '@kobato/db/duckdb/access-events'
 import { appendDeviceEnvServerRows } from '@kobato/db/duckdb/device-env'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@kobato/server/infra/data-paths'
@@ -15,7 +16,6 @@ import {
   writeDeadLetter,
 } from '@kobato/server/infra/db/insert-batcher'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { randomUUID } from 'node:crypto'
 
 const BATCHER_NAME = 'AccessLogBatcher'

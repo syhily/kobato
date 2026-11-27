@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 
 const SERVICE_NAME = 'kobato'
 const DEPLOYMENT_ENVIRONMENT = 'development'

@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader as lightLoader } from '@sayaka/routes/images-calendar'
 import { loader as darkLoader } from '@sayaka/routes/images-calendar-dark'
 import { createStubKobato, makeSayakaLoaderArgs, stubCallsFor } from '@sayaka/tests/utils/stub-kobato'

@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export type CacheBucketId = (typeof CACHE_DECLARATIONS)[number]['id']
 

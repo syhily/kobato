@@ -1,5 +1,6 @@
 import { parseCommentEntity, serializeCommentEntity } from '@kobato/api/contracts/public/comments'
 import { commentsAuthedContract } from '@kobato/api/rpc/account/comments'
+import { idFromString } from '@kobato/base/utils/id'
 import { resolveEntitiesForComments } from '@kobato/db/sqlite/operations/content/entity-asset'
 import {
   countMyComments,
@@ -7,7 +8,6 @@ import {
   loadMineCommentsPage,
 } from '@kobato/server/domains/comments/services/mine-comments'
 import { implementAuthed } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthed(commentsAuthedContract)
 

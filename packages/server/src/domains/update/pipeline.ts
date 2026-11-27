@@ -1,11 +1,11 @@
 import type { UpdateJobState } from '@kobato/api/contracts/admin/update'
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
-import { APP_REPOSITORY } from '@kobato/distribution/app'
+import { APP_REPOSITORY } from '@kobato/base/distribution/app'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { createHash } from 'node:crypto'
 import { createReadStream, createWriteStream } from 'node:fs'
 import { chmod, mkdir, open, rename, rm } from 'node:fs/promises'

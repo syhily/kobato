@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net'
 
 import { type ServerType, serve } from '@hono/node-server'
 import { type ServeStaticOptions, serveStatic } from '@hono/node-server/serve-static'
-import { SEA_SAYAKA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
+import { SEA_SAYAKA_CLIENT_ASSET_PREFIX } from '@kobato/base/distribution/sea-assets'
 import { sayakaConfig } from '@sayaka/server/config'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@sayaka/server/hono/build-runtime'
 import { cache } from '@sayaka/server/hono/cache-middleware'

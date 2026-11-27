@@ -114,6 +114,7 @@ describe('structure conventions', () => {
       'packages/inkling/src',
       'packages/db/src',
       'packages/api/src',
+      'packages/shared/base/src',
       'packages/shared/settings/src',
     ]
     const offenders: string[] = []

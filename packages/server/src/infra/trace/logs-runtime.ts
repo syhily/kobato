@@ -4,7 +4,7 @@ import type { LogSeverityText } from '@kobato/server/infra/trace/log-record'
 import type { LogRecord, SeverityNumber } from '@opentelemetry/api'
 import type { LogRecordExporter } from '@opentelemetry/sdk-logs'
 
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { observeExporter } from '@kobato/server/infra/trace/export-health'
 import { projectLogLine } from '@kobato/server/infra/trace/log-record'
 import { traceResourceAttributes } from '@kobato/server/infra/trace/resource'

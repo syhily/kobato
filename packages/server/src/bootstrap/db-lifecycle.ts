@@ -1,6 +1,7 @@
 import type { Database, DatabaseHandle } from '@kobato/db/sqlite/database'
 
 import { JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/public/notifications'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { closeDatabase, databaseOf, openDatabase } from '@kobato/db/sqlite/database'
 import { defaultMigrationsFolder, migrateDatabase } from '@kobato/db/sqlite/migrate'
 import {
@@ -53,18 +54,17 @@ import { startQueryDiagnostics } from '@kobato/server/infra/db/query-diagnostics
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { setJobHandleGetter } from '@kobato/server/infra/job-registry'
+import '@kobato/server/domains/analytics/services/batcher'
+import '@kobato/server/domains/analytics/services/pv-batcher'
+import '@kobato/server/domains/audit/services/batcher'
 import {
   closeHttpServer,
   setRestartGetDb,
   setRestartRefreshSettings,
   setServerPhase,
 } from '@kobato/server/infra/lifecycle'
-import '@kobato/server/domains/analytics/services/batcher'
-import '@kobato/server/domains/analytics/services/pv-batcher'
-import '@kobato/server/domains/audit/services/batcher'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getBlogSettingsBundleSync, requireBlogSettingsSection } from '@kobato/settings/getters'
-import { isRecord } from '@kobato/utils/type-guards'
 
 function migrationsRanInHmr(): boolean {
   const data: unknown = import.meta.hot?.data

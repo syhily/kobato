@@ -1,11 +1,11 @@
 import type { AdminPageDto } from '@kobato/api/contracts/admin/pages'
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { formatDate } from '@kobato/base/utils/format'
 import { Image } from '@kobato/ui/components/Image'
 import { useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { type I18nValue, useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatDate } from '@kobato/utils/format'
 import { ImageIcon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 

@@ -1,8 +1,8 @@
 import type { MetricRow, MetricType } from '@kobato/api/contracts/admin/analytics'
 
+import { formatNumber } from '@kobato/base/utils/format'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatNumber } from '@kobato/utils/format'
 import { MetricName } from '@kobato/web-admin/ui/analytics/MetricName'
 
 export interface MetricRowsProps {

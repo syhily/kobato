@@ -1,4 +1,5 @@
 import { adminCommentsContract } from '@kobato/api/rpc/admin/comments'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { asAdminCommentsWire, asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
@@ -16,7 +17,6 @@ import {
   updateComment,
 } from '@kobato/server/domains/comments/services/moderate'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminCommentsContract)
 

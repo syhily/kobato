@@ -3,6 +3,7 @@ import type { ErrorMessageDescriptor } from '@kobato/api/contracts/primitives'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ImageRow } from '@kobato/db/sqlite/types'
 
+import { formatBytes } from '@kobato/base/utils/format'
 import {
   findImagesByStoragePaths,
   insertImage,
@@ -16,7 +17,6 @@ import { processImageBuffer } from '@kobato/server/infra/image/process'
 import { getLogger } from '@kobato/server/infra/logger'
 import { activeBackend } from '@kobato/server/infra/storage/registry'
 import { resolveAppLocalization } from '@kobato/settings/app-localization'
-import { formatBytes } from '@kobato/utils/format'
 
 const log = getLogger('images.service')
 

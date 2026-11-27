@@ -5,7 +5,9 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@kobato/db/sqlite/types'
 import type { MetaEntityDescriptor } from '@kobato/server/domains/content/entities/descriptor'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
+import { idFromString } from '@kobato/base/utils/id'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   findEntityMetaById,
   findEntityMetaBySlug,
@@ -32,8 +34,6 @@ import { DomainError } from '@kobato/server/infra/http/errors'
 import { computeBodyText } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger } from '@kobato/server/infra/logger'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
-import { idFromString } from '@kobato/utils/id'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('posts.service')
 

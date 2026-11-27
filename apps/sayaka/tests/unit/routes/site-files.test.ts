@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader as manifestLoader } from '@sayaka/routes/manifest-webmanifest'
 import { loader as robotsLoader } from '@sayaka/routes/robots-txt'
 import { loader as searchLoader } from '@sayaka/routes/search'

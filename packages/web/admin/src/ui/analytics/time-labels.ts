@@ -1,7 +1,7 @@
+import type { TimeUnit } from '@kobato/base/utils/date-range'
 import type { AppLocale } from '@kobato/i18n/locales'
-import type { TimeUnit } from '@kobato/utils/date-range'
 
-import { formatDate, formatDateTime } from '@kobato/utils/format'
+import { formatDate, formatDateTime } from '@kobato/base/utils/format'
 
 export function parseTimeLabel(unit: TimeUnit, label: string): number {
   if (unit === 'day') {

@@ -4,7 +4,8 @@ import {
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
-} from '@kobato/distribution/sea-assets'
+} from '@kobato/base/distribution/sea-assets'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { parseConfigArg } from '@kobato/server/infra/config-arg'
 import { rollbackBinary } from '@kobato/server/infra/sea/binary-rollback'
 import {
@@ -18,7 +19,6 @@ import { isSea, seaAssetPath, seaVfsRoot } from '@kobato/server/infra/sea/sea'
 import { bootstrapSeaRuntime } from '@kobato/server/infra/sea/sea-natives'
 import { installSeaVfsRuntimePatches } from '@kobato/server/infra/sea/sea-vfs-fs-patch'
 import { evaluateSelfUpdateGate } from '@kobato/server/infra/sea/self-update-gate'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
 import { createWriteStream, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'

@@ -1,9 +1,9 @@
 import type { StorageBackend } from '@kobato/server/infra/storage/backend'
 import type { StorageDriver } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { localBackend } from '@kobato/server/infra/storage/backends/local'
 import { s3Backend } from '@kobato/server/infra/storage/backends/s3'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const backends: Record<StorageDriver, StorageBackend> = {
   s3: s3Backend,

@@ -1,6 +1,6 @@
 import { honeypotField, idString, isoDateTime, successDto } from '@kobato/api/contracts/primitives'
+import { httpUrlOrEmptyStringSchema } from '@kobato/base/utils/url-schema'
 import { commentEditorStateSchema, type CommentEditorState } from '@kobato/inkling/headless/comment-schema'
-import { httpUrlOrEmptyStringSchema } from '@kobato/utils/url-schema'
 import { z } from 'zod'
 
 export const commentBaseDto = z.object({

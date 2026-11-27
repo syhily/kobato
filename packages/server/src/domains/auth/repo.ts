@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 import type { Database } from '@kobato/db/sqlite/database'
 import type { SessionRow } from '@kobato/db/sqlite/types'
 

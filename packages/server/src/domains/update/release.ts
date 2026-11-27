@@ -1,8 +1,8 @@
-import { APP_REPOSITORY } from '@kobato/distribution/app'
+import { APP_REPOSITORY } from '@kobato/base/distribution/app'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { through } from '@kobato/server/infra/cache/registry'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
-import { isRecord } from '@kobato/utils/type-guards'
 
 export interface LatestRelease {
   tagName: string

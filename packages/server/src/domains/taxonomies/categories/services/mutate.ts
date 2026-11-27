@@ -4,6 +4,7 @@ import type { CategoryRow } from '@kobato/db/sqlite/types'
 import type { OgWarmTarget } from '@kobato/server/domains/content/render-warmup'
 import type { UpsertCategoryInputs } from '@kobato/server/domains/taxonomies/categories/projection'
 
+import { idFromString } from '@kobato/base/utils/id'
 import {
   deleteCategory as deleteCategoryRow,
   findCategoryById,
@@ -28,7 +29,6 @@ import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { resolveSlug } from '@kobato/server/infra/slug/resolve'
 import { requireBlogSettingsSection } from '@kobato/settings/getters'
-import { idFromString } from '@kobato/utils/id'
 
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {
   return {

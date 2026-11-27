@@ -1,11 +1,11 @@
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { resetGeoReader } from '@kobato/server/domains/analytics/geoip/lookup'
 import { MAXMIND_DB_PATH, MAXMIND_META_PATH } from '@kobato/server/infra/data-paths'
 import { descriptorFor } from '@kobato/server/infra/http/error-descriptor'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { getLogger } from '@kobato/server/infra/logger'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { Reader } from '@maxmind/geoip2-node'
 import { createWriteStream, existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'

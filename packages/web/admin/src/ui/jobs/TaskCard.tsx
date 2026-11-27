@@ -3,11 +3,11 @@ import type { StorageMigrationStatus } from '@kobato/api/contracts/admin/storage
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
 import { isStorageMigrationInFlightPhase } from '@kobato/api/contracts/admin/storage'
+import { formatBytes, formatDuration } from '@kobato/base/utils/format'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatBytes, formatDuration } from '@kobato/utils/format'
 import {
   MIGRATION_PHASE_META,
   RUN_STATUS_META,

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { DateRange } from '@kobato/utils/date-range'
+import type { DateRange } from '@kobato/base/utils/date-range'
 import type { ReactElement } from 'react'
 
 import { calendarMachineDay } from '@kobato/ui/components/calendar'

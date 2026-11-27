@@ -32,8 +32,8 @@
   },
   "devDependencies": {
     "@kobato/api": "workspace:*",
+    "@kobato/base": "workspace:*",
     "@kobato/db": "workspace:*",
-    "@kobato/distribution": "workspace:*",
     "@kobato/i18n": "workspace:*",
     "@kobato/inkling": "workspace:*",
     "@kobato/pack": "workspace:*",
@@ -42,7 +42,6 @@
     "@kobato/test": "workspace:*",
     "@kobato/tsconfig": "workspace:*",
     "@kobato/ui": "workspace:*",
-    "@kobato/utils": "workspace:*",
     "@kobato/web-admin": "workspace:*",
     "@orpc/server": "catalog:",
     "@playwright/test": "catalog:",

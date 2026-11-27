@@ -2,8 +2,8 @@ import type { MetricType } from '@kobato/api/contracts/admin/analytics'
 import type { AppLocale } from '@kobato/i18n/locales'
 import type { ComponentType } from 'react'
 
+import { formatDisplayName } from '@kobato/base/utils/format'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatDisplayName } from '@kobato/utils/format'
 import {
   SiAcer,
   SiAndroid,

@@ -1,12 +1,12 @@
 import type { RateLimitBucket, RateLimitSettings } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { rateLimitBucketSchema } from '@kobato/settings/rate-limit-bucket'
 import { rateLimitBounds, rateLimitDefaults } from '@kobato/settings/rate-limit-defaults'
 import { Popover, PopoverContent, PopoverTrigger } from '@kobato/ui/components/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@kobato/ui/components/table'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import {
   ADVANCED_GROUPS,
   ALL_KEYS,

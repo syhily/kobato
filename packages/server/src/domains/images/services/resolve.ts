@@ -2,7 +2,7 @@ import type { Database } from '@kobato/db/sqlite/database'
 import type { ImageRow } from '@kobato/db/sqlite/types'
 import type { StorageDriver } from '@kobato/settings/types'
 
-import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { STORAGE_ROUTE_PREFIX } from '@kobato/base/assets/asset-url'
 import { findImagesByStoragePaths } from '@kobato/db/sqlite/operations/content/image'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getPublicBaseUrl, parseAssetUrl, safeResolveAssetUrl } from '@kobato/server/infra/storage/public-url'

@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { loader } from '@sayaka/routes/page/detail'
 import { createStubKobato, loaderData, makeSayakaLoaderArgs } from '@sayaka/tests/utils/stub-kobato'
 import { describe, expect, it } from 'vitest'

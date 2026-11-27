@@ -1,7 +1,7 @@
 import type { Database } from '@kobato/db/sqlite/database'
 import type { EntityTarget } from '@kobato/db/sqlite/target'
 
-import { makeToken } from '@kobato/auth/security'
+import { makeToken } from '@kobato/base/auth/security'
 import {
   commentCountsByOwnerIds,
   consumeLikeAndDecrement,

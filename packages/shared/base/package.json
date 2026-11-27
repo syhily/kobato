@@ -1,0 +1,25 @@
+{
+  "name": "@kobato/base",
+  "version": "8.2.2-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "devDependencies": {
+    "@date-fns/tz": "catalog:",
+    "@kobato/i18n": "workspace:*",
+    "@kobato/tsconfig": "workspace:*",
+    "@types/jsdom": "catalog:",
+    "@types/node": "catalog:",
+    "date-fns": "catalog:",
+    "dompurify": "catalog:",
+    "jsdom": "catalog:",
+    "sharp": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

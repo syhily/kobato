@@ -4,6 +4,7 @@ import type { EntityType } from '@kobato/db/sqlite/target'
 import type { ContentRow, NewPageMeta, NewPostMeta } from '@kobato/db/sqlite/types'
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { isUniqueConstraintError } from '@kobato/db/sqlite/errors'
 import { metaTableFor, SlugOccupiedError } from '@kobato/db/sqlite/operations/content/entity-meta'
@@ -11,7 +12,6 @@ import { slugRegistry } from '@kobato/db/sqlite/schema/config'
 import { content as contentTable, postSearchIndex } from '@kobato/db/sqlite/schema/content'
 import { postTag } from '@kobato/db/sqlite/schema/post-tag'
 import { tag as tagTable } from '@kobato/db/sqlite/schema/taxonomy'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 
 type SqliteTx = NodeSQLiteDatabase

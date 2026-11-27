@@ -1,4 +1,4 @@
-import { CHUNKS_SENTINEL } from '@kobato/distribution/route-warmup'
+import { CHUNKS_SENTINEL } from '@kobato/base/distribution/route-warmup'
 import { routeWarmupPlugin } from '@kobato/pack/vite/route-warmup'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'

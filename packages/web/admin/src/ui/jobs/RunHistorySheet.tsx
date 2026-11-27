@@ -2,6 +2,7 @@ import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/api/cont
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatDuration } from '@kobato/base/utils/format'
 import { Badge } from '@kobato/ui/components/badge'
 import { Button } from '@kobato/ui/components/button'
 import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty'
@@ -14,7 +15,6 @@ import {
   SheetTrigger,
 } from '@kobato/ui/components/sheet'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatDuration } from '@kobato/utils/format'
 import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@kobato/web-admin/ui/jobs/meta'
 import { AdminInfiniteListFooter } from '@kobato/web-admin/ui/shared/list/AdminInfiniteListFooter'
 import { useAdminInfiniteList } from '@kobato/web-admin/ui/shared/list/use-admin-infinite-list'

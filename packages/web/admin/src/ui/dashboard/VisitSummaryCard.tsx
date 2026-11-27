@@ -2,11 +2,11 @@ import type { CountersDto, ViewsDto, ViewsPoint } from '@kobato/api/contracts/ad
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatNumber } from '@kobato/base/utils/format'
 import { Button } from '@kobato/ui/components/button'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useHydrated } from '@kobato/ui/lib/use-hydrated'
-import { formatNumber } from '@kobato/utils/format'
 import { dayKeyOfLabel } from '@kobato/web-admin/ui/analytics/time-labels'
 import { getClientTimezone } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { useQuery } from '@tanstack/react-query'

@@ -1,4 +1,4 @@
-import { thumbHashToDataURL } from '@kobato/utils/thumbhash'
+import { thumbHashToDataURL } from '@kobato/base/utils/thumbhash'
 import { useSyncExternalStore, type CSSProperties } from 'react'
 
 const thumbhashStyleCache = new Map<string, CSSProperties>()

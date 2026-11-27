@@ -38,8 +38,8 @@ test-only exception is under `tests/`.
   `document-facts` (`documentFactsFrom`, the root loader data → `DocumentFacts` mapping the root `Layout` hands the
   document shell).
 - The workspace has no route warmup (ADR-0011 §4): no idle script, no manifest fetch, no `virtual:kobato-route-warmup`.
-  The warmup manifest contract (`@kobato/distribution/warmup-manifest`), the inline idle script, and the Vite plugin
-  that writes the manifest (`tools/pack/src/vite/route-warmup.ts`) belong to the public site (`apps/sayaka`).
+  The warmup manifest contract (`@kobato/base/distribution/warmup-manifest`), the inline idle script, and the Vite
+  plugin that writes the manifest (`tools/pack/src/vite/route-warmup.ts`) belong to the public site (`apps/sayaka`).
 - `src/styles/` — the workspace's one Tailwind entry; see `src/styles/AGENTS.md`.
 - Imports: the package imports itself through `@kobato/web-admin/<path>` (source) and `@kobato/web-admin/tests/<path>`
   (test helpers), as the kit does — never a relative specifier outside React Router's generated `./+types/*`; product

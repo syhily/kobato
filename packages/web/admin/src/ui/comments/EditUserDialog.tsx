@@ -2,6 +2,7 @@ import type { AdminCommentWire as AdminComment } from '@kobato/api/contracts/adm
 import type { AdminUserUpdateInput } from '@kobato/api/contracts/admin/users'
 
 import { orpc } from '@kobato/api/browser/client'
+import { idStr } from '@kobato/base/utils/id'
 import { Button } from '@kobato/ui/components/button'
 import { Checkbox } from '@kobato/ui/components/checkbox'
 import {
@@ -15,7 +16,6 @@ import {
 import { Input } from '@kobato/ui/components/input'
 import { Label } from '@kobato/ui/components/label'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { idStr } from '@kobato/utils/id'
 import { buildUserUpdatePayload } from '@kobato/web-admin/ui/users/user-update-payload'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { useMutation } from '@tanstack/react-query'

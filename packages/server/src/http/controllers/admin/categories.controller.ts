@@ -1,4 +1,5 @@
 import { adminCategoriesContract } from '@kobato/api/rpc/admin/categories'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import {
   deleteAdminCategory,
@@ -7,7 +8,6 @@ import {
 } from '@kobato/server/domains/taxonomies/categories/services/mutate'
 import { listCategoriesForAdmin } from '@kobato/server/domains/taxonomies/categories/services/query'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminCategoriesContract)
 

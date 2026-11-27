@@ -124,7 +124,7 @@ ONE Rust crate (`kobato-font-split`, cdylib + rlib at the package root) — the 
     message names the `--skip` that measures only that stage again); a stage that fails keeps the stages measured before
     it in `results.json` — the document stays untouched until a run completes — and names the `--skip` that finishes the
     run; `slice-driver.ts` is a child-process entry and imports nothing beyond `node:` builtins and
-    `@kobato/utils/unsafe-cast`.
+    `@kobato/base/utils/unsafe-cast`.
 - `scripts/cjk-tables/opencc/` — the four OpenCC dictionaries `opencc-fmmseg` 0.13.1 bundled (`TS`/`STCharacters.txt`,
   `TS`/`STPhrases.txt`; Apache-2.0, the `LICENSE` beside them). That lexicon differs from the stock OpenCC data
   `opencc-js` ships — it extends it with rare-character entries (暱→昵, 牠→它, 菓→果 …) and settles common one-to-many

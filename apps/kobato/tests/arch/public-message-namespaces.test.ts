@@ -13,12 +13,10 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web-kit': 'packages/web/kit/src',
   '@kobato/ui': 'packages/web/ui/src',
   '@kobato/api': 'packages/api/src',
+  '@kobato/base': 'packages/shared/base/src',
   '@kobato/catalog': 'packages/shared/catalog/src',
-  '@kobato/utils': 'packages/shared/utils/src',
   '@kobato/i18n': 'packages/shared/i18n/src',
   '@kobato/settings': 'packages/shared/settings/src',
-  '@kobato/assets': 'packages/shared/assets/src',
-  '@kobato/sanitize': 'packages/shared/sanitize/src',
   '@kobato/inkling': 'packages/inkling/src',
   '@kobato/test': 'tools/test/src',
 }

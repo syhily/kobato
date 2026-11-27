@@ -1,8 +1,8 @@
 import type { BlogSettingsBundle } from '@kobato/settings/types'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { SECRET_FIELDS } from '@kobato/settings/secrets'
 import { SECTION_TO_BUNDLE_KEY, type SettingsSection } from '@kobato/settings/sections'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const REPRESENTATION_SCOPES = ['detail', 'listing', 'feed', 'calendar', 'og', 'manifest', 'sitemap'] as const
 

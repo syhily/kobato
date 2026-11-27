@@ -1,6 +1,6 @@
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { getLogger } from '@kobato/server/infra/logger'
 import { FONT_SPLIT_ADDON_SPEC, nativeRequire } from '@kobato/server/infra/sea/native-require'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('fonts.napi-split')
 

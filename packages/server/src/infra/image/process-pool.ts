@@ -9,7 +9,7 @@ import type {
 import type { Span } from '@kobato/server/infra/trace/facade'
 import type { ImageOperation, ImageSizeBucket } from '@kobato/server/infra/trace/sanitize'
 
-import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/distribution/sea-assets'
+import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@kobato/base/distribution/sea-assets'
 import { domainErrorFromWire } from '@kobato/server/infra/http/errors'
 import { registerShutdownHook } from '@kobato/server/infra/lifecycle'
 import { getLogger } from '@kobato/server/infra/logger'

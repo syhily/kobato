@@ -1,6 +1,6 @@
 import type { ImgHTMLAttributes, Ref, CSSProperties } from 'react'
 
-import { getImageSrcset, getImageUrl } from '@kobato/assets/images'
+import { getImageSrcset, getImageUrl } from '@kobato/base/assets/images'
 import { useAssetsSettings, useSiteIdentity } from '@kobato/ui/lib/blog-settings-context'
 import { cn } from '@kobato/ui/lib/cn'
 import { useImageLoaded } from '@kobato/ui/lib/use-image-loaded'

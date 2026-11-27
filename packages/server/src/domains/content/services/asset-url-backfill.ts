@@ -1,7 +1,9 @@
 import type { Database } from '@kobato/db/sqlite/database'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 
-import { STORAGE_ROUTE_PREFIX } from '@kobato/assets/asset-url'
+import { STORAGE_ROUTE_PREFIX } from '@kobato/base/assets/asset-url'
+import { isRecord } from '@kobato/base/utils/type-guards'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import {
   listContentBodies,
   listNonEmptyCoverRows,
@@ -17,8 +19,6 @@ import { hydrateBlogSettings } from '@kobato/server/domains/settings/services/hy
 import { computeBodyProjections } from '@kobato/server/infra/lexical/lexical-projection'
 import { getLogger } from '@kobato/server/infra/logger'
 import { getPublicBaseUrl, parseAssetUrl } from '@kobato/server/infra/storage/public-url'
-import { isRecord } from '@kobato/utils/type-guards'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const log = getLogger('content.asset-url-backfill')
 

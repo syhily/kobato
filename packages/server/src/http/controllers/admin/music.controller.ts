@@ -1,6 +1,7 @@
 import type { HandlerContext } from '@kobato/server/http/orpc-base'
 
 import { adminMusicContract } from '@kobato/api/rpc/admin/music'
+import { idFromString } from '@kobato/base/utils/id'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { proxyMusicAsset } from '@kobato/server/domains/music/services/proxy'
 import { findMusicDtoById, listMusicForAdmin } from '@kobato/server/domains/music/services/read'
@@ -9,7 +10,6 @@ import { addMusic } from '@kobato/server/domains/music/services/write/add'
 import { deleteMusic } from '@kobato/server/domains/music/services/write/delete'
 import { updateMusicMetadata } from '@kobato/server/domains/music/services/write/metadata'
 import { implementAuthor, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthor(adminMusicContract)
 

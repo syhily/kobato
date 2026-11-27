@@ -1,4 +1,5 @@
 import { adminUsersSessionsContract } from '@kobato/api/rpc/admin/users'
+import { idFromString } from '@kobato/base/utils/id'
 import { formatUaLabel } from '@kobato/server/domains/analytics/ua-parse'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { listAllSessions } from '@kobato/server/domains/auth/services/sessions'
@@ -6,7 +7,6 @@ import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@kobato/serv
 import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@kobato/server/domains/comments/services/moderate'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminUsersSessionsContract)
 

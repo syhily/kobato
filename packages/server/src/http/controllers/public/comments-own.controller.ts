@@ -1,4 +1,5 @@
 import { commentsOwnContract } from '@kobato/api/rpc/public/comments'
+import { idFromString } from '@kobato/base/utils/id'
 import { asCommentItemWire } from '@kobato/server/domains/comments/projection'
 import {
   cancelOwnCommentDeletion,
@@ -6,7 +7,6 @@ import {
   requestOwnCommentDeletion,
 } from '@kobato/server/domains/comments/services/moderate'
 import { implementAuthed, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAuthed(commentsOwnContract)
 

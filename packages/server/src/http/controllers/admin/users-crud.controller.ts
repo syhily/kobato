@@ -1,5 +1,6 @@
 import { splitMergePatch } from '@kobato/api/contracts/primitives'
 import { adminUsersCrudContract } from '@kobato/api/rpc/admin/users'
+import { idFromString } from '@kobato/base/utils/id'
 import { restoreUserById, updateUserById } from '@kobato/db/sqlite/operations/identity/user'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@kobato/server/domains/auth/passkey/gate'
@@ -11,7 +12,6 @@ import {
   toAdminUserDto,
 } from '@kobato/server/domains/users/services/admin'
 import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-base'
-import { idFromString } from '@kobato/utils/id'
 
 const impl = implementAdmin(adminUsersCrudContract)
 

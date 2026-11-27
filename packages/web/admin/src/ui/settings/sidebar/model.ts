@@ -1,7 +1,7 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { CustomQuote, DailyQuoteSource, SidebarWidgetType } from '@kobato/settings/types'
 
-import { isRecord } from '@kobato/utils/type-guards'
+import { isRecord } from '@kobato/base/utils/type-guards'
 
 export const WIDGET_LABEL_IDS = {
   search: 'admin.settings.sidebar.widget.search.label',

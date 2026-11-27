@@ -1,6 +1,6 @@
 import type { HeaderCurrentUser } from '@sayaka/ui/chrome/Header'
 
-import { avatarImageUrl } from '@kobato/assets/avatar'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
 import { Button } from '@kobato/ui/components/button'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

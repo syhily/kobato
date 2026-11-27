@@ -1,9 +1,9 @@
 import type { SafeFetchFailure, SafeFetchResult } from '@kobato/server/infra/safe-fetch'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { basicAuthorizationHeader } from '@kobato/server/domains/observability/config'
 import { normalizeObservabilityOrigin, OBSERVABILITY_ORGANIZATION_PATTERN } from '@kobato/server/infra/observability'
 import { safeFetch } from '@kobato/server/infra/safe-fetch'
-import { isRecord } from '@kobato/utils/type-guards'
 
 export const O2_REQUEST_TIMEOUT_MS = 8_000
 export const O2_HEALTH_TIMEOUT_MS = 5_000

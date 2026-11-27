@@ -1,4 +1,4 @@
-import type { Role } from '@kobato/auth/roles'
+import type { Role } from '@kobato/base/auth/roles'
 
 import { sqliteOf } from '@kobato/db/sqlite/database'
 import { user } from '@kobato/db/sqlite/schema/user'

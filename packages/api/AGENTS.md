@@ -125,7 +125,7 @@ their own.
   nested inside an envelope object is silently dropped by the JSON serializer — pinned by
   `tests/unit/client/create-server-client.test.ts`. `client-address.ts` is the visitor-address derivation both
   perimeters share — a pure function over the web `Request` (loopback/trusted-proxy-gated proxy-header resolution), with
-  the IP/CIDR grammar from `@kobato/auth/trusted-proxy`. `is-bot.ts` is the User-Agent bot heuristic shared by the
+  the IP/CIDR grammar from `@kobato/base/auth/trusted-proxy`. `is-bot.ts` is the User-Agent bot heuristic shared by the
   analytics domains and sayaka's entry server (moved here from `@kobato/server` so the public app consumes it without
   crossing the server boundary).
 - `src/browser/` — the built-in frontend's browser assembly, and the ONLY UI-bound, ambient part of the package:
@@ -139,14 +139,14 @@ their own.
 
 ## Rules
 
-- Allowed deps: `@orpc/contract` (rpc + client), `@orpc/client` (client only), and the shared leaves `auth`, `catalog`,
-  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`; `src/browser/` additionally imports `@orpc/react-query`,
-  `@tanstack/react-query`, and `react` (`use-notifications`' `useCallback`), and its one shared-leaf import is
-  `@kobato/utils/type-guards` (`use-notifications`' `isRecord`). `@types/react` is declared only to pin
-  `@orpc/react-query`'s and `@tanstack/react-query`'s peer resolution to the workspace's single React copy, and `react`
-  is that pin plus a runtime import of `use-notifications` — `src/browser/` is the one tree that imports `react`, and no
-  module outside it does. `src/contracts/` imports no `@orpc/*` package and never imports `src/rpc/` or `src/client/`
-  (`apps/kobato/tests/arch/shared-react-free.test.ts`).
+- Allowed deps: `@orpc/contract` (rpc + client), `@orpc/client` (client only), and the shared leaves `base` (`auth`,
+  `assets`, `utils`), `catalog`, `settings`, `i18n`, inkling `/headless`; `src/browser/` additionally imports
+  `@orpc/react-query`, `@tanstack/react-query`, and `react` (`use-notifications`' `useCallback`), and its one
+  shared-leaf import is `@kobato/base/utils/type-guards` (`use-notifications`' `isRecord`). `@types/react` is declared
+  only to pin `@orpc/react-query`'s and `@tanstack/react-query`'s peer resolution to the workspace's single React copy,
+  and `react` is that pin plus a runtime import of `use-notifications` — `src/browser/` is the one tree that imports
+  `react`, and no module outside it does. `src/contracts/` imports no `@orpc/*` package and never imports `src/rpc/` or
+  `src/client/` (`apps/kobato/tests/arch/shared-react-free.test.ts`).
 - A browser hook imports the contract, the client, and TanStack Query — never a UI package (`@kobato/ui`,
   `@kobato/web-kit`, and `@kobato/inkling` — the barrel and every entry but `/headless*`), never message copy (the
   `@kobato/i18n` message catalogs `messages/*`, the fallback catalog `fallback-messages`, and the label tables

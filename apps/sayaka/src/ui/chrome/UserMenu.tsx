@@ -1,7 +1,7 @@
 import type { HeaderCurrentUser } from '@sayaka/ui/chrome/Header'
 
-import { avatarImageUrl } from '@kobato/assets/avatar'
-import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
+import { avatarImageUrl } from '@kobato/base/assets/avatar'
+import { ROLE_LABEL_KEYS } from '@kobato/base/auth/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@kobato/ui/components/avatar'
 import { Button } from '@kobato/ui/components/button'
 import {

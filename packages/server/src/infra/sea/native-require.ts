@@ -8,9 +8,9 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
-} from '@kobato/distribution/sea-assets'
+} from '@kobato/base/distribution/sea-assets'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { getEmbeddedAsset, requireExternal } from '@kobato/server/infra/sea/sea'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 import { join } from 'node:path'
 
 function sharpPlatform(): string {

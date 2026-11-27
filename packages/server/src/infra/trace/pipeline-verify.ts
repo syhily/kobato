@@ -1,5 +1,6 @@
 import type { ServerTraceRuntimeConfig } from '@kobato/server/infra/trace/config'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import {
   RUM_PRIVACY_FUNCTION_NAME,
   RUM_PRIVACY_HASH_MARKER,
@@ -9,7 +10,6 @@ import {
   RUM_STREAM_NAME,
   RUM_PRIVACY_VERSION_MARKER,
 } from '@kobato/settings/telemetry/pipeline'
-import { isRecord } from '@kobato/utils/type-guards'
 import { createHash } from 'node:crypto'
 
 export const RUM_PRIVACY_VERIFY_TIMEOUT_MS = 1500

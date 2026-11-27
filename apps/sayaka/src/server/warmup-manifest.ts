@@ -2,15 +2,15 @@ import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
   type RouteManifestRoute,
-} from '@kobato/distribution/route-warmup'
-import { SEA_SAYAKA_CLIENT_ASSET_PREFIX } from '@kobato/distribution/sea-assets'
+} from '@kobato/base/distribution/route-warmup'
+import { SEA_SAYAKA_CLIENT_ASSET_PREFIX } from '@kobato/base/distribution/sea-assets'
 import {
   collectManifestChunks,
   isWarmupManifest,
   parseClientManifest,
   type WarmupManifest,
-} from '@kobato/distribution/warmup-manifest'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+} from '@kobato/base/distribution/warmup-manifest'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { seaVfsRoot } from '@sayaka/server/sea'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'

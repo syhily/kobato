@@ -1,7 +1,7 @@
 import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
 
+import { idFromString } from '@kobato/base/utils/id'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { idFromString } from '@kobato/utils/id'
 import { AnalyticsDashboard, type AnalyticsDashboardData } from '@kobato/web-admin/ui/analytics/AnalyticsDashboard'
 import { type AnalyticsState } from '@kobato/web-admin/ui/analytics/use-analytics-state'
 import { Link } from 'react-router'

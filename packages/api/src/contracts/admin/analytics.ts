@@ -1,8 +1,8 @@
 import type { AdminPostDto } from '@kobato/api/contracts/admin/posts'
-import type { DateRange, PresetKey } from '@kobato/utils/date-range'
+import type { DateRange, PresetKey } from '@kobato/base/utils/date-range'
 
 import { safeBoolean } from '@kobato/api/contracts/primitives'
-import { PRESET_KEYS, TIME_UNITS } from '@kobato/utils/date-range'
+import { PRESET_KEYS, TIME_UNITS } from '@kobato/base/utils/date-range'
 import { z } from 'zod'
 
 export const PRESET_KEY_VALUES = [...PRESET_KEYS] as [PresetKey, ...PresetKey[]]

@@ -25,11 +25,9 @@ const CLIENT_LAYERS = [
   'packages/inkling/src/hooks',
   'packages/inkling/src/labels',
   'packages/inkling/src/components',
-  'packages/shared/utils/src',
+  'packages/shared/base/src',
   'packages/shared/i18n/src',
   'packages/shared/settings/src',
-  'packages/shared/assets/src',
-  'packages/shared/sanitize/src',
 ]
 
 const NODE_BUILTINS = [
@@ -87,7 +85,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'jsdom',
     reason: 'server-side DOM for the sanitize engine and inkling headless projections',
-    allowedIn: ['packages/shared/sanitize/src/engine.node.ts'],
+    allowedIn: ['packages/shared/base/src/sanitize/engine.node.ts'],
   },
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
@@ -263,11 +261,9 @@ const I18N_SCANNED_ROOTS = [
   'packages/api/src/browser',
   'packages/shared/catalog/src/seo',
   'packages/inkling/src',
-  'packages/shared/utils/src',
+  'packages/shared/base/src',
   'packages/shared/i18n/src',
   'packages/shared/settings/src',
-  'packages/shared/assets/src',
-  'packages/shared/sanitize/src',
 ]
 
 const I18N_SCANNED_ROOT_FILES = ['packages/web/admin/src/root.tsx', 'apps/sayaka/src/root.tsx']

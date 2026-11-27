@@ -2,6 +2,7 @@ import type { CacheBucketStats, ReservedCacheBucketStats } from '@kobato/api/con
 import type { Database } from '@kobato/db/sqlite/database'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@kobato/settings/cache-bucket'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { countLiveSessions } from '@kobato/db/sqlite/operations/identity/session'
 import { clearBucketDir, clearBucketEntries, statBucket } from '@kobato/server/infra/cache/file-store'
 import { bumpCounter, evictBucketMemory, isCounterBucket, resolveCacheSlot } from '@kobato/server/infra/cache/registry'
@@ -10,7 +11,6 @@ import { rateLimitEntryCount } from '@kobato/server/infra/rate-limit'
 import { resolveAppLocalization } from '@kobato/settings/app-localization'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@kobato/settings/cache-bucket'
 import { CACHE_DECLARATIONS } from '@kobato/settings/cache-registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 function cacheTranslator() {
   return createServerTranslator(resolveAppLocalization().locale)

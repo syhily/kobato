@@ -10,7 +10,7 @@ import type { CommentItemWire } from '@kobato/api/contracts/public/comments'
 import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@kobato/catalog/model'
 import type { CommentEditorState } from '@kobato/inkling/headless/comment-schema'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { afterEach } from 'vitest'
 
 let counter = 0

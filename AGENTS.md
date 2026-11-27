@@ -18,7 +18,7 @@ runtime state):
   `toast-api-error`), and `admin` (`@kobato/web-admin`, the workspace as a React Router 8 **SPA** project —
   `ssr: false`, React 19, `appDirectory: 'src'`; the routes, the root, the UI tree, the document runtime, the styles —
   whose static client build lives under the `/admin/` base; it sits under `packages/` because it is not deployed on its
-  own, ADR-0011 §4) — and eight isomorphic React-free leaves under `packages/shared/*`. `@kobato/server` owns the
+  own, ADR-0011 §4) — and four isomorphic React-free leaves under `packages/shared/*`. `@kobato/server` owns the
   backend's boot sequence (`bootstrap/start-kobato`) and the workspace-serving Hono app (`http/kobato-app`,
   `http/spa-shell`) — the app hands over the workspace build's location, nothing more.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
@@ -92,7 +92,8 @@ probe JavaScript, and import-scanner test fixtures.
 Dependency declarations are the enforcement; the graphs are pinned by the arch tests in `apps/kobato/tests/arch/`. This
 section pins the direction graph only — package composition rules live in each package's own `AGENTS.md`.
 
-- `packages/shared/*` leaves are the dependency floor (the leaf DAG lives in `packages/shared/AGENTS.md`).
+- `packages/shared/*` leaves — `i18n` ← `base` ← `settings` ← `catalog` — are the dependency floor (the leaf DAG lives
+  in `packages/shared/AGENTS.md`).
 - `@kobato/api` → the shared leaves only.
 - `@kobato/api/browser/*` is the built-in frontend's ambient, UI-bound assembly — the browser client, the TanStack Query
   binding, and the contract's data hooks (`use-notifications`); a browser hook imports the contract, the client, and
@@ -102,7 +103,7 @@ section pins the direction graph only — package composition rules live in each
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
   `bootstrap/start-kobato` is its composition root — the one module that knows every layer, which nothing inside the
   package imports — and `apps/kobato/src` reaches the package through it and the SEA VFS seam alone.
-- `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row
+- `@kobato/db` → `settings`, `base`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
 - Web direction: `packages/web` holds three packages — `@kobato/ui` (`packages/web/ui`, the design system and the
   document shell), `@kobato/web-kit` (`packages/web/kit`, the features both front-ends render that call a procedure),
@@ -118,8 +119,7 @@ section pins the direction graph only — package composition rules live in each
   source (kobato allows it tests-only; so does the workspace's test tree, in the five files
   `packages/web/admin/AGENTS.md` names, both backend packages declared there as test dependencies only). The browser
   oRPC client is typed exclusively through `@kobato/api`.
-- `@kobato/ui` → `assets`, `settings`, `i18n`, `utils`. `@kobato/inkling` → `ui`, `i18n`, `distribution`, `assets`,
-  `sanitize`, `utils`.
+- `@kobato/ui` → `base`, `settings`, `i18n`. `@kobato/inkling` → `ui`, `i18n`, `base`.
 - `apps/kobato/src` is the backend entry alone: `server.ts` calls `startKobato` and default-exports the app, and
   `server/*` holds the two app-side seams (the workspace build's location, the Vite dev server reference). It carries no
   routes and no UI; every workspace module lives in `@kobato/web-admin`.
@@ -173,7 +173,8 @@ Tests live next to the covered package — no root-level test tree.
 - Single-purpose rule: unit (pure logic, mocks) → `tests/unit/<mirrored-path>.test.ts`; integration (DB / real RPC) →
   `tests/it/`; snapshots → `tests/snaps/`. One file never mixes purposes. Tests that spin up the real DuckDB engine live
   in `tests/it/` named `*.duckdb.test.ts`; the suffix routes them into the owning package's `-duckdb` project
-  (`pnpm test:duckdb`; they also run under `pnpm test`).
+  (`pnpm test:duckdb`; they also run under `pnpm test`). `packages/shared/base` mirrors each of its five directories
+  under its name — `tests/<directory>/unit/<mirrored-path>.test.ts`.
 - Project registration: the root `vitest.config.ts` spreads `allTestProjects` from `@kobato/test/projects/registry` —
   the explicit, ordered project table. No config glob discovery; every test file is matched exactly once and
   `e2e`/`browser` are registered nowhere (`apps/kobato/tests/arch/vitest-project-registry.test.ts`).

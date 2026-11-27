@@ -2,7 +2,7 @@ import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
 import { orpc } from '@kobato/api/browser/client'
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
-import { ROLE_LABEL_KEYS } from '@kobato/auth/roles'
+import { ROLE_LABEL_KEYS } from '@kobato/base/auth/roles'
 import { Button } from '@kobato/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@kobato/ui/components/card'
 import { Label } from '@kobato/ui/components/label'

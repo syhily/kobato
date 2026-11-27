@@ -1,4 +1,4 @@
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { ORPCError } from '@orpc/contract'
 import { loader as ogLoader } from '@sayaka/routes/images-og'
 import { loader as ogCategoryLoader } from '@sayaka/routes/images-og-category'

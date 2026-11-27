@@ -1,7 +1,7 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { formatDate, formatDateTime } from '@kobato/base/utils/format'
 import { calendarWallClockDate } from '@kobato/ui/components/calendar'
-import { formatDate, formatDateTime } from '@kobato/utils/format'
 
 export const WALL_CLOCK_ZONE = 'Etc/UTC'
 

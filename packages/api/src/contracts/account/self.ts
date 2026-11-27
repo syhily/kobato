@@ -6,8 +6,8 @@ import {
   MIN_PASSWORD_LENGTH,
   passwordWithinBcryptLimit,
   PASSWORD_COMPLEXITY_RE,
-} from '@kobato/auth/security'
-import { optionalHttpUrlSchema } from '@kobato/utils/url-schema'
+} from '@kobato/base/auth/security'
+import { optionalHttpUrlSchema } from '@kobato/base/utils/url-schema'
 import { z } from 'zod'
 
 export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const

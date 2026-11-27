@@ -1,6 +1,6 @@
 import { idString, isoDateTime } from '@kobato/api/contracts/primitives'
 import { WEBMENTION_TYPES } from '@kobato/api/contracts/public/webmentions'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const

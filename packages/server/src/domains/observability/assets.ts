@@ -2,12 +2,12 @@ import {
   OBSERVABILITY_DASHBOARD_FILES,
   SEA_OBSERVABILITY_DASHBOARD_PREFIX,
   SEA_OBSERVABILITY_RUM_PRIVACY_VRL_KEY,
-} from '@kobato/distribution/sea-assets'
+} from '@kobato/base/distribution/sea-assets'
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { secretHmac } from '@kobato/server/infra/crypto/secret-encryption'
 import { getLogger } from '@kobato/server/infra/logger'
 import { readAssetTextOrDisk } from '@kobato/server/infra/sea/sea-asset'
 import { RUM_PRIVACY_VRL_SHA256 } from '@kobato/settings/telemetry/pipeline'
-import { isRecord } from '@kobato/utils/type-guards'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 

@@ -1,6 +1,6 @@
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { z } from 'zod'
 
 export const idString = z.string().regex(/^\d+$/, 'numeric id required')

@@ -3,7 +3,7 @@ import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { LucideIcon } from 'lucide-react'
 
 import { type NotificationDto, JOB_RUN_NOTIFICATION_SOURCE } from '@kobato/api/contracts/public/notifications'
-import { formatRelativeTime } from '@kobato/utils/format'
+import { formatRelativeTime } from '@kobato/base/utils/format'
 import { MegaphoneIcon, MessageSquareIcon, ShieldAlertIcon, WrenchIcon } from 'lucide-react'
 
 export interface NotificationMeta {

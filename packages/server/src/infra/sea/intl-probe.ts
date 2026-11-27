@@ -1,7 +1,7 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
+import { formatDuration } from '@kobato/base/utils/format'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
-import { formatDuration } from '@kobato/utils/format'
 
 export const INTL_PROBE_INSTANT = new Date('2026-01-02T15:04:05.000Z')
 

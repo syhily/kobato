@@ -1,4 +1,4 @@
-import type { AvatarSource } from '@kobato/assets/avatar'
+import type { AvatarSource } from '@kobato/base/assets/avatar'
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 import type { CommentsLoaderShape } from '@kobato/settings/projection'
 

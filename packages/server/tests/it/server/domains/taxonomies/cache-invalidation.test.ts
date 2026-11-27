@@ -1,4 +1,4 @@
-import { APP_VERSION } from '@kobato/distribution/app'
+import { APP_VERSION } from '@kobato/base/distribution/app'
 import { countEntryFiles } from '@kobato/server/infra/cache/file-store'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { lexicalBodyWith, lexicalParagraph, stubMusicResolver } from '@kobato/server/tests/utils/lexical'

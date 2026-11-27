@@ -1,6 +1,6 @@
 import type { AdminShellProps } from '@kobato/web-admin/ui/shell/AdminShell'
 
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { SidebarMenuItem } from '@kobato/ui/components/sidebar'
 import { Switch } from '@kobato/ui/components/switch'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'

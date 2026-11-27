@@ -1,10 +1,10 @@
 import type { AppLocale } from '@kobato/i18n/locales'
 
 import { applyFriendSchema } from '@kobato/api/contracts/public/friends'
+import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/base/utils/url-schema'
 import { SUPPORTED_LOCALES } from '@kobato/i18n/locales'
 import { zodIssueToWire } from '@kobato/server/infra/http/error-descriptor'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
-import { HTTP_URL_MESSAGE, optionalHttpUrlSchema } from '@kobato/utils/url-schema'
 import { describe, expect, it } from 'vitest'
 
 const EXPECTED: Record<AppLocale, string> = {

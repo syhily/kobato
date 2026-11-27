@@ -1,7 +1,7 @@
 import type { RouteHandle } from '@kobato/web-admin/root'
 
 import { orpc } from '@kobato/api/browser/client'
-import { hasAtLeast } from '@kobato/auth/roles'
+import { hasAtLeast } from '@kobato/base/auth/roles'
 import { awaitRootBootstrap, requireRoleFromBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 import { AdminErrorFallback } from '@kobato/web-admin/ui/shell/AdminErrorFallback'
 import { AdminShell } from '@kobato/web-admin/ui/shell/AdminShell'

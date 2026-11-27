@@ -2,9 +2,9 @@ import type { ContentRow } from '@kobato/db/sqlite/types'
 import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
 import type { MarkdownHeading } from '@kobato/inkling/headless/toc'
 
+import { isRecord } from '@kobato/base/utils/type-guards'
 import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
 import { readStringArray } from '@kobato/server/infra/coerce'
-import { isRecord } from '@kobato/utils/type-guards'
 
 export function readLexicalBody(value: unknown): LexicalEditorState {
   return lexicalEditorStateSchema.parse(value)

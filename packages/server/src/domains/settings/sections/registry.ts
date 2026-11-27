@@ -1,11 +1,11 @@
 import type { SettingsSection } from '@kobato/settings/sections'
 import type { SectionMeta } from '@kobato/settings/sections/registry'
 
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { observabilityWriteSchema } from '@kobato/server/domains/settings/sections/observability'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { SETTINGS_SECTIONS } from '@kobato/settings/sections'
 import { SECTION_REGISTRY as SHARED_SECTION_REGISTRY } from '@kobato/settings/sections/registry'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 export const SECTION_REGISTRY = SHARED_SECTION_REGISTRY
 

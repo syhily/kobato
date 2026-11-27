@@ -1,6 +1,7 @@
 import type { BlogSettingsBundle, SettingsBundle } from '@kobato/settings/types'
 
 import { adminSettingsContract } from '@kobato/api/rpc/admin/settings'
+import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { recordAuditEventFromContext } from '@kobato/server/domains/audit/services/record'
 import { projectSectionForAdmin } from '@kobato/server/domains/settings/services/admin-projection'
 import { updateBlogSettingsSection } from '@kobato/server/domains/settings/services/core'
@@ -11,7 +12,6 @@ import { implementAdmin, localizedOrpcError } from '@kobato/server/http/orpc-bas
 import { safeBigInt } from '@kobato/server/infra/coerce'
 import { createServerTranslator } from '@kobato/server/infra/i18n'
 import { getSupportedTimeZones } from '@kobato/settings/timezones'
-import { unsafeCast } from '@kobato/utils/unsafe-cast'
 
 const impl = implementAdmin(adminSettingsContract)
 

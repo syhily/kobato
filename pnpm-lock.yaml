@@ -759,12 +759,12 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../../packages/shared/base
       '@kobato/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../../packages/shared/distribution
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../packages/shared/i18n
@@ -789,9 +789,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../../packages/web/ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
       '@kobato/web-admin':
         specifier: workspace:*
         version: link:../../packages/web/admin
@@ -831,18 +828,12 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../../packages/shared/assets
-      '@kobato/auth':
-        specifier: workspace:*
-        version: link:../../packages/shared/auth
+        version: link:../../packages/shared/base
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../../packages/shared/catalog
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../../packages/shared/distribution
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../packages/shared/i18n
@@ -852,9 +843,6 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../tools/pack
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../../packages/shared/sanitize
       '@kobato/settings':
         specifier: workspace:*
         version: link:../../packages/shared/settings
@@ -867,9 +855,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../../packages/web/ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
       '@kobato/web-kit':
         specifier: workspace:*
         version: link:../../packages/web/kit
@@ -963,12 +948,9 @@ importers:
 
   packages/api:
     devDependencies:
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../shared/assets
-      '@kobato/auth':
-        specifier: workspace:*
-        version: link:../shared/auth
+        version: link:../shared/base
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../shared/catalog
@@ -984,9 +966,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../shared/utils
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.16.6(@opentelemetry/api@1.10.0)
@@ -1023,6 +1002,9 @@ importers:
       '@duckdbfan/drizzle-duckdb':
         specifier: 'catalog:'
         version: 3.0.0-rc.4(@duckdb/node-api@2.0.1-r.1)(drizzle-orm@1.0.0-rc.6(@opentelemetry/api@1.10.0)(valibot@1.5.0(typescript@7.0.2))(zod@4.6.7))
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../shared/base
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../inkling
@@ -1035,9 +1017,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../shared/utils
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.11
@@ -1077,18 +1056,12 @@ importers:
       '@codemirror/view':
         specifier: ^6.44.1
         version: 6.44.1
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../shared/assets
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../shared/distribution
+        version: link:../shared/base
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../shared/sanitize
       '@kobato/test':
         specifier: workspace:*
         version: link:../../tools/test
@@ -1098,9 +1071,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../web/ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../shared/utils
       '@lexical/clipboard':
         specifier: 'catalog:'
         version: 0.53.0(typescript@7.0.2)
@@ -1260,30 +1230,21 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../api
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../shared/assets
-      '@kobato/auth':
-        specifier: workspace:*
-        version: link:../shared/auth
+        version: link:../shared/base
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../shared/catalog
       '@kobato/db':
         specifier: workspace:*
         version: link:../db
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../shared/distribution
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../shared/i18n
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../inkling
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../shared/sanitize
       '@kobato/settings':
         specifier: workspace:*
         version: link:../shared/settings
@@ -1293,9 +1254,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../shared/utils
       '@maxmind/geoip2-node':
         specifier: 'catalog:'
         version: 7.1.0
@@ -1426,29 +1384,47 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
 
-  packages/shared/assets:
+  packages/shared/base:
     devDependencies:
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      vitest:
+      '@date-fns/tz':
         specifier: 'catalog:'
-        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-
-  packages/shared/auth:
-    devDependencies:
+        version: 1.5.0
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../../tools/tsconfig
+      '@types/jsdom':
+        specifier: 'catalog:'
+        version: 30.0.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.11
+      date-fns:
+        specifier: 'catalog:'
+        version: 4.4.0
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.5.0
+      jsdom:
+        specifier: 'catalog:'
+        version: 31.0.1(@napi-rs/canvas@1.2.1)
+      sharp:
+        specifier: 'catalog:'
+        version: 0.35.5(@types/node@26.6.11)
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
 
   packages/shared/catalog:
     devDependencies:
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../base
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -1461,24 +1437,9 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../utils
       react-router:
         specifier: 'catalog:'
         version: 8.5.3(@types/react-dom@19.3.0(@types/react@19.3.3))(@types/react@19.3.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-
-  packages/shared/distribution:
-    devDependencies:
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.6.11
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1504,29 +1465,11 @@ importers:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
 
-  packages/shared/sanitize:
-    devDependencies:
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      '@types/jsdom':
-        specifier: 'catalog:'
-        version: 30.0.0
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.5.0
-      jsdom:
-        specifier: 'catalog:'
-        version: 31.0.1(@napi-rs/canvas@1.2.1)
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-
   packages/shared/settings:
     devDependencies:
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../assets
+        version: link:../base
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -1536,33 +1479,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../utils
-      vitest:
-        specifier: 'catalog:'
-        version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
-
-  packages/shared/utils:
-    devDependencies:
-      '@date-fns/tz':
-        specifier: 'catalog:'
-        version: 1.5.0
-      '@kobato/i18n':
-        specifier: workspace:*
-        version: link:../i18n
-      '@kobato/tsconfig':
-        specifier: workspace:*
-        version: link:../../../tools/tsconfig
-      date-fns:
-        specifier: 'catalog:'
-        version: 4.4.0
-      sharp:
-        specifier: 'catalog:'
-        version: 0.35.5(@types/node@26.6.11)
       vitest:
         specifier: 'catalog:'
         version: 5.1.2(@opentelemetry/api@1.10.0)(@types/node@26.6.11)(@vitest/coverage-v8@5.1.2)(happy-dom@21.0.4)(jsdom@31.0.1(@napi-rs/canvas@1.2.1))(vite@8.4.0(@types/node@26.6.11)(jiti@2.7.0)(terser@5.51.4)(yaml@2.9.1))
@@ -1587,21 +1503,15 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../../api
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../../shared/assets
-      '@kobato/auth':
-        specifier: workspace:*
-        version: link:../../shared/auth
+        version: link:../../shared/base
       '@kobato/catalog':
         specifier: workspace:*
         version: link:../../shared/catalog
       '@kobato/db':
         specifier: workspace:*
         version: link:../../db
-      '@kobato/distribution':
-        specifier: workspace:*
-        version: link:../../shared/distribution
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n
@@ -1611,9 +1521,6 @@ importers:
       '@kobato/pack':
         specifier: workspace:*
         version: link:../../../tools/pack
-      '@kobato/sanitize':
-        specifier: workspace:*
-        version: link:../../shared/sanitize
       '@kobato/server':
         specifier: workspace:*
         version: link:../../server
@@ -1629,9 +1536,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../shared/utils
       '@kobato/web-kit':
         specifier: workspace:*
         version: link:../kit
@@ -1755,6 +1659,9 @@ importers:
       '@kobato/api':
         specifier: workspace:*
         version: link:../../api
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../../shared/base
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n
@@ -1770,9 +1677,6 @@ importers:
       '@kobato/ui':
         specifier: workspace:*
         version: link:../ui
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../shared/utils
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.16.6(@opentelemetry/api@1.10.0)
@@ -1815,9 +1719,9 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.3.3)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@kobato/assets':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../../shared/assets
+        version: link:../../shared/base
       '@kobato/i18n':
         specifier: workspace:*
         version: link:../../shared/i18n
@@ -1830,9 +1734,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../../../tools/tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../shared/utils
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 8.0.0(@testing-library/dom@10.4.2)(vitest@5.1.2)
@@ -1890,15 +1791,15 @@ importers:
 
   tools/font-split:
     devDependencies:
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../../packages/shared/base
       '@kobato/test':
         specifier: workspace:*
         version: link:../test
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
       '@napi-rs/cli':
         specifier: 'catalog:'
         version: 3.11.1(@emnapi/core@2.0.0-beta.3)(@emnapi/runtime@2.0.0-beta.3)(@types/node@26.6.11)
@@ -1929,9 +1830,9 @@ importers:
       '@hono/vite-dev-server':
         specifier: 'catalog:'
         version: 0.26.1(hono@4.13.22)
-      '@kobato/distribution':
+      '@kobato/base':
         specifier: workspace:*
-        version: link:../../packages/shared/distribution
+        version: link:../../packages/shared/base
       '@kobato/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -1944,9 +1845,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.65.1
@@ -2022,6 +1920,9 @@ importers:
 
   tools/trace:
     devDependencies:
+      '@kobato/base':
+        specifier: workspace:*
+        version: link:../../packages/shared/base
       '@kobato/inkling':
         specifier: workspace:*
         version: link:../../packages/inkling
@@ -2037,9 +1938,6 @@ importers:
       '@kobato/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@kobato/utils':
-        specifier: workspace:*
-        version: link:../../packages/shared/utils
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.65.1

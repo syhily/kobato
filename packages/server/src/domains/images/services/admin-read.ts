@@ -2,7 +2,7 @@ import type { AdminImageDto, AdminImagesListInput, ListImagesOutput } from '@kob
 import type { Database } from '@kobato/db/sqlite/database'
 import type { ImageRow } from '@kobato/db/sqlite/types'
 
-import { classifyImageKind } from '@kobato/assets/images'
+import { classifyImageKind } from '@kobato/base/assets/images'
 import {
   type AdminImagesListFilters,
   countAdminImages,

@@ -1,6 +1,6 @@
 import { orpc } from '@kobato/api/browser/client'
+import { idFromString } from '@kobato/base/utils/id'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { idFromString } from '@kobato/utils/id'
 import { isOrpcErrorWithCode } from '@kobato/web-admin/lib/orpc-error'
 import { awaitRootBootstrap, requireRoleFromBootstrap } from '@kobato/web-admin/lib/root-bootstrap'
 import { notFound } from '@kobato/web-admin/lib/route-status'

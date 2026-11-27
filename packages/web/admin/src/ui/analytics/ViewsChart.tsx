@@ -1,11 +1,11 @@
-import type { TimeUnit } from '@kobato/utils/date-range'
+import type { TimeUnit } from '@kobato/base/utils/date-range'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { pickTimeUnit } from '@kobato/base/utils/date-range'
 import { Skeleton } from '@kobato/ui/components/skeleton'
 import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useHydrated } from '@kobato/ui/lib/use-hydrated'
-import { pickTimeUnit } from '@kobato/utils/date-range'
 import { useAnalyticsDashboardState } from '@kobato/web-admin/ui/analytics/analytics-state-context'
 import { AnalyticsQueryState } from '@kobato/web-admin/ui/analytics/AnalyticsQueryState'
 import { useAnalyticsQueryData } from '@kobato/web-admin/ui/analytics/use-analytics-query'

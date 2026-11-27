@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react'
 
+import { formatLocalDate } from '@kobato/base/utils/site-date'
 import { fallbackMessages } from '@kobato/i18n/fallback-messages'
 import { DEFAULT_LOCALE } from '@kobato/i18n/locales'
 import { uiMessagesEnUS } from '@kobato/i18n/messages/ui/en-US'
@@ -8,7 +9,6 @@ import { uiMessagesZhCN } from '@kobato/i18n/messages/ui/zh-CN'
 import { uiMessagesZhTW } from '@kobato/i18n/messages/ui/zh-TW'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
-import { formatLocalDate } from '@kobato/utils/site-date'
 import { ErrorBoundary, Layout } from '@kobato/web-admin/root'
 import { prerenderToHtml } from '@kobato/web-kit/tests/utils/render'
 import { act } from 'react'
