@@ -110,7 +110,7 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/pack': PACK_INTERNAL_SCOPES,
   '@kobato/trace': INTERNAL_SCOPES,
   '@kobato/inkling-demo': INTERNAL_SCOPES,
-  '@kobato/font-split': [],
+  '@kobato/font-split': ['@kobato/test', '@kobato/utils'],
 }
 
 const SRC_TARGETS: Record<string, readonly string[]> = {

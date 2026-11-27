@@ -4,7 +4,7 @@ use indexmap::IndexSet;
 
 use log::info;
 
-use crate::run_subset::{WOFF2_QUALITY, build_subset};
+use crate::run_subset::{build_subset, woff2_quality};
 use crate::unicode::cjk::char_touch_probability;
 
 use super::PreSubsetContext;
@@ -120,7 +120,7 @@ pub fn auto_chunk(
     let pooled: Vec<u32> = packs.iter().flat_map(|(_, sample, _)| take_share(sample, share)).collect();
     let scale = probe_scale(
         build_subset(ctx.face, &pooled, PROBE_QUALITY).len(),
-        build_subset(ctx.face, &pooled, WOFF2_QUALITY).len(),
+        build_subset(ctx.face, &pooled, woff2_quality()).len(),
     );
 
     let mut chunked = Vec::with_capacity(subsets.len());

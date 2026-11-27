@@ -2,46 +2,62 @@
 <line x1="58" x2="856" y1="208" y2="208" stroke="#8b949e" stroke-opacity="1"/>
 <text x="50" y="212" text-anchor="end" fill="#8b949e">0.0</text>
 <line x1="58" x2="856" y1="163.5" y2="163.5" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="167.5" text-anchor="end" fill="#8b949e">3.2</text>
+<text x="50" y="167.5" text-anchor="end" fill="#8b949e">4.0</text>
 <line x1="58" x2="856" y1="119" y2="119" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="123" text-anchor="end" fill="#8b949e">6.3</text>
-<line x1="58" x2="856" y1="74.49999999999997" y2="74.49999999999997" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="78.49999999999997" text-anchor="end" fill="#8b949e">9.5</text>
+<text x="50" y="123" text-anchor="end" fill="#8b949e">8.0</text>
+<line x1="58" x2="856" y1="74.5" y2="74.5" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="78.5" text-anchor="end" fill="#8b949e">12.0</text>
 <line x1="58" x2="856" y1="30" y2="30" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="34" text-anchor="end" fill="#8b949e">12.7</text>
-<rect x="78.52" y="206.3127962085308" width="72.96000000000001" height="1.6872037914691942" rx="3" fill="#1a7f37"/>
-<text x="115" y="201.3127962085308" text-anchor="middle" fill="#8b949e">0.12</text>
-<text x="115" y="224" text-anchor="middle" fill="#8b949e">subsetting</text>
-<text x="115" y="238" text-anchor="middle" fill="#8b949e">only</text>
-<text x="115" y="296" text-anchor="middle" fill="#8b949e">no compression</text>
-<rect x="192.52" y="200.9699842022117" width="72.96000000000001" height="7.03001579778831" rx="3" fill="#1a7f37"/>
-<text x="229" y="195.9699842022117" text-anchor="middle" fill="#8b949e">0.50</text>
-<text x="229" y="224" text-anchor="middle" fill="#8b949e">q8</text>
-<text x="229" y="296" text-anchor="middle" fill="#8b949e">27,401,572 B</text>
-<rect x="306.52" y="199.56398104265404" width="72.96000000000001" height="8.43601895734597" rx="3" fill="#2da44e"/>
-<text x="343" y="194.56398104265404" text-anchor="middle" fill="#8b949e">0.60</text>
-<text x="343" y="224" text-anchor="middle" fill="#8b949e">q9</text>
-<text x="343" y="296" text-anchor="middle" fill="#8b949e">27,318,980 B</text>
-<rect x="420.52" y="120.26540284360189" width="72.96000000000001" height="87.73459715639811" rx="3" fill="#9a6700"/>
-<text x="457" y="115.26540284360189" text-anchor="middle" fill="#8b949e">6.24</text>
-<text x="457" y="224" text-anchor="middle" fill="#8b949e">q10</text>
-<text x="457" y="296" text-anchor="middle" fill="#8b949e">25,457,484 B</text>
-<rect x="534.52" y="30" width="72.96000000000001" height="178" rx="3" fill="#cf222e"/>
-<text x="571" y="25" text-anchor="middle" fill="#8b949e">12.66</text>
-<text x="571" y="224" text-anchor="middle" fill="#8b949e">q11</text>
-<text x="571" y="238" text-anchor="middle" fill="#8b949e">default</text>
-<text x="571" y="252" text-anchor="middle" fill="#8b949e">profile</text>
-<text x="571" y="296" text-anchor="middle" fill="#8b949e">25,438,984 B</text>
-<rect x="648.52" y="41.10742496050554" width="72.96000000000001" height="166.89257503949446" rx="3" fill="#316dca"/>
-<text x="685" y="36.10742496050554" text-anchor="middle" fill="#8b949e">11.87</text>
-<text x="685" y="224" text-anchor="middle" fill="#8b949e">q11</text>
-<text x="685" y="238" text-anchor="middle" fill="#8b949e">codegen-units=1</text>
-<text x="685" y="296" text-anchor="middle" fill="#8b949e">25,438,984 B</text>
-<rect x="762.52" y="41.951026856240105" width="72.96000000000001" height="166.0489731437599" rx="3" fill="#8250df"/>
-<text x="799" y="36.951026856240105" text-anchor="middle" fill="#8b949e">11.81</text>
-<text x="799" y="224" text-anchor="middle" fill="#8b949e">q11</text>
-<text x="799" y="238" text-anchor="middle" fill="#8b949e">+</text>
-<text x="799" y="252" text-anchor="middle" fill="#8b949e">PGO</text>
-<text x="799" y="296" text-anchor="middle" fill="#8b949e">25,438,984 B</text>
-<text x="58" y="14" fill="#8b949e">Slicing the 38 MiB production font, wall time (seconds, 8 Rayon threads, median)</text>
+<text x="50" y="34" text-anchor="end" fill="#8b949e">16.0</text>
+<rect x="65.8" y="205.8" width="73" height="2.2" rx="3" fill="#1a7f37"/>
+<text x="102.3" y="200.8" text-anchor="middle" fill="#8b949e">0.20</text>
+<text x="102.3" y="224" text-anchor="middle" fill="#8b949e">subsetting</text>
+<text x="102.3" y="238" text-anchor="middle" fill="#8b949e">only</text>
+<text x="102.3" y="252" text-anchor="middle" fill="#8b949e">no compression</text>
+<text x="102.3" y="296" text-anchor="middle" fill="#8b949e">41,427,116 B</text>
+<rect x="154.5" y="200.2" width="73" height="7.8" rx="3" fill="#2da44e"/>
+<text x="191" y="195.2" text-anchor="middle" fill="#8b949e">0.70</text>
+<text x="191" y="224" text-anchor="middle" fill="#8b949e">q8</text>
+<text x="191" y="296" text-anchor="middle" fill="#8b949e">27,330,408 B</text>
+<rect x="243.2" y="199.1" width="73" height="8.9" rx="3" fill="#2da44e"/>
+<text x="279.7" y="194.1" text-anchor="middle" fill="#8b949e">0.80</text>
+<text x="279.7" y="224" text-anchor="middle" fill="#8b949e">q9</text>
+<text x="279.7" y="296" text-anchor="middle" fill="#8b949e">27,245,364 B</text>
+<rect x="331.8" y="133.6" width="73" height="74.4" rx="3" fill="#9a6700"/>
+<text x="368.3" y="128.6" text-anchor="middle" fill="#8b949e">6.69</text>
+<text x="368.3" y="224" text-anchor="middle" fill="#8b949e">q10</text>
+<text x="368.3" y="296" text-anchor="middle" fill="#8b949e">25,393,544 B</text>
+<rect x="420.5" y="73.4" width="73" height="134.6" rx="3" fill="#cf222e"/>
+<text x="457" y="68.4" text-anchor="middle" fill="#8b949e">12.10</text>
+<text x="457" y="224" text-anchor="middle" fill="#8b949e">q11</text>
+<text x="457" y="238" text-anchor="middle" fill="#8b949e">default</text>
+<text x="457" y="252" text-anchor="middle" fill="#8b949e">profile</text>
+<text x="457" y="296" text-anchor="middle" fill="#8b949e">25,366,020 B</text>
+<rect x="509.2" y="72.7" width="73" height="135.3" rx="3" fill="#316dca"/>
+<text x="545.7" y="67.7" text-anchor="middle" fill="#8b949e">12.16</text>
+<text x="545.7" y="224" text-anchor="middle" fill="#8b949e">q11</text>
+<text x="545.7" y="238" text-anchor="middle" fill="#8b949e">codegen-units=1</text>
+<text x="545.7" y="296" text-anchor="middle" fill="#8b949e">25,366,020 B</text>
+<rect x="597.8" y="67.9" width="73" height="140.1" rx="3" fill="#8250df"/>
+<text x="634.3" y="62.9" text-anchor="middle" fill="#8b949e">12.59</text>
+<text x="634.3" y="224" text-anchor="middle" fill="#8b949e">q11</text>
+<text x="634.3" y="238" text-anchor="middle" fill="#8b949e">+</text>
+<text x="634.3" y="252" text-anchor="middle" fill="#8b949e">PGO</text>
+<text x="634.3" y="266" text-anchor="middle" fill="#8b949e">run 1</text>
+<text x="634.3" y="296" text-anchor="middle" fill="#8b949e">25,366,020 B</text>
+<rect x="686.5" y="66.8" width="73" height="141.2" rx="3" fill="#8250df"/>
+<text x="723" y="61.8" text-anchor="middle" fill="#8b949e">12.69</text>
+<text x="723" y="224" text-anchor="middle" fill="#8b949e">q11</text>
+<text x="723" y="238" text-anchor="middle" fill="#8b949e">+</text>
+<text x="723" y="252" text-anchor="middle" fill="#8b949e">PGO</text>
+<text x="723" y="266" text-anchor="middle" fill="#8b949e">run 2</text>
+<text x="723" y="296" text-anchor="middle" fill="#8b949e">25,366,020 B</text>
+<rect x="775.2" y="67.2" width="73" height="140.8" rx="3" fill="#8250df"/>
+<text x="811.7" y="62.2" text-anchor="middle" fill="#8b949e">12.66</text>
+<text x="811.7" y="224" text-anchor="middle" fill="#8b949e">q11</text>
+<text x="811.7" y="238" text-anchor="middle" fill="#8b949e">+</text>
+<text x="811.7" y="252" text-anchor="middle" fill="#8b949e">PGO</text>
+<text x="811.7" y="266" text-anchor="middle" fill="#8b949e">run 3</text>
+<text x="811.7" y="296" text-anchor="middle" fill="#8b949e">25,366,020 B</text>
+<text x="58" y="14" fill="#8b949e">Slicing OPPOSerif, wall time (seconds, 8 Rayon threads, median)</text>
 </svg>

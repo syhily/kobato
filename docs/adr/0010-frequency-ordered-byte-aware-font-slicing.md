@@ -70,11 +70,12 @@ Adopt the two measured wins inside our existing Rust pipeline.
    replace stroke order with corpus document-frequency order inside each pack, in the existing `corpus:generate`
    pipeline; the generator also emits the parallel `*_DF` arrays the DP consumes as touch probabilities. −38% to −41%
    per-page bytes, zero algorithm change. Corpus (settled): the pinned `zhwiki-20261101` Wikimedia dump, processed by
-   font-split's feature-gated `corpus` bin (`src/bin/corpus/`) in one streaming pass — wikitext cleaning,
-   `opencc-fmmseg` conversion into **two script dimensions** (`t2s` Simplified orders the TGH/JA packs, `s2t` orders the
-   HK/TW packs, both over the same document set), per-document character frequencies. Fixture pages are excluded from
-   the counts. (zhwiki is stub-heavy: the first fixture rule — `id % 5003`, ≥2500 cleaned chars — yielded only 17 of 304
-   candidates against 1,563,340 counted documents; the shipped rule is `id % 2003 == 7` with a 1200-char floor.)
+   font-split's `corpus build` script (`tools/font-split/scripts/corpus/`) in one streaming pass — wikitext cleaning,
+   conversion through the `opencc-fmmseg` 0.13.1 dictionaries (vendored under `scripts/cjk-tables/opencc/`) into **two
+   script dimensions** (`t2s` Simplified orders the TGH/JA packs, `s2t` orders the HK/TW packs, both over the same
+   document set), per-document character frequencies. Fixture pages are excluded from the counts. (zhwiki is stub-heavy:
+   the first fixture rule — `id % 5003`, ≥2500 cleaned chars — yielded only 17 of 304 candidates against 1,563,340
+   counted documents; the shipped rule is `id % 2003 == 7` with a 1200-char floor.)
 2. **Byte-aware DP chunk boundaries** in `pre_subset/auto_chunk.rs`, replacing the cube-root ramp. Chunks are contiguous
    segments of the frequency-ordered sequence; minimize `Σ P(chunk touched)×(bytes+λ)+μ` under a byte cap; P from the
    frequency table, bytes from a per-pack size probe (one font-wide 1% sampling estimate until the 2026-11-26 revision).
@@ -184,10 +185,12 @@ production font and the production blog — the fixture swap this ADR asked for 
   per cold page. It sits on a plateau (55–60 KB give nearly the same package), so small drift around it changes nothing.
   Going further was left open: 80–120 KB keep improving HTTP/1.1 fast (next page ×0.74 / ×0.68) while cold pages on slow
   or HTTP/2 links lose 8–15%; on a deployment known to serve fonts over HTTP/1.1, revisit with `pagecost:sweep`.
-- **Build and encoder evaluations** (measured against `xingwangzhe/cjk-font-split-native`, details in `BENCHMARK.md`):
-  the release profile becomes fat LTO + `codegen-units = 1` + `strip = "symbols"` (−4% slicing time, −21% addon size);
-  PGO, a native Brotli/woff2 stack and HarfBuzz subset preprocessing were rejected with data — the hot code is already
-  the C/C++ woff2 + Brotli that `woff` compiles, subsetting is 1% of slicing time, and PGO cannot see C/C++.
+- **Build and encoder evaluations** (measured against `xingwangzhe/cjk-font-split-native`, current numbers of every
+  variant in `BENCHMARK.md`): the release profile becomes fat LTO + `codegen-units = 1` + `strip = "symbols"` (−22%
+  addon size; its slicing-time difference stays inside the run-to-run noise); PGO, a native Brotli/woff2 stack and
+  HarfBuzz subset preprocessing were rejected with data — PGO's effect is decided by the training run, a few percent
+  gained or lost from one to the next, the hot code is already the C/C++ woff2 + Brotli that `woff` compiles, subsetting
+  is ≈2% of slicing time, and PGO cannot see C/C++.
 - **Side findings.** Latin kerning only works inside one face: the deployed package scatters ASCII over 5 chunks, the
   frequency-ordered packages over 2, so kerning retention against the source font rises from 19.5% to 68.3% and mixed
   Chinese/English paragraphs are no longer pixel-identical. The render-blocking `result.css` is 278 KB (deployed: 238
@@ -272,6 +275,9 @@ script:
 | Mark-to-base pairs (14,328 / 14,590)      |            4.6% |            100% |     100% |     100% |
 | Ligature component sets (36 / 33)         |           91.7% |            100% |    93.9% |     100% |
 
+The benchmark suite counts these populations under its own definition (`tests/shaping_colocation.rs`: 1,522 / 913 ASCII
+and 145,800 / 64,205 encoded kern pairs on the current packages); `BENCHMARK.md` carries its numbers.
+
 This supersedes decision 4 and the "Latin kerning only works inside one face" side finding: the 68.3% kerning retention
 measured then was an accident of the DP boundaries, not of the closure. The largest face grows from 75.9 KB to 115.9 KB
 (OPPOSerif) and from 77.7 KB to 80.4 KB (og).
@@ -307,7 +313,9 @@ Costs of the revision:
   and q11 is superlinear in face size (0.31 s for a 73 KB face, 1.08 s for 118 KB).
 - The fingerprint moves from `99475c9dd394` to `1dca6e172640`, so every already-uploaded font is re-sliced on its next
   upload.
-- The throttled-browser loading-time table above was not re-run; the byte/request exchange it models is unchanged.
+- The throttled-browser loading time was re-run on 2026-11-27 by `pnpm run bench:font-split`, the whole suite on the
+  revised packages. It keeps λ=55: against λ=45 KB no load is more than 2.4% slower on any link or protocol, and every
+  next page loads 5–8% faster. The current table is in `BENCHMARK.md`.
 
 ## Rejected alternatives
 
@@ -343,4 +351,5 @@ Costs of the revision:
 - The co-occurrence arm (`S2`) uses k-means over the sub-5% tail; it is an experimental comparison, not part of the
   shipped pipeline.
 - The 2026-11-26 revision's browser check (seven strings, one Chrome version, no committed gate) is a spot check, not a
-  rendering regression test; the throttled-browser loading-time table was not re-run.
+  rendering regression test. It and the throttled-browser loading time are re-measured by every
+  `pnpm run bench:font-split` run; the latest is in `BENCHMARK.md`.

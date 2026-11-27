@@ -1,66 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="880" height="480" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12">
 <line x1="64" x2="856" y1="416" y2="416" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="420" text-anchor="end" fill="#8b949e">1300</text>
-<line x1="64" x2="856" y1="362.2857142857143" y2="362.2857142857143" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="366.2857142857143" text-anchor="end" fill="#8b949e">1500</text>
-<line x1="64" x2="856" y1="308.57142857142856" y2="308.57142857142856" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="312.57142857142856" text-anchor="end" fill="#8b949e">1700</text>
-<line x1="64" x2="856" y1="254.85714285714286" y2="254.85714285714286" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="258.8571428571429" text-anchor="end" fill="#8b949e">1900</text>
-<line x1="64" x2="856" y1="201.14285714285717" y2="201.14285714285717" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="205.14285714285717" text-anchor="end" fill="#8b949e">2100</text>
-<line x1="64" x2="856" y1="147.42857142857144" y2="147.42857142857144" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="151.42857142857144" text-anchor="end" fill="#8b949e">2300</text>
-<line x1="64" x2="856" y1="93.71428571428572" y2="93.71428571428572" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="97.71428571428572" text-anchor="end" fill="#8b949e">2500</text>
+<text x="56" y="420" text-anchor="end" fill="#8b949e">1,500</text>
+<line x1="64" x2="856" y1="340.8" y2="340.8" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="56" y="344.8" text-anchor="end" fill="#8b949e">1,600</text>
+<line x1="64" x2="856" y1="265.6" y2="265.6" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="56" y="269.6" text-anchor="end" fill="#8b949e">1,700</text>
+<line x1="64" x2="856" y1="190.4" y2="190.4" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="56" y="194.4" text-anchor="end" fill="#8b949e">1,800</text>
+<line x1="64" x2="856" y1="115.2" y2="115.2" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="56" y="119.2" text-anchor="end" fill="#8b949e">1,900</text>
 <line x1="64" x2="856" y1="40" y2="40" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="56" y="44" text-anchor="end" fill="#8b949e">2700</text>
+<text x="56" y="44" text-anchor="end" fill="#8b949e">2,000</text>
 <line x1="64" x2="64" y1="416" y2="420" stroke="#8b949e"/>
-<text x="64" y="432" text-anchor="middle" fill="#8b949e">50</text>
+<text x="64" y="432" text-anchor="middle" fill="#8b949e">40</text>
 <line x1="196" x2="196" y1="416" y2="420" stroke="#8b949e"/>
-<text x="196" y="432" text-anchor="middle" fill="#8b949e">60</text>
+<text x="196" y="432" text-anchor="middle" fill="#8b949e">50</text>
 <line x1="328" x2="328" y1="416" y2="420" stroke="#8b949e"/>
-<text x="328" y="432" text-anchor="middle" fill="#8b949e">70</text>
+<text x="328" y="432" text-anchor="middle" fill="#8b949e">60</text>
 <line x1="460" x2="460" y1="416" y2="420" stroke="#8b949e"/>
-<text x="460" y="432" text-anchor="middle" fill="#8b949e">80</text>
+<text x="460" y="432" text-anchor="middle" fill="#8b949e">70</text>
 <line x1="592" x2="592" y1="416" y2="420" stroke="#8b949e"/>
-<text x="592" y="432" text-anchor="middle" fill="#8b949e">90</text>
+<text x="592" y="432" text-anchor="middle" fill="#8b949e">80</text>
 <line x1="724" x2="724" y1="416" y2="420" stroke="#8b949e"/>
-<text x="724" y="432" text-anchor="middle" fill="#8b949e">100</text>
+<text x="724" y="432" text-anchor="middle" fill="#8b949e">90</text>
 <line x1="856" x2="856" y1="416" y2="420" stroke="#8b949e"/>
-<text x="856" y="432" text-anchor="middle" fill="#8b949e">110</text>
+<text x="856" y="432" text-anchor="middle" fill="#8b949e">100</text>
 <line x1="64" x2="856" y1="416" y2="416" stroke="#8b949e"/>
 <line x1="64" x2="64" y1="40" y2="416" stroke="#8b949e"/>
-<path d="M782.1 386.9 L679.1 377.8 L598.6 371.1 L520.7 363.6 L516.8 363.2 L445.5 358.7 L441.5 357.9 L434.9 356.8 L392.7 347.8 L391.4 347.3 L390.0 346.0 L383.4 345.1 L334.6 339.2 L334.6 337.6 L330.6 337.1 L288.4 326.0 L256.7 316.9 L181.5 291.8" fill="none" stroke="#316dca" stroke-width="2"/>
-<circle cx="782.1" cy="386.9" r="3" fill="#316dca"/>
-<circle cx="679.1" cy="377.8" r="3" fill="#316dca"/>
-<circle cx="598.6" cy="371.1" r="3" fill="#316dca"/>
-<circle cx="520.7" cy="363.6" r="3" fill="#316dca"/>
-<circle cx="516.8" cy="363.2" r="3" fill="#316dca"/>
-<circle cx="445.5" cy="358.7" r="3" fill="#316dca"/>
-<circle cx="441.5" cy="357.9" r="3" fill="#316dca"/>
-<circle cx="434.9" cy="356.8" r="3" fill="#316dca"/>
-<circle cx="392.7" cy="347.8" r="3" fill="#316dca"/>
-<circle cx="391.4" cy="347.3" r="3" fill="#316dca"/>
-<circle cx="390.0" cy="346.0" r="3" fill="#316dca"/>
-<circle cx="383.4" cy="345.1" r="3" fill="#316dca"/>
-<circle cx="334.6" cy="339.2" r="3" fill="#316dca"/>
-<circle cx="334.6" cy="337.6" r="3" fill="#316dca"/>
-<circle cx="330.6" cy="337.1" r="3" fill="#316dca"/>
-<circle cx="288.4" cy="326.0" r="3" fill="#316dca"/>
-<circle cx="256.7" cy="316.9" r="3" fill="#316dca"/>
-<circle cx="181.5" cy="291.8" r="3" fill="#316dca"/>
-<text x="791.08" y="390.9203236607143" fill="#316dca">20</text>
-<text x="607.6" y="375.1244419642857" fill="#316dca">30</text>
-<text x="401.68000000000006" y="351.81223214285717" fill="#316dca">45</text>
-<text x="344.6" y="353.17047433035714" fill="#316dca">55</text>
-<text x="326.64000000000004" y="329.05704799107144" fill="#316dca">60</text>
-<text x="265.7199999999999" y="320.8908482142857" fill="#316dca">80</text>
-<text x="190.48" y="295.8187611607143" fill="#316dca">120</text>
-<text x="447.4800000000001" y="349.74602678571426" fill="#316dca">37.5</text>
-<path d="M328 63.30495535714289 L330.9 69.90495535714288 L338 70.50495535714289 L332.7 75.30495535714289 L334 82.30495535714289 L328 78.40495535714288 L322 82.30495535714289 L323.3 75.30495535714289 L318 70.50495535714289 L325.1 69.90495535714288 Z" fill="#cf222e"/>
-<text x="342" y="77.30495535714289" fill="#cf222e">cn-font-split</text>
-<circle cx="70" cy="438" r="3.5" fill="#316dca"/>
-<text x="78" y="442" fill="#8b949e">labels are λ in KB, connected in λ order — lower-left is better</text>
-<text x="64" y="458" fill="#8b949e">Cold page KB against requests per page, blog corpus</text>
+<path d="M737.1 373.9 L639.8 347.2 L540.2 326.3 L463.2 298.5 L402.2 269 L345.1 238.2 L343.1 233 L262 171.5 L188.2 101.6" fill="none" stroke="#316dca" stroke-width="2"/>
+<circle cx="737.1" cy="373.9" r="3" fill="#316dca"/>
+<text x="745.1" y="366.9" text-anchor="start" fill="#316dca">20</text>
+<circle cx="639.8" cy="347.2" r="3" fill="#316dca"/>
+<text x="647.8" y="340.2" text-anchor="start" fill="#316dca">25</text>
+<circle cx="540.2" cy="326.3" r="3" fill="#316dca"/>
+<text x="548.2" y="319.3" text-anchor="start" fill="#316dca">30</text>
+<circle cx="463.2" cy="298.5" r="3" fill="#316dca"/>
+<text x="471.2" y="291.5" text-anchor="start" fill="#316dca">37.5</text>
+<circle cx="402.2" cy="269" r="3" fill="#316dca"/>
+<text x="410.2" y="262" text-anchor="start" fill="#316dca">45</text>
+<circle cx="345.1" cy="238.2" r="3" fill="#316dca"/>
+<text x="353.1" y="231.2" text-anchor="start" fill="#316dca">55</text>
+<circle cx="343.1" cy="233" r="3" fill="#316dca"/>
+<text x="351.1" y="212" text-anchor="start" fill="#316dca">60</text>
+<circle cx="262" cy="171.5" r="3" fill="#316dca"/>
+<text x="270" y="164.5" text-anchor="start" fill="#316dca">80</text>
+<circle cx="188.2" cy="101.6" r="3" fill="#316dca"/>
+<text x="196.2" y="94.6" text-anchor="start" fill="#316dca">120</text>
+<polygon points="459.4,-404.1 462.4,-397.2 469.9,-396.5 464.2,-391.6 465.9,-384.2 459.4,-388.1 453,-384.2 454.7,-391.6 449,-396.5 456.5,-397.2" fill="#cf222e"/>
+<text x="475.4" y="-389.1" fill="#cf222e">cn-font-split</text>
+<text x="64" y="456" fill="#8b949e">labels are λ in KB, connected in λ order — lower-left is better</text>
+<text x="64" y="476" fill="#8b949e">Cold page KB against requests per page, blog corpus</text>
 </svg>

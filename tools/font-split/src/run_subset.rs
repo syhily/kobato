@@ -12,8 +12,37 @@ use woff::version2::compress;
 
 pub const WOFF2_QUALITY: usize = 11;
 
+#[cfg(feature = "bench")]
+fn bench_woff2_quality() -> Option<usize> {
+    static QUALITY: std::sync::LazyLock<Option<usize>> = std::sync::LazyLock::new(|| {
+        std::env::var("FONT_SPLIT_BENCH_WOFF2_QUALITY").ok().and_then(|value| value.trim().parse().ok())
+    });
+    *QUALITY
+}
+
+#[cfg(not(feature = "bench"))]
+fn bench_woff2_quality() -> Option<usize> {
+    None
+}
+
+#[cfg(feature = "bench")]
+fn bench_skips_compression() -> bool {
+    static SKIP: std::sync::LazyLock<bool> =
+        std::sync::LazyLock::new(|| std::env::var_os("FONT_SPLIT_BENCH_SKIP_COMPRESSION").is_some());
+    *SKIP
+}
+
+#[cfg(not(feature = "bench"))]
+fn bench_skips_compression() -> bool {
+    false
+}
+
+pub(crate) fn woff2_quality() -> usize {
+    bench_woff2_quality().unwrap_or(WOFF2_QUALITY)
+}
+
 pub fn build_single_subset(face: &Owned<Face>, subset: &[u32]) -> Vec<u8> {
-    build_subset(face, subset, WOFF2_QUALITY)
+    build_subset(face, subset, woff2_quality())
 }
 
 pub fn build_subset(face: &Owned<Face>, subset: &[u32], quality: usize) -> Vec<u8> {
@@ -23,6 +52,9 @@ pub fn build_subset(face: &Owned<Face>, subset: &[u32], quality: usize) -> Vec<u
     subset_runner.add_chars(subset);
     let new_face = subset_runner.run_subset(face).face_data();
     let ttf_binary = new_face.get_data();
+    if bench_skips_compression() {
+        return ttf_binary.to_vec();
+    }
 
     compress(ttf_binary, String::from(""), quality, true).expect("Failed to compress subset")
 }

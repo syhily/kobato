@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "bench:font-split": "pnpm -C tools/font-split bench:font-split",
     "build": "pnpm -C apps/kobato build && pnpm -C apps/sayaka build",
     "bump": "taze && pnpm update",
     "db:gen": "pnpm -C packages/db db:gen && pnpm -C packages/db db:gen:duckdb",

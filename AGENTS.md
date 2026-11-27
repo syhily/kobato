@@ -113,6 +113,10 @@ Dev workflow: `pnpm run dev` boots kobato's Vite dev server on 4321 — the shar
 `/rpc/*`, `/health`, and the resource routes through the Hono app while `/admin/*` + `/editor/*` documents (and React
 Router's `.data` requests) stay on React Router's dev middleware; `pnpm dev:sayaka` adds the public origin on 4322.
 
+`pnpm run bench:font-split` is local-only (`tools/font-split/scripts/bench/`): it regenerates
+`tools/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a
+font-split change is meant to move those numbers and commit the regenerated files with it.
+
 `pnpm run lint` is the one static gate: it runs `react-router typegen` for both apps (route modules import generated
 `./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole workspace — lint rules and TypeScript compiler
 diagnostics in a single pass. There is no separate type-check command and `tsc` is never run (`oxlint.config.ts` sets

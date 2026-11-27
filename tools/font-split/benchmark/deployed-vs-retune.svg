@@ -1,56 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 870 380" width="870" height="380" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12">
 <text x="14" y="20" fill="#8b949e">Cold page, mean (KB)</text>
-<rect x="22" y="40" width="70" height="120" rx="3" fill="#cf222e"/>
-<text x="57" y="35" text-anchor="middle" fill="#8b949e">2,576</text>
-<rect x="112" y="91.65709814482891" width="70" height="68.34290185517109" rx="3" fill="#8250df"/>
-<text x="147" y="86.65709814482891" text-anchor="middle" fill="#8b949e">1,467</text>
-<rect x="202" y="86.11464939176956" width="70" height="73.88535060823044" rx="3" fill="#316dca"/>
-<text x="237" y="81.11464939176956" text-anchor="middle" fill="#8b949e">1,586</text>
+<rect x="62" y="40" width="70" height="120" rx="3" fill="#cf222e"/>
+<text x="97" y="35" text-anchor="middle" fill="#8b949e">2,576</text>
+<rect x="162" y="79.1" width="70" height="80.9" rx="3" fill="#316dca"/>
+<text x="197" y="74.1" text-anchor="middle" fill="#8b949e">1,736</text>
 <line x1="14" x2="280" y1="160" y2="160" stroke="#8b949e"/>
 <text x="304" y="20" fill="#8b949e">Cold page, p90 (KB)</text>
-<rect x="312" y="40" width="70" height="120" rx="3" fill="#cf222e"/>
-<text x="347" y="35" text-anchor="middle" fill="#8b949e">3,285</text>
-<rect x="402" y="87.15754829489043" width="70" height="72.84245170510957" rx="3" fill="#8250df"/>
-<text x="437" y="82.15754829489043" text-anchor="middle" fill="#8b949e">1,994</text>
-<rect x="492" y="83.43782809432707" width="70" height="76.56217190567293" rx="3" fill="#316dca"/>
-<text x="527" y="78.43782809432707" text-anchor="middle" fill="#8b949e">2,096</text>
+<rect x="352" y="40" width="70" height="120" rx="3" fill="#cf222e"/>
+<text x="387" y="35" text-anchor="middle" fill="#8b949e">3,285</text>
+<rect x="452" y="77.2" width="70" height="82.8" rx="3" fill="#316dca"/>
+<text x="487" y="72.2" text-anchor="middle" fill="#8b949e">2,266</text>
 <line x1="304" x2="570" y1="160" y2="160" stroke="#8b949e"/>
 <text x="594" y="20" fill="#8b949e">Cold page, requests (mean)</text>
-<rect x="602" y="67.18232044198895" width="70" height="92.81767955801105" rx="3" fill="#cf222e"/>
-<text x="637" y="62.18232044198895" text-anchor="middle" fill="#8b949e">70.0</text>
-<rect x="692" y="40" width="70" height="120" rx="3" fill="#8250df"/>
-<text x="727" y="35" text-anchor="middle" fill="#8b949e">90.5</text>
-<rect x="782" y="66.51933701657458" width="70" height="93.48066298342542" rx="3" fill="#316dca"/>
-<text x="817" y="61.51933701657458" text-anchor="middle" fill="#8b949e">70.5</text>
+<rect x="642" y="40" width="70" height="120" rx="3" fill="#cf222e"/>
+<text x="677" y="35" text-anchor="middle" fill="#8b949e">70.0</text>
+<rect x="742" y="54.9" width="70" height="105.1" rx="3" fill="#316dca"/>
+<text x="777" y="49.9" text-anchor="middle" fill="#8b949e">61.3</text>
 <line x1="594" x2="860" y1="160" y2="160" stroke="#8b949e"/>
 <text x="14" y="210" fill="#8b949e">Cold page, requests (p90 / max)</text>
-<rect x="22" y="269.36" width="70" height="80.64" rx="3" fill="#cf222e"/>
-<text x="57" y="264.36" text-anchor="middle" fill="#8b949e">84</text>
-<rect x="112" y="230" width="70" height="120" rx="3" fill="#8250df"/>
-<text x="147" y="225" text-anchor="middle" fill="#8b949e">125</text>
-<rect x="202" y="255.92000000000002" width="70" height="94.08" rx="3" fill="#316dca"/>
-<text x="237" y="250.92000000000002" text-anchor="middle" fill="#8b949e">98</text>
+<rect x="62" y="235.5" width="70" height="114.5" rx="3" fill="#cf222e"/>
+<text x="97" y="230.5" text-anchor="middle" fill="#8b949e">84 / 103</text>
+<rect x="162" y="230" width="70" height="120" rx="3" fill="#316dca"/>
+<text x="197" y="225" text-anchor="middle" fill="#8b949e">88 / 154</text>
 <line x1="14" x2="280" y1="350" y2="350" stroke="#8b949e"/>
 <text x="304" y="210" fill="#8b949e">Next page, new bytes (KB)</text>
-<rect x="312" y="230" width="70" height="120" rx="3" fill="#cf222e"/>
-<text x="347" y="225" text-anchor="middle" fill="#8b949e">659</text>
-<rect x="402" y="249.5847302436963" width="70" height="100.4152697563037" rx="3" fill="#8250df"/>
-<text x="437" y="244.5847302436963" text-anchor="middle" fill="#8b949e">551</text>
-<rect x="492" y="259.3309213306544" width="70" height="90.66907866934557" rx="3" fill="#316dca"/>
-<text x="527" y="254.3309213306544" text-anchor="middle" fill="#8b949e">498</text>
+<rect x="352" y="230" width="70" height="120" rx="3" fill="#cf222e"/>
+<text x="387" y="225" text-anchor="middle" fill="#8b949e">659</text>
+<rect x="452" y="260.3" width="70" height="89.7" rx="3" fill="#316dca"/>
+<text x="487" y="255.3" text-anchor="middle" fill="#8b949e">492</text>
 <line x1="304" x2="570" y1="350" y2="350" stroke="#8b949e"/>
 <text x="594" y="210" fill="#8b949e">Next page, new requests</text>
-<rect x="602" y="317.01902748414375" width="70" height="32.98097251585624" rx="3" fill="#cf222e"/>
-<text x="637" y="312.01902748414375" text-anchor="middle" fill="#8b949e">13.0</text>
-<rect x="692" y="230" width="70" height="120" rx="3" fill="#8250df"/>
-<text x="727" y="225" text-anchor="middle" fill="#8b949e">47.3</text>
-<rect x="782" y="261.7124735729387" width="70" height="88.28752642706131" rx="3" fill="#316dca"/>
-<text x="817" y="256.7124735729387" text-anchor="middle" fill="#8b949e">34.8</text>
+<rect x="642" y="297" width="70" height="53" rx="3" fill="#cf222e"/>
+<text x="677" y="292" text-anchor="middle" fill="#8b949e">13.0</text>
+<rect x="742" y="230" width="70" height="120" rx="3" fill="#316dca"/>
+<text x="777" y="225" text-anchor="middle" fill="#8b949e">29.5</text>
 <line x1="594" x2="860" y1="350" y2="350" stroke="#8b949e"/>
 <rect x="22" y="362" width="12" height="12" rx="2" fill="#cf222e"/>
-<text x="39" y="372" fill="#8b949e">cn-font-split</text>
-<rect x="152.10000000000002" y="362" width="12" height="12" rx="2" fill="#8250df"/>
-<text x="169.10000000000002" y="372" fill="#8b949e">λ=30 KB</text>
-<rect x="242.00000000000003" y="362" width="12" height="12" rx="2" fill="#316dca"/>
-<text x="259" y="372" fill="#8b949e">λ=55 KB</text>
+<text x="39" y="372" fill="#8b949e">cn-font-split (deployed package)</text>
+<rect x="242" y="362" width="12" height="12" rx="2" fill="#316dca"/>
+<text x="259" y="372" fill="#8b949e">shipped algorithm (λ=55 KB)</text>
 </svg>

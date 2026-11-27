@@ -123,6 +123,7 @@ catalog:
   motion: ^14.14.0
   node-device-detector: ^2.2.9
   nodemailer: ^10.6.1
+  opencc-js: ^1.4.2
   oxc-transform-react: ^0.158.0
   oxfmt: ^0.80.0
   oxlint: ^1.95.0

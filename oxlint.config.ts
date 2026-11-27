@@ -329,7 +329,7 @@ export default defineConfig({
       },
     },
     {
-      files: ['tools/pack/**/*.ts', 'tools/trace/**/*.ts'],
+      files: ['tools/pack/**/*.ts', 'tools/trace/**/*.ts', 'tools/font-split/scripts/**/*.ts'],
       rules: {
         'no-console': 'off',
         'typescript/no-unsafe-argument': 'off',

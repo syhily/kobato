@@ -1,128 +1,128 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 640" width="880" height="640" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12">
 <g transform="translate(0 0)">
 <text x="58" y="18" fill="#8b949e">Cold page</text>
-<line x1="58" x2="856" y1="246.28571428571425" y2="246.28571428571425" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="250.28571428571425" text-anchor="end" fill="#8b949e">0.9</text>
-<line x1="58" x2="856" y1="186.85714285714283" y2="186.85714285714283" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="190.85714285714283" text-anchor="end" fill="#8b949e">1</text>
-<line x1="58" x2="856" y1="127.42857142857136" y2="127.42857142857136" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="131.42857142857136" text-anchor="end" fill="#8b949e">1.1</text>
-<line x1="58" x2="856" y1="68" y2="68" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="72" text-anchor="end" fill="#8b949e">1.2</text>
+<line x1="58" x2="856" y1="276" y2="276" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="280" text-anchor="end" fill="#8b949e">0.9</text>
+<line x1="58" x2="856" y1="202" y2="202" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="206" text-anchor="end" fill="#8b949e">1.0</text>
+<line x1="58" x2="856" y1="128" y2="128" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="132" text-anchor="end" fill="#8b949e">1.1</text>
+<line x1="58" x2="856" y1="54" y2="54" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="58" text-anchor="end" fill="#8b949e">1.2</text>
 <line x1="58" x2="58" y1="276" y2="280" stroke="#8b949e"/>
 <text x="58" y="292" text-anchor="middle" fill="#8b949e">30</text>
 <line x1="191" x2="191" y1="276" y2="280" stroke="#8b949e"/>
 <text x="191" y="292" text-anchor="middle" fill="#8b949e">45</text>
-<line x1="279.6666666666667" x2="279.6666666666667" y1="276" y2="280" stroke="#8b949e"/>
-<text x="279.6666666666667" y="292" text-anchor="middle" fill="#8b949e">55</text>
-<line x1="501.33333333333337" x2="501.33333333333337" y1="276" y2="280" stroke="#8b949e"/>
-<text x="501.33333333333337" y="292" text-anchor="middle" fill="#8b949e">80</text>
+<line x1="279.7" x2="279.7" y1="276" y2="280" stroke="#8b949e"/>
+<text x="279.7" y="292" text-anchor="middle" fill="#8b949e">55</text>
+<line x1="501.3" x2="501.3" y1="276" y2="280" stroke="#8b949e"/>
+<text x="501.3" y="292" text-anchor="middle" fill="#8b949e">80</text>
 <line x1="856" x2="856" y1="276" y2="280" stroke="#8b949e"/>
 <text x="856" y="292" text-anchor="middle" fill="#8b949e">120</text>
 <line x1="58" x2="856" y1="276" y2="276" stroke="#8b949e"/>
 <line x1="58" x2="58" y1="54" y2="276" stroke="#8b949e"/>
-<line x1="58" x2="856" y1="186.85714285714283" y2="186.85714285714283" stroke="#8b949e" stroke-dasharray="5 4" stroke-width="1.5"/>
-<path d="M58.0 186.9 L124.5 150.6 L191.0 134.0 L279.7 133.6 L501.3 103.8 L856.0 96.2" fill="none" stroke="#9a6700" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="186.9" r="3.5" fill="#9a6700"/>
-<circle cx="124.5" cy="150.6" r="3.5" fill="#9a6700"/>
-<circle cx="191.0" cy="134.0" r="3.5" fill="#9a6700"/>
-<circle cx="279.7" cy="133.6" r="3.5" fill="#9a6700"/>
-<circle cx="501.3" cy="103.8" r="3.5" fill="#9a6700"/>
-<circle cx="856.0" cy="96.2" r="3.5" fill="#9a6700"/>
-<path d="M58.0 186.9 L124.5 200.9 L191.0 213.7 L279.7 231.3 L501.3 230.4 L856.0 198.8" fill="none" stroke="#cf222e" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="186.9" r="3.5" fill="#cf222e"/>
-<circle cx="124.5" cy="200.9" r="3.5" fill="#cf222e"/>
-<circle cx="191.0" cy="213.7" r="3.5" fill="#cf222e"/>
-<circle cx="279.7" cy="231.3" r="3.5" fill="#cf222e"/>
-<circle cx="501.3" cy="230.4" r="3.5" fill="#cf222e"/>
-<circle cx="856.0" cy="198.8" r="3.5" fill="#cf222e"/>
-<path d="M58.0 186.9 L124.5 153.5 L191.0 137.4 L279.7 136.1 L501.3 103.7 L856.0 97.9" fill="none" stroke="#1a7f37" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="186.9" r="3.5" fill="#1a7f37"/>
-<circle cx="124.5" cy="153.5" r="3.5" fill="#1a7f37"/>
-<circle cx="191.0" cy="137.4" r="3.5" fill="#1a7f37"/>
-<circle cx="279.7" cy="136.1" r="3.5" fill="#1a7f37"/>
-<circle cx="501.3" cy="103.7" r="3.5" fill="#1a7f37"/>
-<circle cx="856.0" cy="97.9" r="3.5" fill="#1a7f37"/>
-<path d="M58.0 186.9 L124.5 183.7 L191.0 172.4 L279.7 160.1 L501.3 139.3 L856.0 123.3" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="186.9" r="3.5" fill="#316dca"/>
-<circle cx="124.5" cy="183.7" r="3.5" fill="#316dca"/>
-<circle cx="191.0" cy="172.4" r="3.5" fill="#316dca"/>
-<circle cx="279.7" cy="160.1" r="3.5" fill="#316dca"/>
-<circle cx="501.3" cy="139.3" r="3.5" fill="#316dca"/>
-<circle cx="856.0" cy="123.3" r="3.5" fill="#316dca"/>
-<line x1="62" x2="80" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5" />
+<line x1="58" x2="856" y1="202" y2="202" stroke="#8b949e" stroke-dasharray="5 4" stroke-width="1.5"/>
+<path d="M58 202 L124.5 189.6 L191 186.5 L279.7 170 L501.3 135 L856 108.9" fill="none" stroke="#9a6700" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="202" r="3.5" fill="#9a6700"/>
+<circle cx="124.5" cy="189.6" r="3.5" fill="#9a6700"/>
+<circle cx="191" cy="186.5" r="3.5" fill="#9a6700"/>
+<circle cx="279.7" cy="170" r="3.5" fill="#9a6700"/>
+<circle cx="501.3" cy="135" r="3.5" fill="#9a6700"/>
+<circle cx="856" cy="108.9" r="3.5" fill="#9a6700"/>
+<path d="M58 202 L124.5 212.9 L191 219.8 L279.7 202.3 L501.3 229.9 L856 238.4" fill="none" stroke="#cf222e" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="202" r="3.5" fill="#cf222e"/>
+<circle cx="124.5" cy="212.9" r="3.5" fill="#cf222e"/>
+<circle cx="191" cy="219.8" r="3.5" fill="#cf222e"/>
+<circle cx="279.7" cy="202.3" r="3.5" fill="#cf222e"/>
+<circle cx="501.3" cy="229.9" r="3.5" fill="#cf222e"/>
+<circle cx="856" cy="238.4" r="3.5" fill="#cf222e"/>
+<path d="M58 202 L124.5 187.2 L191 185.3 L279.7 171 L501.3 134.7 L856 107.9" fill="none" stroke="#1a7f37" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="202" r="3.5" fill="#1a7f37"/>
+<circle cx="124.5" cy="187.2" r="3.5" fill="#1a7f37"/>
+<circle cx="191" cy="185.3" r="3.5" fill="#1a7f37"/>
+<circle cx="279.7" cy="171" r="3.5" fill="#1a7f37"/>
+<circle cx="501.3" cy="134.7" r="3.5" fill="#1a7f37"/>
+<circle cx="856" cy="107.9" r="3.5" fill="#1a7f37"/>
+<path d="M58 202 L124.5 194.9 L191 180.7 L279.7 179.9 L501.3 145.5 L856 129.3" fill="none" stroke="#316dca" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="202" r="3.5" fill="#316dca"/>
+<circle cx="124.5" cy="194.9" r="3.5" fill="#316dca"/>
+<circle cx="191" cy="180.7" r="3.5" fill="#316dca"/>
+<circle cx="279.7" cy="179.9" r="3.5" fill="#316dca"/>
+<circle cx="501.3" cy="145.5" r="3.5" fill="#316dca"/>
+<circle cx="856" cy="129.3" r="3.5" fill="#316dca"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5"/>
 <text x="85" y="50" fill="#8b949e">H1 slow</text>
-<line x1="153.9" x2="171.9" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5" />
-<text x="176.9" y="50" fill="#8b949e">H1 fast</text>
-<line x1="245.8" x2="263.8" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5" />
-<text x="268.8" y="50" fill="#8b949e">H2 slow</text>
-<line x1="337.70000000000005" x2="355.70000000000005" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
-<text x="360.70000000000005" y="50" fill="#8b949e">H2 fast</text>
+<line x1="176.1" x2="194.1" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5"/>
+<text x="199.1" y="50" fill="#8b949e">H1 fast</text>
+<line x1="290.2" x2="308.2" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5"/>
+<text x="313.2" y="50" fill="#8b949e">H2 slow</text>
+<line x1="404.3" x2="422.3" y1="46" y2="46" stroke="#316dca" stroke-width="2.5"/>
+<text x="427.3" y="50" fill="#8b949e">H2 fast</text>
 <text x="457" y="314" text-anchor="middle" fill="#8b949e">DP λ (KB) — paired median time until the page’s fonts are loaded, relative to λ=30 KB (cold page)</text>
 </g>
 <g transform="translate(0 320)">
 <text x="58" y="18" fill="#8b949e">Next page</text>
 <line x1="58" x2="856" y1="276" y2="276" stroke="#8b949e" stroke-opacity="0.25"/>
 <text x="50" y="280" text-anchor="end" fill="#8b949e">0.6</text>
-<line x1="58" x2="856" y1="234.40000000000003" y2="234.40000000000003" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="238.40000000000003" text-anchor="end" fill="#8b949e">0.7</text>
-<line x1="58" x2="856" y1="192.8" y2="192.8" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="196.8" text-anchor="end" fill="#8b949e">0.8</text>
-<line x1="58" x2="856" y1="151.2" y2="151.2" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="155.2" text-anchor="end" fill="#8b949e">0.9</text>
-<line x1="58" x2="856" y1="109.60000000000002" y2="109.60000000000002" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="113.60000000000002" text-anchor="end" fill="#8b949e">1</text>
-<line x1="58" x2="856" y1="68" y2="68" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="72" text-anchor="end" fill="#8b949e">1.1</text>
+<line x1="58" x2="856" y1="231.6" y2="231.6" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="235.6" text-anchor="end" fill="#8b949e">0.7</text>
+<line x1="58" x2="856" y1="187.2" y2="187.2" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="191.2" text-anchor="end" fill="#8b949e">0.8</text>
+<line x1="58" x2="856" y1="142.8" y2="142.8" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="146.8" text-anchor="end" fill="#8b949e">0.9</text>
+<line x1="58" x2="856" y1="98.4" y2="98.4" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="102.4" text-anchor="end" fill="#8b949e">1.0</text>
+<line x1="58" x2="856" y1="54" y2="54" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="58" text-anchor="end" fill="#8b949e">1.1</text>
 <line x1="58" x2="58" y1="276" y2="280" stroke="#8b949e"/>
 <text x="58" y="292" text-anchor="middle" fill="#8b949e">30</text>
 <line x1="191" x2="191" y1="276" y2="280" stroke="#8b949e"/>
 <text x="191" y="292" text-anchor="middle" fill="#8b949e">45</text>
-<line x1="279.6666666666667" x2="279.6666666666667" y1="276" y2="280" stroke="#8b949e"/>
-<text x="279.6666666666667" y="292" text-anchor="middle" fill="#8b949e">55</text>
-<line x1="501.33333333333337" x2="501.33333333333337" y1="276" y2="280" stroke="#8b949e"/>
-<text x="501.33333333333337" y="292" text-anchor="middle" fill="#8b949e">80</text>
+<line x1="279.7" x2="279.7" y1="276" y2="280" stroke="#8b949e"/>
+<text x="279.7" y="292" text-anchor="middle" fill="#8b949e">55</text>
+<line x1="501.3" x2="501.3" y1="276" y2="280" stroke="#8b949e"/>
+<text x="501.3" y="292" text-anchor="middle" fill="#8b949e">80</text>
 <line x1="856" x2="856" y1="276" y2="280" stroke="#8b949e"/>
 <text x="856" y="292" text-anchor="middle" fill="#8b949e">120</text>
 <line x1="58" x2="856" y1="276" y2="276" stroke="#8b949e"/>
 <line x1="58" x2="58" y1="54" y2="276" stroke="#8b949e"/>
-<line x1="58" x2="856" y1="109.60000000000002" y2="109.60000000000002" stroke="#8b949e" stroke-dasharray="5 4" stroke-width="1.5"/>
-<path d="M58.0 109.6 L124.5 123.7 L191.0 137.7 L279.7 149.4 L501.3 161.4 L856.0 153.9" fill="none" stroke="#9a6700" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="109.6" r="3.5" fill="#9a6700"/>
-<circle cx="124.5" cy="123.7" r="3.5" fill="#9a6700"/>
-<circle cx="191.0" cy="137.7" r="3.5" fill="#9a6700"/>
-<circle cx="279.7" cy="149.4" r="3.5" fill="#9a6700"/>
-<circle cx="501.3" cy="161.4" r="3.5" fill="#9a6700"/>
-<circle cx="856.0" cy="153.9" r="3.5" fill="#9a6700"/>
-<path d="M58.0 109.6 L124.5 133.6 L191.0 167.4 L279.7 176.0 L501.3 219.3 L856.0 242.2" fill="none" stroke="#cf222e" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="109.6" r="3.5" fill="#cf222e"/>
-<circle cx="124.5" cy="133.6" r="3.5" fill="#cf222e"/>
-<circle cx="191.0" cy="167.4" r="3.5" fill="#cf222e"/>
-<circle cx="279.7" cy="176.0" r="3.5" fill="#cf222e"/>
-<circle cx="501.3" cy="219.3" r="3.5" fill="#cf222e"/>
-<circle cx="856.0" cy="242.2" r="3.5" fill="#cf222e"/>
-<path d="M58.0 109.6 L124.5 120.2 L191.0 137.8 L279.7 142.7 L501.3 150.7 L856.0 139.3" fill="none" stroke="#1a7f37" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="109.6" r="3.5" fill="#1a7f37"/>
-<circle cx="124.5" cy="120.2" r="3.5" fill="#1a7f37"/>
-<circle cx="191.0" cy="137.8" r="3.5" fill="#1a7f37"/>
-<circle cx="279.7" cy="142.7" r="3.5" fill="#1a7f37"/>
-<circle cx="501.3" cy="150.7" r="3.5" fill="#1a7f37"/>
-<circle cx="856.0" cy="139.3" r="3.5" fill="#1a7f37"/>
-<path d="M58.0 109.6 L124.5 128.6 L191.0 144.6 L279.7 145.0 L501.3 165.3 L856.0 164.5" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
-<circle cx="58.0" cy="109.6" r="3.5" fill="#316dca"/>
-<circle cx="124.5" cy="128.6" r="3.5" fill="#316dca"/>
-<circle cx="191.0" cy="144.6" r="3.5" fill="#316dca"/>
-<circle cx="279.7" cy="145.0" r="3.5" fill="#316dca"/>
-<circle cx="501.3" cy="165.3" r="3.5" fill="#316dca"/>
-<circle cx="856.0" cy="164.5" r="3.5" fill="#316dca"/>
-<line x1="62" x2="80" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5" />
+<line x1="58" x2="856" y1="98.4" y2="98.4" stroke="#8b949e" stroke-dasharray="5 4" stroke-width="1.5"/>
+<path d="M58 98.4 L124.5 99.1 L191 105.3 L279.7 126.3 L501.3 147.8 L856 175.5" fill="none" stroke="#9a6700" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="98.4" r="3.5" fill="#9a6700"/>
+<circle cx="124.5" cy="99.1" r="3.5" fill="#9a6700"/>
+<circle cx="191" cy="105.3" r="3.5" fill="#9a6700"/>
+<circle cx="279.7" cy="126.3" r="3.5" fill="#9a6700"/>
+<circle cx="501.3" cy="147.8" r="3.5" fill="#9a6700"/>
+<circle cx="856" cy="175.5" r="3.5" fill="#9a6700"/>
+<path d="M58 98.4 L124.5 100 L191 131.3 L279.7 160.4 L501.3 205.7 L856 232.8" fill="none" stroke="#cf222e" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="98.4" r="3.5" fill="#cf222e"/>
+<circle cx="124.5" cy="100" r="3.5" fill="#cf222e"/>
+<circle cx="191" cy="131.3" r="3.5" fill="#cf222e"/>
+<circle cx="279.7" cy="160.4" r="3.5" fill="#cf222e"/>
+<circle cx="501.3" cy="205.7" r="3.5" fill="#cf222e"/>
+<circle cx="856" cy="232.8" r="3.5" fill="#cf222e"/>
+<path d="M58 98.4 L124.5 98 L191 96.2 L279.7 128.4 L501.3 142.1 L856 172.2" fill="none" stroke="#1a7f37" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="98.4" r="3.5" fill="#1a7f37"/>
+<circle cx="124.5" cy="98" r="3.5" fill="#1a7f37"/>
+<circle cx="191" cy="96.2" r="3.5" fill="#1a7f37"/>
+<circle cx="279.7" cy="128.4" r="3.5" fill="#1a7f37"/>
+<circle cx="501.3" cy="142.1" r="3.5" fill="#1a7f37"/>
+<circle cx="856" cy="172.2" r="3.5" fill="#1a7f37"/>
+<path d="M58 98.4 L124.5 84.4 L191 107.3 L279.7 140.9 L501.3 134.7 L856 165.6" fill="none" stroke="#316dca" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="58" cy="98.4" r="3.5" fill="#316dca"/>
+<circle cx="124.5" cy="84.4" r="3.5" fill="#316dca"/>
+<circle cx="191" cy="107.3" r="3.5" fill="#316dca"/>
+<circle cx="279.7" cy="140.9" r="3.5" fill="#316dca"/>
+<circle cx="501.3" cy="134.7" r="3.5" fill="#316dca"/>
+<circle cx="856" cy="165.6" r="3.5" fill="#316dca"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5"/>
 <text x="85" y="50" fill="#8b949e">H1 slow</text>
-<line x1="153.9" x2="171.9" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5" />
-<text x="176.9" y="50" fill="#8b949e">H1 fast</text>
-<line x1="245.8" x2="263.8" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5" />
-<text x="268.8" y="50" fill="#8b949e">H2 slow</text>
-<line x1="337.70000000000005" x2="355.70000000000005" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
-<text x="360.70000000000005" y="50" fill="#8b949e">H2 fast</text>
+<line x1="176.1" x2="194.1" y1="46" y2="46" stroke="#cf222e" stroke-width="2.5"/>
+<text x="199.1" y="50" fill="#8b949e">H1 fast</text>
+<line x1="290.2" x2="308.2" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5"/>
+<text x="313.2" y="50" fill="#8b949e">H2 slow</text>
+<line x1="404.3" x2="422.3" y1="46" y2="46" stroke="#316dca" stroke-width="2.5"/>
+<text x="427.3" y="50" fill="#8b949e">H2 fast</text>
 <text x="457" y="314" text-anchor="middle" fill="#8b949e">DP λ (KB) — paired median, relative to λ=30 KB (next page: cold cache for the new page’s chunks)</text>
 </g>
 </svg>

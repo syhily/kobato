@@ -10,13 +10,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [features]
-corpus = ["dep:memchr", "dep:opencc-fmmseg"]
 bench = []
-
-[[bin]]
-name = "corpus"
-path = "src/bin/corpus/main.rs"
-required-features = ["corpus"]
 
 [dependencies]
 harfbuzz_rs_now = "2.3.2"
@@ -27,10 +21,8 @@ rayon = "1.10.0"
 woff = "0.6.4"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "now"] }
 indexmap = "2.14.2"
-memchr = { version = "2.8.3", optional = true }
 napi = { version = "3.16.3", features = ["napi10", "async"] }
 napi-derive = "3.7.2"
-opencc-fmmseg = { version = "0.13.1", optional = true }
 
 [build-dependencies]
 napi-build = "2.7.0"

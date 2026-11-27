@@ -3,11 +3,12 @@ import { INKLING_UNIT_INCLUDE } from '@kobato/test/projects/inkling-unit'
 import {
   allTestProjects,
   demoUnitConfigPath,
+  fontSplitUnitConfigPath,
   inklingUnitConfigPath,
   packUnitConfigPath,
   traceUnitConfigPath,
 } from '@kobato/test/projects/registry'
-import { PACK_UNIT_INCLUDE, TRACE_UNIT_INCLUDE } from '@kobato/test/projects/unit-includes'
+import { FONT_SPLIT_UNIT_INCLUDE, PACK_UNIT_INCLUDE, TRACE_UNIT_INCLUDE } from '@kobato/test/projects/unit-includes'
 import { vitestTestBase } from '@kobato/test/vitest.base'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -60,6 +61,7 @@ const PINNED_CONFIG_PATH_ENTRIES = [
   demoUnitConfigPath,
   packUnitConfigPath,
   traceUnitConfigPath,
+  fontSplitUnitConfigPath,
 ] as const
 
 const VM_THREAD_PROJECTS = [
@@ -84,7 +86,7 @@ const ISOLATED_PROJECTS = [
   'app-duckdb',
 ] as const
 
-const PATH_CONFIG_THREAD_PROJECTS = ['pack-unit', 'trace-unit'] as const
+const PATH_CONFIG_THREAD_PROJECTS = ['pack-unit', 'trace-unit', 'font-split-unit'] as const
 
 const ISOLATE_CONSTRAINT =
   'isolate: false is a hard constraint (AGENTS.md): rename the file to *.iso.test.ts instead of flipping the default'
@@ -138,6 +140,7 @@ function configPathIncludes(): Array<readonly [readonly string[], string]> {
     [DEMO_UNIT_INCLUDE, 'demo-unit'],
     [PACK_UNIT_INCLUDE, 'pack-unit'],
     [TRACE_UNIT_INCLUDE, 'trace-unit'],
+    [FONT_SPLIT_UNIT_INCLUDE, 'font-split-unit'],
   ] as const
 }
 
@@ -288,11 +291,12 @@ describe('vitest project registry', () => {
       [demoUnitConfigPath, 'demoUnitProject('],
       [packUnitConfigPath, 'PACK_UNIT_INCLUDE'],
       [traceUnitConfigPath, 'TRACE_UNIT_INCLUDE'],
+      [fontSplitUnitConfigPath, 'FONT_SPLIT_UNIT_INCLUDE'],
     ]
     for (const [path, marker] of sourceChecks) {
       expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toContain(marker)
     }
-    for (const path of [packUnitConfigPath, traceUnitConfigPath]) {
+    for (const path of [packUnitConfigPath, traceUnitConfigPath, fontSplitUnitConfigPath]) {
       expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toContain('vitestTestBase')
     }
     for (const path of [

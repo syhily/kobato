@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "measured": "2026-11-27",
+  "source": "cn-font-split 7.6.8 wasm core (git 120cbd7cd), css.fontFamily \"OPPOSerif\"",
+  "font": {
+    "file": "calendar.ttf",
+    "sha256": "a5de98d4a3d3bca39a1b677d4096983c178ffd8607cb1635ea24bba466ccff07"
+  },
+  "chunks": 655,
+  "chunkBytes": 30323800,
+  "cssBytes": 243421,
+  "corpora": {
+    "hans": {
+      "chunks": 655,
+      "totalBytes": 30323800,
+      "cssBytes": 243421,
+      "pages": 64,
+      "coldMeanBytes": 2882133.3125,
+      "coldP90Bytes": 3931380,
+      "coldMeanChunks": 75.5625,
+      "coldP90Chunks": 94,
+      "coldMaxChunks": 128,
+      "sessionMeanBytes": 4929454.461538462,
+      "sessionMeanChunks": 113.84615384615384,
+      "incrementalMeanBytes": 838756,
+      "nextMeanBytes": 822032.9732142857,
+      "nextMeanChunks": 15.629960317460318,
+      "bySize": [
+        {
+          "band": "<300",
+          "pages": 3,
+          "meanBytes": 1981645.3333333333,
+          "meanChunks": 60
+        },
+        {
+          "band": "300-399",
+          "pages": 12,
+          "meanBytes": 2442235.6666666665,
+          "meanChunks": 66.75
+        },
+        {
+          "band": "400-499",
+          "pages": 13,
+          "meanBytes": 2399861.846153846,
+          "meanChunks": 67.23076923076923
+        },
+        {
+          "band": "500-699",
+          "pages": 21,
+          "meanBytes": 2856280.380952381,
+          "meanChunks": 75.14285714285714
+        },
+        {
+          "band": "700+",
+          "pages": 15,
+          "meanBytes": 3868311.7333333334,
+          "meanChunks": 93.53333333333333
+        }
+      ]
+    },
+    "hant": {
+      "chunks": 655,
+      "totalBytes": 30323800,
+      "cssBytes": 243421,
+      "pages": 64,
+      "coldMeanBytes": 4158271,
+      "coldP90Bytes": 5876080,
+      "coldMeanChunks": 123.015625,
+      "coldP90Chunks": 161,
+      "coldMaxChunks": 201,
+      "sessionMeanBytes": 7612228.923076923,
+      "sessionMeanChunks": 193.92307692307693,
+      "incrementalMeanBytes": 1403871.111111111,
+      "nextMeanBytes": 1372661.2738095238,
+      "nextMeanChunks": 29.699156746031747,
+      "bySize": [
+        {
+          "band": "<300",
+          "pages": 3,
+          "meanBytes": 2504765.3333333335,
+          "meanChunks": 84.33333333333333
+        },
+        {
+          "band": "300-399",
+          "pages": 12,
+          "meanBytes": 3301930.6666666665,
+          "meanChunks": 104.41666666666667
+        },
+        {
+          "band": "400-499",
+          "pages": 13,
+          "meanBytes": 3502273.230769231,
+          "meanChunks": 110.07692307692308
+        },
+        {
+          "band": "500-699",
+          "pages": 21,
+          "meanBytes": 4094219.8095238097,
+          "meanChunks": 121.66666666666667
+        },
+        {
+          "band": "700+",
+          "pages": 15,
+          "meanBytes": 5832247.466666667,
+          "meanChunks": 158.73333333333332
+        }
+      ]
+    },
+    "blog": {
+      "chunks": 655,
+      "totalBytes": 30323800,
+      "cssBytes": 243421,
+      "pages": 234,
+      "coldMeanBytes": 2637816.376068376,
+      "coldP90Bytes": 3364124,
+      "coldMeanChunks": 69.95726495726495,
+      "coldP90Chunks": 84,
+      "coldMaxChunks": 103,
+      "sessionMeanBytes": 4129867.744680851,
+      "sessionMeanChunks": 98.19148936170212,
+      "incrementalMeanBytes": 659262.008583691,
+      "nextMeanBytes": 674404.7511096438,
+      "nextMeanChunks": 13.03807637284032,
+      "bySize": [
+        {
+          "band": "<300",
+          "pages": 40,
+          "meanBytes": 1896526.8,
+          "meanChunks": 55.175
+        },
+        {
+          "band": "300-399",
+          "pages": 74,
+          "meanBytes": 2603958.378378378,
+          "meanChunks": 69.29729729729729
+        },
+        {
+          "band": "400-499",
+          "pages": 72,
+          "meanBytes": 2775489.6666666665,
+          "meanChunks": 72.66666666666667
+        },
+        {
+          "band": "500-699",
+          "pages": 35,
+          "meanBytes": 3024074.1714285715,
+          "meanChunks": 77.88571428571429
+        },
+        {
+          "band": "700+",
+          "pages": 13,
+          "meanBytes": 3309014.4615384615,
+          "meanChunks": 82.84615384615384
+        }
+      ]
+    }
+  }
+}

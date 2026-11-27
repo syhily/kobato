@@ -1,6 +1,6 @@
 # Character document frequencies for Kobato font slicing (dimension: zh-hant (OpenCC s2t)).
 # Source: https://dumps.wikimedia.org/zhwiki/20261101/zhwiki-20261101-pages-articles-multistream.xml.bz2 (Wikimedia dump, article text CC BY-SA 4.0; frequency counts and codepoint sets are factual data)
-# Generator: pnpm --filter @kobato/font-split run corpus:build (src/bin/corpus)
+# Generator: pnpm --filter @kobato/font-split run corpus:build (tools/font-split/scripts/corpus)
 # Pipeline: ns0 non-redirect pages, wikitext-cleaned, OpenCC-converted; per-document distinct counts s2t; fixture pages (page_id % 2003 == 7) excluded
 # Documents: 1563100
 # Cut: df >= 2 (21211 of 28205 codepoints kept)

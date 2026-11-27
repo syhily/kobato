@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./tests/*": "./tests/*",
     "./*": [
       "./src/*.ts",
       "./src/*.tsx"

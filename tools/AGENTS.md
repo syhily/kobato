@@ -11,7 +11,10 @@ in the product; `font-split` is the ONE exception.
 - `trace` — OpenObserve DEV container tooling.
 - `font-split` — a vendored cn-font-split Rust fork compiled into a Node-API addon the production server loads at
   runtime, reached only through `nativeRequire('@kobato/font-split/font-split.node')` (a specifier string, not an
-  import). The workspace link sits in the ROOT `package.json` with the other production natives.
+  import). The workspace link sits in the ROOT `package.json` with the other production natives. The crate is the addon
+  only; its local-only tooling (the corpus pipeline, the CJK table generator, the benchmark toolchain behind
+  `pnpm run bench:font-split`) is TypeScript under `scripts/`, imported through the `@kobato/font-split/scripts/*`
+  export.
 
 ## Boundary rules
 

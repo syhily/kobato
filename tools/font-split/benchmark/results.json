@@ -1,0 +1,4430 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-27T01:43:51.580Z",
+  "quick": false,
+  "machine": {
+    "platform": "darwin",
+    "arch": "x64",
+    "cpu": "Intel(R) Xeon(R) W-2191B CPU @ 2.30GHz",
+    "cpus": 36,
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09) (Homebrew)",
+    "node": "v26.13.1"
+  },
+  "fonts": [
+    {
+      "key": "calendar",
+      "label": "OPPOSerif",
+      "file": "calendar.ttf",
+      "bytes": 40144936,
+      "sha256": "a5de98d4a3d3bca39a1b677d4096983c178ffd8607cb1635ea24bba466ccff07"
+    },
+    {
+      "key": "og",
+      "label": "og",
+      "file": "og.ttf",
+      "bytes": 22741096,
+      "sha256": "6c7d5864c661516e1f400d9f21e4297f2e2a0719909691e29607cc4ef484a9f4"
+    }
+  ],
+  "startedAt": "2026-11-27T01:43:51.545Z",
+  "commit": "4dc336e8b",
+  "pageCost": {
+    "fixture": {
+      "hans": {
+        "chunks": 69,
+        "totalBytes": 1501972,
+        "cssBytes": 40441,
+        "pages": 64,
+        "coldMeanBytes": 935265.75,
+        "coldP90Bytes": 1147088,
+        "coldMeanChunks": 29.140625,
+        "coldP90Chunks": 48,
+        "coldMaxChunks": 61,
+        "sessionMeanBytes": 1278362.1538461538,
+        "sessionMeanChunks": 55.76923076923077,
+        "incrementalMeanBytes": 145218.9841269841,
+        "nextMeanBytes": 141612.23015873015,
+        "nextMeanChunks": 11.261160714285714,
+        "bySize": [
+          {
+            "band": "<300",
+            "pages": 3,
+            "meanBytes": 753790.6666666666,
+            "meanChunks": 16.666666666666668
+          },
+          {
+            "band": "300-399",
+            "pages": 12,
+            "meanBytes": 841070,
+            "meanChunks": 21.333333333333332
+          },
+          {
+            "band": "400-499",
+            "pages": 13,
+            "meanBytes": 881657.2307692308,
+            "meanChunks": 24.384615384615383
+          },
+          {
+            "band": "500-699",
+            "pages": 21,
+            "meanBytes": 925673.7142857143,
+            "meanChunks": 28
+          },
+          {
+            "band": "700+",
+            "pages": 15,
+            "meanBytes": 1106806.9333333333,
+            "meanChunks": 43.6
+          }
+        ]
+      },
+      "hant": {
+        "chunks": 69,
+        "totalBytes": 1501972,
+        "cssBytes": 40441,
+        "pages": 64,
+        "coldMeanBytes": 875030.75,
+        "coldP90Bytes": 1053664,
+        "coldMeanChunks": 24.703125,
+        "coldP90Chunks": 40,
+        "coldMaxChunks": 54,
+        "sessionMeanBytes": 1198705.5384615385,
+        "sessionMeanChunks": 49.69230769230769,
+        "incrementalMeanBytes": 127330.09523809524,
+        "nextMeanBytes": 123422.00396825396,
+        "nextMeanChunks": 9.378224206349206,
+        "bySize": [
+          {
+            "band": "<300",
+            "pages": 3,
+            "meanBytes": 677276,
+            "meanChunks": 14
+          },
+          {
+            "band": "300-399",
+            "pages": 12,
+            "meanBytes": 787573.3333333334,
+            "meanChunks": 18.25
+          },
+          {
+            "band": "400-499",
+            "pages": 13,
+            "meanBytes": 833491.3846153846,
+            "meanChunks": 20.846153846153847
+          },
+          {
+            "band": "500-699",
+            "pages": 21,
+            "meanBytes": 868886.0952380953,
+            "meanChunks": 23.61904761904762
+          },
+          {
+            "band": "700+",
+            "pages": 15,
+            "meanBytes": 1029150.9333333333,
+            "meanChunks": 36.86666666666667
+          }
+        ]
+      },
+      "blog": {
+        "chunks": 69,
+        "totalBytes": 1501972,
+        "cssBytes": 40441,
+        "pages": 234,
+        "coldMeanBytes": 1030864.8376068376,
+        "coldP90Bytes": 1212728,
+        "coldMeanChunks": 34.64957264957265,
+        "coldP90Chunks": 48,
+        "coldMaxChunks": 68,
+        "sessionMeanBytes": 1418430.2978723405,
+        "sessionMeanChunks": 62.638297872340424,
+        "incrementalMeanBytes": 179327.57081545066,
+        "nextMeanBytes": 180847.86258757932,
+        "nextMeanChunks": 12.937419757162246,
+        "bySize": [
+          {
+            "band": "<300",
+            "pages": 40,
+            "meanBytes": 860666.9,
+            "meanChunks": 23.55
+          },
+          {
+            "band": "300-399",
+            "pages": 74,
+            "meanBytes": 1014757.1351351351,
+            "meanChunks": 33.229729729729726
+          },
+          {
+            "band": "400-499",
+            "pages": 72,
+            "meanBytes": 1064297.111111111,
+            "meanChunks": 36.68055555555556
+          },
+          {
+            "band": "500-699",
+            "pages": 35,
+            "meanBytes": 1117927.7714285713,
+            "meanChunks": 40.94285714285714
+          },
+          {
+            "band": "700+",
+            "pages": 13,
+            "meanBytes": 1226677.2307692308,
+            "meanChunks": 48.69230769230769
+          }
+        ]
+      }
+    },
+    "sweep": {
+      "calendar": [
+        {
+          "lambdaKb": 20,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 832,
+              "totalBytes": 25511328,
+              "cssBytes": 310935,
+              "pages": 64,
+              "coldMeanBytes": 1578640.125,
+              "coldP90Bytes": 2246448,
+              "coldMeanChunks": 94.3125,
+              "coldP90Chunks": 166,
+              "coldMaxChunks": 250,
+              "sessionMeanBytes": 3275455.6923076925,
+              "sessionMeanChunks": 220.53846153846155,
+              "incrementalMeanBytes": 616517.3333333334,
+              "nextMeanBytes": 603917.9861111111,
+              "nextMeanChunks": 51.510912698412696,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 953704,
+                  "meanChunks": 39.666666666666664
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1262664,
+                  "meanChunks": 61.833333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1255550.4615384615,
+                  "meanChunks": 68.92307692307692
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1530888.380952381,
+                  "meanChunks": 88.95238095238095
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2303271.7333333334,
+                  "meanChunks": 160.73333333333332
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 832,
+              "totalBytes": 25511328,
+              "cssBytes": 310935,
+              "pages": 64,
+              "coldMeanBytes": 2094325.9375,
+              "coldP90Bytes": 3165720,
+              "coldMeanChunks": 127.28125,
+              "coldP90Chunks": 219,
+              "coldMaxChunks": 359,
+              "sessionMeanBytes": 4410627.384615385,
+              "sessionMeanChunks": 307.9230769230769,
+              "incrementalMeanBytes": 819353.5238095238,
+              "nextMeanBytes": 804268.2728174604,
+              "nextMeanChunks": 70.68799603174604,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1262404,
+                  "meanChunks": 53.333333333333336
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1655261.6666666667,
+                  "meanChunks": 83
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1673913.5384615385,
+                  "meanChunks": 93.15384615384616
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2002809.7142857143,
+                  "meanChunks": 117.28571428571429
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3104441.8666666667,
+                  "meanChunks": 221.06666666666666
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 832,
+              "totalBytes": 25511328,
+              "cssBytes": 310935,
+              "pages": 234,
+              "coldMeanBytes": 1593303.0256410257,
+              "coldP90Bytes": 2143648,
+              "coldMeanChunks": 90.9957264957265,
+              "coldP90Chunks": 126,
+              "coldMaxChunks": 225,
+              "sessionMeanBytes": 3151668.255319149,
+              "sessionMeanChunks": 203.9787234042553,
+              "incrementalMeanBytes": 571597.6309012875,
+              "nextMeanBytes": 584782.1264810535,
+              "nextMeanChunks": 47.214097061736545,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1133793.1,
+                  "meanChunks": 51.375
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1516564.3783783785,
+                  "meanChunks": 83.97297297297297
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1652554.8333333333,
+                  "meanChunks": 96.70833333333333
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 1905189.3714285714,
+                  "meanChunks": 117.2
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2276141.846153846,
+                  "meanChunks": 150.69230769230768
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 25,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 802,
+              "totalBytes": 25477124,
+              "cssBytes": 304966,
+              "pages": 64,
+              "coldMeanBytes": 1600924.5,
+              "coldP90Bytes": 2241780,
+              "coldMeanChunks": 84.890625,
+              "coldP90Chunks": 154,
+              "coldMaxChunks": 229,
+              "sessionMeanBytes": 3256536.6153846155,
+              "sessionMeanChunks": 202.15384615384616,
+              "incrementalMeanBytes": 599520.7619047619,
+              "nextMeanBytes": 582087.3333333334,
+              "nextMeanChunks": 46.67832341269841,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1001974.6666666666,
+                  "meanChunks": 36
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1302052,
+                  "meanChunks": 56.333333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1295004.3076923077,
+                  "meanChunks": 62.92307692307692
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1555748.380952381,
+                  "meanChunks": 79.47619047619048
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2288189.8666666667,
+                  "meanChunks": 144.13333333333333
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 802,
+              "totalBytes": 25477124,
+              "cssBytes": 304966,
+              "pages": 64,
+              "coldMeanBytes": 2141597.5,
+              "coldP90Bytes": 3099888,
+              "coldMeanChunks": 115.96875,
+              "coldP90Chunks": 199,
+              "coldMaxChunks": 328,
+              "sessionMeanBytes": 4401579.076923077,
+              "sessionMeanChunks": 282.15384615384613,
+              "incrementalMeanBytes": 795435.4285714285,
+              "nextMeanBytes": 772380.4821428572,
+              "nextMeanChunks": 63.24702380952381,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1330338.6666666667,
+                  "meanChunks": 50.333333333333336
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1717970.6666666667,
+                  "meanChunks": 75.83333333333333
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1740321.2307692308,
+                  "meanChunks": 86
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2059311.8095238095,
+                  "meanChunks": 107.38095238095238
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3105723.466666667,
+                  "meanChunks": 199.2
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 802,
+              "totalBytes": 25477124,
+              "cssBytes": 304966,
+              "pages": 234,
+              "coldMeanBytes": 1629719.5897435897,
+              "coldP90Bytes": 2188920,
+              "coldMeanChunks": 83.61965811965813,
+              "coldP90Chunks": 119,
+              "coldMaxChunks": 210,
+              "sessionMeanBytes": 3158575.659574468,
+              "sessionMeanChunks": 188.40425531914894,
+              "incrementalMeanBytes": 555557.2360515022,
+              "nextMeanBytes": 568359.7627379773,
+              "nextMeanChunks": 43.04429404643997,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1181818.1,
+                  "meanChunks": 48.1
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1559626.6486486488,
+                  "meanChunks": 77.5945945945946
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1686119.3333333333,
+                  "meanChunks": 88.5
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 1927914.0571428572,
+                  "meanChunks": 106.85714285714286
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2291669.5384615385,
+                  "meanChunks": 137.6153846153846
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 30,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 776,
+              "totalBytes": 25447704,
+              "cssBytes": 299753,
+              "pages": 64,
+              "coldMeanBytes": 1634369.3125,
+              "coldP90Bytes": 2222160,
+              "coldMeanChunks": 77.84375,
+              "coldP90Chunks": 140,
+              "coldMaxChunks": 212,
+              "sessionMeanBytes": 3235391.3846153845,
+              "sessionMeanChunks": 185.76923076923077,
+              "incrementalMeanBytes": 575949.2698412698,
+              "nextMeanBytes": 562282.0783730159,
+              "nextMeanChunks": 42.32490079365079,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1050198.6666666667,
+                  "meanChunks": 33
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1346260,
+                  "meanChunks": 52.083333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1332279.076923077,
+                  "meanChunks": 57.30769230769231
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1586663.0476190476,
+                  "meanChunks": 72.57142857142857
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2310291.2,
+                  "meanChunks": 132.6
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 776,
+              "totalBytes": 25447704,
+              "cssBytes": 299753,
+              "pages": 64,
+              "coldMeanBytes": 2194632.875,
+              "coldP90Bytes": 3153440,
+              "coldMeanChunks": 107.578125,
+              "coldP90Chunks": 176,
+              "coldMaxChunks": 302,
+              "sessionMeanBytes": 4376316.307692308,
+              "sessionMeanChunks": 259.53846153846155,
+              "incrementalMeanBytes": 761239.4285714285,
+              "nextMeanBytes": 743969.5952380953,
+              "nextMeanChunks": 57.120287698412696,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1409861.3333333333,
+                  "meanChunks": 48
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1789995.6666666667,
+                  "meanChunks": 71.66666666666667
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1805042.1538461538,
+                  "meanChunks": 80.53846153846153
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2114402.8571428573,
+                  "meanChunks": 99.23809523809524
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3125264.2666666666,
+                  "meanChunks": 183.33333333333334
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 776,
+              "totalBytes": 25447704,
+              "cssBytes": 299753,
+              "pages": 234,
+              "coldMeanBytes": 1658193.2478632478,
+              "coldP90Bytes": 2191928,
+              "coldMeanChunks": 76.07692307692308,
+              "coldP90Chunks": 106,
+              "coldMaxChunks": 192,
+              "sessionMeanBytes": 3147715.14893617,
+              "sessionMeanChunks": 172.74468085106383,
+              "incrementalMeanBytes": 539084.3776824034,
+              "nextMeanBytes": 551674.9376031694,
+              "nextMeanChunks": 39.22545027695242,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1226362.4,
+                  "meanChunks": 44.325
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1589761.4054054054,
+                  "meanChunks": 70.48648648648648
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1713902.111111111,
+                  "meanChunks": 80.68055555555556
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 1942937.2571428572,
+                  "meanChunks": 96.48571428571428
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2301278.769230769,
+                  "meanChunks": 125.15384615384616
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 37.5,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 750,
+              "totalBytes": 25417932,
+              "cssBytes": 294626,
+              "pages": 64,
+              "coldMeanBytes": 1674374.75,
+              "coldP90Bytes": 2248984,
+              "coldMeanChunks": 71.9375,
+              "coldP90Chunks": 126,
+              "coldMaxChunks": 192,
+              "sessionMeanBytes": 3241356,
+              "sessionMeanChunks": 171.69230769230768,
+              "incrementalMeanBytes": 557624.4444444445,
+              "nextMeanBytes": 546799.0674603175,
+              "nextMeanChunks": 38.58779761904762,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1115740,
+                  "meanChunks": 32
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1392101,
+                  "meanChunks": 48.416666666666664
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1388816,
+                  "meanChunks": 53.92307692307692
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1628603.0476190476,
+                  "meanChunks": 66.80952380952381
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2323485.3333333335,
+                  "meanChunks": 121.53333333333333
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 750,
+              "totalBytes": 25417932,
+              "cssBytes": 294626,
+              "pages": 64,
+              "coldMeanBytes": 2257666.0625,
+              "coldP90Bytes": 3132216,
+              "coldMeanChunks": 100.0625,
+              "coldP90Chunks": 169,
+              "coldMaxChunks": 278,
+              "sessionMeanBytes": 4385923.692307692,
+              "sessionMeanChunks": 239.07692307692307,
+              "incrementalMeanBytes": 736951.9365079365,
+              "nextMeanBytes": 723972.2371031746,
+              "nextMeanChunks": 51.683035714285715,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1478868,
+                  "meanChunks": 46.333333333333336
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1868516.3333333333,
+                  "meanChunks": 68.25
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1889410.4615384615,
+                  "meanChunks": 76.6923076923077
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2181451.619047619,
+                  "meanChunks": 92.04761904761905
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3150600.533333333,
+                  "meanChunks": 167.73333333333332
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 750,
+              "totalBytes": 25417932,
+              "cssBytes": 294626,
+              "pages": 234,
+              "coldMeanBytes": 1696010.1025641025,
+              "coldP90Bytes": 2224624,
+              "coldMeanChunks": 70.24358974358974,
+              "coldP90Chunks": 101,
+              "coldMaxChunks": 181,
+              "sessionMeanBytes": 3150187.489361702,
+              "sessionMeanChunks": 159.08510638297872,
+              "incrementalMeanBytes": 522360.0858369099,
+              "nextMeanBytes": 534939.5730897619,
+              "nextMeanChunks": 35.60751623197975,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1276741.8,
+                  "meanChunks": 41.775
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1632197.4594594594,
+                  "meanChunks": 65.39189189189189
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1752243.0555555555,
+                  "meanChunks": 74.45833333333333
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 1967480,
+                  "meanChunks": 88.31428571428572
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2306983.076923077,
+                  "meanChunks": 113.46153846153847
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 45,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 729,
+              "totalBytes": 25392484,
+              "cssBytes": 290422,
+              "pages": 64,
+              "coldMeanBytes": 1702391.9375,
+              "coldP90Bytes": 2203420,
+              "coldMeanChunks": 65.875,
+              "coldP90Chunks": 116,
+              "coldMaxChunks": 184,
+              "sessionMeanBytes": 3212915.6923076925,
+              "sessionMeanChunks": 157.69230769230768,
+              "incrementalMeanBytes": 537980.4444444445,
+              "nextMeanBytes": 523137.5486111111,
+              "nextMeanChunks": 34.91269841269841,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1147369.3333333333,
+                  "meanChunks": 29.666666666666668
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1438260,
+                  "meanChunks": 44.833333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1420992,
+                  "meanChunks": 48.76923076923077
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1657808.1904761905,
+                  "meanChunks": 61.142857142857146
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2330999.2,
+                  "meanChunks": 111.4
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 729,
+              "totalBytes": 25392484,
+              "cssBytes": 290422,
+              "pages": 64,
+              "coldMeanBytes": 2314938.625,
+              "coldP90Bytes": 3165792,
+              "coldMeanChunks": 93.65625,
+              "coldP90Chunks": 161,
+              "coldMaxChunks": 263,
+              "sessionMeanBytes": 4366624.923076923,
+              "sessionMeanChunks": 220.92307692307693,
+              "incrementalMeanBytes": 715314.2222222222,
+              "nextMeanBytes": 697692.6448412698,
+              "nextMeanChunks": 46.74702380952381,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1540873.3333333333,
+                  "meanChunks": 45
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1949034,
+                  "meanChunks": 65.83333333333333
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1940980.6153846155,
+                  "meanChunks": 70.61538461538461
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2244499.0476190476,
+                  "meanChunks": 86.33333333333333
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3185187.7333333334,
+                  "meanChunks": 155.86666666666667
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 729,
+              "totalBytes": 25392484,
+              "cssBytes": 290422,
+              "pages": 234,
+              "coldMeanBytes": 1736209.829059829,
+              "coldP90Bytes": 2275260,
+              "coldMeanChunks": 65.61965811965813,
+              "coldP90Chunks": 94,
+              "coldMaxChunks": 163,
+              "sessionMeanBytes": 3149238.3829787234,
+              "sessionMeanChunks": 147.74468085106383,
+              "incrementalMeanBytes": 506121.88841201714,
+              "nextMeanBytes": 517762.18062433513,
+              "nextMeanChunks": 32.53836983236125,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1333241.6,
+                  "meanChunks": 40.25
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1671638.3243243243,
+                  "meanChunks": 60.87837837837838
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1789387.611111111,
+                  "meanChunks": 69.34722222222223
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 2006834.7428571428,
+                  "meanChunks": 82.6
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2320544.3076923075,
+                  "meanChunks": 104.3076923076923
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 55,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 707,
+              "totalBytes": 25366020,
+              "cssBytes": 286018,
+              "pages": 64,
+              "coldMeanBytes": 1742986.1875,
+              "coldP90Bytes": 2220188,
+              "coldMeanChunks": 61.046875,
+              "coldP90Chunks": 103,
+              "coldMaxChunks": 170,
+              "sessionMeanBytes": 3223061.846153846,
+              "sessionMeanChunks": 146,
+              "incrementalMeanBytes": 521966.22222222225,
+              "nextMeanBytes": 508723.6378968254,
+              "nextMeanChunks": 31.70907738095238,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1199986.6666666667,
+                  "meanChunks": 27.666666666666668
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1484454,
+                  "meanChunks": 41.583333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1461453.5384615385,
+                  "meanChunks": 45.15384615384615
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1711072.761904762,
+                  "meanChunks": 57.76190476190476
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2347085.6,
+                  "meanChunks": 101.66666666666667
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 707,
+              "totalBytes": 25366020,
+              "cssBytes": 286018,
+              "pages": 64,
+              "coldMeanBytes": 2378529.375,
+              "coldP90Bytes": 3151140,
+              "coldMeanChunks": 87.90625,
+              "coldP90Chunks": 148,
+              "coldMaxChunks": 239,
+              "sessionMeanBytes": 4388362.769230769,
+              "sessionMeanChunks": 205.30769230769232,
+              "incrementalMeanBytes": 690915.3015873015,
+              "nextMeanBytes": 676537.8611111111,
+              "nextMeanChunks": 42.164186507936506,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1620685.3333333333,
+                  "meanChunks": 43.666666666666664
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 2025261,
+                  "meanChunks": 62.666666666666664
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 2018024.6153846155,
+                  "meanChunks": 67.46153846153847
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2314569.3333333335,
+                  "meanChunks": 81.71428571428571
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3214694.4,
+                  "meanChunks": 143.33333333333334
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 707,
+              "totalBytes": 25366020,
+              "cssBytes": 286018,
+              "pages": 234,
+              "coldMeanBytes": 1778065.811965812,
+              "coldP90Bytes": 2320172,
+              "coldMeanChunks": 61.294871794871796,
+              "coldP90Chunks": 88,
+              "coldMaxChunks": 154,
+              "sessionMeanBytes": 3162384.595744681,
+              "sessionMeanChunks": 136.9787234042553,
+              "incrementalMeanBytes": 494727.4849785408,
+              "nextMeanBytes": 504066.0099042588,
+              "nextMeanChunks": 29.515846814130075,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1376702.5,
+                  "meanChunks": 38.075
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1718052.3243243243,
+                  "meanChunks": 57.04054054054054
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1832706.7777777778,
+                  "meanChunks": 64.93055555555556
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 2038346.0571428572,
+                  "meanChunks": 76.14285714285714
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2351263.6923076925,
+                  "meanChunks": 96.84615384615384
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 60,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 702,
+              "totalBytes": 25360520,
+              "cssBytes": 285022,
+              "pages": 64,
+              "coldMeanBytes": 1745113.8125,
+              "coldP90Bytes": 2262840,
+              "coldMeanChunks": 60.46875,
+              "coldP90Chunks": 103,
+              "coldMaxChunks": 168,
+              "sessionMeanBytes": 3230811.076923077,
+              "sessionMeanChunks": 144.84615384615384,
+              "incrementalMeanBytes": 524686.8571428572,
+              "nextMeanBytes": 508188.8839285714,
+              "nextMeanChunks": 31.264880952380953,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1200049.3333333333,
+                  "meanChunks": 27.333333333333332
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1489310.6666666667,
+                  "meanChunks": 41.583333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1469601.8461538462,
+                  "meanChunks": 45.30769230769231
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1708676.380952381,
+                  "meanChunks": 56.666666666666664
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2348558.6666666665,
+                  "meanChunks": 100.66666666666667
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 702,
+              "totalBytes": 25360520,
+              "cssBytes": 285022,
+              "pages": 64,
+              "coldMeanBytes": 2391060.9375,
+              "coldP90Bytes": 3165556,
+              "coldMeanChunks": 87.21875,
+              "coldP90Chunks": 145,
+              "coldMaxChunks": 237,
+              "sessionMeanBytes": 4393997.846153846,
+              "sessionMeanChunks": 201.92307692307693,
+              "incrementalMeanBytes": 697164.7619047619,
+              "nextMeanBytes": 677308.439484127,
+              "nextMeanChunks": 41.254960317460316,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1622030.6666666667,
+                  "meanChunks": 43
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 2038878,
+                  "meanChunks": 62.583333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 2032003.6923076923,
+                  "meanChunks": 67.38461538461539
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2321315.238095238,
+                  "meanChunks": 80.61904761904762
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3235440.2666666666,
+                  "meanChunks": 142.2
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 702,
+              "totalBytes": 25360520,
+              "cssBytes": 285022,
+              "pages": 234,
+              "coldMeanBytes": 1785245.47008547,
+              "coldP90Bytes": 2311664,
+              "coldMeanChunks": 61.14102564102564,
+              "coldP90Chunks": 88,
+              "coldMaxChunks": 150,
+              "sessionMeanBytes": 3164258.0425531915,
+              "sessionMeanChunks": 135.38297872340425,
+              "incrementalMeanBytes": 493730.025751073,
+              "nextMeanBytes": 503600.8197791717,
+              "nextMeanChunks": 29.026062873702358,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1379817.9,
+                  "meanChunks": 37.9
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1728358.054054054,
+                  "meanChunks": 57.25675675675676
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1842364.5,
+                  "meanChunks": 64.95833333333333
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 2043974.6285714286,
+                  "meanChunks": 75.57142857142857
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2343605.5384615385,
+                  "meanChunks": 94.76923076923077
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 80,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 671,
+              "totalBytes": 25320808,
+              "cssBytes": 278812,
+              "pages": 64,
+              "coldMeanBytes": 1818396.4375,
+              "coldP90Bytes": 2315832,
+              "coldMeanChunks": 53.578125,
+              "coldP90Chunks": 87,
+              "coldMaxChunks": 150,
+              "sessionMeanBytes": 3214785.5384615385,
+              "sessionMeanChunks": 126.07692307692308,
+              "incrementalMeanBytes": 484340.0634920635,
+              "nextMeanBytes": 472557.8224206349,
+              "nextMeanChunks": 26.062748015873016,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1286877.3333333333,
+                  "meanChunks": 25
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1586341.6666666667,
+                  "meanChunks": 38.083333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1552689.5384615385,
+                  "meanChunks": 40.61538461538461
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1790912.380952381,
+                  "meanChunks": 50.76190476190476
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2379101.066666667,
+                  "meanChunks": 86.86666666666666
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 671,
+              "totalBytes": 25320808,
+              "cssBytes": 278812,
+              "pages": 64,
+              "coldMeanBytes": 2505092.625,
+              "coldP90Bytes": 3216084,
+              "coldMeanChunks": 79.578125,
+              "coldP90Chunks": 126,
+              "coldMaxChunks": 210,
+              "sessionMeanBytes": 4388690.153846154,
+              "sessionMeanChunks": 177.23076923076923,
+              "incrementalMeanBytes": 658028.253968254,
+              "nextMeanBytes": 641642.8273809524,
+              "nextMeanChunks": 34.58010912698413,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1736156,
+                  "meanChunks": 40.666666666666664
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 2172365,
+                  "meanChunks": 59.166666666666664
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 2157931.6923076925,
+                  "meanChunks": 63.07692307692308
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2454078.285714286,
+                  "meanChunks": 74.38095238095238
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3297354.933333333,
+                  "meanChunks": 125.26666666666667
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 671,
+              "totalBytes": 25320808,
+              "cssBytes": 278812,
+              "pages": 234,
+              "coldMeanBytes": 1868965.2478632478,
+              "coldP90Bytes": 2349284,
+              "coldMeanChunks": 55,
+              "coldP90Chunks": 77,
+              "coldMaxChunks": 131,
+              "sessionMeanBytes": 3177330.1276595746,
+              "sessionMeanChunks": 118.76595744680851,
+              "incrementalMeanBytes": 463099.330472103,
+              "nextMeanBytes": 474522.86262426176,
+              "nextMeanChunks": 24.45959429221232,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1477844,
+                  "meanChunks": 35.65
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1825858.6486486488,
+                  "meanChunks": 52.310810810810814
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1921507.2222222222,
+                  "meanChunks": 57.75
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 2108210.285714286,
+                  "meanChunks": 66.71428571428571
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2382668.3076923075,
+                  "meanChunks": 83.07692307692308
+                }
+              ]
+            }
+          }
+        },
+        {
+          "lambdaKb": 120,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 636,
+              "totalBytes": 25275776,
+              "cssBytes": 271806,
+              "pages": 64,
+              "coldMeanBytes": 1907155.5625,
+              "coldP90Bytes": 2405244,
+              "coldMeanChunks": 47.9375,
+              "coldP90Chunks": 74,
+              "coldMaxChunks": 124,
+              "sessionMeanBytes": 3248888.3076923075,
+              "sessionMeanChunks": 108.76923076923077,
+              "incrementalMeanBytes": 464727.49206349207,
+              "nextMeanBytes": 455494.52876984124,
+              "nextMeanChunks": 21.19097222222222,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1325549.3333333333,
+                  "meanChunks": 24.666666666666668
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1676633,
+                  "meanChunks": 35.916666666666664
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1663762.1538461538,
+                  "meanChunks": 37.53846153846154
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1901571.619047619,
+                  "meanChunks": 46.23809523809524
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2426653.3333333335,
+                  "meanChunks": 73.6
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 636,
+              "totalBytes": 25275776,
+              "cssBytes": 271806,
+              "pages": 64,
+              "coldMeanBytes": 2632611.5625,
+              "coldP90Bytes": 3253964,
+              "coldMeanChunks": 73.1875,
+              "coldP90Chunks": 109,
+              "coldMaxChunks": 175,
+              "sessionMeanBytes": 4459794.461538462,
+              "sessionMeanChunks": 155.15384615384616,
+              "incrementalMeanBytes": 644756.8888888889,
+              "nextMeanBytes": 630073.9831349206,
+              "nextMeanChunks": 28.314980158730158,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1782148,
+                  "meanChunks": 40
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 2286934,
+                  "meanChunks": 56.5
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 2307177.846153846,
+                  "meanChunks": 59.53846153846154
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 2611763.0476190476,
+                  "meanChunks": 70.14285714285714
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 3390476.8,
+                  "meanChunks": 109.26666666666667
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 636,
+              "totalBytes": 25275776,
+              "cssBytes": 271806,
+              "pages": 234,
+              "coldMeanBytes": 1964132.188034188,
+              "coldP90Bytes": 2458468,
+              "coldMeanChunks": 49.4059829059829,
+              "coldP90Chunks": 70,
+              "coldMaxChunks": 112,
+              "sessionMeanBytes": 3224116.510638298,
+              "sessionMeanChunks": 102.91489361702128,
+              "incrementalMeanBytes": 448959.5879828326,
+              "nextMeanBytes": 455279.6281134221,
+              "nextMeanChunks": 20.06494626022523,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 1570066.1,
+                  "meanChunks": 33.825
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1927288.5945945946,
+                  "meanChunks": 47.013513513513516
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 2019909.2222222222,
+                  "meanChunks": 51.791666666666664
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 2202662.8571428573,
+                  "meanChunks": 59.34285714285714
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 2435251.3846153845,
+                  "meanChunks": 71
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "og": [
+        {
+          "lambdaKb": 55,
+          "muKb": 0.5,
+          "corpora": {
+            "hans": {
+              "chunks": 439,
+              "totalBytes": 15335688,
+              "cssBytes": 231213,
+              "pages": 64,
+              "coldMeanBytes": 1208121.875,
+              "coldP90Bytes": 1570572,
+              "coldMeanChunks": 40.359375,
+              "coldP90Chunks": 65,
+              "coldMaxChunks": 109,
+              "sessionMeanBytes": 2148027.3846153845,
+              "sessionMeanChunks": 95.3076923076923,
+              "incrementalMeanBytes": 326212.31746031746,
+              "nextMeanBytes": 315036.0615079365,
+              "nextMeanChunks": 19.960565476190474,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 859598.6666666666,
+                  "meanChunks": 19
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1069932.6666666667,
+                  "meanChunks": 29.5
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1036349.2307692308,
+                  "meanChunks": 30.53846153846154
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1189436.380952381,
+                  "meanChunks": 38.476190476190474
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 1563407.2,
+                  "meanChunks": 64.46666666666667
+                }
+              ]
+            },
+            "hant": {
+              "chunks": 439,
+              "totalBytes": 15335688,
+              "cssBytes": 231213,
+              "pages": 64,
+              "coldMeanBytes": 1687358.8125,
+              "coldP90Bytes": 2105128,
+              "coldMeanChunks": 61.109375,
+              "coldP90Chunks": 96,
+              "coldMaxChunks": 160,
+              "sessionMeanBytes": 2990162.769230769,
+              "sessionMeanChunks": 137,
+              "incrementalMeanBytes": 451096.8888888889,
+              "nextMeanBytes": 440338.23511904763,
+              "nextMeanChunks": 27.26512896825397,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 3,
+                  "meanBytes": 1140482.6666666667,
+                  "meanChunks": 30.666666666666668
+                },
+                {
+                  "band": "300-399",
+                  "pages": 12,
+                  "meanBytes": 1468193.6666666667,
+                  "meanChunks": 45.333333333333336
+                },
+                {
+                  "band": "400-499",
+                  "pages": 13,
+                  "meanBytes": 1460549.5384615385,
+                  "meanChunks": 48.38461538461539
+                },
+                {
+                  "band": "500-699",
+                  "pages": 21,
+                  "meanBytes": 1655031.238095238,
+                  "meanChunks": 57.57142857142857
+                },
+                {
+                  "band": "700+",
+                  "pages": 15,
+                  "meanBytes": 2213892.8,
+                  "meanChunks": 95.8
+                }
+              ]
+            },
+            "blog": {
+              "chunks": 439,
+              "totalBytes": 15335688,
+              "cssBytes": 231213,
+              "pages": 234,
+              "coldMeanBytes": 1244488.341880342,
+              "coldP90Bytes": 1559932,
+              "coldMeanChunks": 41.53846153846154,
+              "coldP90Chunks": 61,
+              "coldMaxChunks": 98,
+              "sessionMeanBytes": 2094709.8723404256,
+              "sessionMeanChunks": 88.17021276595744,
+              "incrementalMeanBytes": 305118.9184549356,
+              "nextMeanBytes": 311084.04842082097,
+              "nextMeanChunks": 18.431495543083525,
+              "bySize": [
+                {
+                  "band": "<300",
+                  "pages": 40,
+                  "meanBytes": 996288.3,
+                  "meanChunks": 27.05
+                },
+                {
+                  "band": "300-399",
+                  "pages": 74,
+                  "meanBytes": 1215141.4594594594,
+                  "meanChunks": 39.351351351351354
+                },
+                {
+                  "band": "400-499",
+                  "pages": 72,
+                  "meanBytes": 1274773.888888889,
+                  "meanChunks": 43.583333333333336
+                },
+                {
+                  "band": "500-699",
+                  "pages": 35,
+                  "meanBytes": 1410677.3714285714,
+                  "meanChunks": 50.97142857142857
+                },
+                {
+                  "band": "700+",
+                  "pages": 13,
+                  "meanBytes": 1560064.923076923,
+                  "meanChunks": 61.84615384615385
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "deployed": {
+      "measured": "2026-11-27",
+      "source": "cn-font-split 7.6.8 wasm core (git 120cbd7cd), css.fontFamily \"OPPOSerif\"",
+      "font": {
+        "file": "calendar.ttf",
+        "sha256": "a5de98d4a3d3bca39a1b677d4096983c178ffd8607cb1635ea24bba466ccff07"
+      },
+      "chunks": 655,
+      "chunkBytes": 30323800,
+      "cssBytes": 243421,
+      "corpora": {
+        "hans": {
+          "chunks": 655,
+          "totalBytes": 30323800,
+          "cssBytes": 243421,
+          "pages": 64,
+          "coldMeanBytes": 2882133.3125,
+          "coldP90Bytes": 3931380,
+          "coldMeanChunks": 75.5625,
+          "coldP90Chunks": 94,
+          "coldMaxChunks": 128,
+          "sessionMeanBytes": 4929454.461538462,
+          "sessionMeanChunks": 113.84615384615384,
+          "incrementalMeanBytes": 838756,
+          "nextMeanBytes": 822032.9732142857,
+          "nextMeanChunks": 15.629960317460318,
+          "bySize": [
+            {
+              "band": "<300",
+              "pages": 3,
+              "meanBytes": 1981645.3333333333,
+              "meanChunks": 60
+            },
+            {
+              "band": "300-399",
+              "pages": 12,
+              "meanBytes": 2442235.6666666665,
+              "meanChunks": 66.75
+            },
+            {
+              "band": "400-499",
+              "pages": 13,
+              "meanBytes": 2399861.846153846,
+              "meanChunks": 67.23076923076923
+            },
+            {
+              "band": "500-699",
+              "pages": 21,
+              "meanBytes": 2856280.380952381,
+              "meanChunks": 75.14285714285714
+            },
+            {
+              "band": "700+",
+              "pages": 15,
+              "meanBytes": 3868311.7333333334,
+              "meanChunks": 93.53333333333333
+            }
+          ]
+        },
+        "hant": {
+          "chunks": 655,
+          "totalBytes": 30323800,
+          "cssBytes": 243421,
+          "pages": 64,
+          "coldMeanBytes": 4158271,
+          "coldP90Bytes": 5876080,
+          "coldMeanChunks": 123.015625,
+          "coldP90Chunks": 161,
+          "coldMaxChunks": 201,
+          "sessionMeanBytes": 7612228.923076923,
+          "sessionMeanChunks": 193.92307692307693,
+          "incrementalMeanBytes": 1403871.111111111,
+          "nextMeanBytes": 1372661.2738095238,
+          "nextMeanChunks": 29.699156746031747,
+          "bySize": [
+            {
+              "band": "<300",
+              "pages": 3,
+              "meanBytes": 2504765.3333333335,
+              "meanChunks": 84.33333333333333
+            },
+            {
+              "band": "300-399",
+              "pages": 12,
+              "meanBytes": 3301930.6666666665,
+              "meanChunks": 104.41666666666667
+            },
+            {
+              "band": "400-499",
+              "pages": 13,
+              "meanBytes": 3502273.230769231,
+              "meanChunks": 110.07692307692308
+            },
+            {
+              "band": "500-699",
+              "pages": 21,
+              "meanBytes": 4094219.8095238097,
+              "meanChunks": 121.66666666666667
+            },
+            {
+              "band": "700+",
+              "pages": 15,
+              "meanBytes": 5832247.466666667,
+              "meanChunks": 158.73333333333332
+            }
+          ]
+        },
+        "blog": {
+          "chunks": 655,
+          "totalBytes": 30323800,
+          "cssBytes": 243421,
+          "pages": 234,
+          "coldMeanBytes": 2637816.376068376,
+          "coldP90Bytes": 3364124,
+          "coldMeanChunks": 69.95726495726495,
+          "coldP90Chunks": 84,
+          "coldMaxChunks": 103,
+          "sessionMeanBytes": 4129867.744680851,
+          "sessionMeanChunks": 98.19148936170212,
+          "incrementalMeanBytes": 659262.008583691,
+          "nextMeanBytes": 674404.7511096438,
+          "nextMeanChunks": 13.03807637284032,
+          "bySize": [
+            {
+              "band": "<300",
+              "pages": 40,
+              "meanBytes": 1896526.8,
+              "meanChunks": 55.175
+            },
+            {
+              "band": "300-399",
+              "pages": 74,
+              "meanBytes": 2603958.378378378,
+              "meanChunks": 69.29729729729729
+            },
+            {
+              "band": "400-499",
+              "pages": 72,
+              "meanBytes": 2775489.6666666665,
+              "meanChunks": 72.66666666666667
+            },
+            {
+              "band": "500-699",
+              "pages": 35,
+              "meanBytes": 3024074.1714285715,
+              "meanChunks": 77.88571428571429
+            },
+            {
+              "band": "700+",
+              "pages": 13,
+              "meanBytes": 3309014.4615384615,
+              "meanChunks": 82.84615384615384
+            }
+          ]
+        }
+      }
+    }
+  },
+  "shaping": {
+    "calendar": {
+      "codepoints": 29251,
+      "glyphs": 29469,
+      "sharedGlyphs": 0,
+      "faces": 707,
+      "pairSubtables": 14,
+      "markSubtables": 5,
+      "extensionSubtables": 19,
+      "largestFaceBytes": 118672,
+      "largestFaceCodepoints": 856,
+      "largestFaceAscii": 95,
+      "facesWithoutIdeograph": 16,
+      "kernAscii": {
+        "relations": 1522,
+        "colocated": 1522
+      },
+      "kernMapped": {
+        "relations": 145800,
+        "colocated": 145800
+      },
+      "markBase": {
+        "relations": 14328,
+        "colocated": 14328
+      },
+      "ligature": {
+        "relations": 36,
+        "colocated": 36
+      }
+    },
+    "og": {
+      "codepoints": 29197,
+      "glyphs": 29385,
+      "sharedGlyphs": 0,
+      "faces": 439,
+      "pairSubtables": 15,
+      "markSubtables": 4,
+      "extensionSubtables": 0,
+      "largestFaceBytes": 82352,
+      "largestFaceCodepoints": 99,
+      "largestFaceAscii": 0,
+      "facesWithoutIdeograph": 15,
+      "kernAscii": {
+        "relations": 913,
+        "colocated": 913
+      },
+      "kernMapped": {
+        "relations": 64205,
+        "colocated": 64205
+      },
+      "markBase": {
+        "relations": 14590,
+        "colocated": 14590
+      },
+      "ligature": {
+        "relations": 33,
+        "colocated": 33
+      }
+    }
+  },
+  "rendering": {
+    "calendar": [
+      {
+        "text": "To Tale Av Way WA LT P. T, V",
+        "note": "",
+        "originalWidth": 614.125,
+        "packageWidth": 614.125,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "AVAWA Ta Vo We Yo PA We",
+        "note": "",
+        "originalWidth": 580.421875,
+        "packageWidth": 580.421875,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "Office flow waffle fish fi fl",
+        "note": "",
+        "originalWidth": 512.796875,
+        "packageWidth": 512.796875,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "é á ñ ö À",
+        "note": "combining marks",
+        "originalWidth": 187.015625,
+        "packageWidth": 187.015625,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "Ångström naïve café",
+        "note": "",
+        "originalWidth": 420.0625,
+        "packageWidth": 420.0625,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "中文测试，标点。「引用」",
+        "note": "",
+        "originalWidth": 584.546875,
+        "packageWidth": 584.546875,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 7
+      },
+      {
+        "text": "2026-11-26 Kobato",
+        "note": "",
+        "originalWidth": 391.453125,
+        "packageWidth": 391.453125,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      }
+    ],
+    "og": [
+      {
+        "text": "To Tale Av Way WA LT P. T, V",
+        "note": "",
+        "originalWidth": 608.75,
+        "packageWidth": 608.75,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "AVAWA Ta Vo We Yo PA We",
+        "note": "",
+        "originalWidth": 592.09375,
+        "packageWidth": 592.09375,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "Office flow waffle fish fi fl",
+        "note": "",
+        "originalWidth": 526.328125,
+        "packageWidth": 526.328125,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "é á ñ ö À",
+        "note": "combining marks",
+        "originalWidth": 189.515625,
+        "packageWidth": 189.515625,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "Ångström naïve café",
+        "note": "",
+        "originalWidth": 437.625,
+        "packageWidth": 437.625,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      },
+      {
+        "text": "中文测试，标点。「引用」",
+        "note": "",
+        "originalWidth": 579.9375,
+        "packageWidth": 579.9375,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 6
+      },
+      {
+        "text": "2026-11-26 Kobato",
+        "note": "",
+        "originalWidth": 408.921875,
+        "packageWidth": 408.921875,
+        "identical": true,
+        "differingPixels": 0,
+        "packageFaces": 1
+      }
+    ]
+  },
+  "loadingTime": {
+    "browser": "158.0.8127.89",
+    "lambdasKb": [30, 37.5, 45, 55, 80, 120],
+    "links": {
+      "slow": {
+        "downloadBytesPerSecond": 200000,
+        "uploadBytesPerSecond": 93750,
+        "latencyMs": 150
+      },
+      "fast": {
+        "downloadBytesPerSecond": 2500000,
+        "uploadBytesPerSecond": 1250000,
+        "latencyMs": 40
+      }
+    },
+    "pairsPerLink": {
+      "slow": 4,
+      "fast": 10
+    },
+    "conditions": [
+      {
+        "protocol": "h1",
+        "link": "slow",
+        "pairs": [
+          {
+            "index": 0,
+            "coldPage": 0,
+            "nextPage": 1,
+            "runs": {
+              "30": {
+                "coldMs": 7411.9000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1048532,
+                "nextMs": 4452.5999999940395,
+                "nextNewFaces": 51,
+                "nextNewBytes": 734372,
+                "nextCachedFaces": 26
+              },
+              "45": {
+                "coldMs": 7744.199999988079,
+                "coldFaces": 26,
+                "coldBytes": 1125956,
+                "nextMs": 4401,
+                "nextNewFaces": 44,
+                "nextNewBytes": 764664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 7738.0999999940395,
+                "coldFaces": 26,
+                "coldBytes": 1129500,
+                "nextMs": 4778,
+                "nextNewFaces": 43,
+                "nextNewBytes": 840244,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 8338,
+                "coldFaces": 25,
+                "coldBytes": 1253620,
+                "nextMs": 4836,
+                "nextNewFaces": 39,
+                "nextNewBytes": 858020,
+                "nextCachedFaces": 25
+              },
+              "120": {
+                "coldMs": 8651.699999988079,
+                "coldFaces": 25,
+                "coldBytes": 1323232,
+                "nextMs": 5007.600000023842,
+                "nextNewFaces": 33,
+                "nextNewBytes": 891536,
+                "nextCachedFaces": 25
+              },
+              "37.5": {
+                "coldMs": 7397.0999999940395,
+                "coldFaces": 26,
+                "coldBytes": 1051404,
+                "nextMs": 4524.399999976158,
+                "nextNewFaces": 47,
+                "nextNewBytes": 785080,
+                "nextCachedFaces": 26
+              }
+            }
+          },
+          {
+            "index": 1,
+            "coldPage": 59,
+            "nextPage": 60,
+            "runs": {
+              "30": {
+                "coldMs": 16067.199999988079,
+                "coldFaces": 128,
+                "coldBytes": 2674236,
+                "nextMs": 4815.199999988079,
+                "nextNewFaces": 49,
+                "nextNewBytes": 810060,
+                "nextCachedFaces": 128
+              },
+              "45": {
+                "coldMs": 16298.90000000596,
+                "coldFaces": 114,
+                "coldBytes": 2746020,
+                "nextMs": 4694.5999999940395,
+                "nextNewFaces": 43,
+                "nextNewBytes": 794540,
+                "nextCachedFaces": 114
+              },
+              "55": {
+                "coldMs": 16424.40000000596,
+                "coldFaces": 105,
+                "coldBytes": 2776440,
+                "nextMs": 4257.199999988079,
+                "nextNewFaces": 35,
+                "nextNewBytes": 717396,
+                "nextCachedFaces": 105
+              },
+              "80": {
+                "coldMs": 16673.79999998212,
+                "coldFaces": 94,
+                "coldBytes": 2843424,
+                "nextMs": 4192.5999999940395,
+                "nextNewFaces": 31,
+                "nextNewBytes": 696332,
+                "nextCachedFaces": 94
+              },
+              "120": {
+                "coldMs": 16802.80000001192,
+                "coldFaces": 82,
+                "coldBytes": 2891988,
+                "nextMs": 3651.399999976158,
+                "nextNewFaces": 23,
+                "nextNewBytes": 606004,
+                "nextCachedFaces": 82
+              },
+              "37.5": {
+                "coldMs": 16337.699999988079,
+                "coldFaces": 121,
+                "coldBytes": 2748812,
+                "nextMs": 4386.799999982119,
+                "nextNewFaces": 42,
+                "nextNewBytes": 730184,
+                "nextCachedFaces": 121
+              }
+            }
+          },
+          {
+            "index": 2,
+            "coldPage": 117,
+            "nextPage": 118,
+            "runs": {
+              "30": {
+                "coldMs": 10458.799999982119,
+                "coldFaces": 80,
+                "coldBytes": 1605232,
+                "nextMs": 2698.600000023842,
+                "nextNewFaces": 32,
+                "nextNewBytes": 394544,
+                "nextCachedFaces": 80
+              },
+              "45": {
+                "coldMs": 10631.699999988079,
+                "coldFaces": 67,
+                "coldBytes": 1663896,
+                "nextMs": 2864.5,
+                "nextNewFaces": 29,
+                "nextNewBytes": 430968,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 10902.200000017881,
+                "coldFaces": 63,
+                "coldBytes": 1723232,
+                "nextMs": 2672.5,
+                "nextNewFaces": 27,
+                "nextNewBytes": 385068,
+                "nextCachedFaces": 63
+              },
+              "80": {
+                "coldMs": 11322.299999982119,
+                "coldFaces": 57,
+                "coldBytes": 1819424,
+                "nextMs": 2446.5999999940395,
+                "nextNewFaces": 21,
+                "nextNewBytes": 372436,
+                "nextCachedFaces": 57
+              },
+              "120": {
+                "coldMs": 11576.200000017881,
+                "coldFaces": 48,
+                "coldBytes": 1886056,
+                "nextMs": 2414,
+                "nextNewFaces": 19,
+                "nextNewBytes": 356292,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 10634.5,
+                "coldFaces": 75,
+                "coldBytes": 1649788,
+                "nextMs": 2854.5,
+                "nextNewFaces": 32,
+                "nextNewBytes": 451868,
+                "nextCachedFaces": 75
+              }
+            }
+          },
+          {
+            "index": 3,
+            "coldPage": 176,
+            "nextPage": 177,
+            "runs": {
+              "30": {
+                "coldMs": 10113.699999988079,
+                "coldFaces": 74,
+                "coldBytes": 1541952,
+                "nextMs": 1312.4000000059605,
+                "nextNewFaces": 16,
+                "nextNewBytes": 150360,
+                "nextCachedFaces": 74
+              },
+              "45": {
+                "coldMs": 10370.09999999404,
+                "coldFaces": 63,
+                "coldBytes": 1618412,
+                "nextMs": 1286.5999999940395,
+                "nextNewFaces": 14,
+                "nextNewBytes": 147180,
+                "nextCachedFaces": 63
+              },
+              "55": {
+                "coldMs": 10744.5,
+                "coldFaces": 60,
+                "coldBytes": 1694444,
+                "nextMs": 1160.4000000059605,
+                "nextNewFaces": 11,
+                "nextNewBytes": 123940,
+                "nextCachedFaces": 60
+              },
+              "80": {
+                "coldMs": 11111.200000017881,
+                "coldFaces": 53,
+                "coldBytes": 1785048,
+                "nextMs": 1022.3000000119209,
+                "nextNewFaces": 8,
+                "nextNewBytes": 101504,
+                "nextCachedFaces": 53
+              },
+              "120": {
+                "coldMs": 11577.800000011921,
+                "coldFaces": 48,
+                "coldBytes": 1886800,
+                "nextMs": 786.3000000119209,
+                "nextNewFaces": 5,
+                "nextNewBytes": 78252,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 10310.199999988079,
+                "coldFaces": 70,
+                "coldBytes": 1595536,
+                "nextMs": 1287,
+                "nextNewFaces": 14,
+                "nextNewBytes": 137060,
+                "nextCachedFaces": 70
+              }
+            }
+          }
+        ]
+      },
+      {
+        "protocol": "h1",
+        "link": "fast",
+        "pairs": [
+          {
+            "index": 0,
+            "coldPage": 0,
+            "nextPage": 1,
+            "runs": {
+              "30": {
+                "coldMs": 775.5,
+                "coldFaces": 26,
+                "coldBytes": 1048532,
+                "nextMs": 670,
+                "nextNewFaces": 51,
+                "nextNewBytes": 734372,
+                "nextCachedFaces": 26
+              },
+              "45": {
+                "coldMs": 797.9000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1125956,
+                "nextMs": 640.6999999880791,
+                "nextNewFaces": 44,
+                "nextNewBytes": 764664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 792.1000000238419,
+                "coldFaces": 26,
+                "coldBytes": 1129500,
+                "nextMs": 680.6999999880791,
+                "nextNewFaces": 43,
+                "nextNewBytes": 840244,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 842.0999999940395,
+                "coldFaces": 25,
+                "coldBytes": 1253620,
+                "nextMs": 644.5999999940395,
+                "nextNewFaces": 39,
+                "nextNewBytes": 858020,
+                "nextCachedFaces": 25
+              },
+              "120": {
+                "coldMs": 876.6999999880791,
+                "coldFaces": 25,
+                "coldBytes": 1323232,
+                "nextMs": 657.3000000119209,
+                "nextNewFaces": 33,
+                "nextNewBytes": 891536,
+                "nextCachedFaces": 25
+              },
+              "37.5": {
+                "coldMs": 784.5,
+                "coldFaces": 26,
+                "coldBytes": 1051404,
+                "nextMs": 704.6000000238419,
+                "nextNewFaces": 47,
+                "nextNewBytes": 785080,
+                "nextCachedFaces": 26
+              }
+            }
+          },
+          {
+            "index": 1,
+            "coldPage": 23,
+            "nextPage": 24,
+            "runs": {
+              "30": {
+                "coldMs": 1308.6000000238419,
+                "coldFaces": 72,
+                "coldBytes": 1609496,
+                "nextMs": 445.09999999403954,
+                "nextNewFaces": 28,
+                "nextNewBytes": 292312,
+                "nextCachedFaces": 72
+              },
+              "45": {
+                "coldMs": 1142.5999999940395,
+                "coldFaces": 63,
+                "coldBytes": 1696836,
+                "nextMs": 374.90000000596046,
+                "nextNewFaces": 22,
+                "nextNewBytes": 256400,
+                "nextCachedFaces": 63
+              },
+              "55": {
+                "coldMs": 1217.1000000238419,
+                "coldFaces": 57,
+                "coldBytes": 1723828,
+                "nextMs": 367.90000000596046,
+                "nextNewFaces": 21,
+                "nextNewBytes": 260240,
+                "nextCachedFaces": 57
+              },
+              "80": {
+                "coldMs": 1192.5,
+                "coldFaces": 53,
+                "coldBytes": 1841968,
+                "nextMs": 339.90000000596046,
+                "nextNewFaces": 17,
+                "nextNewBytes": 239492,
+                "nextCachedFaces": 53
+              },
+              "120": {
+                "coldMs": 1137.8999999761581,
+                "coldFaces": 47,
+                "coldBytes": 1921100,
+                "nextMs": 317,
+                "nextNewFaces": 14,
+                "nextNewBytes": 229552,
+                "nextCachedFaces": 47
+              },
+              "37.5": {
+                "coldMs": 1227.2000000178814,
+                "coldFaces": 63,
+                "coldBytes": 1612028,
+                "nextMs": 460.40000000596046,
+                "nextNewFaces": 28,
+                "nextNewBytes": 319032,
+                "nextCachedFaces": 63
+              }
+            }
+          },
+          {
+            "index": 2,
+            "coldPage": 47,
+            "nextPage": 48,
+            "runs": {
+              "30": {
+                "coldMs": 1303.3999999761581,
+                "coldFaces": 76,
+                "coldBytes": 1743936,
+                "nextMs": 373.5,
+                "nextNewFaces": 22,
+                "nextNewBytes": 238220,
+                "nextCachedFaces": 76
+              },
+              "45": {
+                "coldMs": 1203.9000000059605,
+                "coldFaces": 67,
+                "coldBytes": 1822680,
+                "nextMs": 323.10000002384186,
+                "nextNewFaces": 18,
+                "nextNewBytes": 226896,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 1316.9000000059605,
+                "coldFaces": 64,
+                "coldBytes": 1880272,
+                "nextMs": 266.5,
+                "nextNewFaces": 12,
+                "nextNewBytes": 173508,
+                "nextCachedFaces": 64
+              },
+              "80": {
+                "coldMs": 1323.7999999821186,
+                "coldFaces": 63,
+                "coldBytes": 2038332,
+                "nextMs": 253.09999999403954,
+                "nextNewFaces": 9,
+                "nextNewBytes": 147252,
+                "nextCachedFaces": 63
+              },
+              "120": {
+                "coldMs": 1263.5,
+                "coldFaces": 55,
+                "coldBytes": 2127612,
+                "nextMs": 239.30000001192093,
+                "nextNewFaces": 8,
+                "nextNewBytes": 144440,
+                "nextCachedFaces": 55
+              },
+              "37.5": {
+                "coldMs": 1289.7999999821186,
+                "coldFaces": 71,
+                "coldBytes": 1792520,
+                "nextMs": 364,
+                "nextNewFaces": 19,
+                "nextNewBytes": 218612,
+                "nextCachedFaces": 71
+              }
+            }
+          },
+          {
+            "index": 3,
+            "coldPage": 70,
+            "nextPage": 71,
+            "runs": {
+              "30": {
+                "coldMs": 1012.2000000178814,
+                "coldFaces": 46,
+                "coldBytes": 1342444,
+                "nextMs": 599,
+                "nextNewFaces": 40,
+                "nextNewBytes": 447760,
+                "nextCachedFaces": 46
+              },
+              "45": {
+                "coldMs": 986.8999999761581,
+                "coldFaces": 43,
+                "coldBytes": 1465688,
+                "nextMs": 466.59999999403954,
+                "nextNewFaces": 30,
+                "nextNewBytes": 378840,
+                "nextCachedFaces": 43
+              },
+              "55": {
+                "coldMs": 1024.5,
+                "coldFaces": 41,
+                "coldBytes": 1522344,
+                "nextMs": 420.69999998807907,
+                "nextNewFaces": 25,
+                "nextNewBytes": 354768,
+                "nextCachedFaces": 41
+              },
+              "80": {
+                "coldMs": 1021.1999999880791,
+                "coldFaces": 38,
+                "coldBytes": 1634388,
+                "nextMs": 420,
+                "nextNewFaces": 25,
+                "nextNewBytes": 371004,
+                "nextCachedFaces": 38
+              },
+              "120": {
+                "coldMs": 1034.800000011921,
+                "coldFaces": 37,
+                "coldBytes": 1713936,
+                "nextMs": 319.09999999403954,
+                "nextNewFaces": 15,
+                "nextNewBytes": 321256,
+                "nextCachedFaces": 37
+              },
+              "37.5": {
+                "coldMs": 980,
+                "coldFaces": 43,
+                "coldBytes": 1392180,
+                "nextMs": 545,
+                "nextNewFaces": 35,
+                "nextNewBytes": 426684,
+                "nextCachedFaces": 43
+              }
+            }
+          },
+          {
+            "index": 4,
+            "coldPage": 94,
+            "nextPage": 95,
+            "runs": {
+              "30": {
+                "coldMs": 1579.199999988079,
+                "coldFaces": 101,
+                "coldBytes": 2074996,
+                "nextMs": 379.80000001192093,
+                "nextNewFaces": 22,
+                "nextNewBytes": 237584,
+                "nextCachedFaces": 101
+              },
+              "45": {
+                "coldMs": 1546.0999999940395,
+                "coldFaces": 89,
+                "coldBytes": 2162272,
+                "nextMs": 325.10000002384186,
+                "nextNewFaces": 15,
+                "nextNewBytes": 182980,
+                "nextCachedFaces": 89
+              },
+              "55": {
+                "coldMs": 1591.7999999821186,
+                "coldFaces": 83,
+                "coldBytes": 2205212,
+                "nextMs": 313.69999998807907,
+                "nextNewFaces": 14,
+                "nextNewBytes": 184504,
+                "nextCachedFaces": 83
+              },
+              "80": {
+                "coldMs": 1376.4000000059605,
+                "coldFaces": 71,
+                "coldBytes": 2232684,
+                "nextMs": 267.2999999821186,
+                "nextNewFaces": 12,
+                "nextNewBytes": 179468,
+                "nextCachedFaces": 71
+              },
+              "120": {
+                "coldMs": 1353.5,
+                "coldFaces": 66,
+                "coldBytes": 2373744,
+                "nextMs": 259.09999999403954,
+                "nextNewFaces": 9,
+                "nextNewBytes": 163032,
+                "nextCachedFaces": 66
+              },
+              "37.5": {
+                "coldMs": 1645.9000000059605,
+                "coldFaces": 93,
+                "coldBytes": 2104640,
+                "nextMs": 378.59999999403954,
+                "nextNewFaces": 20,
+                "nextNewBytes": 225388,
+                "nextCachedFaces": 93
+              }
+            }
+          },
+          {
+            "index": 5,
+            "coldPage": 117,
+            "nextPage": 118,
+            "runs": {
+              "30": {
+                "coldMs": 1391.4000000059605,
+                "coldFaces": 80,
+                "coldBytes": 1605232,
+                "nextMs": 548.9000000059605,
+                "nextNewFaces": 32,
+                "nextNewBytes": 394544,
+                "nextCachedFaces": 80
+              },
+              "45": {
+                "coldMs": 1283.199999988079,
+                "coldFaces": 67,
+                "coldBytes": 1663896,
+                "nextMs": 502.19999998807907,
+                "nextNewFaces": 29,
+                "nextNewBytes": 430968,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 1264.7000000178814,
+                "coldFaces": 63,
+                "coldBytes": 1723232,
+                "nextMs": 479.69999998807907,
+                "nextNewFaces": 27,
+                "nextNewBytes": 385068,
+                "nextCachedFaces": 63
+              },
+              "80": {
+                "coldMs": 1199.199999988079,
+                "coldFaces": 57,
+                "coldBytes": 1819424,
+                "nextMs": 407.80000001192093,
+                "nextNewFaces": 21,
+                "nextNewBytes": 372436,
+                "nextCachedFaces": 57
+              },
+              "120": {
+                "coldMs": 1126.5,
+                "coldFaces": 48,
+                "coldBytes": 1886056,
+                "nextMs": 406.2000000178814,
+                "nextNewFaces": 19,
+                "nextNewBytes": 356292,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 1343.5999999940395,
+                "coldFaces": 75,
+                "coldBytes": 1649788,
+                "nextMs": 546.7000000178814,
+                "nextNewFaces": 32,
+                "nextNewBytes": 451868,
+                "nextCachedFaces": 75
+              }
+            }
+          },
+          {
+            "index": 6,
+            "coldPage": 140,
+            "nextPage": 141,
+            "runs": {
+              "30": {
+                "coldMs": 1774.300000011921,
+                "coldFaces": 113,
+                "coldBytes": 2429792,
+                "nextMs": 174.7000000178814,
+                "nextNewFaces": 5,
+                "nextNewBytes": 41620,
+                "nextCachedFaces": 113
+              },
+              "45": {
+                "coldMs": 1763.199999988079,
+                "coldFaces": 105,
+                "coldBytes": 2549380,
+                "nextMs": 170.59999999403954,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10224,
+                "nextCachedFaces": 105
+              },
+              "55": {
+                "coldMs": 1837.2000000178814,
+                "coldFaces": 97,
+                "coldBytes": 2559644,
+                "nextMs": 161.30000001192093,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10732,
+                "nextCachedFaces": 97
+              },
+              "80": {
+                "coldMs": 1689.5,
+                "coldFaces": 86,
+                "coldBytes": 2623132,
+                "nextMs": 159.2999999821186,
+                "nextNewFaces": 1,
+                "nextNewBytes": 11232,
+                "nextCachedFaces": 86
+              },
+              "120": {
+                "coldMs": 1593.5,
+                "coldFaces": 78,
+                "coldBytes": 2725372,
+                "nextMs": 85.5,
+                "nextNewFaces": 0,
+                "nextNewBytes": 0,
+                "nextCachedFaces": 78
+              },
+              "37.5": {
+                "coldMs": 1838.4000000059605,
+                "coldFaces": 110,
+                "coldBytes": 2504980,
+                "nextMs": 179.40000000596046,
+                "nextNewFaces": 2,
+                "nextNewBytes": 18724,
+                "nextCachedFaces": 110
+              }
+            }
+          },
+          {
+            "index": 7,
+            "coldPage": 164,
+            "nextPage": 165,
+            "runs": {
+              "30": {
+                "coldMs": 802,
+                "coldFaces": 30,
+                "coldBytes": 1033752,
+                "nextMs": 1143.4000000059605,
+                "nextNewFaces": 80,
+                "nextNewBytes": 1243428,
+                "nextCachedFaces": 30
+              },
+              "45": {
+                "coldMs": 805.8999999761581,
+                "coldFaces": 26,
+                "coldBytes": 1144464,
+                "nextMs": 1093.7999999821186,
+                "nextNewFaces": 74,
+                "nextNewBytes": 1238664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 795,
+                "coldFaces": 26,
+                "coldBytes": 1150976,
+                "nextMs": 970.5,
+                "nextNewFaces": 68,
+                "nextNewBytes": 1267344,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 844.0999999940395,
+                "coldFaces": 24,
+                "coldBytes": 1262552,
+                "nextMs": 861.1999999880791,
+                "nextNewFaces": 54,
+                "nextNewBytes": 1152852,
+                "nextCachedFaces": 24
+              },
+              "120": {
+                "coldMs": 837.9000000059605,
+                "coldFaces": 24,
+                "coldBytes": 1270536,
+                "nextMs": 890.5999999940395,
+                "nextNewFaces": 49,
+                "nextNewBytes": 1265244,
+                "nextCachedFaces": 24
+              },
+              "37.5": {
+                "coldMs": 786.6999999880791,
+                "coldFaces": 27,
+                "coldBytes": 1082440,
+                "nextMs": 1178.5999999940395,
+                "nextNewFaces": 81,
+                "nextNewBytes": 1280420,
+                "nextCachedFaces": 27
+              }
+            }
+          },
+          {
+            "index": 8,
+            "coldPage": 187,
+            "nextPage": 188,
+            "runs": {
+              "30": {
+                "coldMs": 368.80000001192093,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 913.9000000059605,
+                "nextNewFaces": 47,
+                "nextNewBytes": 1302452,
+                "nextCachedFaces": 2
+              },
+              "45": {
+                "coldMs": 360.2999999821186,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 866.6000000238419,
+                "nextNewFaces": 42,
+                "nextNewBytes": 1420216,
+                "nextCachedFaces": 2
+              },
+              "55": {
+                "coldMs": 361.30000001192093,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 796.9000000059605,
+                "nextNewFaces": 37,
+                "nextNewBytes": 1451064,
+                "nextCachedFaces": 2
+              },
+              "80": {
+                "coldMs": 358.60000002384186,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 821.6999999880791,
+                "nextNewFaces": 34,
+                "nextNewBytes": 1554228,
+                "nextCachedFaces": 2
+              },
+              "120": {
+                "coldMs": 354.89999997615814,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 866.5,
+                "nextNewFaces": 33,
+                "nextNewBytes": 1618492,
+                "nextCachedFaces": 2
+              },
+              "37.5": {
+                "coldMs": 368.40000000596046,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 859.3000000119209,
+                "nextNewFaces": 45,
+                "nextNewBytes": 1371504,
+                "nextCachedFaces": 2
+              }
+            }
+          },
+          {
+            "index": 9,
+            "coldPage": 211,
+            "nextPage": 212,
+            "runs": {
+              "30": {
+                "coldMs": 1023.5,
+                "coldFaces": 47,
+                "coldBytes": 1225120,
+                "nextMs": 150,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8120,
+                "nextCachedFaces": 47
+              },
+              "45": {
+                "coldMs": 894,
+                "coldFaces": 36,
+                "coldBytes": 1285772,
+                "nextMs": 140.5,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8976,
+                "nextCachedFaces": 36
+              },
+              "55": {
+                "coldMs": 933.0999999940395,
+                "coldFaces": 34,
+                "coldBytes": 1341684,
+                "nextMs": 146.30000001192093,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10088,
+                "nextCachedFaces": 34
+              },
+              "80": {
+                "coldMs": 953.9000000059605,
+                "coldFaces": 32,
+                "coldBytes": 1462264,
+                "nextMs": 149.40000000596046,
+                "nextNewFaces": 1,
+                "nextNewBytes": 11832,
+                "nextCachedFaces": 32
+              },
+              "120": {
+                "coldMs": 961.3000000119209,
+                "coldFaces": 29,
+                "coldBytes": 1564908,
+                "nextMs": 71.89999997615814,
+                "nextNewFaces": 0,
+                "nextNewBytes": 0,
+                "nextCachedFaces": 29
+              },
+              "37.5": {
+                "coldMs": 974.1999999880791,
+                "coldFaces": 43,
+                "coldBytes": 1269344,
+                "nextMs": 147.80000001192093,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8504,
+                "nextCachedFaces": 43
+              }
+            }
+          }
+        ]
+      },
+      {
+        "protocol": "h2",
+        "link": "slow",
+        "pairs": [
+          {
+            "index": 0,
+            "coldPage": 0,
+            "nextPage": 1,
+            "runs": {
+              "30": {
+                "coldMs": 7395.4000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1048532,
+                "nextMs": 4217.5,
+                "nextNewFaces": 51,
+                "nextNewBytes": 734372,
+                "nextCachedFaces": 26
+              },
+              "45": {
+                "coldMs": 7730.600000023842,
+                "coldFaces": 26,
+                "coldBytes": 1125956,
+                "nextMs": 4331.5,
+                "nextNewFaces": 44,
+                "nextNewBytes": 764664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 7705.4000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1129500,
+                "nextMs": 4765.4000000059605,
+                "nextNewFaces": 43,
+                "nextNewBytes": 840244,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 8286.90000000596,
+                "coldFaces": 25,
+                "coldBytes": 1253620,
+                "nextMs": 4799.5,
+                "nextNewFaces": 39,
+                "nextNewBytes": 858020,
+                "nextCachedFaces": 25
+              },
+              "120": {
+                "coldMs": 8623.5,
+                "coldFaces": 25,
+                "coldBytes": 1323232,
+                "nextMs": 4984,
+                "nextNewFaces": 33,
+                "nextNewBytes": 891536,
+                "nextCachedFaces": 25
+              },
+              "37.5": {
+                "coldMs": 7392.4000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1051404,
+                "nextMs": 4475.200000017881,
+                "nextNewFaces": 47,
+                "nextNewBytes": 785080,
+                "nextCachedFaces": 26
+              }
+            }
+          },
+          {
+            "index": 1,
+            "coldPage": 59,
+            "nextPage": 60,
+            "runs": {
+              "30": {
+                "coldMs": 15935.699999988079,
+                "coldFaces": 128,
+                "coldBytes": 2674236,
+                "nextMs": 4650.700000017881,
+                "nextNewFaces": 49,
+                "nextNewBytes": 810060,
+                "nextCachedFaces": 128
+              },
+              "45": {
+                "coldMs": 16187.100000023842,
+                "coldFaces": 114,
+                "coldBytes": 2746020,
+                "nextMs": 4571.800000011921,
+                "nextNewFaces": 43,
+                "nextNewBytes": 794540,
+                "nextCachedFaces": 114
+              },
+              "55": {
+                "coldMs": 16280.699999988079,
+                "coldFaces": 105,
+                "coldBytes": 2776440,
+                "nextMs": 4095.4000000059605,
+                "nextNewFaces": 35,
+                "nextNewBytes": 717396,
+                "nextCachedFaces": 105
+              },
+              "80": {
+                "coldMs": 16564.09999999404,
+                "coldFaces": 94,
+                "coldBytes": 2843424,
+                "nextMs": 4003.2000000178814,
+                "nextNewFaces": 31,
+                "nextNewBytes": 696332,
+                "nextCachedFaces": 94
+              },
+              "120": {
+                "coldMs": 16726.59999999404,
+                "coldFaces": 82,
+                "coldBytes": 2891988,
+                "nextMs": 3514.9000000059605,
+                "nextNewFaces": 23,
+                "nextNewBytes": 606004,
+                "nextCachedFaces": 82
+              },
+              "37.5": {
+                "coldMs": 16274.40000000596,
+                "coldFaces": 121,
+                "coldBytes": 2748812,
+                "nextMs": 4244.899999976158,
+                "nextNewFaces": 42,
+                "nextNewBytes": 730184,
+                "nextCachedFaces": 121
+              }
+            }
+          },
+          {
+            "index": 2,
+            "coldPage": 117,
+            "nextPage": 118,
+            "runs": {
+              "30": {
+                "coldMs": 10391.899999976158,
+                "coldFaces": 80,
+                "coldBytes": 1605232,
+                "nextMs": 2468,
+                "nextNewFaces": 32,
+                "nextNewBytes": 394544,
+                "nextCachedFaces": 80
+              },
+              "45": {
+                "coldMs": 10571.59999999404,
+                "coldFaces": 67,
+                "coldBytes": 1663896,
+                "nextMs": 2617.300000011921,
+                "nextNewFaces": 29,
+                "nextNewBytes": 430968,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 10828,
+                "coldFaces": 63,
+                "coldBytes": 1723232,
+                "nextMs": 2425.5999999940395,
+                "nextNewFaces": 27,
+                "nextNewBytes": 385068,
+                "nextCachedFaces": 63
+              },
+              "80": {
+                "coldMs": 11242.699999988079,
+                "coldFaces": 57,
+                "coldBytes": 1819424,
+                "nextMs": 2325.9000000059605,
+                "nextNewFaces": 21,
+                "nextNewBytes": 372436,
+                "nextCachedFaces": 57
+              },
+              "120": {
+                "coldMs": 11528.90000000596,
+                "coldFaces": 48,
+                "coldBytes": 1886056,
+                "nextMs": 2250.4000000059605,
+                "nextNewFaces": 19,
+                "nextNewBytes": 356292,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 10585.399999976158,
+                "coldFaces": 75,
+                "coldBytes": 1649788,
+                "nextMs": 2773.4000000059605,
+                "nextNewFaces": 32,
+                "nextNewBytes": 451868,
+                "nextCachedFaces": 75
+              }
+            }
+          },
+          {
+            "index": 3,
+            "coldPage": 176,
+            "nextPage": 177,
+            "runs": {
+              "30": {
+                "coldMs": 10053.40000000596,
+                "coldFaces": 74,
+                "coldBytes": 1541952,
+                "nextMs": 1201.3999999761581,
+                "nextNewFaces": 16,
+                "nextNewBytes": 150360,
+                "nextCachedFaces": 74
+              },
+              "45": {
+                "coldMs": 10332.59999999404,
+                "coldFaces": 63,
+                "coldBytes": 1618412,
+                "nextMs": 1168.5,
+                "nextNewFaces": 14,
+                "nextNewBytes": 147180,
+                "nextCachedFaces": 63
+              },
+              "55": {
+                "coldMs": 10686.800000011921,
+                "coldFaces": 60,
+                "coldBytes": 1694444,
+                "nextMs": 1059.800000011921,
+                "nextNewFaces": 11,
+                "nextNewBytes": 123940,
+                "nextCachedFaces": 60
+              },
+              "80": {
+                "coldMs": 11059.09999999404,
+                "coldFaces": 53,
+                "coldBytes": 1785048,
+                "nextMs": 922.9000000059605,
+                "nextNewFaces": 8,
+                "nextNewBytes": 101504,
+                "nextCachedFaces": 53
+              },
+              "120": {
+                "coldMs": 11510.699999988079,
+                "coldFaces": 48,
+                "coldBytes": 1886800,
+                "nextMs": 798.5,
+                "nextNewFaces": 5,
+                "nextNewBytes": 78252,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 10271.100000023842,
+                "coldFaces": 70,
+                "coldBytes": 1595536,
+                "nextMs": 1130.300000011921,
+                "nextNewFaces": 14,
+                "nextNewBytes": 137060,
+                "nextCachedFaces": 70
+              }
+            }
+          }
+        ]
+      },
+      {
+        "protocol": "h2",
+        "link": "fast",
+        "pairs": [
+          {
+            "index": 0,
+            "coldPage": 0,
+            "nextPage": 1,
+            "runs": {
+              "30": {
+                "coldMs": 741.2999999821186,
+                "coldFaces": 26,
+                "coldBytes": 1048532,
+                "nextMs": 452.7000000178814,
+                "nextNewFaces": 51,
+                "nextNewBytes": 734372,
+                "nextCachedFaces": 26
+              },
+              "45": {
+                "coldMs": 772.7999999821186,
+                "coldFaces": 26,
+                "coldBytes": 1125956,
+                "nextMs": 457.5,
+                "nextNewFaces": 44,
+                "nextNewBytes": 764664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 757.3000000119209,
+                "coldFaces": 26,
+                "coldBytes": 1129500,
+                "nextMs": 490.5,
+                "nextNewFaces": 43,
+                "nextNewBytes": 840244,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 817.9000000059605,
+                "coldFaces": 25,
+                "coldBytes": 1253620,
+                "nextMs": 495.5,
+                "nextNewFaces": 39,
+                "nextNewBytes": 858020,
+                "nextCachedFaces": 25
+              },
+              "120": {
+                "coldMs": 843.8000000119209,
+                "coldFaces": 25,
+                "coldBytes": 1323232,
+                "nextMs": 509.69999998807907,
+                "nextNewFaces": 33,
+                "nextNewBytes": 891536,
+                "nextCachedFaces": 25
+              },
+              "37.5": {
+                "coldMs": 738.4000000059605,
+                "coldFaces": 26,
+                "coldBytes": 1051404,
+                "nextMs": 472.69999998807907,
+                "nextNewFaces": 47,
+                "nextNewBytes": 785080,
+                "nextCachedFaces": 26
+              }
+            }
+          },
+          {
+            "index": 1,
+            "coldPage": 23,
+            "nextPage": 24,
+            "runs": {
+              "30": {
+                "coldMs": 1045.8999999761581,
+                "coldFaces": 72,
+                "coldBytes": 1609496,
+                "nextMs": 277.69999998807907,
+                "nextNewFaces": 28,
+                "nextNewBytes": 292312,
+                "nextCachedFaces": 72
+              },
+              "45": {
+                "coldMs": 1014.5999999940395,
+                "coldFaces": 63,
+                "coldBytes": 1696836,
+                "nextMs": 264.5,
+                "nextNewFaces": 22,
+                "nextNewBytes": 256400,
+                "nextCachedFaces": 63
+              },
+              "55": {
+                "coldMs": 1019.9000000059605,
+                "coldFaces": 57,
+                "coldBytes": 1723828,
+                "nextMs": 250.5,
+                "nextNewFaces": 21,
+                "nextNewBytes": 260240,
+                "nextCachedFaces": 57
+              },
+              "80": {
+                "coldMs": 1055,
+                "coldFaces": 53,
+                "coldBytes": 1841968,
+                "nextMs": 251.60000002384186,
+                "nextNewFaces": 17,
+                "nextNewBytes": 239492,
+                "nextCachedFaces": 53
+              },
+              "120": {
+                "coldMs": 1096,
+                "coldFaces": 47,
+                "coldBytes": 1921100,
+                "nextMs": 232.59999999403954,
+                "nextNewFaces": 14,
+                "nextNewBytes": 229552,
+                "nextCachedFaces": 47
+              },
+              "37.5": {
+                "coldMs": 990.8999999761581,
+                "coldFaces": 63,
+                "coldBytes": 1612028,
+                "nextMs": 286.40000000596046,
+                "nextNewFaces": 28,
+                "nextNewBytes": 319032,
+                "nextCachedFaces": 63
+              }
+            }
+          },
+          {
+            "index": 2,
+            "coldPage": 47,
+            "nextPage": 48,
+            "runs": {
+              "30": {
+                "coldMs": 1042.6000000238419,
+                "coldFaces": 76,
+                "coldBytes": 1743936,
+                "nextMs": 253.2000000178814,
+                "nextNewFaces": 22,
+                "nextNewBytes": 238220,
+                "nextCachedFaces": 76
+              },
+              "45": {
+                "coldMs": 1077,
+                "coldFaces": 67,
+                "coldBytes": 1822680,
+                "nextMs": 246.5,
+                "nextNewFaces": 18,
+                "nextNewBytes": 226896,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 1090.5,
+                "coldFaces": 64,
+                "coldBytes": 1880272,
+                "nextMs": 208.69999998807907,
+                "nextNewFaces": 12,
+                "nextNewBytes": 173508,
+                "nextCachedFaces": 64
+              },
+              "80": {
+                "coldMs": 1150.199999988079,
+                "coldFaces": 63,
+                "coldBytes": 2038332,
+                "nextMs": 205.59999999403954,
+                "nextNewFaces": 9,
+                "nextNewBytes": 147252,
+                "nextCachedFaces": 63
+              },
+              "120": {
+                "coldMs": 1163.199999988079,
+                "coldFaces": 55,
+                "coldBytes": 2127612,
+                "nextMs": 197.7999999821186,
+                "nextNewFaces": 8,
+                "nextNewBytes": 144440,
+                "nextCachedFaces": 55
+              },
+              "37.5": {
+                "coldMs": 1056,
+                "coldFaces": 71,
+                "coldBytes": 1792520,
+                "nextMs": 250.90000000596046,
+                "nextNewFaces": 19,
+                "nextNewBytes": 218612,
+                "nextCachedFaces": 71
+              }
+            }
+          },
+          {
+            "index": 3,
+            "coldPage": 70,
+            "nextPage": 71,
+            "runs": {
+              "30": {
+                "coldMs": 874.5999999940395,
+                "coldFaces": 46,
+                "coldBytes": 1342444,
+                "nextMs": 337,
+                "nextNewFaces": 40,
+                "nextNewBytes": 447760,
+                "nextCachedFaces": 46
+              },
+              "45": {
+                "coldMs": 922.5,
+                "coldFaces": 43,
+                "coldBytes": 1465688,
+                "nextMs": 300.7999999821186,
+                "nextNewFaces": 30,
+                "nextNewBytes": 378840,
+                "nextCachedFaces": 43
+              },
+              "55": {
+                "coldMs": 940,
+                "coldFaces": 41,
+                "coldBytes": 1522344,
+                "nextMs": 293,
+                "nextNewFaces": 25,
+                "nextNewBytes": 354768,
+                "nextCachedFaces": 41
+              },
+              "80": {
+                "coldMs": 968.1999999880791,
+                "coldFaces": 38,
+                "coldBytes": 1634388,
+                "nextMs": 306.7000000178814,
+                "nextNewFaces": 25,
+                "nextNewBytes": 371004,
+                "nextCachedFaces": 38
+              },
+              "120": {
+                "coldMs": 1013.5999999940395,
+                "coldFaces": 37,
+                "coldBytes": 1713936,
+                "nextMs": 262.80000001192093,
+                "nextNewFaces": 15,
+                "nextNewBytes": 321256,
+                "nextCachedFaces": 37
+              },
+              "37.5": {
+                "coldMs": 884.5,
+                "coldFaces": 43,
+                "coldBytes": 1392180,
+                "nextMs": 328.30000001192093,
+                "nextNewFaces": 35,
+                "nextNewBytes": 426684,
+                "nextCachedFaces": 43
+              }
+            }
+          },
+          {
+            "index": 4,
+            "coldPage": 94,
+            "nextPage": 95,
+            "runs": {
+              "30": {
+                "coldMs": 1204.1000000238419,
+                "coldFaces": 101,
+                "coldBytes": 2074996,
+                "nextMs": 247.09999999403954,
+                "nextNewFaces": 22,
+                "nextNewBytes": 237584,
+                "nextCachedFaces": 101
+              },
+              "45": {
+                "coldMs": 1201.2999999821186,
+                "coldFaces": 89,
+                "coldBytes": 2162272,
+                "nextMs": 243.7000000178814,
+                "nextNewFaces": 15,
+                "nextNewBytes": 182980,
+                "nextCachedFaces": 89
+              },
+              "55": {
+                "coldMs": 1227.699999988079,
+                "coldFaces": 83,
+                "coldBytes": 2205212,
+                "nextMs": 222.59999999403954,
+                "nextNewFaces": 14,
+                "nextNewBytes": 184504,
+                "nextCachedFaces": 83
+              },
+              "80": {
+                "coldMs": 1231.0999999940395,
+                "coldFaces": 71,
+                "coldBytes": 2232684,
+                "nextMs": 232.69999998807907,
+                "nextNewFaces": 12,
+                "nextNewBytes": 179468,
+                "nextCachedFaces": 71
+              },
+              "120": {
+                "coldMs": 1282.9000000059605,
+                "coldFaces": 66,
+                "coldBytes": 2373744,
+                "nextMs": 212.40000000596046,
+                "nextNewFaces": 9,
+                "nextNewBytes": 163032,
+                "nextCachedFaces": 66
+              },
+              "37.5": {
+                "coldMs": 1192.5,
+                "coldFaces": 93,
+                "coldBytes": 2104640,
+                "nextMs": 255.5,
+                "nextNewFaces": 20,
+                "nextNewBytes": 225388,
+                "nextCachedFaces": 93
+              }
+            }
+          },
+          {
+            "index": 5,
+            "coldPage": 117,
+            "nextPage": 118,
+            "runs": {
+              "30": {
+                "coldMs": 988.4000000059605,
+                "coldFaces": 80,
+                "coldBytes": 1605232,
+                "nextMs": 328.59999999403954,
+                "nextNewFaces": 32,
+                "nextNewBytes": 394544,
+                "nextCachedFaces": 80
+              },
+              "45": {
+                "coldMs": 1004.7999999821186,
+                "coldFaces": 67,
+                "coldBytes": 1663896,
+                "nextMs": 332.2999999821186,
+                "nextNewFaces": 29,
+                "nextNewBytes": 430968,
+                "nextCachedFaces": 67
+              },
+              "55": {
+                "coldMs": 1014.6999999880791,
+                "coldFaces": 63,
+                "coldBytes": 1723232,
+                "nextMs": 315.59999999403954,
+                "nextNewFaces": 27,
+                "nextNewBytes": 385068,
+                "nextCachedFaces": 63
+              },
+              "80": {
+                "coldMs": 1055.1000000238419,
+                "coldFaces": 57,
+                "coldBytes": 1819424,
+                "nextMs": 305.59999999403954,
+                "nextNewFaces": 21,
+                "nextNewBytes": 372436,
+                "nextCachedFaces": 57
+              },
+              "120": {
+                "coldMs": 1072.5,
+                "coldFaces": 48,
+                "coldBytes": 1886056,
+                "nextMs": 291.5,
+                "nextNewFaces": 19,
+                "nextNewBytes": 356292,
+                "nextCachedFaces": 48
+              },
+              "37.5": {
+                "coldMs": 1018.6999999880791,
+                "coldFaces": 75,
+                "coldBytes": 1649788,
+                "nextMs": 348.5,
+                "nextNewFaces": 32,
+                "nextNewBytes": 451868,
+                "nextCachedFaces": 75
+              }
+            }
+          },
+          {
+            "index": 6,
+            "coldPage": 140,
+            "nextPage": 141,
+            "runs": {
+              "30": {
+                "coldMs": 1341,
+                "coldFaces": 113,
+                "coldBytes": 2429792,
+                "nextMs": 182.19999998807907,
+                "nextNewFaces": 5,
+                "nextNewBytes": 41620,
+                "nextCachedFaces": 113
+              },
+              "45": {
+                "coldMs": 1373.5999999940395,
+                "coldFaces": 105,
+                "coldBytes": 2549380,
+                "nextMs": 169,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10224,
+                "nextCachedFaces": 105
+              },
+              "55": {
+                "coldMs": 1385.4000000059605,
+                "coldFaces": 97,
+                "coldBytes": 2559644,
+                "nextMs": 158.5,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10732,
+                "nextCachedFaces": 97
+              },
+              "80": {
+                "coldMs": 1414,
+                "coldFaces": 86,
+                "coldBytes": 2623132,
+                "nextMs": 157,
+                "nextNewFaces": 1,
+                "nextNewBytes": 11232,
+                "nextCachedFaces": 86
+              },
+              "120": {
+                "coldMs": 1435.699999988079,
+                "coldFaces": 78,
+                "coldBytes": 2725372,
+                "nextMs": 84.59999999403954,
+                "nextNewFaces": 0,
+                "nextNewBytes": 0,
+                "nextCachedFaces": 78
+              },
+              "37.5": {
+                "coldMs": 1382.0999999940395,
+                "coldFaces": 110,
+                "coldBytes": 2504980,
+                "nextMs": 166.59999999403954,
+                "nextNewFaces": 2,
+                "nextNewBytes": 18724,
+                "nextCachedFaces": 110
+              }
+            }
+          },
+          {
+            "index": 7,
+            "coldPage": 164,
+            "nextPage": 165,
+            "runs": {
+              "30": {
+                "coldMs": 744.7000000178814,
+                "coldFaces": 30,
+                "coldBytes": 1033752,
+                "nextMs": 663.9000000059605,
+                "nextNewFaces": 80,
+                "nextNewBytes": 1243428,
+                "nextCachedFaces": 30
+              },
+              "45": {
+                "coldMs": 773.6999999880791,
+                "coldFaces": 26,
+                "coldBytes": 1144464,
+                "nextMs": 657.9000000059605,
+                "nextNewFaces": 74,
+                "nextNewBytes": 1238664,
+                "nextCachedFaces": 26
+              },
+              "55": {
+                "coldMs": 785,
+                "coldFaces": 26,
+                "coldBytes": 1150976,
+                "nextMs": 674.5,
+                "nextNewFaces": 68,
+                "nextNewBytes": 1267344,
+                "nextCachedFaces": 26
+              },
+              "80": {
+                "coldMs": 829.0999999940395,
+                "coldFaces": 24,
+                "coldBytes": 1262552,
+                "nextMs": 615.0999999940395,
+                "nextNewFaces": 54,
+                "nextNewBytes": 1152852,
+                "nextCachedFaces": 24
+              },
+              "120": {
+                "coldMs": 827.6999999880791,
+                "coldFaces": 24,
+                "coldBytes": 1270536,
+                "nextMs": 659.5,
+                "nextNewFaces": 49,
+                "nextNewBytes": 1265244,
+                "nextCachedFaces": 24
+              },
+              "37.5": {
+                "coldMs": 750.5,
+                "coldFaces": 27,
+                "coldBytes": 1082440,
+                "nextMs": 684.9000000059605,
+                "nextNewFaces": 81,
+                "nextNewBytes": 1280420,
+                "nextCachedFaces": 27
+              }
+            }
+          },
+          {
+            "index": 8,
+            "coldPage": 187,
+            "nextPage": 188,
+            "runs": {
+              "30": {
+                "coldMs": 356.09999999403954,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 674.1999999880791,
+                "nextNewFaces": 47,
+                "nextNewBytes": 1302452,
+                "nextCachedFaces": 2
+              },
+              "45": {
+                "coldMs": 375,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 714.0999999940395,
+                "nextNewFaces": 42,
+                "nextNewBytes": 1420216,
+                "nextCachedFaces": 2
+              },
+              "55": {
+                "coldMs": 360.09999999403954,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 724.9000000059605,
+                "nextNewFaces": 37,
+                "nextNewBytes": 1451064,
+                "nextCachedFaces": 2
+              },
+              "80": {
+                "coldMs": 340,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 759.3000000119209,
+                "nextNewFaces": 34,
+                "nextNewBytes": 1554228,
+                "nextCachedFaces": 2
+              },
+              "120": {
+                "coldMs": 344.69999998807907,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 789.5,
+                "nextNewFaces": 33,
+                "nextNewBytes": 1618492,
+                "nextCachedFaces": 2
+              },
+              "37.5": {
+                "coldMs": 362.89999997615814,
+                "coldFaces": 2,
+                "coldBytes": 125484,
+                "nextMs": 697.5999999940395,
+                "nextNewFaces": 45,
+                "nextNewBytes": 1371504,
+                "nextCachedFaces": 2
+              }
+            }
+          },
+          {
+            "index": 9,
+            "coldPage": 211,
+            "nextPage": 212,
+            "runs": {
+              "30": {
+                "coldMs": 835.5,
+                "coldFaces": 47,
+                "coldBytes": 1225120,
+                "nextMs": 153.09999999403954,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8120,
+                "nextCachedFaces": 47
+              },
+              "45": {
+                "coldMs": 856.1000000238419,
+                "coldFaces": 36,
+                "coldBytes": 1285772,
+                "nextMs": 144.69999998807907,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8976,
+                "nextCachedFaces": 36
+              },
+              "55": {
+                "coldMs": 872.2999999821186,
+                "coldFaces": 34,
+                "coldBytes": 1341684,
+                "nextMs": 138.7999999821186,
+                "nextNewFaces": 1,
+                "nextNewBytes": 10088,
+                "nextCachedFaces": 34
+              },
+              "80": {
+                "coldMs": 906.5999999940395,
+                "coldFaces": 32,
+                "coldBytes": 1462264,
+                "nextMs": 134.90000000596046,
+                "nextNewFaces": 1,
+                "nextNewBytes": 11832,
+                "nextCachedFaces": 32
+              },
+              "120": {
+                "coldMs": 936.5,
+                "coldFaces": 29,
+                "coldBytes": 1564908,
+                "nextMs": 76.30000001192093,
+                "nextNewFaces": 0,
+                "nextNewBytes": 0,
+                "nextCachedFaces": 29
+              },
+              "37.5": {
+                "coldMs": 841.4000000059605,
+                "coldFaces": 43,
+                "coldBytes": 1269344,
+                "nextMs": 151.30000001192093,
+                "nextNewFaces": 1,
+                "nextNewBytes": 8504,
+                "nextCachedFaces": 43
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "slicingTime": {
+    "threads": 8,
+    "fingerprint": "1dca6e172640",
+    "profdata": "Homebrew LLVM version 23.1.6",
+    "fonts": {
+      "calendar": {
+        "variants": [
+          {
+            "variant": "shipped",
+            "build": null,
+            "addonBytes": 3708128,
+            "samples": [
+              {
+                "ms": 12141.7,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12143.4,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12168.5,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12336,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12159,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "previous-profile",
+            "build": null,
+            "addonBytes": 4739640,
+            "samples": [
+              {
+                "ms": 12099.4,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12129.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12092.8,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12095.1,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12234.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "pgo",
+            "build": 1,
+            "addonBytes": 3671224,
+            "samples": [
+              {
+                "ms": 12594.7,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12544.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12821.8,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12940.8,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12584.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "pgo",
+            "build": 2,
+            "addonBytes": 3671224,
+            "samples": [
+              {
+                "ms": 12694.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12727.9,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 13072.9,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12660.3,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12651.1,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "pgo",
+            "build": 3,
+            "addonBytes": 3671224,
+            "samples": [
+              {
+                "ms": 12593.9,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12679.7,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12630.4,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12655.4,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 12689.2,
+                "chunks": 707,
+                "chunkBytes": 25366020,
+                "cssBytes": 280239,
+                "largestFaceBytes": 118672,
+                "namesHash": "439438b5eda1",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q10",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 6724.9,
+                "chunks": 712,
+                "chunkBytes": 25393544,
+                "cssBytes": 281058,
+                "largestFaceBytes": 120524,
+                "namesHash": "b6d52d5be643",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6689.6,
+                "chunks": 712,
+                "chunkBytes": 25393544,
+                "cssBytes": 281058,
+                "largestFaceBytes": 120524,
+                "namesHash": "b6d52d5be643",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6692.1,
+                "chunks": 712,
+                "chunkBytes": 25393544,
+                "cssBytes": 281058,
+                "largestFaceBytes": 120524,
+                "namesHash": "b6d52d5be643",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6688.3,
+                "chunks": 712,
+                "chunkBytes": 25393544,
+                "cssBytes": 281058,
+                "largestFaceBytes": 120524,
+                "namesHash": "b6d52d5be643",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6765.6,
+                "chunks": 712,
+                "chunkBytes": 25393544,
+                "cssBytes": 281058,
+                "largestFaceBytes": 120524,
+                "namesHash": "b6d52d5be643",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q9",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 806,
+                "chunks": 763,
+                "chunkBytes": 27245364,
+                "cssBytes": 291154,
+                "largestFaceBytes": 130780,
+                "namesHash": "9693880da76c",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 798.7,
+                "chunks": 763,
+                "chunkBytes": 27245364,
+                "cssBytes": 291154,
+                "largestFaceBytes": 130780,
+                "namesHash": "9693880da76c",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 798,
+                "chunks": 763,
+                "chunkBytes": 27245364,
+                "cssBytes": 291154,
+                "largestFaceBytes": 130780,
+                "namesHash": "9693880da76c",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 812.3,
+                "chunks": 763,
+                "chunkBytes": 27245364,
+                "cssBytes": 291154,
+                "largestFaceBytes": 130780,
+                "namesHash": "9693880da76c",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 788.8,
+                "chunks": 763,
+                "chunkBytes": 27245364,
+                "cssBytes": 291154,
+                "largestFaceBytes": 130780,
+                "namesHash": "9693880da76c",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q8",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 700.7,
+                "chunks": 763,
+                "chunkBytes": 27330408,
+                "cssBytes": 291167,
+                "largestFaceBytes": 131312,
+                "namesHash": "f74db9b2660d",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 706.6,
+                "chunks": 763,
+                "chunkBytes": 27330408,
+                "cssBytes": 291167,
+                "largestFaceBytes": 131312,
+                "namesHash": "f74db9b2660d",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 704.6,
+                "chunks": 763,
+                "chunkBytes": 27330408,
+                "cssBytes": 291167,
+                "largestFaceBytes": 131312,
+                "namesHash": "f74db9b2660d",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 695.8,
+                "chunks": 763,
+                "chunkBytes": 27330408,
+                "cssBytes": 291167,
+                "largestFaceBytes": 131312,
+                "namesHash": "f74db9b2660d",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 673.1,
+                "chunks": 763,
+                "chunkBytes": 27330408,
+                "cssBytes": 291167,
+                "largestFaceBytes": 131312,
+                "namesHash": "f74db9b2660d",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "raw",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 201.5,
+                "chunks": 1130,
+                "chunkBytes": 41427116,
+                "cssBytes": 362685,
+                "largestFaceBytes": 437960,
+                "namesHash": "316d14783c45",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 203.3,
+                "chunks": 1130,
+                "chunkBytes": 41427116,
+                "cssBytes": 362685,
+                "largestFaceBytes": 437960,
+                "namesHash": "316d14783c45",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 201.7,
+                "chunks": 1130,
+                "chunkBytes": 41427116,
+                "cssBytes": 362685,
+                "largestFaceBytes": 437960,
+                "namesHash": "316d14783c45",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 203.9,
+                "chunks": 1130,
+                "chunkBytes": 41427116,
+                "cssBytes": 362685,
+                "largestFaceBytes": 437960,
+                "namesHash": "316d14783c45",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 197.5,
+                "chunks": 1130,
+                "chunkBytes": 41427116,
+                "cssBytes": 362685,
+                "largestFaceBytes": 437960,
+                "namesHash": "316d14783c45",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          }
+        ],
+        "phases": {
+          "preSubsetMs": 422,
+          "runSubsetMs": 11002.7,
+          "linkSubsetMs": 4.2,
+          "faces": 707,
+          "largestFaceBytes": 118672,
+          "largestFaceMs": 994.7
+        }
+      },
+      "og": {
+        "variants": [
+          {
+            "variant": "shipped",
+            "build": null,
+            "addonBytes": 3708128,
+            "samples": [
+              {
+                "ms": 6074.4,
+                "chunks": 439,
+                "chunkBytes": 15335688,
+                "cssBytes": 221432,
+                "largestFaceBytes": 82352,
+                "namesHash": "00737862fa2a",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6030,
+                "chunks": 439,
+                "chunkBytes": 15335688,
+                "cssBytes": 221432,
+                "largestFaceBytes": 82352,
+                "namesHash": "00737862fa2a",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 6109.9,
+                "chunks": 439,
+                "chunkBytes": 15335688,
+                "cssBytes": 221432,
+                "largestFaceBytes": 82352,
+                "namesHash": "00737862fa2a",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q10",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 3205.2,
+                "chunks": 446,
+                "chunkBytes": 15404936,
+                "cssBytes": 222701,
+                "largestFaceBytes": 81712,
+                "namesHash": "876f7b31e6b9",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 3192.9,
+                "chunks": 446,
+                "chunkBytes": 15404936,
+                "cssBytes": 222701,
+                "largestFaceBytes": 81712,
+                "namesHash": "876f7b31e6b9",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 3200.8,
+                "chunks": 446,
+                "chunkBytes": 15404936,
+                "cssBytes": 222701,
+                "largestFaceBytes": 81712,
+                "namesHash": "876f7b31e6b9",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q9",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 456.7,
+                "chunks": 470,
+                "chunkBytes": 16255592,
+                "cssBytes": 227133,
+                "largestFaceBytes": 82168,
+                "namesHash": "9a57e6a147ea",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 452.3,
+                "chunks": 470,
+                "chunkBytes": 16255592,
+                "cssBytes": 227133,
+                "largestFaceBytes": 82168,
+                "namesHash": "9a57e6a147ea",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 458.7,
+                "chunks": 470,
+                "chunkBytes": 16255592,
+                "cssBytes": 227133,
+                "largestFaceBytes": 82168,
+                "namesHash": "9a57e6a147ea",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          },
+          {
+            "variant": "q8",
+            "build": null,
+            "addonBytes": 3712240,
+            "samples": [
+              {
+                "ms": 373,
+                "chunks": 473,
+                "chunkBytes": 16428100,
+                "cssBytes": 227602,
+                "largestFaceBytes": 83428,
+                "namesHash": "f9240dfbd4d0",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 368.1,
+                "chunks": 473,
+                "chunkBytes": 16428100,
+                "cssBytes": 227602,
+                "largestFaceBytes": 83428,
+                "namesHash": "f9240dfbd4d0",
+                "fingerprint": "1dca6e172640"
+              },
+              {
+                "ms": 362.1,
+                "chunks": 473,
+                "chunkBytes": 16428100,
+                "cssBytes": 227602,
+                "largestFaceBytes": 83428,
+                "namesHash": "f9240dfbd4d0",
+                "fingerprint": "1dca6e172640"
+              }
+            ]
+          }
+        ],
+        "phases": {
+          "preSubsetMs": 317.2,
+          "runSubsetMs": 5381.9,
+          "linkSubsetMs": 4.6,
+          "faces": 439,
+          "largestFaceBytes": 82352,
+          "largestFaceMs": 197.9
+        }
+      }
+    }
+  },
+  "stages": {
+    "page-cost": "2026-11-27T01:43:51.545Z",
+    "shaping": "2026-11-27T01:43:51.545Z",
+    "rendering": "2026-11-27T01:43:51.545Z",
+    "loading-time": "2026-11-27T01:43:51.545Z",
+    "slicing-time": "2026-11-27T01:43:51.545Z"
+  }
+}

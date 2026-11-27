@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "extends": "@kobato/tsconfig/tsconfig.base.json",
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./scripts/**/*", "./tests/unit/**/*"],
   "compilerOptions": {
     "types": ["node"]
   }

@@ -57,9 +57,12 @@
       "@kobato/test/*": ["../../tools/test/src/*"],
       "@kobato/font-split": ["../../tools/font-split/src/index.ts"],
       "@kobato/font-split/*": ["../../tools/font-split/src/*"],
+      "@kobato/font-split/scripts/*": ["../../tools/font-split/scripts/*"],
       "@kobato/pack/*": ["../../tools/pack/src/*"],
       "@kobato/trace/*": ["../../tools/trace/src/*"],
-      "@kobato/trace/tests/*": ["../../tools/trace/tests/*"]
+      "@kobato/trace/tests/*": ["../../tools/trace/tests/*"],
+      "@kobato/pack/tests/*": ["../../tools/pack/tests/*"],
+      "@kobato/font-split/tests/*": ["../../tools/font-split/tests/*"]
     }
   }
 }

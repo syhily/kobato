@@ -2,87 +2,93 @@
 <g transform="translate(0 0)">
 <text x="58" y="18" fill="#8b949e">Cold page bytes</text>
 <line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="260" text-anchor="end" fill="#8b949e">1200</text>
-<line x1="58" x2="856" y1="215.71428571428572" y2="215.71428571428572" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="219.71428571428572" text-anchor="end" fill="#8b949e">1500</text>
-<line x1="58" x2="856" y1="175.42857142857144" y2="175.42857142857144" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="179.42857142857144" text-anchor="end" fill="#8b949e">1800</text>
-<line x1="58" x2="856" y1="135.14285714285714" y2="135.14285714285714" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="139.14285714285714" text-anchor="end" fill="#8b949e">2100</text>
-<line x1="58" x2="856" y1="94.85714285714286" y2="94.85714285714286" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="98.85714285714286" text-anchor="end" fill="#8b949e">2400</text>
+<text x="50" y="260" text-anchor="end" fill="#8b949e">1,400</text>
+<line x1="58" x2="856" y1="222.3" y2="222.3" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="226.3" text-anchor="end" fill="#8b949e">1,600</text>
+<line x1="58" x2="856" y1="188.7" y2="188.7" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="192.7" text-anchor="end" fill="#8b949e">1,800</text>
+<line x1="58" x2="856" y1="155" y2="155" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="159" text-anchor="end" fill="#8b949e">2,000</text>
+<line x1="58" x2="856" y1="121.3" y2="121.3" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="125.3" text-anchor="end" fill="#8b949e">2,200</text>
+<line x1="58" x2="856" y1="87.7" y2="87.7" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="91.7" text-anchor="end" fill="#8b949e">2,400</text>
+<line x1="58" x2="856" y1="54" y2="54" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="58" text-anchor="end" fill="#8b949e">2,600</text>
 <line x1="58" x2="58" y1="256" y2="260" stroke="#8b949e"/>
 <text x="58" y="272" text-anchor="middle" fill="#8b949e">20</text>
 <line x1="137.8" x2="137.8" y1="256" y2="260" stroke="#8b949e"/>
 <text x="137.8" y="272" text-anchor="middle" fill="#8b949e">30</text>
-<line x1="217.60000000000002" x2="217.60000000000002" y1="256" y2="260" stroke="#8b949e"/>
-<text x="217.60000000000002" y="272" text-anchor="middle" fill="#8b949e">40</text>
+<line x1="217.6" x2="217.6" y1="256" y2="260" stroke="#8b949e"/>
+<text x="217.6" y="272" text-anchor="middle" fill="#8b949e">40</text>
 <line x1="297.4" x2="297.4" y1="256" y2="260" stroke="#8b949e"/>
 <text x="297.4" y="272" text-anchor="middle" fill="#8b949e">50</text>
-<line x1="377.20000000000005" x2="377.20000000000005" y1="256" y2="260" stroke="#8b949e"/>
-<text x="377.20000000000005" y="272" text-anchor="middle" fill="#8b949e">60</text>
+<line x1="377.2" x2="377.2" y1="256" y2="260" stroke="#8b949e"/>
+<text x="377.2" y="272" text-anchor="middle" fill="#8b949e">60</text>
 <line x1="536.8" x2="536.8" y1="256" y2="260" stroke="#8b949e"/>
 <text x="536.8" y="272" text-anchor="middle" fill="#8b949e">80</text>
 <line x1="856" x2="856" y1="256" y2="260" stroke="#8b949e"/>
 <text x="856" y="272" text-anchor="middle" fill="#8b949e">120</text>
 <line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e"/>
 <line x1="58" x2="58" y1="54" y2="256" stroke="#8b949e"/>
-<line x1="58" x2="856" y1="71.22390625" y2="71.22390625" stroke="#cf222e" stroke-dasharray="5 4" stroke-width="1.5"/>
-<line x1="337.29999999999995" x2="337.29999999999995" y1="54" y2="256" stroke="#8b949e" stroke-dasharray="2 4"/>
-<text x="342.29999999999995" y="250" fill="#8b949e">λ=55</text>
-<path d="M58.0 228.0 L97.9 223.5 L137.8 220.1 L157.8 216.4 L177.7 216.2 L197.6 213.9 L217.6 213.5 L237.6 213.0 L257.5 208.5 L277.5 208.2 L297.4 207.6 L317.4 207.1 L337.3 204.2 L357.3 203.4 L377.2 203.1 L457.0 197.6 L536.8 193.0 L856.0 180.5" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
-<path d="M58.0 226.2 L97.9 222.6 L137.8 220.3 L157.8 217.0 L177.7 216.5 L197.6 214.1 L217.6 213.2 L237.6 212.9 L257.5 209.5 L277.5 209.5 L297.4 208.9 L317.4 208.2 L337.3 205.4 L357.3 204.9 L377.2 205.3 L457.0 200.3 L536.8 196.2 L856.0 184.8" fill="none" stroke="#1a7f37" stroke-width="2"  stroke-linejoin="round"/>
-<path d="M58.0 157.6 L97.9 151.0 L137.8 145.2 L157.8 139.7 L177.7 138.2 L197.6 134.7 L217.6 132.6 L237.6 132.1 L257.5 127.5 L277.5 126.6 L297.4 125.3 L317.4 123.9 L337.3 120.1 L357.3 119.2 L377.2 117.9 L457.0 111.1 L536.8 105.2 L856.0 88.5" fill="none" stroke="#9a6700" stroke-width="2"  stroke-linejoin="round"/>
-<line x1="62" x2="80" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
+<line x1="58" x2="856" y1="58" y2="58" stroke="#cf222e" stroke-dasharray="5 4" stroke-width="1.5"/>
+<line x1="337.3" x2="337.3" y1="54" y2="256" stroke="#8b949e" stroke-dasharray="2 4"/>
+<text x="342.3" y="250" fill="#8b949e">λ=55</text>
+<path d="M58 229.7 L97.9 223.8 L137.8 219.1 L197.6 212.9 L257.5 206.3 L337.3 199.4 L377.2 198.2 L536.8 184.4 L856 168.8" fill="none" stroke="#316dca" stroke-width="2" stroke-linejoin="round"/>
+<path d="M58 232.2 L97.9 228.5 L137.8 223 L197.6 216.4 L257.5 211.8 L337.3 205.1 L377.2 204.8 L536.8 192.7 L856 178.2" fill="none" stroke="#1a7f37" stroke-width="2" stroke-linejoin="round"/>
+<path d="M58 147.4 L97.9 139.6 L137.8 130.9 L197.6 120.5 L257.5 111.1 L337.3 100.7 L377.2 98.6 L536.8 79.9 L856 58.9" fill="none" stroke="#9a6700" stroke-width="2" stroke-linejoin="round"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#316dca" stroke-width="2.5"/>
 <text x="85" y="50" fill="#8b949e">blog</text>
-<line x1="133.8" x2="151.8" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5" />
-<text x="156.8" y="50" fill="#8b949e">wiki hans</text>
-<line x1="239.10000000000002" x2="257.1" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5" />
-<text x="262.1" y="50" fill="#8b949e">wiki hant</text>
-<text x="457" y="294" text-anchor="middle" fill="#8b949e">DP λ (KB) — the shipped value is 55 KB</text>
+<line x1="157.2" x2="175.2" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5"/>
+<text x="180.2" y="50" fill="#8b949e">wiki hans</text>
+<line x1="283.9" x2="301.9" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5"/>
+<text x="306.9" y="50" fill="#8b949e">wiki hant</text>
+<text x="457" y="294" text-anchor="middle" fill="#8b949e">DP λ (KB) — dashed red: cn-font-split on the blog corpus</text>
 </g>
 <g transform="translate(0 300)">
 <text x="58" y="18" fill="#8b949e">Cold page requests</text>
 <line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="260" text-anchor="end" fill="#8b949e">40</text>
-<line x1="58" x2="856" y1="218.4" y2="218.4" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="222.4" text-anchor="end" fill="#8b949e">60</text>
-<line x1="58" x2="856" y1="180.8" y2="180.8" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="184.8" text-anchor="end" fill="#8b949e">80</text>
-<line x1="58" x2="856" y1="143.2" y2="143.2" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="147.2" text-anchor="end" fill="#8b949e">100</text>
-<line x1="58" x2="856" y1="105.6" y2="105.6" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="109.6" text-anchor="end" fill="#8b949e">120</text>
-<line x1="58" x2="856" y1="68" y2="68" stroke="#8b949e" stroke-opacity="0.25"/>
-<text x="50" y="72" text-anchor="end" fill="#8b949e">140</text>
+<text x="50" y="260" text-anchor="end" fill="#8b949e">0</text>
+<line x1="58" x2="856" y1="222.3" y2="222.3" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="226.3" text-anchor="end" fill="#8b949e">25</text>
+<line x1="58" x2="856" y1="188.7" y2="188.7" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="192.7" text-anchor="end" fill="#8b949e">50</text>
+<line x1="58" x2="856" y1="155" y2="155" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="159" text-anchor="end" fill="#8b949e">75</text>
+<line x1="58" x2="856" y1="121.3" y2="121.3" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="125.3" text-anchor="end" fill="#8b949e">100</text>
+<line x1="58" x2="856" y1="87.7" y2="87.7" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="91.7" text-anchor="end" fill="#8b949e">125</text>
+<line x1="58" x2="856" y1="54" y2="54" stroke="#8b949e" stroke-opacity="0.25"/>
+<text x="50" y="58" text-anchor="end" fill="#8b949e">150</text>
 <line x1="58" x2="58" y1="256" y2="260" stroke="#8b949e"/>
 <text x="58" y="272" text-anchor="middle" fill="#8b949e">20</text>
 <line x1="137.8" x2="137.8" y1="256" y2="260" stroke="#8b949e"/>
 <text x="137.8" y="272" text-anchor="middle" fill="#8b949e">30</text>
-<line x1="217.60000000000002" x2="217.60000000000002" y1="256" y2="260" stroke="#8b949e"/>
-<text x="217.60000000000002" y="272" text-anchor="middle" fill="#8b949e">40</text>
+<line x1="217.6" x2="217.6" y1="256" y2="260" stroke="#8b949e"/>
+<text x="217.6" y="272" text-anchor="middle" fill="#8b949e">40</text>
 <line x1="297.4" x2="297.4" y1="256" y2="260" stroke="#8b949e"/>
 <text x="297.4" y="272" text-anchor="middle" fill="#8b949e">50</text>
-<line x1="377.20000000000005" x2="377.20000000000005" y1="256" y2="260" stroke="#8b949e"/>
-<text x="377.20000000000005" y="272" text-anchor="middle" fill="#8b949e">60</text>
+<line x1="377.2" x2="377.2" y1="256" y2="260" stroke="#8b949e"/>
+<text x="377.2" y="272" text-anchor="middle" fill="#8b949e">60</text>
 <line x1="536.8" x2="536.8" y1="256" y2="260" stroke="#8b949e"/>
 <text x="536.8" y="272" text-anchor="middle" fill="#8b949e">80</text>
 <line x1="856" x2="856" y1="256" y2="260" stroke="#8b949e"/>
 <text x="856" y="272" text-anchor="middle" fill="#8b949e">120</text>
 <line x1="58" x2="856" y1="256" y2="256" stroke="#8b949e"/>
 <line x1="58" x2="58" y1="54" y2="256" stroke="#8b949e"/>
-<line x1="58" x2="856" y1="199.6" y2="199.6" stroke="#cf222e" stroke-dasharray="5 4" stroke-width="1.5"/>
-<line x1="337.29999999999995" x2="337.29999999999995" y1="54" y2="256" stroke="#8b949e" stroke-dasharray="2 4"/>
-<text x="342.29999999999995" y="250" fill="#8b949e">λ=55</text>
-<path d="M58.0 134.9 L97.9 149.6 L137.8 161.1 L157.8 172.2 L177.7 172.7 L197.6 182.9 L217.6 183.4 L237.6 184.4 L257.5 190.4 L277.5 190.6 L297.4 190.8 L317.4 191.7 L337.3 198.7 L357.3 198.7 L377.2 199.2 L457.0 205.2 L536.8 209.8 L856.0 220.5" fill="none" stroke="#316dca" stroke-width="2"  stroke-linejoin="round"/>
-<path d="M58.0 122.3 L97.9 140.0 L137.8 154.1 L157.8 166.1 L177.7 166.7 L197.6 176.9 L217.6 176.5 L237.6 178.0 L257.5 186.1 L277.5 187.0 L297.4 187.4 L317.4 187.9 L337.3 195.7 L357.3 196.0 L377.2 197.3 L457.0 204.3 L536.8 210.1 L856.0 222.2" fill="none" stroke="#1a7f37" stroke-width="2"  stroke-linejoin="round"/>
-<path d="M58.0 76.6 L97.9 96.4 L137.8 112.0 L157.8 126.1 L177.7 126.3 L197.6 134.7 L217.6 137.6 L237.6 139.1 L257.5 145.5 L277.5 147.0 L297.4 149.2 L317.4 149.6 L337.3 155.6 L357.3 156.7 L377.2 159.2 L457.0 165.6 L536.8 171.2 L856.0 183.2" fill="none" stroke="#9a6700" stroke-width="2"  stroke-linejoin="round"/>
-<line x1="62" x2="80" y1="46" y2="46" stroke="#316dca" stroke-width="2.5" />
+<line x1="58" x2="856" y1="161.8" y2="161.8" stroke="#cf222e" stroke-dasharray="5 4" stroke-width="1.5"/>
+<line x1="337.3" x2="337.3" y1="54" y2="256" stroke="#8b949e" stroke-dasharray="2 4"/>
+<text x="342.3" y="250" fill="#8b949e">λ=55</text>
+<path d="M58 133.5 L97.9 143.4 L137.8 153.5 L197.6 161.4 L257.5 167.6 L337.3 173.5 L377.2 173.7 L536.8 181.9 L856 189.5" fill="none" stroke="#316dca" stroke-width="2" stroke-linejoin="round"/>
+<path d="M58 129 L97.9 141.7 L137.8 151.2 L197.6 159.1 L257.5 167.3 L337.3 173.8 L377.2 174.6 L536.8 183.8 L856 191.4" fill="none" stroke="#1a7f37" stroke-width="2" stroke-linejoin="round"/>
+<path d="M58 84.6 L97.9 99.8 L137.8 111.1 L197.6 121.2 L257.5 129.9 L337.3 137.6 L377.2 138.5 L536.8 148.8 L856 157.4" fill="none" stroke="#9a6700" stroke-width="2" stroke-linejoin="round"/>
+<line x1="62" x2="80" y1="46" y2="46" stroke="#316dca" stroke-width="2.5"/>
 <text x="85" y="50" fill="#8b949e">blog</text>
-<line x1="133.8" x2="151.8" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5" />
-<text x="156.8" y="50" fill="#8b949e">wiki hans</text>
-<line x1="239.10000000000002" x2="257.1" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5" />
-<text x="262.1" y="50" fill="#8b949e">wiki hant</text>
+<line x1="157.2" x2="175.2" y1="46" y2="46" stroke="#1a7f37" stroke-width="2.5"/>
+<text x="180.2" y="50" fill="#8b949e">wiki hans</text>
+<line x1="283.9" x2="301.9" y1="46" y2="46" stroke="#9a6700" stroke-width="2.5"/>
+<text x="306.9" y="50" fill="#8b949e">wiki hant</text>
 <text x="457" y="294" text-anchor="middle" fill="#8b949e">DP λ (KB) — dashed red: cn-font-split on the blog corpus</text>
 </g>
 </svg>

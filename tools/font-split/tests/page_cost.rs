@@ -276,9 +276,19 @@ fn measure(run: &SliceRun, pages: &[BTreeSet<u32>]) -> Metrics {
     }
 }
 
-fn report(label: &str, run: &SliceRun, metrics: &Metrics) {
+fn bucket_label(bucket: &SizeBucket) -> String {
+    let upper = SIZE_BUCKETS.iter().find(|&&from| from > bucket.from).copied().unwrap_or(usize::MAX);
+    match (bucket.from, upper) {
+        (0, to) => format!("<{to}"),
+        (_, usize::MAX) => format!("{}+", bucket.from),
+        (_, to) => format!("{}-{}", bucket.from, to - 1),
+    }
+}
+
+fn report(label: &str, sweep: Option<(f64, f64)>, run: &SliceRun, metrics: &Metrics) {
+    let title = sweep.map_or_else(|| label.to_string(), |(lambda, mu)| format!("{label} lambda={lambda} mu={mu}"));
     println!(
-        "page-cost report [{label}]: {} chunks, {} B total (+ {} B css); cold: mean {:.0} B/page, p90 {:.0} B/page, \
+        "page-cost report [{title}]: {} chunks, {} B total (+ {} B css); cold: mean {:.0} B/page, p90 {:.0} B/page, \
          {:.1} chunks/page (p90 {:.1}, max {}); session(5): mean {:.0} B / {:.1} chunks; incremental: mean {:.0} \
          B/page; jump: mean {:.0} B / {:.1} chunks — over {} pages",
         run.chunks.len(),
@@ -302,17 +312,41 @@ fn report(label: &str, run: &SliceRun, metrics: &Metrics) {
         .iter()
         .filter(|b| b.pages > 0)
         .map(|b| {
-            let upper = SIZE_BUCKETS.iter().find(|&&from| from > b.from).copied().unwrap_or(usize::MAX);
-            let range = match (b.from, upper) {
-                (0, to) => format!("<{to}"),
-                (_, usize::MAX) => format!("{}+", b.from),
-                (_, to) => format!("{}-{}", b.from, to - 1),
-            };
-            format!("{range}: {:.0} KB / {:.1} req ({} pages)", kb(b.mean_bytes), b.mean_chunks, b.pages)
+            format!("{}: {:.0} KB / {:.1} req ({} pages)", bucket_label(b), kb(b.mean_bytes), b.mean_chunks, b.pages)
         })
         .collect::<Vec<_>>()
         .join(" | ");
-    println!("page-cost by size [{label}]: {buckets}");
+    println!("page-cost by size [{title}]: {buckets}");
+
+    let params = sweep.map_or_else(String::new, |(lambda, mu)| format!("\tlambda={lambda}\tmu={mu}"));
+    println!(
+        "page-cost\tlabel={label}{params}\tchunks={}\ttotalBytes={}\tcssBytes={}\tpages={}\tcold.meanBytes={}\t\
+         cold.p90Bytes={}\tcold.meanChunks={}\tcold.p90Chunks={}\tcold.maxChunks={}\tsession.meanBytes={}\t\
+         session.meanChunks={}\tincremental.meanBytes={}\tnext.meanBytes={}\tnext.meanChunks={}",
+        run.chunks.len(),
+        run.total_bytes,
+        run.css_bytes,
+        metrics.page_count,
+        metrics.mean_bytes_per_page,
+        metrics.p90_bytes_per_page,
+        metrics.mean_chunks_per_page,
+        metrics.p90_chunks_per_page,
+        metrics.max_chunks_per_page,
+        metrics.mean_session_bytes,
+        metrics.mean_session_chunks,
+        metrics.mean_incremental_bytes,
+        metrics.mean_jump_bytes,
+        metrics.mean_jump_chunks,
+    );
+    for bucket in metrics.buckets.iter().filter(|b| b.pages > 0) {
+        println!(
+            "page-cost-size\tlabel={label}{params}\tband={}\tpages={}\tmeanBytes={}\tmeanChunks={}",
+            bucket_label(bucket),
+            bucket.pages,
+            bucket.mean_bytes,
+            bucket.mean_chunks,
+        );
+    }
 }
 
 fn production_font_path() -> PathBuf {
@@ -340,7 +374,7 @@ fn page_cost_baseline_is_pinned() {
         ("blog", PAGES_BLOG, &BLOG_BASELINE),
     ] {
         let metrics = measure(run, &load_pages(fixture));
-        report(label, run, &metrics);
+        report(label, None, run, &metrics);
 
         let near = |actual: f64, recorded: f64, tolerance: f64, what: &str| {
             assert!(
@@ -393,7 +427,7 @@ fn page_cost_font_report() {
         }
     };
     for (label, fixture) in CORPORA {
-        report(label, &run, &measure(&run, &load_pages(fixture)));
+        report(label, None, &run, &measure(&run, &load_pages(fixture)));
     }
 }
 
@@ -447,7 +481,7 @@ fn page_cost_lambda_sweep() {
             let run = to_run(files);
             assert_covered_exactly_once(&input, &run);
             for (label, pages) in &corpora {
-                report(&format!("{label} lambda={lambda} mu={mu}"), &run, &measure(&run, pages));
+                report(label, Some((lambda, mu)), &run, &measure(&run, pages));
             }
         }
     }
