@@ -14,6 +14,7 @@ const SCAN_ROOTS = [
   'packages/db/src',
   'packages/server/src',
   'packages/api/src/contracts',
+  'packages/api/src/browser',
   'packages/shared/auth/src',
   'packages/shared/catalog/src',
   'packages/shared/distribution/src',

@@ -7,6 +7,7 @@ const REPO_ROOT = process.cwd()
 const KIT_ROOT = 'packages/web/kit/src'
 const UI_ROOT = 'packages/web/ui/src'
 const WORKSPACE_UI_ROOT = 'apps/kobato/src/ui'
+const API_BROWSER_ROOT = 'packages/api/src/browser'
 
 function walk(root: string, out: string[]): void {
   if (!existsSync(root)) {
@@ -75,13 +76,15 @@ describe('web direction', () => {
     expect(offendersImporting([WORKSPACE_UI_ROOT], ['@sayaka/'])).toEqual([])
   })
 
-  it('keeps route title/meta resolution in the app layer: no web package or workspace UI module imports @kobato/catalog/seo', () => {
-    expect(offendersImporting([KIT_ROOT, UI_ROOT, WORKSPACE_UI_ROOT], ['@kobato/catalog/seo'])).toEqual([])
+  it('keeps route title/meta resolution in the app layer: no web package, workspace UI module, or api browser hook imports @kobato/catalog/seo', () => {
+    expect(
+      offendersImporting([KIT_ROOT, UI_ROOT, WORKSPACE_UI_ROOT, API_BROWSER_ROOT], ['@kobato/catalog/seo']),
+    ).toEqual([])
   })
 
-  it('keeps root route data behind the document shell: no web package module reads useRouteLoaderData', () => {
+  it('keeps root route data behind the document shell: no web package module or api browser hook reads useRouteLoaderData', () => {
     const files: string[] = []
-    for (const root of [KIT_ROOT, UI_ROOT]) {
+    for (const root of [KIT_ROOT, UI_ROOT, API_BROWSER_ROOT]) {
       walk(`${REPO_ROOT}/${root}`, files)
     }
 
@@ -90,6 +93,9 @@ describe('web direction', () => {
       .map((file) => relative(REPO_ROOT, file))
       .sort()
 
-    expect(offenders, 'a shared hook takes document facts from @kobato/ui/lib/document-facts-context').toEqual([])
+    expect(
+      offenders,
+      "a shared hook takes document facts from @kobato/ui/lib/document-facts-context, and an api browser hook never reads a consumer's route data",
+    ).toEqual([])
   })
 })

@@ -7,9 +7,10 @@ public resource (images, storage, embedded fonts, branding assets, the Webmentio
 `public.*` procedure pair that sayaka serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and
 the two forwarded path families. kobato wires routes to product code and owns the workspace admin UI in `src/ui/` (the
 former `@kobato/web-admin` package, absorbed per ADR-0009); cross-surface features that call a procedure stay in
-`@kobato/web-kit`, primitives, the document shell, and the shared document modules in `@kobato/ui`, backend in
-`@kobato/server`, contracts in `@kobato/api`. The browser runtime under `src/document/` and `src/route-warmup/` is
-consumed by this app alone — nothing outside `apps/kobato` imports it.
+`@kobato/web-kit` (their UI-free data hooks, `use-notifications`, in `@kobato/api/browser`), primitives, the document
+shell, and the shared document modules in `@kobato/ui`, backend in `@kobato/server`, contracts in `@kobato/api`. The
+browser runtime under `src/document/` and `src/route-warmup/` is consumed by this app alone — nothing outside
+`apps/kobato` imports it.
 
 - `src/root.tsx`, `src/routes.ts`, `src/server.ts` — the framework entry set (`src/entry.server.tsx` is gone: SPA mode
   prerenders `/__spa-fallback.html` through React Router's default entry, renamed to `index.html` by the build);

@@ -131,16 +131,28 @@ their own.
 - `src/browser/` — the built-in frontend's browser assembly, and the ONLY UI-bound, ambient part of the package:
   `client.ts` is the browser singleton (`orpc` + `setCsrfToken` — the CSRF token store and the same-origin `/rpc` URL
   default, delegating to `createKobatoClient`), `orpc-query.ts` the TanStack Query binding (`orpcQuery`),
-  `query-client.ts` the app's `QueryClient` factory (`makeQueryClient`). It is a leaf: nothing else under `src/` imports
-  it, and neither does `@kobato/server`, `@kobato/db`, or a shared leaf.
+  `query-client.ts` the app's `QueryClient` factory (`makeQueryClient`), and `use-notifications.ts` the contract's data
+  hooks (`useUnreadNotificationCount`, `useInvalidateNotifications`, `usePatchNotificationReadState` over
+  `patchNotificationReadState` — the TanStack Query reads of `public.notifications.*` with the read-state cache patching
+  beside them, ADR-0011 §3). It is a leaf: nothing else under `src/` imports it, and neither does `@kobato/server`,
+  `@kobato/db`, or a shared leaf.
 
 ## Rules
 
 - Allowed deps: `@orpc/contract` (rpc + client), `@orpc/client` (client only), and the shared leaves `auth`, `catalog`,
-  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`; `src/browser/` additionally imports `@orpc/react-query`
-  and `@tanstack/react-query`. `react` and `@types/react` are declared only to pin those packages' peer resolution to
-  the workspace's single React copy — no module outside `src/browser/` imports them. `src/contracts/` imports no
-  `@orpc/*` package and never imports `src/rpc/` or `src/client/` (`apps/kobato/tests/arch/shared-react-free.test.ts`).
+  `settings`, `i18n`, `utils`, inkling `/headless`, `assets`; `src/browser/` additionally imports `@orpc/react-query`,
+  `@tanstack/react-query`, and `react` (`use-notifications`' `useCallback`), and its one shared-leaf import is
+  `@kobato/utils/type-guards` (`use-notifications`' `isRecord`). `@types/react` is declared only to pin
+  `@orpc/react-query`'s and `@tanstack/react-query`'s peer resolution to the workspace's single React copy, and `react`
+  is that pin plus a runtime import of `use-notifications` — `src/browser/` is the one tree that imports `react`, and no
+  module outside it does. `src/contracts/` imports no `@orpc/*` package and never imports `src/rpc/` or `src/client/`
+  (`apps/kobato/tests/arch/shared-react-free.test.ts`).
+- A browser hook imports the contract, the client, and TanStack Query — never a UI package (`@kobato/ui`,
+  `@kobato/web-kit`, and `@kobato/inkling` — the barrel and every entry but `/headless*`), never message copy (the
+  `@kobato/i18n` message catalogs `messages/*`, the fallback catalog `fallback-messages`, and the label tables
+  `inkling-labels/*`), never a consumer's route data (React Router); `toast-api-error` (sonner, message ids) and the
+  document clock fail it and stay out (ADR-0011 §3, `apps/kobato/tests/arch/shared-react-free.test.ts` — its tripwire
+  proves every entry of the ban list, type-only imports included).
 - Runtime-isomorphic and React-free outside `src/browser/`: no node/DOM-only APIs, no logger. The contract, rpc, and
   client layers use only the isomorphic web platform — never browser-only globals or ambient mutable state;
   `globalThis.fetch` is only the default fetch adapter. `src/browser/` is the one exemption and never grows a second
@@ -152,6 +164,9 @@ their own.
   pins contract shapes (key sets, route method/path values, schema identity against the contracts, parse behavior, per
   group), the `defineProcedure` factory (`define-procedure.test.ts`), and the frozen `publicRead` key set;
   `tests/unit/client/` pins the transport factory, the real-transport public seam (`public-client.test.ts`), and wire
-  error decoding; `tests/unit/browser/` pins the browser singleton assembly. The server-side full-tree parity test and
-  `apps/kobato/tests/arch/public-api-contract.test.ts` pin the surfaces. `tests/utils/catalog.ts` is the
-  workspace-canonical content and DTO fixture.
+  error decoding; `tests/unit/browser/` pins the browser singleton assembly and the notifications data hook's read-state
+  cache patch (`use-notifications.test.ts`, a real `QueryClient` — mock-free, so it runs in `api-unit`, not the `-iso-`
+  twin). The server-side full-tree parity test and `apps/kobato/tests/arch/public-api-contract.test.ts` pin the
+  surfaces. `tests/utils/catalog.ts` is the workspace-canonical content and DTO fixture; `tests/utils/notifications.ts`
+  is the workspace-canonical notification cache fixture (the row factory and the tab seed/read helpers that
+  `use-notifications.test.ts` and the kit's drawer read-state test share).

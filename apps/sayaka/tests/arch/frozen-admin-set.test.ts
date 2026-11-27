@@ -18,7 +18,7 @@ const FROZEN_ADMIN_DOMAINS = new Set(['comments', 'notifications', 'users'])
 
 const PROCEDURE_BUILDERS = new Set(['queryOptions', 'mutationOptions', 'infiniteOptions'])
 
-const SCAN_ROOTS = ['apps/sayaka/src', 'packages/web/kit/src'] as const
+const SCAN_ROOTS = ['apps/sayaka/src', 'packages/web/kit/src', 'packages/api/src/browser'] as const
 
 const ADMIN_TOUCH = /\borpc(?:Query)?\.admin\.([A-Za-z]\w*)\.([A-Za-z]\w*)(?:\.([A-Za-z]\w*))?/g
 
@@ -54,7 +54,7 @@ describe('frozen first-party admin set (ADR-0009 §2)', () => {
   const files = SCAN_ROOTS.flatMap((root) => sourceFiles(root))
   const touches = files.flatMap((file) => adminTouches(file, readFileSync(join(REPO_ROOT, file), 'utf8')))
 
-  it('scans both first-party public surfaces', () => {
+  it('scans both first-party public surfaces and the api browser hooks they import', () => {
     expect(files.length).toBeGreaterThan(0)
     for (const root of SCAN_ROOTS) {
       expect(

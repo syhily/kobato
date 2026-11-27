@@ -1,10 +1,10 @@
 # ADR-0011: Front-end packages by what they may import — `web/{ui,kit,admin}`, four shared leaves, a mount-only `kobato`, and `tools/` by purpose
 
-- Status: **accepted** 2026-11-27 and being implemented: adoption step 1 and the first two of step 2's three commits
-  (the comment surface and the shared composer platform to Inkling, the root-data label hook to the workspace UI; the
-  shell modules and the document shell to `@kobato/ui`, both roots onto it) have landed; the last commit of step 2 and
-  steps 3–6 follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the
-  Implementation notes' "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+- Status: **accepted** 2026-11-27 and being implemented: adoption steps 1 and 2 have landed (the comment surface and the
+  shared composer platform to Inkling, the root-data label hook to the workspace UI; the shell modules and the document
+  shell to `@kobato/ui`, both roots onto it; `use-notifications` to `@kobato/api/browser`, §1's rule pinned); steps 3–6
+  follow. It amends [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation
+  notes' "Packages" and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).
@@ -77,12 +77,10 @@ What leaves the kit:
   comment editors the root table through the `labels` prop.
 - **`use-notifications` → `@kobato/api/browser`** (§3).
 
-The kit keeps what calls the wire from both front-ends — the notifications family, `use-logout`, `toast-api-error`:
-about 1,140 lines in 11 source files with the first two of step 2's three commits landed, and about 960 lines in 10
-files once `use-notifications` (180 lines) has moved to `@kobato/api` (§3) with the third. Once the shell modules have
-left, sayaka imports four kit modules in five import lines — `use-logout`, `LazyNotificationsDrawer` (the drawer and its
-chunk warm-up, two lines), `NotificationBadge`, and `use-notifications`; the last moves to `@kobato/api` (§3), leaving
-three modules in four lines.
+The kit keeps what calls the wire from both front-ends — the notifications family, `use-logout`, `toast-api-error`: 957
+lines in 10 source files, with `use-notifications` (180 lines) in `@kobato/api` (§3). With the shell modules in
+`@kobato/ui` and `use-notifications` in `@kobato/api`, sayaka imports three kit modules in four import lines —
+`use-logout`, `LazyNotificationsDrawer` (the drawer and its chunk warm-up, two lines), and `NotificationBadge`.
 
 **The document shell.** `@kobato/ui` gains one family (`components/document-shell/`: `DocumentShell`,
 `DocumentProviders`, the head planner) that renders a document and owns root route data: fonts and preconnects, theme,
@@ -103,8 +101,10 @@ external frontend author composes a comment with the public contract and this on
 
 `use-notifications` is 180 lines of TanStack Query over `public.notifications.*` with the cache patching beside it, and
 imports no UI package. It moves to `src/browser/`. The rule for that directory grows one sentence: **a browser hook
-imports the contract, the client, and TanStack Query — never a UI package, never message copy, never a consumer's route
-data.** `toast-api-error` (sonner, message ids) and the document clock (`use-chrome-clock` when this was written, now
+imports the contract, the client, and TanStack Query — never a UI package (`@kobato/ui`, `@kobato/web-kit`, and the
+`@kobato/inkling` barrel and every Inkling entry but `/headless*`), never message copy (the `@kobato/i18n` message
+catalogs, the fallback catalog, and the label tables), never a consumer's route data (React Router).** `toast-api-error`
+(sonner, message ids) and the document clock (`use-chrome-clock` when this was written, now
 `@kobato/ui/lib/use-document-clock` over document facts) fail it and stay out.
 
 ### 4. The workspace is a static project; `kobato` mounts the server and serves it

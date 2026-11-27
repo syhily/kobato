@@ -2,6 +2,7 @@ import type { NotificationDto, NotificationTab } from '@kobato/api/contracts/pub
 import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { useInvalidateNotifications, usePatchNotificationReadState } from '@kobato/api/browser/use-notifications'
 import { Button } from '@kobato/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@kobato/ui/components/sheet'
 import { Tabs, TabsList, TabsTrigger } from '@kobato/ui/components/tabs'
@@ -11,10 +12,6 @@ import { ComposeNotificationDialog } from '@kobato/web-kit/ui/shared/notificatio
 import { NotificationBadge } from '@kobato/web-kit/ui/shared/notifications/NotificationBadge'
 import { NotificationDetailPane } from '@kobato/web-kit/ui/shared/notifications/NotificationDetailPane'
 import { NotificationListPane } from '@kobato/web-kit/ui/shared/notifications/NotificationListPane'
-import {
-  useInvalidateNotifications,
-  usePatchNotificationReadState,
-} from '@kobato/web-kit/ui/shared/notifications/use-notifications'
 import { useMutation } from '@tanstack/react-query'
 import { CheckCheckIcon, SquarePenIcon } from 'lucide-react'
 import { useState } from 'react'

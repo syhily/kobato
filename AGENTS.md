@@ -14,8 +14,9 @@ runtime state):
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
   editor with a React-free `/headless/` document model and the `/comment/` comment surface), the two front-end packages
   under `packages/web/` — `ui` (`@kobato/ui`, the design system and the document shell both app roots mount) and `kit`
-  (`web-kit`, the procedure-calling cross-surface features; the admin UI lives in `apps/kobato/src/ui` per ADR-0009) —
-  and eight isomorphic React-free leaves under `packages/shared/*`.
+  (`web-kit`, the features both front-ends render that call a procedure — the notifications UI, `use-logout`,
+  `toast-api-error`; the admin UI lives in `apps/kobato/src/ui` per ADR-0009) — and eight isomorphic React-free leaves
+  under `packages/shared/*`.
 - `tools/` — dev-support packages (`tsconfig`, `test`, `pack`, `trace`, `font-split`). Product `src/` never imports a
   tools package; `font-split` is the sole carve-out, loaded only through `nativeRequire` (never an import).
 
@@ -81,7 +82,10 @@ section pins the direction graph only — package composition rules live in each
 
 - `packages/shared/*` leaves are the dependency floor (the leaf DAG lives in `packages/shared/AGENTS.md`).
 - `@kobato/api` → the shared leaves only.
-- `@kobato/api/browser/*` is the built-in frontend's ambient, UI-bound assembly: `@kobato/server`, `@kobato/db`, and
+- `@kobato/api/browser/*` is the built-in frontend's ambient, UI-bound assembly — the browser client, the TanStack Query
+  binding, and the contract's data hooks (`use-notifications`); a browser hook imports the contract, the client, and
+  TanStack Query — never a UI package, never message copy, never a consumer's route data (ADR-0011 §3,
+  `apps/kobato/tests/arch/shared-react-free.test.ts`). `@kobato/server`, `@kobato/db`, and
   `packages/api/src/{contracts,rpc,client}` never import it.
 - `@kobato/server` → `db`, `api`, the shared leaves, and Inkling only via `/headless`; never web or `ui` in `src/`.
 - `@kobato/db` → `settings`, `utils`, inkling headless; it owns every query, transaction, native connection, and row

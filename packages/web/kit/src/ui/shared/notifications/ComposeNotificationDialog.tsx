@@ -1,6 +1,7 @@
 import type { AdminUserDto } from '@kobato/api/contracts/admin/users'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { useInvalidateNotifications } from '@kobato/api/browser/use-notifications'
 import { Button } from '@kobato/ui/components/button'
 import {
   Dialog,
@@ -19,7 +20,6 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { useDebouncedSearch } from '@kobato/ui/lib/use-debounced-search'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
-import { useInvalidateNotifications } from '@kobato/web-kit/ui/shared/notifications/use-notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckIcon, Loader2Icon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'

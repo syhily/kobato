@@ -13,15 +13,16 @@ components are explicit-props — no reads from sessions, route params, request 
   `I18nProvider`, `ThemeProvider`, the settings contexts (`blog-settings-context`), locale sync, the document facts
   context and hooks, and generic presentation hooks.
 - **`@kobato/web-kit`** — the cross-surface features that call a procedure (the notifications family, `use-logout`); new
-  cross-surface modules go THERE only when they call the wire — otherwise they are `@kobato/ui`'s (the settings
-  contexts, `Image`, `BrandLogo`, locale sync, the document clock, and the document shell already are). The comment
-  composer is Inkling's (`@kobato/inkling/comment/*`); no module in this tree or in `@kobato/web-kit` reads the root
-  loader for document facts — the root maps it into the document shell (`@kobato/ui/components/document-shell`), and the
-  only `useRouteLoaderData` calls under `apps/kobato/src` and `apps/sayaka/src` are the two roots' own `Layout`s and
-  sayaka's `routes/layout.tsx` (`currentUser`). Workspace modules read the shell's facts instead: `useDocumentCsrfToken`
-  (the kit's `useLogout`, `AdminInstallForm`, `BackupView`), `useDocumentClock` (`UsersTable`), `use-inkling-labels`
-  (the one reader of the `labels` fact), and the settings contexts (`useFontsSettingsOptional` in
-  `ui/fonts/font-slots.ts`).
+  cross-surface modules go THERE only when they call the wire and render — otherwise they are `@kobato/ui`'s (the
+  settings contexts, `Image`, `BrandLogo`, locale sync, the document clock, and the document shell already are), and a
+  procedure-calling hook that needs no UI is the contract's own (`@kobato/api/browser/use-notifications`, which
+  `shell/AppSidebar` reads for the unread badge). The comment composer is Inkling's (`@kobato/inkling/comment/*`); no
+  module in this tree or in `@kobato/web-kit` reads the root loader for document facts — the root maps it into the
+  document shell (`@kobato/ui/components/document-shell`), and the only `useRouteLoaderData` calls under
+  `apps/kobato/src` and `apps/sayaka/src` are the two roots' own `Layout`s and sayaka's `routes/layout.tsx`
+  (`currentUser`). Workspace modules read the shell's facts instead: `useDocumentCsrfToken` (the kit's `useLogout`,
+  `AdminInstallForm`, `BackupView`), `useDocumentClock` (`UsersTable`), `use-inkling-labels` (the one reader of the
+  `labels` fact), and the settings contexts (`useFontsSettingsOptional` in `ui/fonts/font-slots.ts`).
 - `ui/shared/` — cross-domain modules (`list/`, `filter-bar/`, `image-edit/`, `form/`); only genuinely multi-domain
   modules stay at the root — `use-inkling-labels.ts` (`useKobatoInklingLabels`, the one reader of the document's
   `labels` fact — the root loader's `i18n.inklingLabels` mapped into the document shell; the page composer and the

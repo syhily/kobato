@@ -1,5 +1,6 @@
 import { REPO_PACKAGES } from '@tests/arch/workspace-packages'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { isAbsolute, join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -143,6 +144,46 @@ function isReactQueryBinding(specifier: string): boolean {
   return isPackageOrSubpath(specifier, '@orpc/react-query') || isPackageOrSubpath(specifier, '@tanstack/react-query')
 }
 
+type ForbiddenImportRule = {
+  scope: string
+  allowedSubpath?: string
+}
+
+const BROWSER_HOOK_FORBIDDEN_IMPORTS: readonly ForbiddenImportRule[] = [
+  { scope: '@kobato/ui' },
+  { scope: '@kobato/web-kit' },
+  { scope: '@kobato/inkling', allowedSubpath: 'headless' },
+  { scope: '@kobato/i18n/messages' },
+  { scope: '@kobato/i18n/fallback-messages' },
+  { scope: '@kobato/i18n/inkling-labels' },
+  { scope: 'react-router' },
+]
+
+function forbiddenBrowserHookImportRule(specifier: string): ForbiddenImportRule | undefined {
+  return BROWSER_HOOK_FORBIDDEN_IMPORTS.find((rule) => {
+    if (!isPackageOrSubpath(specifier, rule.scope)) {
+      return false
+    }
+    return rule.allowedSubpath === undefined || !isPackageOrSubpath(specifier, `${rule.scope}/${rule.allowedSubpath}`)
+  })
+}
+
+function isForbiddenBrowserHookImport(specifier: string): boolean {
+  return forbiddenBrowserHookImportRule(specifier) !== undefined
+}
+
+const BROWSER_HOOK_TRIPWIRE_CASES = [
+  { file: 'ui.ts', specifier: '@kobato/ui/components/button', typeOnly: false, banned: true },
+  { file: 'web-kit.ts', specifier: '@kobato/web-kit/ui/shared/auth/use-logout', typeOnly: false, banned: true },
+  { file: 'inkling-barrel.ts', specifier: '@kobato/inkling', typeOnly: false, banned: true },
+  { file: 'inkling-comment.ts', specifier: '@kobato/inkling/comment/CommentBodyEditor', typeOnly: false, banned: true },
+  { file: 'inkling-headless.ts', specifier: '@kobato/inkling/headless/comment-schema', typeOnly: true, banned: false },
+  { file: 'i18n-messages.ts', specifier: '@kobato/i18n/messages/ui/en-US', typeOnly: true, banned: true },
+  { file: 'i18n-fallback-messages.ts', specifier: '@kobato/i18n/fallback-messages', typeOnly: false, banned: true },
+  { file: 'i18n-inkling-labels.ts', specifier: '@kobato/i18n/inkling-labels/zh-CN', typeOnly: false, banned: true },
+  { file: 'react-router.ts', specifier: 'react-router', typeOnly: false, banned: true },
+] as const
+
 function ambientViolations(files: readonly string[]): string[] {
   const violations: string[] = []
   for (const filePath of files) {
@@ -168,6 +209,7 @@ describe('arch: the browser assembly is the only UI-bound, ambient part of the a
       'packages/api/src/browser/client.ts',
       'packages/api/src/browser/orpc-query.ts',
       'packages/api/src/browser/query-client.ts',
+      'packages/api/src/browser/use-notifications.ts',
     ])
     expect(apiUiRuntimeFreeFiles.map(relativePath)).not.toContain('packages/api/src/browser/client.ts')
   })
@@ -177,6 +219,33 @@ describe('arch: the browser assembly is the only UI-bound, ambient part of the a
       importViolations(apiUiRuntimeFreeFiles, isReactQueryBinding),
       'TanStack / oRPC React bindings belong in packages/api/src/browser only',
     ).toEqual([])
+  })
+
+  it('imports no UI package (the Inkling barrel and every entry but /headless* included), no message copy, and no React Router — a browser hook takes the contract, the client, and TanStack Query only (ADR-0011 §3)', () => {
+    expect(
+      importViolations(listSourceFiles(API_BROWSER_ASSEMBLY_ROOT), isForbiddenBrowserHookImport),
+      "packages/api/src/browser holds the contract's data hooks: never a UI package, never message copy, never a consumer's route data",
+    ).toEqual([])
+  })
+
+  it('tripwire: one fixture file per entry of the ban list is reported, type-only imports included, and Inkling /headless* passes', () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), 'api-browser-hook-boundary-'))
+    try {
+      const provenScopes = new Set<string | undefined>()
+      for (const { file, specifier, typeOnly, banned } of BROWSER_HOOK_TRIPWIRE_CASES) {
+        writeFileSync(join(fixtureRoot, file), `import ${typeOnly ? 'type ' : ''}{ Probe } from '${specifier}'\n`)
+        const violations = importViolations([join(fixtureRoot, file)], isForbiddenBrowserHookImport)
+        expect(violations, specifier).toHaveLength(banned ? 1 : 0)
+        if (banned) {
+          provenScopes.add(forbiddenBrowserHookImportRule(specifier)?.scope)
+        }
+      }
+      for (const rule of BROWSER_HOOK_FORBIDDEN_IMPORTS) {
+        expect(provenScopes.has(rule.scope), `no tripwire fixture proves the ban on ${rule.scope}`).toBe(true)
+      }
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true })
+    }
   })
 
   it('is ambient-free outside the browser assembly — the only globalThis access is the default fetch adapter', () => {

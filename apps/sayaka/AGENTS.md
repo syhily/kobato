@@ -66,8 +66,9 @@ domain logic.
   inside the public page — in-place comment moderation and the notifications drawer's compose/recall — sayaka and
   `@kobato/web-kit` reach a FROZEN set of `admin` procedures (ADR-0009 §2): `admin.comments.{approve,edit,delete}`,
   `admin.notifications.{sendDirect,sendBroadcast,recall}`, and `admin.users.list`. The set carries no external guarantee
-  and cannot grow without a deliberate edit to its pin (`tests/arch/frozen-admin-set.test.ts`), which scans `src/**` and
-  `packages/web/kit/src/**` and fails on any other `admin` touch.
+  and cannot grow without a deliberate edit to its pin (`tests/arch/frozen-admin-set.test.ts`), which scans `src/**`,
+  `packages/web/kit/src/**`, and the api browser hooks both import (`packages/api/src/browser/**`) and fails on any
+  other `admin` touch.
 - Never imports `@/...`, `@tests/...`, `@kobato/server/*`, `@kobato/db/*`, or anything under `apps/kobato` (the
   workspace admin UI in `apps/kobato/src/ui` included — it is reached through the forwarded `/admin` perimeter, never
   imported); `src/` never imports `@kobato/pack` (vite.config may). Pinned by

@@ -1,6 +1,7 @@
 import type { NotificationDto } from '@kobato/api/contracts/public/notifications'
 
 import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { useInvalidateNotifications, usePatchNotificationReadState } from '@kobato/api/browser/use-notifications'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +19,6 @@ import { cn } from '@kobato/ui/lib/cn'
 import { useI18n } from '@kobato/ui/lib/I18nProvider'
 import { onMutationError } from '@kobato/web-kit/ui/lib/toast-api-error'
 import { formatNotificationTime, notificationMeta } from '@kobato/web-kit/ui/shared/notifications/notification-meta'
-import {
-  useInvalidateNotifications,
-  usePatchNotificationReadState,
-} from '@kobato/web-kit/ui/shared/notifications/use-notifications'
 import { useNow } from '@kobato/web-kit/ui/shared/notifications/use-now'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, ExternalLinkIcon, Loader2Icon, SendIcon, Undo2Icon } from 'lucide-react'

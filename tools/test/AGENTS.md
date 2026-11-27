@@ -5,13 +5,13 @@ that models a product shape (settings bundle, DB lifecycle, oRPC caller, render 
 canonical owner package's `tests/utils/`, imported cross-package as `@kobato/<owner>/tests/utils/<name>.ts` — the one
 sanctioned cross-package `tests/` edge (`apps/kobato/tests/arch/package-dag.test.ts`). Product-coupled fixtures must not
 move back here. Canonical fixture owners: `@kobato/settings/tests/utils/blog-settings.ts`,
-`@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/catalog.ts`, `@kobato/inkling/tests/utils/lexical.ts`,
-`@kobato/web-kit/tests/utils/render.tsx`, `@kobato/ui/tests/utils/{i18n-render,hook}.tsx`,
-`@kobato/ui/tests/utils/document-facts.ts` (the `DocumentFacts` fixture, mounted only by the kit's canonical render
-helper above — the `@kobato/ui` render helpers mount none, and tests mount `DocumentFactsProvider` themselves, as
-`packages/web/ui/tests/AGENTS.md` says), and the server harnesses under `@kobato/server/tests/utils/` (session, mail
-capture, integration DBs, request context). The settings-mutation mock is app-local:
-`apps/kobato/tests/utils/settings-mutation-mock.ts`, imported as `@tests/utils/settings-mutation-mock`.
+`@kobato/i18n/tests/utils/i18n.ts`, `@kobato/api/tests/utils/{catalog,notifications}.ts`,
+`@kobato/inkling/tests/utils/lexical.ts`, `@kobato/web-kit/tests/utils/render.tsx`,
+`@kobato/ui/tests/utils/{i18n-render,hook}.tsx`, `@kobato/ui/tests/utils/document-facts.ts` (the `DocumentFacts`
+fixture, mounted only by the kit's canonical render helper above — the `@kobato/ui` render helpers mount none, and tests
+mount `DocumentFactsProvider` themselves, as `packages/web/ui/tests/AGENTS.md` says), and the server harnesses under
+`@kobato/server/tests/utils/` (session, mail capture, integration DBs, request context). The settings-mutation mock is
+app-local: `apps/kobato/tests/utils/settings-mutation-mock.ts`, imported as `@tests/utils/settings-mutation-mock`.
 
 ## Import surface
 

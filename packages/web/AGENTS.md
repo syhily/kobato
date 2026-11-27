@@ -9,14 +9,17 @@ pins in the app test tree).
   contexts, locale sync, chunk recovery, `BrandLogo`, `Image`, the document facts hooks), and generic presentation hooks
   (`ui/AGENTS.md`).
 - `kit/` — `@kobato/web-kit`: the kit of ADR-0009/ADR-0011 — the features both consuming surfaces render that call a
-  procedure (the notifications family, `use-logout`, `toast-api-error`). The comment surface and the shared composer
-  platform are Inkling's public API, the root-data label hook is the workspace UI's, and the document-shell modules are
-  `@kobato/ui`'s (ADR-0011). It stays a workspace package because the backend app never imports the public frontend. The
-  admin UI is not a package: it lives in `apps/kobato/src/ui/` (ADR-0009), and the public surface lives in
-  `apps/sayaka/src/ui/`.
+  procedure (the notifications family, `use-logout`, `toast-api-error`). The procedure-calling hooks with no UI
+  dependency are the contract's own (`@kobato/api/browser/use-notifications`, ADR-0011 §3), the comment surface and the
+  shared composer platform are Inkling's public API, the root-data label hook is the workspace UI's, and the
+  document-shell modules are `@kobato/ui`'s (ADR-0011). It stays a workspace package because the backend app never
+  imports the public frontend. The admin UI is not a package: it lives in `apps/kobato/src/ui/` (ADR-0009), and the
+  public surface lives in `apps/sayaka/src/ui/`.
 
 The rule that separates the two packages: **`@kobato/ui` imports no `@kobato/api` module. A front-end module that calls
-a procedure is a kit module or an app's own** (`packages/web/ui/tests/unit/contract/api-free.test.ts`).
+a procedure is a kit module or an app's own.** Nothing else separates the two packages
+(`packages/web/ui/tests/unit/contract/api-free.test.ts`). The one refinement is ADR-0011 §3: a procedure-calling hook
+that imports no UI package, no message copy, and no route data is the contract's own, under `@kobato/api/browser`.
 
 ## Module seam and direction
 
@@ -37,8 +40,10 @@ Both consuming surfaces may import `@kobato/web-kit`: `apps/kobato/src/ui` (the 
   never inspect `data` for copy and install no rejection interceptor. Wire error decoding lives in
   `@kobato/api/client/error`.
 - Query keys and options come from `orpcQuery` in `@kobato/api/browser/orpc-query`; the app's `QueryClient` comes from
-  `makeQueryClient` in `@kobato/api/browser/query-client`. The TanStack Query binding stays at that seam: a web package
-  imports neither `@orpc/react-query` nor `@orpc/client` from production source.
+  `makeQueryClient` in `@kobato/api/browser/query-client`; the contract's data hooks — `use-notifications`, the
+  notifications reads with the read-state cache patch — come from `@kobato/api/browser/use-notifications` (the kit's
+  notifications family and both apps' chrome consume them from there). The TanStack Query binding stays at that seam: a
+  web package imports neither `@orpc/react-query` nor `@orpc/client` from production source.
 - The singleton's assembly (CSRF token store, same-origin `/rpc` URL) is documented in `packages/api/AGENTS.md`. No
   route talks to domain services directly.
 

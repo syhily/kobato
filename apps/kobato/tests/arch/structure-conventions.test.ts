@@ -36,7 +36,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-const WEB_SRC_ROOTS = ['apps/kobato/src/ui', 'packages/web/kit/src']
+const WEB_SRC_ROOTS = ['apps/kobato/src/ui', 'packages/web/kit/src', 'packages/api/src/browser']
 
 function packageDirs(): string[] {
   const out: string[] = []
@@ -80,7 +80,7 @@ describe('structure conventions', () => {
     expect(offenders, 'config lives at the package root; tests live under tests/').toEqual([])
   })
 
-  it('names every web hook use-kebab-case', () => {
+  it('names every hook use-kebab-case across the workspace UI, the kit, and the api browser assembly', () => {
     const offenders: string[] = []
     for (const root of WEB_SRC_ROOTS) {
       for (const file of walk(`${REPO_ROOT}/${root}`)) {
@@ -93,7 +93,7 @@ describe('structure conventions', () => {
         }
       }
     }
-    expect(offenders, 'a hook file is `use-kebab-case.ts(x)`').toEqual([])
+    expect(offenders, `a hook file is \`use-kebab-case.ts(x)\` under ${WEB_SRC_ROOTS.join(', ')}`).toEqual([])
   })
 
   it('suffixes every router-owning controller with .controller.ts', () => {

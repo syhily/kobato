@@ -1,6 +1,6 @@
+import { useUnreadNotificationCount } from '@kobato/api/browser/use-notifications'
 import { Sidebar } from '@kobato/ui/components/sidebar'
 import { LazyNotificationsDrawer } from '@kobato/web-kit/ui/shared/notifications/LazyNotificationsDrawer'
-import { useUnreadNotificationCount } from '@kobato/web-kit/ui/shared/notifications/use-notifications'
 import { useState } from 'react'
 
 import type { AdminShellProps } from '@/ui/shell/AdminShell'
