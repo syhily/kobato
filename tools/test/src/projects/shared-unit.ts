@@ -13,8 +13,8 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'shared-unit',
-    include: ['packages/shared/*/tests/unit/**/*.test.{ts,tsx}', 'packages/shared/*/tests/*/unit/**/*.test.{ts,tsx}'],
+    include: ['shared/*/tests/unit/**/*.test.{ts,tsx}', 'shared/*/tests/*/unit/**/*.test.{ts,tsx}'],
     exclude: [...configDefaults.exclude],
-    setupFiles: [path.resolve(REPO_ROOT, 'packages/shared/settings/tests/utils/setup/unit.ts')],
+    setupFiles: [path.resolve(REPO_ROOT, 'shared/settings/tests/utils/setup/unit.ts')],
   },
 })

@@ -52,7 +52,7 @@ function workspacePackagePaths(): string[] {
       }
     }
   }
-  for (const base of ['apps', 'packages', 'tools']) {
+  for (const base of ['apps', 'packages', 'shared', 'tools']) {
     collect(base, 1)
   }
   return paths.sort()

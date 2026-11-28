@@ -10,8 +10,8 @@ root of `src/`, and no module moves directory.
 `auth` and `utils` may import `@kobato/i18n`; `assets`, `distribution`, and `sanitize` import no workspace package. No
 directory imports another, and none of the five imports `settings`, `catalog`, `@kobato/api`, or anything above the
 floor — pinned at directory level by `apps/kobato/tests/arch/package-dag.test.ts`. Allowed workspace dep: `@kobato/i18n`
-only. No React, no `node:*` value imports but the one under `sanitize/` (the umbrella rules in
-`packages/shared/AGENTS.md` apply). Tests mirror the directories — `tests/<directory>/unit/` (`shared-unit`).
+only. No React, no `node:*` value imports but the one under `sanitize/` (the umbrella rules in `shared/AGENTS.md`
+apply). Tests mirror the directories — `tests/<directory>/unit/` (`shared-unit`).
 
 ## `utils/`
 

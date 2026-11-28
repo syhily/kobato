@@ -2,7 +2,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'tools/*'
-  - 'packages/shared/*'
+  - 'shared/*'
   - 'packages/web/*'
 
 catalog:

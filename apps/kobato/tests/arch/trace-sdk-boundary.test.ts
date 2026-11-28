@@ -11,10 +11,10 @@ const SOURCE_DIRS = [
   'packages/db/src',
   'packages/server/src',
   'packages/api/src/contracts',
-  'packages/shared/base/src',
-  'packages/shared/catalog/src',
-  'packages/shared/i18n/src',
-  'packages/shared/settings/src',
+  'shared/base/src',
+  'shared/catalog/src',
+  'shared/i18n/src',
+  'shared/settings/src',
   'packages/web/ui/src',
 ].map((dir) => join(PROJECT_ROOT, dir))
 
@@ -102,10 +102,10 @@ describe('trace SDK source boundary', () => {
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/resource.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/trace/log-record.ts'),
       join(PROJECT_ROOT, 'packages/server/src/infra/logger/sink.ts'),
-      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/rum.ts'),
-      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/logs.ts'),
-      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/metrics.ts'),
-      join(PROJECT_ROOT, 'packages/shared/settings/src/telemetry/pipeline.ts'),
+      join(PROJECT_ROOT, 'shared/settings/src/telemetry/rum.ts'),
+      join(PROJECT_ROOT, 'shared/settings/src/telemetry/logs.ts'),
+      join(PROJECT_ROOT, 'shared/settings/src/telemetry/metrics.ts'),
+      join(PROJECT_ROOT, 'shared/settings/src/telemetry/pipeline.ts'),
     ]
 
     expect(collectTelemetryViolations(protectedModules)).toEqual([])

@@ -142,7 +142,7 @@ describe('duckdb test naming', () => {
 
 function walkTestRoots(): string[] {
   const roots: string[] = []
-  for (const base of ['apps', 'packages', 'packages/shared', 'packages/web', 'tools']) {
+  for (const base of ['apps', 'packages', 'packages/web', 'shared', 'tools']) {
     const baseDir = join(REPO_ROOT, base)
     if (!existsSync(baseDir)) {
       continue

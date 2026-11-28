@@ -42,7 +42,7 @@ const WEB_SRC_ROOTS = ['packages/web/ui/src', 'packages/web/kit/src', 'apps/koba
 
 function packageDirs(): string[] {
   const out: string[] = []
-  for (const root of ['apps', 'packages', 'tools']) {
+  for (const root of ['apps', 'packages', 'shared', 'tools']) {
     for (const file of walk(`${REPO_ROOT}/${root}`)) {
       if (file.endsWith('/package.json') && !file.includes('/node_modules/')) {
         out.push(file.slice(0, -'/package.json'.length))
@@ -68,7 +68,7 @@ describe('structure conventions', () => {
 
   it('keeps configuration and test files out of src', () => {
     const offenders: string[] = []
-    for (const root of ['apps', 'packages', 'tools']) {
+    for (const root of ['apps', 'packages', 'shared', 'tools']) {
       for (const file of walk(`${REPO_ROOT}/${root}`)) {
         if (!file.includes('/src/') || file.includes('/node_modules/')) {
           continue
@@ -117,8 +117,8 @@ describe('structure conventions', () => {
       'packages/inkling/src',
       'packages/db/src',
       'packages/api/src',
-      'packages/shared/base/src',
-      'packages/shared/settings/src',
+      'shared/base/src',
+      'shared/settings/src',
     ]
     const offenders: string[] = []
     for (const root of roots) {
@@ -294,7 +294,7 @@ describe('structure conventions', () => {
     const contractRoot = `${REPO_ROOT}/packages/api/src/contracts`
     const referenced = new Set<string>()
     const specifier = /@kobato\/api\/contracts\/(?:(?:public|account|admin)\/)?[a-z0-9-]+/g
-    const sourceFiles = ['packages', 'apps'].flatMap((root) =>
+    const sourceFiles = ['packages', 'apps', 'shared'].flatMap((root) =>
       walk(`${REPO_ROOT}/${root}`).filter((file) => /\.tsx?$/.test(file)),
     )
     for (const file of sourceFiles) {

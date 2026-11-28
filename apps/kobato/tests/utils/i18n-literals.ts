@@ -44,9 +44,9 @@ const COPY_TEXT =
 
 const HAN_TEXT = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 
-const COPY_STORE_PREFIXES = ['packages/shared/i18n/src/messages/', 'packages/shared/i18n/src/inkling-labels/']
+const COPY_STORE_PREFIXES = ['shared/i18n/src/messages/', 'shared/i18n/src/inkling-labels/']
 
-const COPY_STORE_FILES = new Set(['packages/shared/i18n/src/fallback-messages.ts'])
+const COPY_STORE_FILES = new Set(['shared/i18n/src/fallback-messages.ts'])
 
 export function isContentStoreFile(file: string): boolean {
   return COPY_STORE_FILES.has(file)

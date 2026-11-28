@@ -1,8 +1,8 @@
 # Shared umbrella conventions
 
-`packages/shared/` is an umbrella of four workspace leaf packages (`packages/shared/<name>` ↔ `@kobato/<name>`), not a
-package: no umbrella package.json, test directory, barrel, or way to import "shared" as one unit. Its test projects
-(`shared-unit`, `shared-snaps`) are defined in `tools/test/src/projects/`.
+`shared/` is an umbrella of four workspace leaf packages (`shared/<name>` ↔ `@kobato/<name>`), not a package: no
+umbrella package.json, test directory, barrel, or way to import "shared" as one unit. Its test projects (`shared-unit`,
+`shared-snaps`) are defined in `tools/test/src/projects/`.
 
 ## Umbrella rules (every leaf)
 
@@ -18,11 +18,11 @@ package: no umbrella package.json, test directory, barrel, or way to import "sha
 
 ## The four leaves
 
-- `base` — five directories that keep the names of the leaves they were (`packages/shared/base/AGENTS.md`): `utils`
-  (pure isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, network
-  SSRF/CIDR + passkey RP checks), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror),
-  `distribution` (`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `sanitize` (isomorphic
-  DOMPurify stack, `escape-html`).
+- `base` — five directories that keep the names of the leaves they were (`shared/base/AGENTS.md`): `utils` (pure
+  isomorphic helpers + display `format`), `auth` (role vocabulary, password/Web Crypto primitives, network SSRF/CIDR +
+  passkey RP checks), `assets` (asset-URL grammar, image kinds, avatar rule, Gravatar mirror), `distribution`
+  (`__APP_*__` identity, SEA asset keys, route-warmup manifest contract), `sanitize` (isomorphic DOMPurify stack,
+  `escape-html`).
 - `i18n` — locale contract, ICU catalogs, `catalog-scope`, `fallback-messages`, `inkling-labels`.
 - `settings` — Section schema/default/secret registry, admin projections, `snapshot` slot, representation scopes, cache
   bucket declarations, RUM client identity, `telemetry/`.
@@ -31,9 +31,9 @@ package: no umbrella package.json, test directory, barrel, or way to import "sha
 Wire vocabulary (per-domain Zod schemas + DTOs) lives in `@kobato/api/contracts`.
 
 Dependency direction is a line — `i18n` ← `base` ← `settings` ← `catalog` — and inside `base` the direction is pinned at
-directory level (`packages/shared/base/AGENTS.md`). So: `settings` → i18n + base (never `@kobato/api`); `catalog` →
-settings + i18n + base + inkling headless (type-only). Outside the umbrella, Inkling (`@kobato/inkling`) → ui + i18n +
-base. Pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
+directory level (`shared/base/AGENTS.md`). So: `settings` → i18n + base (never `@kobato/api`); `catalog` → settings +
+i18n + base + inkling headless (type-only). Outside the umbrella, Inkling (`@kobato/inkling`) → ui + i18n + base. Pinned
+by `apps/kobato/tests/arch/package-dag.test.ts`.
 
 ## Client API usage
 

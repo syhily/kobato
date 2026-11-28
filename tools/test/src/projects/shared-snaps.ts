@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     ...vitestTestBase,
     name: 'shared-snaps',
-    include: ['packages/shared/*/tests/snaps/**/*.test.{ts,tsx}', 'packages/shared/*/tests/*/snaps/**/*.test.{ts,tsx}'],
-    setupFiles: [path.resolve(REPO_ROOT, 'packages/shared/settings/tests/utils/setup/snaps.ts')],
+    include: ['shared/*/tests/snaps/**/*.test.{ts,tsx}', 'shared/*/tests/*/snaps/**/*.test.{ts,tsx}'],
+    setupFiles: [path.resolve(REPO_ROOT, 'shared/settings/tests/utils/setup/snaps.ts')],
   },
 })

@@ -37,8 +37,8 @@ const API_SHARED_DEPS = [
 ] as const
 
 const BASE_TREES = [
-  ['src', 'packages/shared/base/src'],
-  ['tests', 'packages/shared/base/tests'],
+  ['src', 'shared/base/src'],
+  ['tests', 'shared/base/tests'],
 ] as const
 const BASE_DIRECTORY_TARGETS: Record<string, readonly string[]> = {
   auth: ['@kobato/i18n'],
@@ -670,7 +670,7 @@ describe('package DAG', () => {
 
   it('the @/ app alias appears only inside the app package', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools', 'demo')) {
       if (file.startsWith(`${APP_PACKAGE_DIR}/`)) {
         continue
       }
@@ -685,7 +685,7 @@ describe('package DAG', () => {
 
   it('the @sayaka/ app alias appears only inside the sayaka package', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools', 'demo')) {
       if (file.startsWith('apps/sayaka/')) {
         continue
       }
@@ -700,7 +700,7 @@ describe('package DAG', () => {
 
   it('the @tests alias appears only inside the app test tree', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools', 'demo')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools', 'demo')) {
       if (file.startsWith(`${APP_PACKAGE_DIR}/tests/`)) {
         continue
       }
@@ -803,7 +803,7 @@ describe('package DAG', () => {
 
   it('the demo alias stays in the playground', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools')) {
       if (file.startsWith('apps/inkling-demo/')) {
         continue
       }
@@ -818,7 +818,7 @@ describe('package DAG', () => {
 
   it('package test aliases stay in their own tree, or reach only cross-package tests/utils helpers', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools')) {
       const importingFromTestTree = file.includes('/tests/')
       for (const specifier of importSpecifiers(readSource(file))) {
         const match = /^@kobato\/([^/]+)\/tests(?:\/(.+))?$/.exec(specifier)
@@ -861,8 +861,8 @@ describe('package DAG', () => {
 
   it('canonical test-helper owners expose their test trees through package exports', () => {
     for (const dir of [
-      'packages/shared/settings',
-      'packages/shared/i18n',
+      'shared/settings',
+      'shared/i18n',
       'packages/api',
       'packages/server',
       'packages/web/ui',
@@ -911,7 +911,7 @@ describe('package DAG', () => {
   it('the private inkling alias stays inside the editor package except its white-box host pin', () => {
     const whiteBoxHostPin = 'apps/kobato/tests/unit/ui/editor/cards/host-cards.test.tsx'
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools')) {
       if (file.startsWith('packages/inkling/') || file === whiteBoxHostPin) {
         continue
       }
@@ -926,7 +926,7 @@ describe('package DAG', () => {
 
   it('inkling is reached only through its barrel, headless, comment, styles entries, or test-tree helper imports', () => {
     const offenders: string[] = []
-    for (const file of sourceFiles('apps', 'packages', 'tools')) {
+    for (const file of sourceFiles('apps', 'packages', 'shared', 'tools')) {
       if (file.startsWith('apps/inkling-demo/') || file.startsWith('packages/inkling/')) {
         continue
       }

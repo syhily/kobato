@@ -98,7 +98,7 @@ const OUT_OF_DEFAULT_TEST_TREES = [
 ] as const
 
 const SKIPPED_TREE_DIRS = new Set(['node_modules', '__snapshots__', 'e2e', 'browser'])
-const WORKSPACE_BASES = ['apps', 'packages', 'packages/shared', 'packages/web', 'tools'] as const
+const WORKSPACE_BASES = ['apps', 'packages', 'packages/web', 'shared', 'tools'] as const
 
 const MOCK_REGISTERING_HELPERS = ['mock-react-query', 'settings-mutation-mock'] as const
 const MOCK_CALL = /^\s*vi\.(?:do)?mock\(/m

@@ -18,16 +18,16 @@ const CLIENT_LAYERS = [
   'apps/sayaka/src/rum',
   'packages/api/src/contracts',
   'packages/api/src/browser',
-  'packages/shared/catalog/src/seo',
+  'shared/catalog/src/seo',
   'packages/inkling/src/comment',
   'packages/inkling/src/headless',
   'packages/inkling/src/host-cards',
   'packages/inkling/src/hooks',
   'packages/inkling/src/labels',
   'packages/inkling/src/components',
-  'packages/shared/base/src',
-  'packages/shared/i18n/src',
-  'packages/shared/settings/src',
+  'shared/base/src',
+  'shared/i18n/src',
+  'shared/settings/src',
 ]
 
 const NODE_BUILTINS = [
@@ -85,7 +85,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'jsdom',
     reason: 'server-side DOM for the sanitize engine and inkling headless projections',
-    allowedIn: ['packages/shared/base/src/sanitize/engine.node.ts'],
+    allowedIn: ['shared/base/src/sanitize/engine.node.ts'],
   },
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
@@ -259,11 +259,11 @@ const I18N_SCANNED_ROOTS = [
   'apps/kobato/src/routes',
   'packages/api/src/contracts',
   'packages/api/src/browser',
-  'packages/shared/catalog/src/seo',
+  'shared/catalog/src/seo',
   'packages/inkling/src',
-  'packages/shared/base/src',
-  'packages/shared/i18n/src',
-  'packages/shared/settings/src',
+  'shared/base/src',
+  'shared/i18n/src',
+  'shared/settings/src',
 ]
 
 const I18N_SCANNED_ROOT_FILES = ['apps/kobato/src/root.tsx', 'apps/sayaka/src/root.tsx']
@@ -288,7 +288,7 @@ const I18N_CATALOG_RULE: ServerOnlyImportRule = {
     /^\.\/messages\//,
     /(^|\/)server\/infra\/i18n(\.ts)?$/,
   ],
-  owners: ['packages/shared/i18n/src/catalog.ts'],
+  owners: ['shared/i18n/src/catalog.ts'],
 }
 
 function collectI18nViolations(filePaths: readonly string[]): string[] {
@@ -345,7 +345,7 @@ const INKLING_LABEL_RULE: ServerOnlyImportRule = {
     /^\.\/inkling-labels\//,
   ],
   owners: [
-    'packages/shared/i18n/src/inkling-labels.ts',
+    'shared/i18n/src/inkling-labels.ts',
 
     'packages/inkling/src/labels/load-inkling-labels.ts',
   ],

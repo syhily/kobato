@@ -63,7 +63,7 @@ that the copy is good.
 
 ```bash
 # Catalog structure / ICU / representative terms / translation completeness (all run in the first command)
-pnpm test packages/shared/i18n/tests/unit
+pnpm test shared/i18n/tests/unit
 
 # Four-locale email key completeness and template rendering
 pnpm test packages/server/tests/unit/server/infra/email
@@ -129,7 +129,7 @@ The planned baseline is **2793 UI keys × 4 locales = 11,172 UI strings**; the 2
 **2800 × 4 = 11,200**, plus 99 server keys × 4 and 157 Inkling labels × 4. The current worktree is still appending keys
 in parallel (UI was 2796 at drafting time and later grew to 2800), so:
 
-- The counts change; the catalog files under `packages/shared/i18n/src/` are the source of truth for the current values.
+- The counts change; the catalog files under `shared/i18n/src/` are the source of truth for the current values.
 - Whether the count is 2793, 2800, or higher, **a passing catalog validation only proves structural completeness**; it
   says nothing about whether any single string has been human-reviewed.
 - This document refuses to substitute "all tests green" for review sign-off, and refuses to treat "HK/TW has 249

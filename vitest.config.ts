@@ -17,7 +17,7 @@ export default defineConfig({
         'packages/api/src/**/*.{ts,tsx}',
         'packages/db/src/**/*.{ts,tsx}',
         'packages/server/src/**/*.{ts,tsx}',
-        'packages/shared/*/src/**/*.{ts,tsx}',
+        'shared/*/src/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/*.d.ts',

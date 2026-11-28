@@ -5,12 +5,12 @@ keys**; it is neither a full copy of the four catalogs nor a list of every HK/TW
 
 ## 1. Sources and snapshot
 
-| Item                                  | Location                                                                | Entries per locale      |
-| ------------------------------------- | ----------------------------------------------------------------------- | ----------------------- |
-| UI messages                           | `packages/shared/i18n/src/messages/ui/{en-US,zh-CN,zh-HK,zh-TW}.ts`     | 2793 (planned baseline) |
-| Server messages (mail, notifications) | `packages/shared/i18n/src/messages/server/{en-US,zh-CN,zh-HK,zh-TW}.ts` | 99                      |
-| Inkling editor labels                 | `packages/shared/i18n/src/inkling-labels/{en-US,zh-CN,zh-HK,zh-TW}.ts`  | 157                     |
-| Locale self-names                     | `packages/shared/i18n/src/locales.ts` (`LOCALE_DISPLAY_NAMES`)          | 4                       |
+| Item                                  | Location                                                       | Entries per locale      |
+| ------------------------------------- | -------------------------------------------------------------- | ----------------------- |
+| UI messages                           | `shared/i18n/src/messages/ui/{en-US,zh-CN,zh-HK,zh-TW}.ts`     | 2793 (planned baseline) |
+| Server messages (mail, notifications) | `shared/i18n/src/messages/server/{en-US,zh-CN,zh-HK,zh-TW}.ts` | 99                      |
+| Inkling editor labels                 | `shared/i18n/src/inkling-labels/{en-US,zh-CN,zh-HK,zh-TW}.ts`  | 157                     |
+| Locale self-names                     | `shared/i18n/src/locales.ts` (`LOCALE_DISPLAY_NAMES`)          | 4                       |
 
 - Snapshot date: 2026-11-08; source worktree `tmp/i18n-executor`, baseline commit `bcc0ccfe` plus the current slice's
   changes.
@@ -114,7 +114,7 @@ UI side:
 | `admin.editor.titleField`        | {entity} title | {entity}标题 | {entity}標題 | {entity}標題 | The placeholder must be preserved         |
 | `admin.editor.toolbar.metadata`  | Metadata       | 元数据       | 中繼資料     | 中繼資料     | Both Traditional locales use 「中繼資料」 |
 
-Inkling label side (`packages/shared/i18n/src/inkling-labels/*`):
+Inkling label side (`shared/i18n/src/inkling-labels/*`):
 
 | Key                            | en-US                      | zh-CN         | zh-HK         | zh-TW         | Notes       |
 | ------------------------------ | -------------------------- | ------------- | ------------- | ------------- | ----------- |
@@ -143,7 +143,7 @@ not rewrite one of them into a different set of synonyms just to create a region
 | `common.datetime.hourOption`                   | Hour {hour}          | {hour} 时      | {hour} 時      | {hour} 時      | The placeholder must be preserved      |
 | `common.sort.loginTime`                        | Signed in            | 登录时间       | 登入時間       | 登入時間       | Both Traditional locales use 「登入」  |
 
-Date display is not catalog copy; it is produced by `packages/shared/base/src/utils/format.ts` through
+Date display is not catalog copy; it is produced by `shared/base/src/utils/format.ts` through
 `Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', timeZone })`. `timeFormat: null` means "follow
 the language"; only custom mode substitutes by placeholder. Sample `dateStyle/timeStyle: short` output for 2026-11-08
 14:30 (Asia/Shanghai): en-US `11/8/26, 2:30 PM`, zh-CN `2026/11/8 14:30`, zh-HK `8/11/2026 下午2:30`, zh-TW
@@ -266,13 +266,13 @@ and the test.
 ## 10. Review workflow
 
 1. Inspect current differences read-only: search the key across the four catalog files of its namespace
-   (`rg '<key>' packages/shared/i18n/src/messages/<namespace>/`) and compare the values side by side.
+   (`rg '<key>' shared/i18n/src/messages/<namespace>/`) and compare the values side by side.
 2. Choose a representative term; decide whether it is a "regional difference" or a "shared Traditional Chinese word
    choice".
 3. Land it in all four catalog files at once (the English baseline defines the key; the others use `satisfies`).
 4. Update the anchor table and prose in this document; update the direct assertions in
    `tests/unit/shared/i18n/glossary.test.ts` (representative items only).
-5. Run `pnpm test packages/shared/i18n/tests/unit`.
+5. Run `pnpm test shared/i18n/tests/unit`.
 6. **Do not** add the full difference set to the tests, and **do not** use the number of differences as a review-pass
    criterion.
 

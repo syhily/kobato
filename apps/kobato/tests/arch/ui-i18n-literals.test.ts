@@ -15,18 +15,18 @@ const SCAN_ROOTS = [
   'packages/server/src',
   'packages/api/src/contracts',
   'packages/api/src/browser',
-  'packages/shared/base/src',
-  'packages/shared/catalog/src',
-  'packages/shared/i18n/src',
-  'packages/shared/settings/src',
+  'shared/base/src',
+  'shared/catalog/src',
+  'shared/i18n/src',
+  'shared/settings/src',
   'packages/web/ui/src',
   'packages/web/kit/src',
 ] as const
 
 const ALLOWLIST: readonly ScanAllowlistEntry[] = [
-  { path: 'packages/shared/i18n/src/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
-  { path: 'packages/shared/i18n/src/catalog.ts', rules: ['hardcoded-locale'] },
-  { path: 'packages/shared/base/src/utils/format.ts', rules: ['hardcoded-locale'] },
+  { path: 'shared/i18n/src/locales.ts', rules: ['hardcoded-locale', 'han-literal'] },
+  { path: 'shared/i18n/src/catalog.ts', rules: ['hardcoded-locale'] },
+  { path: 'shared/base/src/utils/format.ts', rules: ['hardcoded-locale'] },
   { path: 'apps/sayaka/src/ui/LikeActions.tsx', rules: ['hardcoded-locale'], text: 'zh_cn' },
   {
     path: 'apps/sayaka/src/ui/comments/CommentReplyForm.tsx',
@@ -103,7 +103,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
   { path: 'apps/kobato/src/ui/shared/SearchShortcutHint.tsx', rules: ['jsx-text'], text: 'K' },
   { path: 'apps/kobato/src/ui/users/UserDetailView.tsx', rules: ['jsx-text'], text: 'Passkey' },
   { path: 'apps/kobato/src/ui/users/UserEditForm.tsx', rules: ['jsx-attribute'], text: 'https://example.com' },
-  { path: 'packages/shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
+  { path: 'shared/i18n/src/inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'packages/inkling/src/labels/load-inkling-labels.ts', rules: ['hardcoded-locale'] },
   { path: 'apps/kobato/src/ui/editor-shell/RevisionsDrawer.tsx', rules: ['jsx-text'], text: 'R' },
   { path: 'apps/kobato/src/ui/editor/pickers/ImageLibraryPicker.tsx', rules: ['jsx-text'], text: '×' },
@@ -141,7 +141,7 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['domain-error'],
     text: 'admin projection shape validation failed (…): … …',
   },
-  { path: 'packages/shared/base/src/utils/slug-char-map.ts', rules: ['hardcoded-locale'] },
+  { path: 'shared/base/src/utils/slug-char-map.ts', rules: ['hardcoded-locale'] },
   { path: 'packages/server/src/infra/sea/intl-probe.ts', rules: ['hardcoded-locale', 'han-literal'] },
   { path: 'packages/server/src/infra/config.ts', rules: ['han-literal'] },
   { path: 'packages/server/src/infra/sea/binary-rollback.ts', rules: ['han-literal'] },
@@ -152,9 +152,9 @@ const ALLOWLIST: readonly ScanAllowlistEntry[] = [
     rules: ['han-literal'],
     text: '🎵 此文章包含音乐播放器，请访问原文收听。',
   },
-  { path: 'packages/shared/settings/src/presentation.ts', rules: ['han-literal'], text: '尾声礼记' },
-  { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微博' },
-  { path: 'packages/shared/settings/src/socials.ts', rules: ['han-literal'], text: '微信' },
+  { path: 'shared/settings/src/presentation.ts', rules: ['han-literal'], text: '尾声礼记' },
+  { path: 'shared/settings/src/socials.ts', rules: ['han-literal'], text: '微博' },
+  { path: 'shared/settings/src/socials.ts', rules: ['han-literal'], text: '微信' },
 ]
 
 function rules(source: string, file = 'fixture.tsx'): string[] {
@@ -180,9 +180,9 @@ describe('production sources', () => {
     expect(result.allowlisted.length).toBeGreaterThan(0)
     expect(new Set(result.allowlisted.map((violation) => violation.file))).toEqual(
       new Set([
-        'packages/shared/i18n/src/locales.ts',
-        'packages/shared/i18n/src/catalog.ts',
-        'packages/shared/base/src/utils/format.ts',
+        'shared/i18n/src/locales.ts',
+        'shared/i18n/src/catalog.ts',
+        'shared/base/src/utils/format.ts',
         'apps/sayaka/src/ui/LikeActions.tsx',
         'apps/sayaka/src/ui/comments/CommentReplyForm.tsx',
         'apps/sayaka/src/ui/friends/FriendApplyForm.tsx',
@@ -207,7 +207,7 @@ describe('production sources', () => {
         'apps/kobato/src/ui/users/UserDetailView.tsx',
         'apps/kobato/src/ui/users/UserEditForm.tsx',
 
-        'packages/shared/i18n/src/inkling-labels.ts',
+        'shared/i18n/src/inkling-labels.ts',
         'packages/inkling/src/labels/load-inkling-labels.ts',
         'apps/kobato/src/ui/editor-shell/RevisionsDrawer.tsx',
         'apps/kobato/src/ui/editor/pickers/ImageLibraryPicker.tsx',
@@ -229,15 +229,15 @@ describe('production sources', () => {
         'packages/inkling/src/components/ui/EmojiPickerPortal.tsx',
         'packages/server/src/domains/auth/primitives.ts',
         'packages/server/src/domains/settings/services/admin-projection.ts',
-        'packages/shared/base/src/utils/slug-char-map.ts',
+        'shared/base/src/utils/slug-char-map.ts',
         'packages/server/src/infra/sea/intl-probe.ts',
         'packages/server/src/infra/config.ts',
         'packages/server/src/infra/sea/binary-rollback.ts',
         'packages/inkling/src/host-cards/menu-matches.ts',
         'packages/inkling/src/headless/cards/solution.ts',
         'packages/inkling/src/headless/cards/music-player.ts',
-        'packages/shared/settings/src/presentation.ts',
-        'packages/shared/settings/src/socials.ts',
+        'shared/settings/src/presentation.ts',
+        'shared/settings/src/socials.ts',
       ]),
     )
   })
@@ -245,25 +245,25 @@ describe('production sources', () => {
   it('excludes whole-file content libraries before reading or parsing them', () => {
     const { skippedFiles, scannedFiles } = scanProduction()
 
-    expect(skippedFiles).toEqual(['packages/shared/i18n/src/fallback-messages.ts'])
+    expect(skippedFiles).toEqual(['shared/i18n/src/fallback-messages.ts'])
     expect(scannedFiles).toContain('packages/server/src/render/calendar/local-quotes.ts')
-    expect(scannedFiles).not.toContain('packages/shared/i18n/src/fallback-messages.ts')
+    expect(scannedFiles).not.toContain('shared/i18n/src/fallback-messages.ts')
   })
 
   it('reaches every file under the roots, including nested catalogs', { timeout: 120_000 }, () => {
     const { scannedFiles } = scanProduction()
 
-    expect(scannedFiles).toContain('packages/shared/i18n/src/locales.ts')
-    expect(scannedFiles).toContain('packages/shared/i18n/src/messages/ui/en-US.ts')
-    expect(scannedFiles).toContain('packages/shared/i18n/src/messages/server/zh-TW.ts')
+    expect(scannedFiles).toContain('shared/i18n/src/locales.ts')
+    expect(scannedFiles).toContain('shared/i18n/src/messages/ui/en-US.ts')
+    expect(scannedFiles).toContain('shared/i18n/src/messages/server/zh-TW.ts')
 
     expect(scannedFiles).toEqual(
       expect.arrayContaining([
         'apps/kobato/src/ui/settings/display.ts',
-        'packages/shared/settings/src/cache-bucket.ts',
-        'packages/shared/settings/src/cache-registry.ts',
-        'packages/shared/base/src/auth/roles.ts',
-        'packages/shared/base/src/utils/site-date.ts',
+        'shared/settings/src/cache-bucket.ts',
+        'shared/settings/src/cache-registry.ts',
+        'shared/base/src/auth/roles.ts',
+        'shared/base/src/utils/site-date.ts',
         'apps/kobato/src/ui/analytics/time-labels.ts',
         'apps/kobato/src/ui/editor-shell/wall-clock.ts',
         'apps/kobato/src/ui/settings/cache/cache-formatters.ts',
@@ -298,8 +298,8 @@ describe('production sources', () => {
         'packages/server/src/domains/auth/passkey/service.ts',
         'packages/server/src/domains/auth/session-guard.ts',
         'packages/server/src/domains/auth/schema.ts',
-        'packages/shared/settings/src/sections/assets.ts',
-        'packages/shared/settings/src/sections/security.ts',
+        'shared/settings/src/sections/assets.ts',
+        'shared/settings/src/sections/security.ts',
         'packages/server/src/domains/settings/services/section-patch.ts',
         'packages/server/src/http/middlewares/hono-rbac.ts',
         'packages/server/src/http/middlewares/rate-limit.ts',
@@ -308,10 +308,10 @@ describe('production sources', () => {
         'packages/server/src/http/localized-http-exception.ts',
         'packages/server/src/http/controllers/admin/settings.controller.ts',
 
-        'packages/shared/settings/src/sections/assets.ts',
-        'packages/shared/settings/src/sections/comments.ts',
-        'packages/shared/settings/src/sections/security.ts',
-        'packages/shared/settings/src/sections/backup.ts',
+        'shared/settings/src/sections/assets.ts',
+        'shared/settings/src/sections/comments.ts',
+        'shared/settings/src/sections/security.ts',
+        'shared/settings/src/sections/backup.ts',
         'packages/server/src/domains/taxonomies/shared.ts',
         'packages/server/src/domains/taxonomies/categories/services/mutate.ts',
         'packages/server/src/domains/content/lifecycle.ts',
@@ -358,7 +358,7 @@ describe('production sources', () => {
 
         'packages/server/src/domains/analytics/geoip/update.ts',
         'packages/server/src/domains/update/pipeline.ts',
-        'packages/shared/base/src/utils/url-schema.ts',
+        'shared/base/src/utils/url-schema.ts',
 
         'apps/kobato/src/ui/settings/comments/CommentsAvatarCard.tsx',
         'packages/server/src/infra/email/sender.ts',
@@ -503,7 +503,7 @@ describe('scanner rules', () => {
   it('skips a content store before the parser sees it', () => {
     const invalid = 'this is not valid TypeScript {{{'
     expect(() => scanSourceForI18nLiterals(invalid, 'src/not-a-content-store.ts')).toThrow()
-    expect(scanSourceForI18nLiterals(invalid, 'packages/shared/i18n/src/fallback-messages.ts')).toEqual([])
+    expect(scanSourceForI18nLiterals(invalid, 'shared/i18n/src/fallback-messages.ts')).toEqual([])
   })
 
   it('stays fast on a large file with thousands of late hits', { timeout: 60_000 }, () => {
@@ -528,13 +528,11 @@ describe('scanner rules', () => {
 describe('allowlist', () => {
   const violations = scanSourceForI18nLiterals(
     "export const a = 'zh-CN'\nexport const b = 'zh-TW'\nexport function C() { return <p>保存</p> }\n",
-    'packages/shared/i18n/src/sample.tsx',
+    'shared/i18n/src/sample.tsx',
   )
 
   it('exempts only the listed rule for a path', () => {
-    const result = applyAllowlist(violations, [
-      { path: 'packages/shared/i18n/src/sample.tsx', rules: ['hardcoded-locale'] },
-    ])
+    const result = applyAllowlist(violations, [{ path: 'shared/i18n/src/sample.tsx', rules: ['hardcoded-locale'] }])
 
     expect(result.allowlisted).toHaveLength(2)
     expect(result.violations.map((violation) => violation.rule)).toEqual(['jsx-text'])
@@ -547,9 +545,7 @@ describe('allowlist', () => {
   })
 
   it('narrows to an exact snippet when one is given', () => {
-    const result = applyAllowlist(violations, [
-      { path: 'packages/shared/i18n/src', rules: ['hardcoded-locale'], text: 'zh-TW' },
-    ])
+    const result = applyAllowlist(violations, [{ path: 'shared/i18n/src', rules: ['hardcoded-locale'], text: 'zh-TW' }])
 
     expect(result.allowlisted.map((violation) => violation.text)).toEqual(['zh-TW'])
     expect(result.violations).toHaveLength(2)

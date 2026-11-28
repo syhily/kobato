@@ -69,5 +69,5 @@ the generic static-asset cache middleware lives in `http/middlewares/cache.ts`.
   (`requireExternal` remains only as `nativeRequire`'s resolver) — banned by the boundaries contract test.
 - SEA-safe file reads go through `seaAssetPath` (raw assets, main thread only) or `getEmbeddedAsset` (packed
   `natives/*`, worker-safe). Never `seaAssetPath` a `natives/*` key — it throws on zstd bytes.
-- Embedded asset keys are owned by `packages/shared/base/src/distribution/sea-assets.ts`; never hardcode one. New
-  resource types go into `tools/pack/src/sea/assets.ts` AND are read via the sea helpers with a non-SEA fallback.
+- Embedded asset keys are owned by `shared/base/src/distribution/sea-assets.ts`; never hardcode one. New resource types
+  go into `tools/pack/src/sea/assets.ts` AND are read via the sea helpers with a non-SEA fallback.

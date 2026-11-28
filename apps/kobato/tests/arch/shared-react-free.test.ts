@@ -5,9 +5,9 @@ import { isAbsolute, join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'packages/shared'), { withFileTypes: true })
+const SHARED_SRC_ROOTS = readdirSync(join(PROJECT_ROOT, 'shared'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .map((entry) => join(PROJECT_ROOT, 'packages/shared', entry.name, 'src'))
+  .map((entry) => join(PROJECT_ROOT, 'shared', entry.name, 'src'))
   .filter((srcDir) => existsSync(srcDir))
 
 const API_SRC_ROOT = join(PROJECT_ROOT, 'packages/api/src')
@@ -113,12 +113,7 @@ describe('arch: the shared leaf packages and the api SDK are UI-runtime-free out
     expect(
       SHARED_SRC_ROOTS.map((dir) => relativePath(dir)).sort(),
       'expected exactly the four documented leaves (ADR-0011 §6) — the umbrella collapsed, grew, or moved',
-    ).toEqual([
-      'packages/shared/base/src',
-      'packages/shared/catalog/src',
-      'packages/shared/i18n/src',
-      'packages/shared/settings/src',
-    ])
+    ).toEqual(['shared/base/src', 'shared/catalog/src', 'shared/i18n/src', 'shared/settings/src'])
   })
 
   it('has no .tsx source files', () => {

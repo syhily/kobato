@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 const REPO_ROOT = process.cwd()
 
-const SCAN_ROOTS = ['apps', 'packages', 'tools']
+const SCAN_ROOTS = ['apps', 'packages', 'shared', 'tools']
 
 const EXEMPT_PREFIXES = [
   'packages/inkling/src/nodes/base/',

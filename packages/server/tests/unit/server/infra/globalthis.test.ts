@@ -5,7 +5,7 @@ const DI_MODULES = [
   'packages/db/src/sqlite/database.ts',
   'packages/db/src/sqlite/migrate.ts',
   'packages/server/src/infra/storage/backends/s3.ts',
-  'packages/shared/settings/src/snapshot.ts',
+  'shared/settings/src/snapshot.ts',
 ] as const
 
 const GLOBAL_THIS_CAST = /globalThis\s+as\s+typeof\s+globalThis\s*&/

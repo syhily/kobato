@@ -13,10 +13,10 @@ const PACKAGE_SRC: Record<string, string> = {
   '@kobato/web-kit': 'packages/web/kit/src',
   '@kobato/ui': 'packages/web/ui/src',
   '@kobato/api': 'packages/api/src',
-  '@kobato/base': 'packages/shared/base/src',
-  '@kobato/catalog': 'packages/shared/catalog/src',
-  '@kobato/i18n': 'packages/shared/i18n/src',
-  '@kobato/settings': 'packages/shared/settings/src',
+  '@kobato/base': 'shared/base/src',
+  '@kobato/catalog': 'shared/catalog/src',
+  '@kobato/i18n': 'shared/i18n/src',
+  '@kobato/settings': 'shared/settings/src',
   '@kobato/inkling': 'packages/inkling/src',
   '@kobato/test': 'tools/test/src',
 }
@@ -26,7 +26,7 @@ const PUBLIC_ENTRY_DIRS = ['apps/sayaka/src/routes'] as const
 const SERVER_ONLY_PREFIXES = ['packages/server/src/'] as const
 
 const DECLARED_WORKSPACE_KEYS: Record<string, readonly string[]> = {
-  'packages/shared/settings/src/sections/observability.ts': [
+  'shared/settings/src/sections/observability.ts': [
     'admin.settings.observability.error.endpointInvalid',
     'admin.settings.observability.error.endpointHttps',
     'admin.settings.observability.error.organizationInvalid',

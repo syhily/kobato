@@ -20,9 +20,9 @@ function toPosix(path: string): string {
 const PACKAGE_SRC_ROOTS: Record<string, string> = {
   server: 'packages/server/src',
   api: 'packages/api/src',
-  base: 'packages/shared/base/src',
-  i18n: 'packages/shared/i18n/src',
-  settings: 'packages/shared/settings/src',
+  base: 'shared/base/src',
+  i18n: 'shared/i18n/src',
+  settings: 'shared/settings/src',
 }
 
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
@@ -70,7 +70,7 @@ describe('server/infra/sea/self-update-gate — zero-side-effect import contract
     expect(closure.size).toBeGreaterThan(3)
     expect(closure.has(ENTRY)).toBe(true)
     expect(closure.has('packages/server/src/infra/sea/sea.ts')).toBe(true)
-    expect(closure.has('packages/shared/i18n/src/messages/ui/en-US.ts')).toBe(true)
+    expect(closure.has('shared/i18n/src/messages/ui/en-US.ts')).toBe(true)
 
     for (const banned of BANNED) {
       expect(closure.has(banned), `${ENTRY} must not import ${banned} (directly or transitively)`).toBe(false)

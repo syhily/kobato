@@ -10,9 +10,9 @@ never through a package name and never through the working directory. The feeds,
 manifest.webmanifest, and the `/tags` + `/search` 301s are sayaka's, and every public resource (images, storage,
 embedded fonts, branding assets, the Webmention receive, the RUM intake) is a `public.*` procedure pair that sayaka
 serves. The public site lives in `apps/sayaka` and reaches kobato over oRPC and the two forwarded path families; it
-imports nothing from this app. Backend in `@kobato/server`, contracts in `@kobato/api`, the shared leaves in
-`packages/shared`. `apps/kobato/package.json` is the version source of truth for every package and for the `__APP_*__`
-build globals of both the backend bundle and the workspace build.
+imports nothing from this app. Backend in `@kobato/server`, contracts in `@kobato/api`, the shared leaves in `shared`.
+`apps/kobato/package.json` is the version source of truth for every package and for the `__APP_*__` build globals of
+both the backend bundle and the workspace build.
 
 ## The backend entry
 

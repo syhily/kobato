@@ -24,7 +24,7 @@ function collectPackages(root: string, dir: string, out: WorkspacePackage[]): vo
   }
 }
 
-export const REPO_PACKAGES: readonly WorkspacePackage[] = ['apps', 'packages', 'tools']
+export const REPO_PACKAGES: readonly WorkspacePackage[] = ['apps', 'packages', 'shared', 'tools']
   .flatMap((root) => {
     const packages: WorkspacePackage[] = []
     collectPackages(process.cwd(), join(process.cwd(), root), packages)

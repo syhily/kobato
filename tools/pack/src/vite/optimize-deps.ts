@@ -16,10 +16,10 @@ const DEPENDENCY_OWNER_DIRS = [
   'packages/web/kit',
   'packages/web/ui',
   'packages/server',
-  'packages/shared/base',
-  'packages/shared/catalog',
-  'packages/shared/i18n',
-  'packages/shared/settings',
+  'shared/base',
+  'shared/catalog',
+  'shared/i18n',
+  'shared/settings',
   'packages/inkling',
 ]
 

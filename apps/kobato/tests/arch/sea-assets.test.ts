@@ -21,7 +21,7 @@ import {
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-const SHARED_MODULE = 'packages/shared/base/src/distribution/sea-assets.ts'
+const SHARED_MODULE = 'shared/base/src/distribution/sea-assets.ts'
 
 const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] = [
   {
