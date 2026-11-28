@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const CSS = readFileSync('packages/web/ui/src/styles/tailwind.css', 'utf8')
 const SHELL_HEAD = readFileSync('packages/web/ui/src/components/document-shell/document-head.ts', 'utf8')
-const ROOTS = ['packages/web/admin/src/root.tsx', 'apps/sayaka/src/root.tsx'].map((file) => readFileSync(file, 'utf8'))
+const ROOTS = ['apps/kobato/src/root.tsx', 'apps/sayaka/src/root.tsx'].map((file) => readFileSync(file, 'utf8'))
 
 function normalize(value: string): string {
   return value

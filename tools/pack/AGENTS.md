@@ -20,16 +20,23 @@ here ships inside the product binaries.
   `check-bundle.ts` derives its defined-globals table from `seaAppDefines`. `src/vite/app-metadata.ts`'s
   `readAppPackage(appDir)` reads any app's package metadata (default `apps/kobato`, the version source of truth — the
   workspace build defines its `__APP_*__` globals from it too) so the helpers can serve the sayaka build too;
-  `appOptimizeDeps(appDir)` reads the dependency table of the named package whose dev server it serves
-  (`packages/web/admin` for the workspace; no default). `src/vite/react-router-hono-server.ts` is sayaka's
-  `reactRouterHonoServer` Vite plugin — every request is served through its Hono app. `src/vite/hono-dev-host.ts` is the
-  backend's dev host (`honoDevHost({ entry })`: `@hono/vite-dev-server` with the node adapter and no client-script
-  injection, used by `apps/kobato/vite.config.ts` to load `src/server.ts`) and owns the three pieces both plugins share:
-  the `globalThis` slot keyed by `Symbol.for('kobato.vite-dev-server')` (`VITE_DEV_SERVER_SLOT`, `exposeViteDevServer`),
-  the `x-remote-*` request-header middleware, and `forceDevMode`. Each app keeps an app-side `dev-server-ref.ts` that
-  reads the slot, because product `src/` never imports a tools package. The backend host additionally marks the process
-  as a dev host (`markDevHost`, the `globalThis` slot keyed by `Symbol.for('kobato.server.dev-host')`) before the entry
-  loads; `@kobato/server/infra/dev-host-state` reads that marker (its own copy of the key — same technique as
+  `appOptimizeDeps(appDir)` reads the dependency table of the named app (`apps/kobato`, the workspace dev server — the
+  one config that enables `optimizeDeps`; no default): an entry the app declares stays bare, one it does not declare is
+  attributed `owner > entry` to the first of its declared dependencies whose table declares it, and one no declared
+  dependency declares is omitted — Vite pre-bundles only what the served app's root can resolve, and an unresolvable
+  include is a per-entry warning at dev boot. `src/vite/react-router-hono-server.ts` is sayaka's `reactRouterHonoServer`
+  Vite plugin — every request is served through its Hono app. `src/vite/hono-dev-host.ts` is the backend's dev host
+  (`honoDevHost({ entry })`: `@hono/vite-dev-server` with the node adapter and no client-script injection, used by
+  `apps/kobato/vite.backend.config.ts` to load `src/server.ts` on `serve` — the same file is the backend bundle on
+  `build`) and owns the three pieces both plugins share: the `globalThis` slot keyed by
+  `Symbol.for('kobato.vite-dev-server')` (`VITE_DEV_SERVER_SLOT`, `exposeViteDevServer`), the `x-remote-*`
+  request-header middleware, and `forceDevMode`. Each app keeps an app-side `dev-server-ref.ts` that reads the slot,
+  because product `src/` never imports a tools package. The backend host additionally marks the process as a dev host
+  (`markDevHost`, the `globalThis` slot keyed by `Symbol.for('kobato.server.dev-host')`) before the entry loads, and
+  drops Vite's own `--config <vite config>` / `-c` from `process.argv` (`withoutViteConfigFlag`): the kobato server
+  reads that same flag for `kobato.config.json` (`packages/server/src/infra/config-arg`), so under the dev host the
+  server must fall through to `KOBATO_CONFIG_FILE` or the cwd default instead of parsing the Vite config as JSON;
+  `@kobato/server/infra/dev-host-state` reads that marker (its own copy of the key — same technique as
   `dev-server-ref.ts`) and keeps the server graph's run-once state there across re-evaluations. Both dev hosts load
   their entry through `@hono/vite-dev-server`, i.e. Vite's `ssrLoadModule` compat runner (`hmr: false`): neither app's
   server graph has an `import.meta.hot`, so neither entry keeps an `accept()` boundary, nothing under
@@ -43,11 +50,10 @@ here ships inside the product binaries.
   `readAppPackage(identityDir)` (default `apps/kobato`), the client/root chunk-size limits (2500/500),
   `resolve.tsconfigPaths`, the route warmup `clientFiles`, and `server.port`; `optimizeDeps` adds
   `appOptimizeDeps(appDir)`, `serverEntry` adds the SSR environment build on `build`, `ssrExternals` the build-only
-  `ssr.external`. `packages/web/admin/vite.config.ts` (port 4321, the `/editor` rewrite and `svgr`, the backend proxy)
-  and `apps/sayaka/vite.config.ts` (port 4322, `reactRouterHonoServer` and the route-warmup plugin) are each one call.
-  `src/sea/paths.ts` resolves the workspace's client build through the package (`adminPackageDir()` /
-  `adminClientBuildDir()` resolve `@kobato/web-admin/package.json` from the kobato app's dependency table) — the SEA
-  asset collection reads the workspace build only through the package.
+  `ssr.external`. `apps/kobato/vite.config.ts` (port 4321, the `/editor` rewrite and `svgr`, the backend proxy) and
+  `apps/sayaka/vite.config.ts` (port 4322, `reactRouterHonoServer` and the route-warmup plugin) are each one call.
+  `src/sea/paths.ts` anchors the workspace's client build on the repository root (`workspaceClientBuildDir()` →
+  `apps/kobato/build/workspace/client`) — the same output the backend's `clientAssetsRoot()` finds beside its bundle.
 - `src/sea/{smoke,e2e,browser}.ts` — the binary-suite entry scripts — boot the PAIR through `@kobato/instance`
   (`bootSuiteInstance` / `stopSuiteInstance`, `readConvergedConfig`, the DuckDB sidecar scan) and share its process
   primitives (`@kobato/instance/process`: `fail`, `sleep`, `pickFreePort`, `fetchManual`, `scrubbedParentEnv`,

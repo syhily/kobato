@@ -69,14 +69,15 @@ domain logic.
   and cannot grow without a deliberate edit to its pin (`tests/arch/frozen-admin-set.test.ts`), which scans `src/**`,
   `packages/web/kit/src/**`, and the api browser hooks both import (`packages/api/src/browser/**`) and fails on any
   other `admin` touch.
-- Never imports `@/...`, `@tests/...`, `@kobato/server/*`, `@kobato/db/*`, `@kobato/web-admin`, or anything under
-  `apps/kobato` (the workspace is reached through the forwarded `/admin` perimeter, never imported); `src/` never
-  imports `@kobato/pack` (vite.config may). Pinned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
+- Never imports anything from the kobato app — `@/...`, `@tests/...`, or any path under `apps/kobato` — nor
+  `@kobato/server/*` or `@kobato/db/*` (the workspace is reached through the forwarded `/admin` perimeter, never
+  imported); `src/` never imports `@kobato/pack` (vite.config may). Pinned by
+  `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - Sayaka owns the public UI layer in `src/ui/**` (the former `@kobato/web-public` tree, dissolved and deleted per
   ADR-0009) and MAY import `@kobato/web-kit`; the public comment composer is Inkling's comment surface
   (`@kobato/inkling/comment/*`: `LazyCommentBodyEditor`, `CommentContentHtml`, `comment-body-helpers`, and the iOS
-  viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the workspace is `@kobato/web-admin`
-  (`packages/web/admin`) and the specifier stays banned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
+  viewport lock both apps' `useIosNoZoomOnFocus` hooks hold) — never the kit; the workspace is the kobato app
+  (`apps/kobato`) and everything from it stays banned by `apps/sayaka/tests/arch/import-boundary.test.ts`.
 - The root `Layout` renders `@kobato/ui`'s `DocumentShell` over `DocumentFacts` mapped from the root loader data
   (`documentFactsFrom` in `src/document/document-facts.ts`): the shell owns the document element, head, fonts,
   preconnects, `I18nProvider`, and the chunk-reload overlay; the `head` slot carries `Meta` / `Links`, the webmention

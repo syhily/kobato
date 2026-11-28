@@ -1,0 +1,250 @@
+import type { CacheBucketStats } from '@kobato/api/contracts/admin/cache'
+import type { BackupLoaderShape } from '@kobato/settings/projection'
+
+import { mockTanstackQuery } from '@kobato/test/mock-react-query'
+import { renderInRouter, renderToHtml, stableHtml } from '@kobato/web-kit/tests/utils/render'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { BackupFileList } from '@/ui/settings/backup/BackupFileList'
+import { BackupScheduleForm } from '@/ui/settings/backup/BackupScheduleForm'
+import { BackupView } from '@/ui/settings/backup/BackupView'
+import { BucketCard } from '@/ui/settings/cache/BucketCard'
+import { idleClearStatus } from '@/ui/settings/cache/cache-status'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
+  isPending: true,
+  error: null as unknown,
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  isPending: false,
+}
+
+const scheduledBackup: BackupLoaderShape = {
+  scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
+  retention: { enabled: true, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
+}
+
+const dailyBackup: BackupLoaderShape = {
+  scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+  retention: { enabled: false, days: 30 },
+  encryption: { enabled: false, password: '' },
+  passwordMask: null,
+}
+
+describe('snapshot: BackupView', () => {
+  beforeEach(() => {
+    queryMocks.query = { data: undefined, isPending: true, error: null }
+    queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
+  })
+
+  it('renders the loading state with schedule and file sections under a router', () => {
+    const html = stableHtml(
+      renderInRouter(<BackupView backup={scheduledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
+    )
+    expect(html).toContain('正在读取备份信息')
+    expect(html).toContain('定时备份')
+    expect(html).toContain('配置自动备份的频率与保留策略')
+    expect(html).toContain('备份文件')
+  })
+
+  it('renders the schedule form populated with the supplied backup config plus the file and manual-restore sections', () => {
+    queryMocks.query = { data: undefined, isPending: true, error: null }
+    const html = stableHtml(
+      renderInRouter(<BackupView backup={scheduledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
+    )
+    expect(html).toContain('定时备份')
+    expect(html).toContain('启用定时备份')
+    expect(html).toContain('备份频率')
+    expect(html).toContain('保留策略')
+    expect(html).toContain('备份文件')
+    expect(html).toContain('暂无备份文件')
+    expect(html).toContain('手动还原')
+    expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计 + 配置')
+    expect(html).toContain('选择文件')
+    expect(html).toContain('上传并还原')
+  })
+
+  it('renders the disabled-schedule branch when the backup config has scheduling off', () => {
+    queryMocks.query = { data: undefined, isPending: true, error: null }
+    const html = stableHtml(
+      renderInRouter(<BackupView backup={dailyBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
+    )
+    expect(html).toContain('定时备份')
+    expect(html).toContain('启用定时备份')
+    expect(html).not.toContain('保留天数')
+    expect(html).toContain('备份文件')
+    expect(html).toContain('手动还原')
+  })
+})
+
+describe('snapshot: BackupScheduleForm', () => {
+  it('renders an enabled weekly schedule', () => {
+    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={scheduledBackup} />))
+    expect(html).toContain('定时备份')
+    expect(html).toContain('启用定时备份')
+    expect(html).toContain('备份频率')
+    expect(html).toContain('备份时间')
+    expect(html).toContain('星期')
+    expect(html).toContain('保留策略')
+  })
+
+  it('collapses the frequency/time rows when scheduling is disabled', () => {
+    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={dailyBackup} />))
+    expect(html).toContain('定时备份')
+    expect(html).toContain('启用定时备份')
+    expect(html).not.toContain('备份频率')
+    expect(html).not.toContain('保留天数')
+  })
+})
+
+describe('snapshot: BackupFileList', () => {
+  const files = [
+    {
+      key: 'backup/2024-01-15.sql.gz',
+      fileName: '2024-01-15.sql.gz',
+      size: 1024 * 512,
+      lastModified: '2024-01-15T03:00:00.000Z',
+      encrypted: false,
+    },
+    {
+      key: 'backup/2024-01-14.sql.gz.enc',
+      fileName: '2024-01-14.sql.gz.enc',
+      size: 1024 * 256,
+      lastModified: '2024-01-14T03:00:00.000Z',
+      encrypted: true,
+    },
+  ]
+
+  it('renders a table of backup files with actions', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <BackupFileList
+          backups={files}
+          timeZone="Asia/Shanghai"
+          isCreating={false}
+          encryptionEnabled={false}
+          onCreate={() => {}}
+          restorePending={false}
+          onRestore={() => {}}
+          onDelete={() => {}}
+          deletePending={false}
+          onLoadMore={() => {}}
+          isLoadingMore={false}
+          hasMore={false}
+        />,
+      ),
+    )
+    expect(html).toContain('备份文件')
+    expect(html).toContain('手动备份')
+    expect(html).toContain('文件名')
+    expect(html).toContain('大小')
+    expect(html).toContain('时间')
+    expect(html).toContain('操作')
+    expect(html).toContain('2024-01-15.sql.gz')
+    expect(html).toContain('2024-01-14.sql.gz.enc')
+    expect(html).toContain('<span class="break-all">2024-01-14.sql.gz.enc</span>')
+    expect(html).toContain('已加密')
+    expect(html).toContain('下载')
+    expect(html).toContain('还原')
+    expect(html).toContain('删除')
+  })
+
+  it('renders the empty state when there are no backups', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <BackupFileList
+          backups={[]}
+          timeZone="Asia/Shanghai"
+          isCreating={false}
+          encryptionEnabled={false}
+          onCreate={() => {}}
+          restorePending={false}
+          onRestore={() => {}}
+          onDelete={() => {}}
+          deletePending={false}
+          onLoadMore={() => {}}
+          isLoadingMore={false}
+          hasMore={false}
+        />,
+      ),
+    )
+    expect(html).toContain('备份文件')
+    expect(html).toContain('暂无备份文件')
+  })
+
+  it('shows the load-more affordance when hasMore is true', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <BackupFileList
+          backups={files}
+          timeZone="Asia/Shanghai"
+          isCreating={false}
+          encryptionEnabled={false}
+          onCreate={() => {}}
+          restorePending={false}
+          onRestore={() => {}}
+          onDelete={() => {}}
+          deletePending={false}
+          onLoadMore={() => {}}
+          isLoadingMore={false}
+          hasMore={true}
+        />,
+      ),
+    )
+    expect(html).toContain('加载更多')
+    expect(html).toMatch(/已展示.*2.*个备份文件/su)
+  })
+})
+
+describe('snapshot: BucketCard', () => {
+  const bucket: CacheBucketStats = {
+    id: 'og',
+    label: 'OG 预渲染缓存',
+    description: '预生成的 Open Graph 元数据，避免每次分享都重新渲染卡片。',
+    prefix: 'og:',
+    ttlSeconds: 60 * 60 * 24,
+    pattern: 'og:*',
+    keyCount: 42,
+    byteSize: 43_008,
+  }
+
+  const allBuckets = {
+    og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
+    calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
+    avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
+    searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
+  }
+
+  it('renders the bucket summary with stats and read-only action bar', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <BucketCard
+          bucket={bucket}
+          settings={{ prefix: 'og:', ttlSeconds: 60 * 60 * 24 }}
+          allBuckets={allBuckets}
+          isClearPending={false}
+          clearStatus={idleClearStatus}
+          onClear={() => {}}
+        />,
+      ),
+    )
+    expect(html).toContain('OG 预渲染缓存')
+    expect(html).toContain('缓存条数')
+    expect(html).toContain('42')
+    expect(html).toContain('磁盘占用')
+    expect(html).toContain('当前前缀')
+    expect(html).toContain('og:')
+    expect(html).toContain('键匹配模式')
+    expect(html).toContain('当前 TTL')
+    expect(html).toContain('编辑')
+    expect(html).toContain('清空该分组')
+  })
+})

@@ -1,6 +1,7 @@
 import { tZhCN } from '@kobato/i18n/tests/utils/i18n'
-import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@kobato/web-admin/ui/comments/use-comments-controller'
 import { describe, expect, it } from 'vitest'
+
+import { parseCommentFiltersFromSearchParams as parseCommentFilters } from '@/ui/comments/use-comments-controller'
 
 const parseCommentFiltersFromSearchParams = (params: URLSearchParams) => parseCommentFilters(params, tZhCN)
 

@@ -3,8 +3,8 @@
 `@kobato/ui` is the design system and the document shell: design tokens, base styles, shadcn/Base UI primitives, static
 icons, theme and i18n providers, the document shell, the shared document modules (settings contexts, locale sync, chunk
 recovery, `BrandLogo`, `Image`), and generic presentation hooks. Production sources depend only on `@kobato/settings`,
-`@kobato/i18n`, and `@kobato/base` (`utils`, `assets` for `Image`) — never `@kobato/web-kit`, `@kobato/web-admin`, the
-public UI tree (`apps/sayaka/src/ui`), or `@kobato/server`.
+`@kobato/i18n`, and `@kobato/base` (`utils`, `assets` for `Image`) — never `@kobato/web-kit`, the kobato app
+(`apps/kobato`), the public UI tree (`apps/sayaka/src/ui`), or `@kobato/server`.
 
 **`@kobato/ui` imports no `@kobato/api` module** (ADR-0011 §1): a front-end module that calls a procedure is a kit
 module or an app's own (`tests/unit/contract/api-free.test.ts`). It imports no React Router either — root route data
@@ -43,7 +43,7 @@ reaches the package only as document facts, never through `useRouteLoaderData`.
 - `icons/` holds static icon exports; named imports only, never runtime name lookups.
 - `lib/` is flat and role-prefixed: `use-*.ts` is a hook, `*Provider.tsx` a provider, `kebab-case-context.tsx` a
   context, `*.ts` a pure helper — `lib/motion.ts` holds the motion presets consumers pass to the `lazy-motion` facade.
-  Browser product state and routes belong in the workspace (`packages/web/admin`) and sayaka (`apps/sayaka`), editor
-  glue in `@kobato/inkling`; the oRPC binding is `@kobato/api/browser`.
+  Browser product state and routes belong in the workspace (`apps/kobato`) and sayaka (`apps/sayaka`), editor glue in
+  `@kobato/inkling`; the oRPC binding is `@kobato/api/browser`.
 - Consumers import directly from `@kobato/ui/<path>`; there is no barrel.
 - Preserve SSR/hydration parity and the lazy-motion facade rules.

@@ -67,7 +67,7 @@ jobs:
         if: github.event_name == 'pull_request'
       - name: production trace/rum bundle guard
         run: |
-          test -d packages/web/admin/build/client
+          test -d apps/kobato/build/workspace/client
           test -d apps/kobato/build/server
           pnpm run test:production-rum
         env:

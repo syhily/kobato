@@ -16,6 +16,22 @@ export function markDevHost(): void {
   Reflect.set(globalThis, DEV_HOST_MARKER, true)
 }
 
+export function withoutViteConfigFlag(argv: readonly string[]): string[] {
+  const kept: string[] = []
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--config' || arg === '-c') {
+      i += 1
+      continue
+    }
+    if (arg.startsWith('--config=')) {
+      continue
+    }
+    kept.push(arg)
+  }
+  return kept
+}
+
 export function remoteAddressMiddleware() {
   return (req: IncomingMessage, _res: ServerResponse, next: () => void) => {
     req.rawHeaders.push('x-remote-address', req.socket.remoteAddress || 'unknown')
@@ -51,6 +67,7 @@ export function honoDevHost(options: HonoDevHostOptions): Plugin {
     enforce: 'post',
     configureServer(server) {
       forceDevMode()
+      process.argv = withoutViteConfigFlag(process.argv)
       exposeViteDevServer(server)
       markDevHost()
       server.middlewares.use(remoteAddressMiddleware())

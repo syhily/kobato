@@ -25,7 +25,7 @@ the request deadline is application-level, so `requestTimeout` is `0`).
 Never move back here: role/security and the SSRF/passkey network boundary (`auth/`); `toc` (`@kobato/inkling/headless`);
 avatar URL rules and the Gravatar mirror policy (`assets/`); app identity (`distribution/app`); Zod helpers, comment
 entity parse/serialize, and the `Comments` summary (`@kobato/api/contracts`); `is-bot` (`@kobato/api/client`); session
-sort (`packages/web/admin/src/ui/sessions`).
+sort (`apps/kobato/src/ui/sessions`).
 
 The ThumbHash snapshot corpus stays in `tests/utils/fixtures/thumbhash/`.
 

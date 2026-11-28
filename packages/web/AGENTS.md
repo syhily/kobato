@@ -1,8 +1,9 @@
 # Web umbrella conventions
 
-`packages/web/` is the UMBRELLA directory for the three front-end packages, split by what they may import (ADR-0011 §1,
-§4), with no package of its own and no umbrella test directory (the `admin-*`, `ui-unit`, `ui-snaps`, and `web-unit`
-projects live in `tools/test/src/projects/`; cross-package contract pins in `apps/kobato/tests/arch`).
+`packages/web/` is the UMBRELLA directory for the two front-end packages shared by both apps, split by what they may
+import (ADR-0011 §1), with no package of its own and no umbrella test directory (the `ui-unit`, `ui-snaps`, and
+`web-unit` projects live in `tools/test/src/projects/`; cross-package contract pins in `apps/kobato/tests/arch`). The
+workspace — the admin, editor, and auth SPA — is not here: it is the kobato app itself (`apps/kobato`, ADR-0012 §2).
 
 - `ui/` — `@kobato/ui`: the design system and the document shell — design tokens, base styles, the shadcn/Base UI
   primitives, theme and i18n providers, the document shell both app roots mount, the shared document modules (settings
@@ -13,37 +14,33 @@ projects live in `tools/test/src/projects/`; cross-package contract pins in `app
   dependency are the contract's own (`@kobato/api/browser/use-notifications`, ADR-0011 §3), the comment surface and the
   shared composer platform are Inkling's public API, the root-data label hook is the workspace's, and the document-shell
   modules are `@kobato/ui`'s (`kit/AGENTS.md`).
-- `admin/` — `@kobato/web-admin`: the workspace — the admin, editor, and auth single-page application as a React Router
-  8 SPA project (`react-router.config.ts`, `vite.config.ts`, the routes, the root, the UI tree, the document runtime,
-  the styles) whose build is a static client tree under the `/admin/` base. It lives under `packages/` because it is not
-  deployed on its own: `apps/kobato` builds and serves it (`admin/AGENTS.md`). The public surface lives in
-  `apps/sayaka/src/ui`.
 
 The rule that separates the design system from what may call a procedure: **`@kobato/ui` imports no `@kobato/api`
 module. A front-end module that calls a procedure is a kit module or an app's own.** Nothing else separates the two
 packages (`packages/web/ui/tests/unit/contract/api-free.test.ts`). The one refinement is ADR-0011 §3: a
 procedure-calling hook that imports no UI package, no message copy, and no route data is the contract's own, under
-`@kobato/api/browser`. The workspace sits on top of both (`@kobato/web-admin` → `@kobato/ui`, `@kobato/web-kit`,
+`@kobato/api/browser`. The workspace (`apps/kobato`) sits on top of both (it imports `@kobato/ui`, `@kobato/web-kit`,
 `@kobato/api`, `@kobato/inkling`, the shared leaves) and nothing below it imports it — not the kit, not the design
-system, never sayaka (`apps/sayaka/tests/arch/import-boundary.test.ts` bans the specifier).
+system, never sayaka (`apps/sayaka/tests/arch/import-boundary.test.ts` bans everything from the kobato app).
 
 ## Module seam and direction
 
-Both consuming surfaces may import `@kobato/web-kit`: the workspace tree (`packages/web/admin/src/ui`) and the public
-tree (`apps/sayaka/src/ui`):
+Both consuming surfaces may import `@kobato/web-kit`: the workspace tree (`apps/kobato/src/ui`) and the public tree
+(`apps/sayaka/src/ui`):
 
-- a kit module never imports `@kobato/server`, the sayaka app, the workspace, or either consumer's tree (pinned by
-  `apps/kobato/tests/arch/web-direction.test.ts` and `package-dag.test.ts`);
-- sayaka never imports the kobato app or its `@/...` alias (pinned by `apps/sayaka/tests/arch/import-boundary.test.ts`);
-- the workspace's production source never imports `@kobato/server`, `@kobato/db`, or sayaka — its test tree is the one
-  exception, the five files `admin/AGENTS.md` names, and both packages are declared test dependencies only — and nothing
-  under `packages/web` is imported by the layer below it (pinned by `apps/kobato/tests/arch/web-direction.test.ts`,
-  `packages/web/admin/tests/arch/route-server-surface.test.ts`, and `package-dag.test.ts`, whose workspace src targets
-  exclude both backend packages);
-- no module under `packages/web/*/src` reads React Router's `useRouteLoaderData` outside the workspace root: root route
+- a kit module never imports `@kobato/server`, the sayaka app, or the kobato app — neither its `@/...` alias nor
+  anything under `apps/kobato` (pinned by `apps/kobato/tests/arch/web-direction.test.ts` and `package-dag.test.ts`);
+- sayaka never imports the kobato app or its `@/...` / `@tests/...` aliases (pinned by
+  `apps/sayaka/tests/arch/import-boundary.test.ts`);
+- the workspace's client tree never imports `@kobato/server`, `@kobato/db`, or sayaka — its test tree and the backend
+  entry (`src/server.ts`, `src/server/`) are the exceptions, and both packages are declared test dependencies only — and
+  nothing under `packages/web` is imported by the layer below it (pinned by
+  `apps/kobato/tests/arch/web-direction.test.ts` and `package-dag.test.ts`, whose kobato src targets exclude
+  `@kobato/db`);
+- no module under `packages/web/*/src` reads React Router's `useRouteLoaderData` outside the two app roots: root route
   data reaches a shared module only as document facts through `@kobato/ui/lib/document-facts-context`, provided by the
-  document shell each app root mounts (pinned by `apps/kobato/tests/arch/web-direction.test.ts`; the workspace's own
-  root `Layout` is the one reader, as sayaka's is).
+  document shell each app root mounts (pinned by `apps/kobato/tests/arch/web-direction.test.ts`; each app's own root
+  `Layout` is the one reader).
 
 ## Backend access
 
@@ -57,20 +54,22 @@ tree (`apps/sayaka/src/ui`):
   notifications family and both apps' chrome consume them from there). The TanStack Query binding stays at that seam: a
   web package imports neither `@orpc/react-query` nor `@orpc/client` from production source.
 - The singleton's assembly (CSRF token store, same-origin `/rpc` URL) is documented in `packages/api/AGENTS.md`. No
-  route talks to domain services directly. In development the workspace's Vite dev server proxies `/rpc`, `/health`, and
-  `/ready` to the backend (`admin/AGENTS.md`); production is one origin behind `apps/kobato`.
+  route talks to domain services directly. In development each app's Vite dev server proxies `/rpc`, `/health`, and
+  `/ready` to the backend (`apps/kobato/AGENTS.md`, `apps/sayaka/AGENTS.md`); production is one origin behind
+  `apps/kobato` or the forwarded families through sayaka.
 
-## Source layout and naming (the three packages and both consuming UI trees)
+## Source layout and naming (the two packages and both consuming UI trees)
 
 - `src/` holds only the documented roots — `@kobato/ui`: `components/`, `icons/`, `lib/`, `styles/`; the kit: `ui/` with
-  its feature dirs, `styles/`; the workspace: the React Router entry set (`root.tsx`, `routes.ts`, `routes/`) plus
-  `ui/`, `styles/`, `lib/`, `document/`, `seo/`; a new root directory needs a line here first. No web package warms
-  routes: the idle script and its manifest are the public site's (`apps/sayaka`).
+  its feature dirs, `styles/`; the workspace (`apps/kobato`): the React Router entry set (`root.tsx`, `routes.ts`,
+  `routes/`) plus `ui/`, `styles/`, `lib/`, `document/`, `seo/`; a new root directory needs a line here first. No web
+  package warms routes: the idle script and its manifest are the public site's (`apps/sayaka`).
 - `PascalCase.tsx` components, `use-kebab-case.ts(x)` hooks, `kebab-case-context.tsx` contexts, `kebab-case.ts` for
   everything else; a module that renders JSX uses `.tsx`. No `index.ts`.
 - A feature directory groups everything its surface needs; only three or more sibling files earn a nested directory.
-- Every package imports itself through its package specifier (`@kobato/ui/<path>`, `@kobato/web-kit/<path>`,
-  `@kobato/web-admin/<path>`; helpers as `@kobato/<name>/tests/utils/<name>`), never a relative path.
-- The kit's tests mirror the source tree one-for-one under `<pkg>/tests/unit/`; the workspace mirrors its full `src/`
-  under `packages/web/admin/tests/{unit,snaps}/`, sayaka under `apps/sayaka/tests/{unit,snaps}/`.
+- Every package imports itself through its package specifier (`@kobato/ui/<path>`, `@kobato/web-kit/<path>`; helpers as
+  `@kobato/<name>/tests/utils/<name>`), never a relative path; the workspace imports itself through the app aliases
+  `@/<path>` and `@tests/<path>`.
+- The kit's tests mirror the source tree one-for-one under `<pkg>/tests/unit/`; the workspace mirrors its `src/` under
+  `apps/kobato/tests/{unit,snaps}/`, sayaka under `apps/sayaka/tests/{unit,snaps}/`.
 - Heavy widgets reach the bundle via React.lazy + Suspense, not top-level imports.

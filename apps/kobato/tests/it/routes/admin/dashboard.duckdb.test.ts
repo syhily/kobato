@@ -15,9 +15,10 @@ import {
 } from '@kobato/server/tests/utils/analytics-db'
 import { clearAllTables, getTestDb } from '@kobato/server/tests/utils/integration-db'
 import { adminSession, authorSession } from '@kobato/server/tests/utils/session'
-import { EMPTY_STATE_LINE_IDS } from '@kobato/web-admin/ui/dashboard/empty-state-lines'
 import { stubRouteRequestContext } from '@tests/utils/orpc-client-mock'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { EMPTY_STATE_LINE_IDS } from '@/ui/dashboard/empty-state-lines'
 
 vi.mock('@kobato/api/browser/client', async () => {
   const { createOrpcClientMockModule } = await import('@tests/utils/orpc-client-mock')
@@ -41,7 +42,7 @@ function clientLoaderArgs(session: ReturnType<typeof adminSession>) {
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { clientLoader } = await import('@kobato/web-admin/routes/admin/dashboard')
+const { clientLoader } = await import('@/routes/admin/dashboard')
 
 beforeEach(async () => {
   await clearAllTables(db)

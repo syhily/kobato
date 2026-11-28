@@ -28,7 +28,7 @@ const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-reset-csrf-token'
 
-const { clientAction } = await import('@kobato/web-admin/routes/auth/signin')
+const { clientAction } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

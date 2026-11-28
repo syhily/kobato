@@ -63,7 +63,7 @@ Open `http://127.0.0.1:4321/admin/setup` and enter the setup token printed in th
 Settings are seeded automatically. Open it on the workspace dev server's origin, not the backend's (4320): the backend
 answers an `/admin/*` document from the workspace's built client tree, which a fresh clone lacks until `pnpm run build`.
 
-`pnpm run build` is the alternative: it builds the workspace (`packages/web/admin/build/client`) before the backend
+`pnpm run build` is the alternative: it builds the workspace (`apps/kobato/build/workspace/client`) before the backend
 bundle, so `pnpm start` — the built backend — serves the workspace itself from one origin, at the port
 `kobato.config.json` names, with no dev server. `pnpm run dev:public` adds the public site's dev server on port 4322.
 

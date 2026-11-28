@@ -50,7 +50,7 @@ const OTP_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { clientAction } = await import('@kobato/web-admin/routes/auth/signin')
+const { clientAction } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

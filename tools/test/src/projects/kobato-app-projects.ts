@@ -7,6 +7,8 @@ import { configDefaults, defineConfig } from 'vitest/config'
 const NODE_SETUP = path.resolve(REPO_ROOT, 'tools/test/src/setup/node.ts')
 const UNIT_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/unit.ts')
 const IT_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/it.ts')
+const SNAPS_SETUP = path.resolve(REPO_ROOT, 'apps/kobato/tests/utils/setup/snaps.ts')
+const TZ_TEST = 'apps/kobato/tests/unit/ui/analytics/time-labels.test.ts'
 
 export const kobatoAppProjects = [
   defineConfig({
@@ -30,7 +32,7 @@ export const kobatoAppProjects = [
       name: 'app-unit',
       pool: 'vmThreads',
       include: ['apps/kobato/tests/unit/**/*.test.{ts,tsx}'],
-      exclude: [...configDefaults.exclude, 'apps/kobato/tests/unit/**/*.duckdb.test.{ts,tsx}'],
+      exclude: [...configDefaults.exclude, 'apps/kobato/tests/unit/**/*.duckdb.test.{ts,tsx}', TZ_TEST],
       setupFiles: [UNIT_SETUP],
     },
   }),
@@ -62,6 +64,32 @@ export const kobatoAppProjects = [
       setupFiles: [IT_SETUP],
       testTimeout: 30_000,
       hookTimeout: 120_000,
+    },
+  }),
+  defineConfig({
+    root: REPO_ROOT,
+    resolve: { tsconfigPaths: true },
+    define: testDefine,
+    test: {
+      ...vitestTestBase,
+      name: 'app-tz-unit',
+      pool: 'forks',
+      environment: 'happy-dom',
+      setupFiles: [UNIT_SETUP],
+      include: [TZ_TEST],
+    },
+  }),
+  defineConfig({
+    root: REPO_ROOT,
+    resolve: { tsconfigPaths: true },
+    define: testDefine,
+    test: {
+      ...vitestTestBase,
+      name: 'app-snaps',
+      pool: 'vmThreads',
+      include: ['apps/kobato/tests/snaps/**/*.test.{ts,tsx}'],
+      exclude: [...configDefaults.exclude],
+      setupFiles: [SNAPS_SETUP],
     },
   }),
 ]

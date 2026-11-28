@@ -39,8 +39,6 @@
       "@kobato/ui/tests/*": ["../../packages/web/ui/tests/*"],
       "@kobato/web-kit/*": ["../../packages/web/kit/src/*"],
       "@kobato/web-kit/tests/*": ["../../packages/web/kit/tests/*"],
-      "@kobato/web-admin/*": ["../../packages/web/admin/src/*"],
-      "@kobato/web-admin/tests/*": ["../../packages/web/admin/tests/*"],
       "@kobato/base/*": ["../../packages/shared/base/src/*"],
       "@kobato/base/tests/*": ["../../packages/shared/base/tests/*"],
       "@kobato/catalog/*": ["../../packages/shared/catalog/src/*"],

@@ -1,0 +1,305 @@
+// @vitest-environment happy-dom
+
+import type { LexicalEditorState } from '@kobato/inkling/headless/schema'
+
+import { act, renderHook } from '@testing-library/react'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const draftStore = vi.hoisted(() => ({
+  get: vi.fn<(key: string) => Promise<unknown>>(),
+  set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
+  remove: vi.fn<(key: string) => Promise<void>>(),
+  removeByPrefix: vi.fn<(prefix: string) => Promise<void>>(),
+}))
+
+const draftStoreMod = await import('@/ui/editor-shell/drafts/draft-store')
+vi.spyOn(draftStoreMod, 'getDraft').mockImplementation(((key: string) => draftStore.get(key)) as never)
+vi.spyOn(draftStoreMod, 'setDraft').mockImplementation(((key: string, record: unknown) =>
+  draftStore.set(key, record)) as never)
+vi.spyOn(draftStoreMod, 'removeDraft').mockImplementation(((key: string) => draftStore.remove(key)) as never)
+vi.spyOn(draftStoreMod, 'removeDraftsByPrefix').mockImplementation(((prefix: string) =>
+  draftStore.removeByPrefix(prefix)) as never)
+
+afterAll(() => {
+  vi.restoreAllMocks()
+})
+
+import { lexicalEditorStateSchema } from '@kobato/inkling/headless/schema'
+import { emptyLexicalBody } from '@kobato/inkling/tests/utils/lexical'
+import { FakeBroadcastChannel } from '@kobato/test/fake-broadcast-channel'
+
+import { draftEditKey, useDraftSession, type UseDraftSessionArgs } from '@/ui/editor-shell/drafts/draft-session'
+import { DRAFT_STORAGE_VERSION, type DraftRecord } from '@/ui/editor-shell/drafts/draft-store'
+
+const KEY = 'cms-post-draft:1:rev1'
+
+type Loaded = { body: LexicalEditorState; savedAt: number }
+
+function mapLoaded(record: DraftRecord, parsedBody: LexicalEditorState): Loaded {
+  return { body: parsedBody, savedAt: record.savedAt }
+}
+
+function makeArgs(
+  overrides: Partial<UseDraftSessionArgs<LexicalEditorState, Loaded>> = {},
+): UseDraftSessionArgs<LexicalEditorState, Loaded> {
+  return {
+    key: KEY,
+    broadcastName: 'test-bc',
+    draftType: 'post-edit',
+    bodySchema: lexicalEditorStateSchema,
+    body: emptyLexicalBody(),
+    mapLoaded,
+    ...overrides,
+  }
+}
+
+function storedRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    key: KEY,
+    type: 'post-edit',
+    body: emptyLexicalBody(),
+    savedAt: 9,
+    version: DRAFT_STORAGE_VERSION,
+    ...overrides,
+  }
+}
+
+async function flushDraftEffects() {
+  await act(async () => {
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve()
+    }
+  })
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  FakeBroadcastChannel.instances.length = 0
+  vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
+  draftStore.get.mockResolvedValue(null)
+  draftStore.set.mockResolvedValue(undefined)
+  draftStore.remove.mockResolvedValue(undefined)
+  draftStore.removeByPrefix.mockResolvedValue(undefined)
+})
+
+describe('draft-session — key derivation', () => {
+  it('draftEditKey formats the edit-mode draft key', () => {
+    expect(draftEditKey('cms-post-draft:', 'post-42', 'rev-7')).toBe('cms-post-draft:post-42:rev-7')
+  })
+})
+
+describe('useDraftSession — load and validate-or-purge', () => {
+  it('hydrates a valid stored draft through mapLoaded', async () => {
+    draftStore.get.mockResolvedValue(storedRecord({ savedAt: 123 }))
+    const { result } = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(draftStore.get).toHaveBeenCalledWith(KEY)
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 123 })
+    expect(draftStore.remove).not.toHaveBeenCalled()
+  })
+
+  it('treats a missing record as an empty (but complete) load', async () => {
+    const { result } = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(result.current.loadedDraft).toBeNull()
+    expect(draftStore.remove).not.toHaveBeenCalled()
+  })
+
+  it('purges a record whose version mismatches DRAFT_STORAGE_VERSION', async () => {
+    draftStore.get.mockResolvedValue(storedRecord({ version: DRAFT_STORAGE_VERSION + 1 }))
+    const { result } = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(draftStore.remove).toHaveBeenCalledWith(KEY)
+    expect(result.current.loadedDraft).toBeNull()
+  })
+
+  it('purges a record whose body fails the schema', async () => {
+    draftStore.get.mockResolvedValue(storedRecord({ body: 'not-a-lexical-state' }))
+    const { result } = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(draftStore.remove).toHaveBeenCalledWith(KEY)
+    expect(result.current.loadedDraft).toBeNull()
+  })
+
+  it('purges a record mapLoaded rejects (adapter-specific validity)', async () => {
+    draftStore.get.mockResolvedValue(storedRecord())
+    const { result } = renderHook(() => useDraftSession(makeArgs({ mapLoaded: () => null })))
+    await flushDraftEffects()
+    expect(draftStore.remove).toHaveBeenCalledWith(KEY)
+    expect(result.current.loadedDraft).toBeNull()
+  })
+
+  it('re-reads when the key changes, at most once per key', async () => {
+    draftStore.get.mockImplementation((key) => Promise.resolve(storedRecord({ key, savedAt: key === 'a' ? 1 : 2 })))
+    const { result, rerender } = renderHook(({ key }) => useDraftSession(makeArgs({ key })), {
+      initialProps: { key: 'a' as string | null },
+    })
+    await flushDraftEffects()
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 1 })
+
+    rerender({ key: 'b' })
+    await flushDraftEffects()
+    expect(draftStore.get).toHaveBeenCalledWith('b')
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 2 })
+
+    const reads = draftStore.get.mock.calls.length
+    rerender({ key: 'b' })
+    await flushDraftEffects()
+    expect(draftStore.get.mock.calls.length).toBe(reads)
+  })
+})
+
+describe('useDraftSession — persist gating', () => {
+  it('never writes before the initial load completes', async () => {
+    const pendingBody = { root: 'pending' } as unknown as LexicalEditorState
+    const settledBody = { root: 'settled' } as unknown as LexicalEditorState
+    let resolveGet: ((value: unknown) => void) | undefined
+    draftStore.get.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveGet = resolve
+        }),
+    )
+    const { rerender } = renderHook(({ body }) => useDraftSession(makeArgs({ body })), {
+      initialProps: { body: emptyLexicalBody() },
+    })
+
+    rerender({ body: pendingBody })
+    await flushDraftEffects()
+    expect(draftStore.set).not.toHaveBeenCalled()
+
+    resolveGet?.(null)
+    await flushDraftEffects()
+
+    rerender({ body: settledBody })
+    await flushDraftEffects()
+    expect(draftStore.set).toHaveBeenCalledTimes(1)
+    expect(draftStore.set).toHaveBeenCalledWith(
+      KEY,
+      expect.objectContaining({
+        key: KEY,
+        type: 'post-edit',
+        body: settledBody,
+        version: DRAFT_STORAGE_VERSION,
+      }),
+    )
+    const payload = draftStore.set.mock.calls[0][1] as Record<string, unknown>
+    expect(payload).not.toHaveProperty('meta')
+    expect(typeof payload.savedAt).toBe('number')
+  })
+
+  it('persists meta alongside the body when provided', async () => {
+    const meta = { title: 'Hello' }
+    const changedBody = { root: 'changed' } as unknown as LexicalEditorState
+    const { rerender } = renderHook(({ body }) => useDraftSession(makeArgs({ body, meta })), {
+      initialProps: { body: emptyLexicalBody() },
+    })
+    await flushDraftEffects()
+
+    rerender({ body: changedBody })
+    await flushDraftEffects()
+    expect(draftStore.set).toHaveBeenCalledWith(KEY, expect.objectContaining({ body: changedBody, meta }))
+  })
+})
+
+describe('useDraftSession — broadcast clear protocol', () => {
+  it('clears the hydrated draft only for a matching clear broadcast', async () => {
+    draftStore.get.mockResolvedValue(storedRecord())
+    const { result } = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(result.current.loadedDraft).not.toBeNull()
+
+    const peer = new FakeBroadcastChannel('test-bc')
+    act(() => {
+      peer.postMessage({ kind: 'cleared', key: 'cms-post-draft:someone-else' })
+    })
+    expect(result.current.loadedDraft).not.toBeNull()
+
+    act(() => {
+      peer.postMessage({ kind: 'cleared', key: KEY })
+    })
+    expect(result.current.loadedDraft).toBeNull()
+  })
+
+  it('clearDraft removes the record and clears hydrated drafts in peer tabs', async () => {
+    draftStore.get.mockResolvedValue(storedRecord())
+    const first = renderHook(() => useDraftSession(makeArgs()))
+    const second = renderHook(() => useDraftSession(makeArgs()))
+    await flushDraftEffects()
+    expect(first.result.current.loadedDraft).not.toBeNull()
+    expect(second.result.current.loadedDraft).not.toBeNull()
+
+    act(() => {
+      second.result.current.clearDraft()
+    })
+    expect(draftStore.remove).toHaveBeenCalledWith(KEY)
+    expect(first.result.current.loadedDraft).toBeNull()
+    expect(second.result.current.loadedDraft).toBeNull()
+  })
+
+  it('clearDraft sweeps every key under clearPrefix when one is supplied (audit P1-15)', async () => {
+    const { result } = renderHook(() => useDraftSession(makeArgs({ clearPrefix: 'cms-post-draft:1:' })))
+    await flushDraftEffects()
+
+    act(() => {
+      result.current.clearDraft()
+    })
+
+    expect(draftStore.removeByPrefix).toHaveBeenCalledWith('cms-post-draft:1:')
+    expect(draftStore.remove).not.toHaveBeenCalled()
+  })
+
+  it('does not throw when BroadcastChannel is unavailable', async () => {
+    const saved = (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel
+    delete (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel
+    try {
+      const { result } = renderHook(() => useDraftSession(makeArgs()))
+      await flushDraftEffects()
+      act(() => {
+        result.current.clearDraft()
+      })
+      expect(draftStore.remove).toHaveBeenCalledWith(KEY)
+    } finally {
+      ;(globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = saved
+    }
+  })
+})
+
+describe('useDraftSession — inactive key', () => {
+  it('touches no storage while the key is null and clearDraft is a no-op', async () => {
+    const { result } = renderHook(() => useDraftSession(makeArgs({ key: null })))
+    await flushDraftEffects()
+    expect(draftStore.get).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current.clearDraft()
+    })
+    expect(draftStore.remove).not.toHaveBeenCalled()
+  })
+
+  it('clears the hydrated draft synchronously when the key becomes null', async () => {
+    draftStore.get.mockResolvedValue(storedRecord())
+    const { result, rerender } = renderHook(({ key }) => useDraftSession(makeArgs({ key })), {
+      initialProps: { key: KEY as string | null },
+    })
+    await flushDraftEffects()
+    expect(result.current.loadedDraft).not.toBeNull()
+
+    rerender({ key: null })
+    expect(result.current.loadedDraft).toBeNull()
+  })
+
+  it('starts the session when the key becomes non-null', async () => {
+    draftStore.get.mockResolvedValue(storedRecord())
+    const { result, rerender } = renderHook(({ key }) => useDraftSession(makeArgs({ key })), {
+      initialProps: { key: null as string | null },
+    })
+    await flushDraftEffects()
+    expect(draftStore.get).not.toHaveBeenCalled()
+
+    rerender({ key: KEY })
+    await flushDraftEffects()
+    expect(draftStore.get).toHaveBeenCalledWith(KEY)
+    expect(result.current.loadedDraft).toEqual({ body: emptyLexicalBody(), savedAt: 9 })
+  })
+})

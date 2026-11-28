@@ -2,6 +2,7 @@ import '@kobato/test/setup/dom'
 import { setAnalyticsQueryExecutor } from '@kobato/db/duckdb/query'
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '@kobato/settings/tests/utils/blog-settings'
 import { installWebStreamGlobals } from '@kobato/test/web-streams'
+import '@tests/utils/settings-mutation-mock'
 import { afterEach } from 'vitest'
 
 installWebStreamGlobals()

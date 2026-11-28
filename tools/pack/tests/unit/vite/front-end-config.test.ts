@@ -48,7 +48,7 @@ describe('frontEndConfig', () => {
   })
 
   it('derives the SSR build shape from the command, the server entry, and the externals', () => {
-    const spa = frontEndConfig({ appDir: 'packages/web/admin', port: 4321 })(BUILD)
+    const spa = frontEndConfig({ appDir: 'apps/kobato', port: 4321 })(BUILD)
     expect(spa.ssr).toEqual({ noExternal: true, target: 'node' })
     expect(spa.environments?.ssr?.build).toBeUndefined()
 
@@ -75,7 +75,7 @@ describe('frontEndConfig', () => {
   })
 
   it('takes the __APP_*__ identity from identityDir, defaulting to the backend that embeds the workspace', () => {
-    const workspace = frontEndConfig({ appDir: 'packages/web/admin', port: 4321 })(SERVE)
+    const workspace = frontEndConfig({ appDir: 'apps/kobato', port: 4321 })(SERVE)
     expect(workspace.define).toEqual(appDefines(readAppPackage('apps/kobato')))
     const sayaka = frontEndConfig({ appDir: 'apps/sayaka', port: 4322, identityDir: 'apps/sayaka' })(SERVE)
     expect(sayaka.define).toEqual(appDefines(readAppPackage('apps/sayaka')))
@@ -84,7 +84,7 @@ describe('frontEndConfig', () => {
   it('keeps the port, the route warmup files, and the limits while the application adds its own rules', () => {
     const proxyRule = { target: 'http://127.0.0.1:4320', changeOrigin: true }
     const config = frontEndConfig({
-      appDir: 'packages/web/admin',
+      appDir: 'apps/kobato',
       port: 4321,
       base: ({ isPreview }) => (isPreview ? '/' : '/admin/'),
       optimizeDeps: true,
@@ -101,7 +101,7 @@ describe('frontEndConfig', () => {
       proxy: { '/rpc': proxyRule },
       port: 4321,
     })
-    expect(served.optimizeDeps).toEqual(appOptimizeDeps('packages/web/admin'))
+    expect(served.optimizeDeps).toEqual(appOptimizeDeps('apps/kobato'))
     expect(served.resolve).toEqual({ tsconfigPaths: true })
     expect(served.build).toEqual({ emptyOutDir: true, chunkSizeWarningLimit: 500 })
     expect(served.environments?.client?.build).toEqual({ chunkSizeWarningLimit: 2500 })

@@ -10,7 +10,7 @@ const BANNED_IMPORTS = ['node:sqlite', 'drizzle-orm', '@duckdb/node-api', '@duck
 const BANNED_UNWRAP_NAMES = /\b(?:sqliteOf|sqliteEngineOf|engineOf|DuckDbEngine)\b/
 const BANNED_QUERY_CALL =
   /\b(?:db|tx|client|handle)\.(?:select|insert|update|delete|transaction|prepare|exec|run|runAndReadAll)\s*\(/
-const INDEXEDDB_OWNERS = new Set(['packages/web/admin/src/ui/editor-shell/drafts/draft-store.ts'])
+const INDEXEDDB_OWNERS = new Set(['apps/kobato/src/ui/editor-shell/drafts/draft-store.ts'])
 const BANNED_NATIVE_ACCESS = /\.(?:writer|reader)\.(?:run|runAndReadAll)\s*\(|\.client\.(?:prepare|exec)\s*\(/
 
 function stripComments(source: string): string {
@@ -38,7 +38,6 @@ function sourceOffenders(file: string, source: string): string[] {
   }
   if (
     file.startsWith('packages/server/src/') ||
-    file.startsWith('packages/web/admin/src/') ||
     file.startsWith('apps/kobato/src/') ||
     file.startsWith('apps/sayaka/src/')
   ) {

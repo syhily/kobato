@@ -6,7 +6,6 @@ const REPO_ROOT = process.cwd()
 
 const CONSUMING_TREES = [
   'apps/kobato/src',
-  'packages/web/admin/src',
   'apps/inkling-demo/src',
   'packages/api/src',
   'packages/db/src',

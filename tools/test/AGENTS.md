@@ -19,8 +19,9 @@ fixtures must not move back here. Canonical fixture owners: `@kobato/settings/te
 fixture, mounted only by the kit's canonical render helper above — the `@kobato/ui` render helpers mount none, and tests
 mount `DocumentFactsProvider` themselves, as `packages/web/ui/tests/AGENTS.md` says), and the server harnesses under
 `@kobato/server/tests/utils/` (session, mail capture, integration DBs, request context). The settings-mutation mock is
-workspace-local: `packages/web/admin/tests/utils/settings-mutation-mock.ts`, imported as
-`@kobato/web-admin/tests/utils/settings-mutation-mock`.
+the kobato app's own: `apps/kobato/tests/utils/settings-mutation-mock.ts` registers `useSettingsMutation` at module
+scope the way `mock-react-query` registers TanStack Query, and the app's unit and snaps setups import it for that side
+effect.
 
 ## Import surface
 
@@ -43,14 +44,14 @@ directory deeper, under `tests/<directory>/`, so the same projects also glob
 `packages/shared/*/tests/*/{unit,snaps}/**`); each module group has ONE multi-project owner
 (`{api,db,server}-projects.ts`, which also owns its `*-duckdb` and `-iso-*` twins); single-project packages keep a
 package-local `tests/**/vitest.config.ts` on `vitestTestBase`, referenced by path. Each app owns its projects in
-`projects/<app>-app-projects.ts` (`kobato-app-projects.ts`, `sayaka-app-projects.ts` — `sayaka-unit` / `sayaka-snaps`
+`projects/<app>-app-projects.ts`: `kobato-app-projects.ts` covers the kobato app's six trees — `app-arch` on the
+product-free Node setup, `app-unit` / `app-snaps` on vmThreads over `apps/kobato/tests/utils/setup/{unit,snaps}.ts` (DOM
+wrappers with the settings-mutation mock and the blog-settings bundle), the forks-pool `app-tz-unit` for the one
+runtime-`TZ` write, and the isolated `app-it` / `app-duckdb`; `sayaka-app-projects.ts` — `sayaka-unit` / `sayaka-snaps`
 point their setups at `apps/sayaka/tests/utils/setup/{unit,snaps}.ts`: DOM/vmThreads wrappers with the blog-settings
 bundle, no server/db seams; `sayaka-it` runs `apps/sayaka/tests/it` — the public route loaders driven through the
 stub-Kobato harness — on the default `threads` pool behind `setup/it.ts`, the Node base with the blog-settings bundle,
-with 30 s test and 120 s hook timeouts), and the workspace owns `projects/admin-projects.ts` (`admin-arch` on the
-product-free Node setup, `admin-unit` / `admin-snaps` on vmThreads over
-`packages/web/admin/tests/utils/setup/{unit,snaps}.ts`, and the forks-pool `admin-tz-unit` for the one runtime-`TZ`
-write).
+with 30 s test and 120 s hook timeouts.
 
 `projects/iso-project.ts` is the twin factory: `isoTestGlob(tree)` is the one spelling of `**/*.iso.test.{ts,tsx}` — a
 tree's default project excludes it, its `-iso-` twin (`threads`, `isolate: true`) includes it, and both spread
@@ -81,13 +82,13 @@ never mount React). `node.ts` preloads `@date-fns/tz` so `TZDate` binds the real
   `isolate: false` — a worker thread is reused across the files of its project instead of restarted per file. Each pool
   name has its own four-worker budget, so the `threads` and `vmThreads` pools can run at the same time.
 - `vmThreads` (a fresh VM context per file, worker thread reused) is the pool for every tree whose files register module
-  mocks or hold module-scoped product state: `server-unit`, `server-it`, `web-unit`, `ui-unit`, `ui-snaps`,
-  `admin-unit`, `admin-snaps`, `app-unit`, `sayaka-unit`, `sayaka-snaps`, `inkling-unit`, `demo-unit`.
+  mocks or hold module-scoped product state: `server-unit`, `server-it`, `web-unit`, `ui-unit`, `ui-snaps`, `app-unit`,
+  `app-snaps`, `sayaka-unit`, `sayaka-snaps`, `inkling-unit`, `demo-unit`.
 - A shared `threads` tree keeps only mock-free files: under a shared module registry a `vi.mock` binds into whichever
   importer is evaluated next and stays bound for every later file in the worker, so a mock-registering file there is
   named `*.iso.test.ts` and runs in the tree's `-iso-` twin. The same suffix moves a `vmThreads` file that needs a real
   realm — `instanceof Error` is false for an error thrown by `node:fs`, SQLite, or fetch from outside the VM context.
-  `admin-tz-unit` runs forks for its runtime `process.env.TZ` write.
+  `app-tz-unit` runs forks for its runtime `process.env.TZ` write.
 - `isolate: true` stays only where a whole project must boot per file: `app-it`, `app-duckdb`, and the `-iso-` twins.
 - SQLite: one in-memory database per file, and one per worker on a shared `threads` tree; `clearAllTables(db)` resets
   tables and `sqlite_sequence` (server helpers may also reset server caches). File-backed flows:

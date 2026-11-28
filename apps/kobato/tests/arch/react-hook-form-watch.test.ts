@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const SCANNED_ROOTS = [
-  'packages/web/admin/src/ui/',
-  'packages/web/admin/src/routes/',
+  'apps/kobato/src/ui/',
+  'apps/kobato/src/routes/',
   'packages/inkling/src/hooks/',
   'packages/inkling/src/comment/',
   'apps/sayaka/src/ui/comments/',

@@ -1,3 +1,3 @@
-pnpm -C packages/web/admin typegen
+pnpm -C apps/kobato typegen
 pnpx lint-staged
 pnpm run lint

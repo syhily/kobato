@@ -11,7 +11,9 @@
   graph has no cycle), the front-end config factory, output paths anchored on the repository root); see "Implementation
   notes (2026-11-27)" for where the tree refined the Decision. It amends
   [ADR-0009](0009-optional-headless-frontends.md): §1 "Where the code lives" and the Implementation notes' "Packages"
-  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands.
+  and "Builds" paragraphs are superseded here; every other section of ADR-0009 stands. It is amended by
+  [ADR-0012](0012-sdk-surface-and-app-cohesion.md): §1, §4, the `packages/web/` umbrella, and §6's location are
+  superseded there (§2's principle stands with a new location; §3, §5, and §7 stand).
 - Date: 2026-11-27
 - Related: [ADR-0009](0009-optional-headless-frontends.md) (the two deliverables and the one contract),
   [CONTEXT.md](../../CONTEXT.md) (`kobato`, `workspace`, `sayaka`).

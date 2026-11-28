@@ -247,7 +247,7 @@ Not part of `pnpm test`: unit/integration builds never require Docker or Playwri
 The ordinary CI test job runs before any build exists, so the production-bundle guard
 `apps/kobato/tests/arch/production-rum-bundle.test.ts` (run with `pnpm run test:production-rum`) runs explicitly in the
 CI build job after `pnpm run build` (push) or `pnpm run sea:build` (PR); it scans the real build outputs — the
-workspace's `packages/web/admin/build/client` and the backend's `apps/kobato/build/server` — for OpenObserve/RUM and
+workspace's `apps/kobato/build/workspace/client` and the backend's `apps/kobato/build/server` — for OpenObserve/RUM and
 server OTel markers. `trace:smoke` itself is a local tool and is not wired into CI.
 
 ## Troubleshooting

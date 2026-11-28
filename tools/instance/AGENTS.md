@@ -25,35 +25,36 @@ Everything that drives a kobato instance as a REAL separate process — two halv
   `seaInstanceEnv` / `sayakaInstanceEnv` env tables), `dev-instance.ts` (the repository DEV servers:
   `bootBackendDevServer` boots kobato on a free port with the converged config (`writeDevConfig(path, port, dataDir)`
   writes that config — the isolated way to boot `pnpm dev`'s backend; the dev boot helper needs the workspace client
-  build, because its readiness probe follows the install gate's 303), `bootAdminDevServer` boots the workspace on
-  another with `KOBATO_DEV_BACKEND_URL` pointing at that backend, and `bootSayakaDevServer` boots sayaka with the
-  caller's `SAYAKA_KOBATO_RPC_URL` — a dev instance of kobato is the backend plus the workspace, and suites boot either
-  or both), `seed.ts` (plain-SQL state for STOPPED instances), `suite-instance.ts` (the PAIR boot: fresh kobato proves
-  the /health 303 gate → fresh sayaka proves the / 303 gate through sayaka → stop kobato → seed → restart kobato behind
-  the RUNNING sayaka; `stopSuiteInstance` SIGTERMs both and removes the temp root), `analytics.ts` (the DuckDB sidecar
-  AFTER shutdown), `split-smoke.ts` (the `split:smoke` entry: boots the BUILT `apps/kobato` + `apps/sayaka` node servers
-  as a pair — or, with `--sea`, the `dist-sea/kobato` + `dist-sea/sayaka` binaries plus two `--version` identity checks
-  — and verifies the ADR-0009 split perimeter — install gate, CSP nonce/ETag/304 on the home document, modulepreload
-  links + the inline route-warmup idle script on that document, the uninstalled setup shell hydrating through headless
-  Chrome with its brand logo and favicon answering 200 pre-install, fingerprint-asset caching, the legacy `/tags` and
-  `/search` 301 redirects forwarded through sayaka, 404s for unknown category/tag/post/page slugs, ETag-bearing
-  `/archives` and `/categories`, a seeded post detail round-trip (admin signin + `upsertMeta` + `publishLatest` on
-  kobato, then 200 + Content-Language/ETag and a conditional 304 at sayaka), the forwarded `/admin/signin` document and
-  its entry chunk through sayaka, forwarded bootstrap parity, kobato's own origin answering 404 for the former public
-  document URLs (the Webmention receive and RUM intake paths included), the binary resource families served by sayaka's
-  procedure pairs (branding assets, OG/calendar/avatar images byte-identical to their procedure answers, an embedded
-  font and a storage object streaming with Range/304/416 semantics), the two inbound protocols answered through sayaka's
-  perimeter handlers byte-identically to the captured router answers (webmention invalid 400 / accepted 202 /
-  unknown-target 404 / oversized 413 / disabled 410; RUM intake 404 while the relay is inactive and 415 for compressed
-  batches), and resource rate-limit keying on the sayaka-forwarded visitor address). In plain-node mode `split-smoke.ts`
-  starts kobato from the temp cwd with `--config <tempRoot>/kobato.config.json` (config and data paths stay absolute in
-  the temp root): kobato resolves its client build through the package — `clientAssetsRoot()` in
-  `apps/kobato/src/server/client-assets-root.ts` resolves `@kobato/web-admin/package.json` and hands `startKobato` that
-  package's `build/client` directory — never through the working directory; under `--sea` both binaries resolve their
-  client assets from the VFS and the cwd is the temp root. The seeded-post helpers stay inline in `split-smoke.ts` —
-  `client/http.ts`'s parameter properties are not plain-node type-strippable. The sayaka DEV boot runs the app's own
-  `dev` script (`pnpm --filter <app> run dev --host …`) so the app-script's repoRoot cwd and app-dir positional stay
-  authoritative.
+  build, because its readiness probe follows the install gate's 303), `bootWorkspaceDevServer` boots the workspace on
+  another through the kobato app's `dev:admin` script (the backend boots through its `dev` script; both take the Vite
+  passthrough flags `--host`, `--port`, `--strictPort`, `--logLevel`) with `KOBATO_DEV_BACKEND_URL` pointing at that
+  backend, and `bootSayakaDevServer` boots sayaka with the caller's `SAYAKA_KOBATO_RPC_URL` — a dev instance of kobato
+  is the backend plus the workspace, and suites boot either or both), `seed.ts` (plain-SQL state for STOPPED instances),
+  `suite-instance.ts` (the PAIR boot: fresh kobato proves the /health 303 gate → fresh sayaka proves the / 303 gate
+  through sayaka → stop kobato → seed → restart kobato behind the RUNNING sayaka; `stopSuiteInstance` SIGTERMs both and
+  removes the temp root), `analytics.ts` (the DuckDB sidecar AFTER shutdown), `split-smoke.ts` (the `split:smoke` entry:
+  boots the BUILT `apps/kobato` + `apps/sayaka` node servers as a pair — or, with `--sea`, the `dist-sea/kobato` +
+  `dist-sea/sayaka` binaries plus two `--version` identity checks — and verifies the ADR-0009 split perimeter — install
+  gate, CSP nonce/ETag/304 on the home document, modulepreload links + the inline route-warmup idle script on that
+  document, the uninstalled setup shell hydrating through headless Chrome with its brand logo and favicon answering 200
+  pre-install, fingerprint-asset caching, the legacy `/tags` and `/search` 301 redirects forwarded through sayaka, 404s
+  for unknown category/tag/post/page slugs, ETag-bearing `/archives` and `/categories`, a seeded post detail round-trip
+  (admin signin + `upsertMeta` + `publishLatest` on kobato, then 200 + Content-Language/ETag and a conditional 304 at
+  sayaka), the forwarded `/admin/signin` document and its entry chunk through sayaka, forwarded bootstrap parity,
+  kobato's own origin answering 404 for the former public document URLs (the Webmention receive and RUM intake paths
+  included), the binary resource families served by sayaka's procedure pairs (branding assets, OG/calendar/avatar images
+  byte-identical to their procedure answers, an embedded font and a storage object streaming with Range/304/416
+  semantics), the two inbound protocols answered through sayaka's perimeter handlers byte-identically to the captured
+  router answers (webmention invalid 400 / accepted 202 / unknown-target 404 / oversized 413 / disabled 410; RUM intake
+  404 while the relay is inactive and 415 for compressed batches), and resource rate-limit keying on the
+  sayaka-forwarded visitor address). In plain-node mode `split-smoke.ts` starts kobato from the temp cwd with
+  `--config <tempRoot>/kobato.config.json` (config and data paths stay absolute in the temp root): kobato resolves its
+  client build beside its bundle — `clientAssetsRoot()` in `apps/kobato/src/server/client-assets-root.ts` hands
+  `startKobato` the app's `build/workspace/client` directory, found relative to the module's own location — never
+  through the working directory; under `--sea` both binaries resolve their client assets from the VFS and the cwd is the
+  temp root. The seeded-post helpers stay inline in `split-smoke.ts` — `client/http.ts`'s parameter properties are not
+  plain-node type-strippable. The sayaka DEV boot runs the app's own `dev` script
+  (`pnpm --filter <app> run dev --host …`) so the app-script's repoRoot cwd and app-dir positional stay authoritative.
 - **`client/`** (what the live-instance suites speak) — `http.ts` (`E2eClient`, the `KOBATO_E2E_*` env contract —
   `KOBATO_E2E_BASE_URL` is kobato's origin for backend-direct checks, `KOBATO_E2E_PUBLIC_URL` is sayaka's origin for
   everything a browser reaches; the oRPC signin helpers: `bootstrapCsrfToken` → `loginAdmin` answers the

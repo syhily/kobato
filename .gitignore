@@ -1,10 +1,8 @@
 build/
-packages/web/admin/build/
 dist/
 dist-sea/
 
 .react-router/
-packages/web/admin/.react-router/
 .source/
 
 .vite/

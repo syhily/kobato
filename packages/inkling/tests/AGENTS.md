@@ -19,7 +19,7 @@
   spec (`CommentBodyEditor.cards.test.tsx`) mounts the live composer and must NOT import `tests/utils/test-editor.ts` —
   that helper's top-level `registerCardDecorateAdapter()` would mask the comment entry's own registration.
 - `tests/utils/lexical.ts` is the WORKSPACE-canonical Lexical document-model fixture: this package's own tests and the
-  workspace test trees (`packages/web/admin/tests/unit`, `packages/web/admin/tests/snaps`) import it — for those trees
-  the one sanctioned `@kobato/inkling/tests/*` deep import, pinned by `apps/kobato/tests/arch/package-dag.test.ts`.
-  Import helpers through `@kobato/inkling/tests/utils/...`; production internals use the private
-  `@kobato/inkling-internal/...` alias rather than relative traversal.
+  workspace test trees (`apps/kobato/tests/unit`, `apps/kobato/tests/snaps`) import it — for those trees the one
+  sanctioned `@kobato/inkling/tests/*` deep import, pinned by `apps/kobato/tests/arch/package-dag.test.ts`. Import
+  helpers through `@kobato/inkling/tests/utils/...`; production internals use the private `@kobato/inkling-internal/...`
+  alias rather than relative traversal.

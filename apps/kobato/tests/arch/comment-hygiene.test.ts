@@ -11,7 +11,7 @@ const EXEMPT_PREFIXES = [
   'packages/inkling/src/utils/draggable/',
   'packages/server/src/domains/fonts/vendor/',
   'packages/db/drizzle/',
-  'packages/web/admin/.react-router/',
+  'apps/kobato/.react-router/',
 ]
 
 const IGNORE_DIRS = new Set(['node_modules', '.git', 'build', 'dist', 'dist-sea', '.vite', 'coverage'])

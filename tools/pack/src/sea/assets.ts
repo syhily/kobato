@@ -21,7 +21,7 @@ import {
 import { fail } from '@kobato/instance/process'
 import { run } from '@kobato/pack/sea/exec'
 import {
-  adminClientBuildDir,
+  workspaceClientBuildDir,
   observabilitySourceAssetsDir,
   repoRoot,
   seaIntermediatesDir,
@@ -347,7 +347,7 @@ export async function collectSeaAssets(app: SeaApp = 'kobato') {
       ctx,
     )
   } else {
-    await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, adminClientBuildDir(), ctx)
+    await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, workspaceClientBuildDir(), ctx)
 
     await addTree(
       assets,

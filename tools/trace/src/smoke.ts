@@ -5,7 +5,7 @@ import { unsafeCast } from '@kobato/base/utils/unsafe-cast'
 import { E2eClient, getAdminCsrfToken, loginAdmin } from '@kobato/instance/client/http'
 import { callE2eRpc } from '@kobato/instance/client/rpc'
 import {
-  bootAdminDevServer,
+  bootWorkspaceDevServer,
   bootBackendDevServer,
   bootSayakaDevServer,
   stopDevServer,
@@ -851,7 +851,7 @@ async function main(): Promise<void> {
     server = await bootBackendDevServer({ repoRoot: REPO_ROOT, configPath, port: appPort, logPath: serverLog })
 
     log('==> booting admin DEV server (workspace over the backend)')
-    admin = await bootAdminDevServer({
+    admin = await bootWorkspaceDevServer({
       repoRoot: REPO_ROOT,
       port: adminPort,
       backendUrl: kobatoOrigin,

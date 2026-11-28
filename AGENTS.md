@@ -5,20 +5,20 @@
 pnpm monorepo with three top-level code roots — no new roots are created (`docs/` holds prose, gitignored `data/` holds
 runtime state):
 
-- `apps/` — deployable apps: `kobato` (the backend: the `@kobato/server` Hono app that `src/server.ts` boots through
-  `startKobato` and default-exports, serving the workspace — the admin, editor, and auth SPA in `@kobato/web-admin` —
-  under the base `/admin/`, so all workspace assets live at `/admin/assets/*`; builds the backend bundle
-  `build/server/index.js` via `vite.backend.config.ts` and holds no React Router project), `sayaka` (the
-  public-front-end split from ADR-0009: a React Router 8 SSR app that serves the public document perimeter and forwards
-  `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo` (standalone Inkling playground, `pnpm demo`).
+- `apps/` — deployable apps: `kobato` (the backend and the workspace in one app, ADR-0012 §2: the `@kobato/server` Hono
+  app that `src/server.ts` boots through `startKobato` and default-exports, and the workspace it serves — the admin,
+  editor, and auth SPA as a React Router 8 **SPA** project (`ssr: false`, React 19, `appDirectory: 'src'`; the routes,
+  the root, the UI tree, the document runtime, the styles) — under the base `/admin/`, so all workspace assets live at
+  `/admin/assets/*`; two Vite projects with two outputs, the workspace build `build/workspace/client` through
+  `vite.config.ts` and the backend bundle `build/server/index.js` through `vite.backend.config.ts`, neither writing into
+  the other's directory), `sayaka` (the public-front-end split from ADR-0009: a React Router 8 SSR app that serves the
+  public document perimeter and forwards `/rpc/*` and `/admin/*`+`/editor/*` to `kobato`), and `inkling-demo`
+  (standalone Inkling playground, `pnpm demo`).
 - `packages/` — product code that ships: `@kobato/server`, `@kobato/db`, `@kobato/api`, `@kobato/inkling` (Lexical
-  editor with a React-free `/headless/` document model and the `/comment/` comment surface), the three front-end
-  packages under `packages/web/` — `ui` (`@kobato/ui`, the design system and the document shell both app roots mount),
-  `kit` (`web-kit`, the features both front-ends render that call a procedure — the notifications UI, `use-logout`,
-  `toast-api-error`), and `admin` (`@kobato/web-admin`, the workspace as a React Router 8 **SPA** project —
-  `ssr: false`, React 19, `appDirectory: 'src'`; the routes, the root, the UI tree, the document runtime, the styles —
-  whose static client build lives under the `/admin/` base; it sits under `packages/` because it is not deployed on its
-  own, ADR-0011 §4) — and four isomorphic React-free leaves under `packages/shared/*`. `@kobato/server` owns the
+  editor with a React-free `/headless/` document model and the `/comment/` comment surface), the two front-end packages
+  under `packages/web/` — `ui` (`@kobato/ui`, the design system and the document shell both app roots mount) and `kit`
+  (`web-kit`, the features both front-ends render that call a procedure — the notifications UI, `use-logout`,
+  `toast-api-error`) — and four isomorphic React-free leaves under `packages/shared/*`. `@kobato/server` owns the
   backend's boot sequence (`bootstrap/start-kobato`) and the workspace-serving Hono app (`http/kobato-app`,
   `http/spa-shell`) — the app hands over the workspace build's location, nothing more. `@kobato/font-split`
   (`packages/font-split`) is the Rust font-slicing addon: the product reaches it only through `nativeRequire` with a
@@ -47,18 +47,21 @@ Runtime facts:
 
 - `pnpm dev` / `pnpm start` run with cwd at the repository root (cwd-anchored `kobato.config.json` / `./data`);
   build-time code anchors paths on `import.meta.url` or the repository root, never `process.cwd()`; the backend finds
-  the workspace's client build by resolving `@kobato/web-admin`, never through the working directory.
-- Three dev commands: `pnpm dev` (the backend on `127.0.0.1:4320`), `pnpm dev:admin` (the workspace on `127.0.0.1:4321`,
-  proxying `/rpc`, `/health`, and `/ready` to the backend — `KOBATO_DEV_BACKEND_URL`, default `http://127.0.0.1:4320`),
-  and `pnpm dev:public` (sayaka on port 4322 — its Vite config sets only the port, so it listens on Vite's default
-  `localhost`, loopback only — forwarding to the workspace origin so `/admin/*` and `/rpc/*` both work through it;
-  `SAYAKA_KOBATO_RPC_URL` points it at the backend directly when the workspace is not needed).
+  the workspace's client build beside its own bundle (`clientAssetsRoot()` resolves `build/workspace/client` relative to
+  its `import.meta.dirname`), never through the working directory.
+- Three dev commands: `pnpm dev` (the backend on `127.0.0.1:4320` —
+  `vite apps/kobato --config apps/kobato/vite.backend.config.ts`), `pnpm dev:admin` (the workspace on `127.0.0.1:4321` —
+  `react-router dev apps/kobato` — proxying `/rpc`, `/health`, and `/ready` to the backend — `KOBATO_DEV_BACKEND_URL`,
+  default `http://127.0.0.1:4320`), and `pnpm dev:public` (sayaka on port 4322 — its Vite config sets only the port, so
+  it listens on Vite's default `localhost`, loopback only — forwarding to the workspace origin so `/admin/*` and
+  `/rpc/*` both work through it; `SAYAKA_KOBATO_RPC_URL` points it at the backend directly when the workspace is not
+  needed).
 - Distribution is a pair of SEA executables built by `pnpm run sea:build` (`tools/pack`): `dist-sea/kobato` (the
   backend + the workspace SPA) and `dist-sea/sayaka` (the public site), each with a `.sha256` sidecar; runtime config is
   `kobato.config.json`, validated through `CONFIG_TABLE`. `apps/kobato/package.json` is the version source of truth —
   every package carries the same version (`pnpm version:sync <version>` repairs drift).
 - Tailwind: package-owned `@source` partials, exactly one compile per surface — the ownership contract lives in
-  `packages/web/admin/src/styles/AGENTS.md`.
+  `apps/kobato/src/styles/AGENTS.md`.
 
 ## Documentation
 
@@ -84,12 +87,12 @@ A comment must describe the present, never a past state of the tree (`apps/kobat
 All imports are absolute and module specifiers omit `.ts`/`.tsx`; the single workspace path table is
 `@kobato/tsconfig/tsconfig.base.json` (consumer tsconfigs only extend it). App source: `@/...` in `apps/kobato`,
 `@sayaka/...` in `apps/sayaka`; app test helpers: `@tests/...` (kobato app tests only). Everything else:
-`@kobato/<package>/...` — the workspace (`@kobato/web-admin`) included, which imports its own source as
-`@kobato/web-admin/<path>` and its test helpers as `@kobato/web-admin/tests/<path>`, as every package does. No relative
-specifiers in source or tests — exceptions: React Router generated `./+types/*`; the SEA pipeline's two build-output
-entries (`tools/pack/src/sea/server-entry.ts` → kobato's `build/server/index.js`, `sayaka-entry.ts` → sayaka's) and
-`sayaka-entry.ts`'s tools-internal `./sayaka-sea-cli`, so the pipeline holds no dependency on the sayaka app; generated
-probe JavaScript; and import-scanner test fixtures.
+`@kobato/<package>/...` — a package imports itself through its own `@kobato/<name>/<path>` row and its helpers as
+`@kobato/<name>/tests/<path>`, an app through its aliases. No relative specifiers in source or tests — exceptions: React
+Router generated `./+types/*`; the SEA pipeline's two build-output entries (`tools/pack/src/sea/server-entry.ts` →
+kobato's `build/server/index.js`, `sayaka-entry.ts` → sayaka's) and `sayaka-entry.ts`'s tools-internal
+`./sayaka-sea-cli`, so the pipeline holds no dependency on the sayaka app; generated probe JavaScript; and
+import-scanner test fixtures.
 
 - Source never imports a package's `tests/` tree; the one sanctioned cross-package seam is
   `@kobato/<owner>/tests/utils/<name>` — the canonical fixture registry lives in `tools/test/AGENTS.md`.
@@ -115,28 +118,29 @@ section pins the direction graph only — package composition rules live in each
   package imports — and `apps/kobato/src` reaches the package through it and the SEA VFS seam alone.
 - `@kobato/db` → `settings`, `base`, inkling headless; it owns every query, transaction, native connection, and row
   model, never wire shapes.
-- Web direction: `packages/web` holds three packages — `@kobato/ui` (`packages/web/ui`, the design system and the
-  document shell), `@kobato/web-kit` (`packages/web/kit`, the features both front-ends render that call a procedure),
-  and `@kobato/web-admin` (`packages/web/admin`, the workspace: the admin, editor, and auth SPA) — and the public UI
-  lives in `apps/sayaka/src/ui` (ADR-0009, ADR-0011 §1/§4). `@kobato/ui` imports no `@kobato/api` module and no React
+- Web direction: `packages/web` holds two packages — `@kobato/ui` (`packages/web/ui`, the design system and the document
+  shell) and `@kobato/web-kit` (`packages/web/kit`, the features both front-ends render that call a procedure) — the
+  workspace is the kobato app itself (`apps/kobato`: the admin, editor, and auth SPA, ADR-0012 §2), and the public UI
+  lives in `apps/sayaka/src/ui` (ADR-0009, ADR-0011 §1). `@kobato/ui` imports no `@kobato/api` module and no React
   Router: a front-end module that calls a procedure is a kit module or an app's own, and root route data reaches shared
   modules only as document facts through the document shell (`packages/web/ui/src/components/document-shell`, ADR-0011
-  §1). The kit imports neither app, neither consuming surface, nor the workspace. The workspace imports the two rows
-  above and the shared leaves — production source never imports `@kobato/server`, `@kobato/db`, or sayaka — and nothing
-  imports it except `apps/kobato`: the backend resolves `@kobato/web-admin` by name to locate its client build, and
-  `apps/kobato/tests` reach the package through its exports; the specifier stays banned in sayaka. The public site is
-  `apps/sayaka` — an app, not a leaf — and may import the kit. Web packages never import `@kobato/server` in production
-  source (kobato allows it tests-only; so does the workspace's test tree, in the five files
-  `packages/web/admin/AGENTS.md` names, both backend packages declared there as test dependencies only). The browser
-  oRPC client is typed exclusively through `@kobato/api`.
+  §1). The kit imports neither app and neither consuming surface. The workspace's client tree — everything under
+  `apps/kobato/src` but `server.ts` and `server/*` — imports the two rows above and the shared leaves and never
+  `@kobato/server`, `@kobato/db`, `@/server`, or sayaka (`apps/kobato/tests/arch/web-direction.test.ts`); nothing
+  imports the kobato app — not the kit, not the design system, never sayaka, where `@/...`, `@tests/...`, and any path
+  under `apps/kobato` are banned. The public site is `apps/sayaka` — an app, not a leaf — and may import the kit. Web
+  packages never import `@kobato/server` in production source (kobato allows it in its backend entry and tests-only; the
+  workspace's test tree reaches both backend packages in the files `apps/kobato/AGENTS.md` names, declared as test
+  dependencies only). The browser oRPC client is typed exclusively through `@kobato/api`.
 - `@kobato/ui` → `base`, `settings`, `i18n`. `@kobato/inkling` → `ui`, `i18n`, `base`.
-- `apps/kobato/src` is the backend entry alone: `server.ts` calls `startKobato` and default-exports the app, and
-  `server/*` holds the two app-side seams (the workspace build's location, the Vite dev server reference). It carries no
-  routes and no UI; every workspace module lives in `@kobato/web-admin`.
-- `apps/sayaka` is the public-front-end split (ADR-0009): it never imports `@kobato/server`, `@kobato/db`, or
-  `@kobato/web-admin` and never touches the database — it reaches `kobato` exclusively over oRPC
-  (`createKobatoServerClient` from `@kobato/api`) and HTTP forwarding. Its declared-dependency allow-list and src
-  targets are pinned in `apps/kobato/tests/arch/package-dag.test.ts`.
+- `apps/kobato/src` holds the backend entry and the workspace side by side: `server.ts` calls `startKobato` and
+  default-exports the app, `server/*` holds the two app-side seams (the workspace build's location, the Vite dev server
+  reference), and everything else — `root.tsx`, `routes.ts`, `routes/`, `ui/`, `lib/`, `document/`, `seo/`, `styles/` —
+  is the workspace SPA.
+- `apps/sayaka` is the public-front-end split (ADR-0009): it never imports anything from the kobato app —
+  `@kobato/server`, `@kobato/db`, the `@/...` alias, or any path under `apps/kobato` — and never touches the database;
+  it reaches `kobato` exclusively over oRPC (`createKobatoServerClient` from `@kobato/api`) and HTTP forwarding. Its
+  declared-dependency allow-list and src targets are pinned in `apps/kobato/tests/arch/package-dag.test.ts`.
 - Refactor from architectural correctness, not minimal diff size.
 
 ## Skills
@@ -147,36 +151,38 @@ skills are pinned in `skills-lock.json`.
 ## Build & CI
 
 `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run test`, `pnpm run build`. Before committing:
-`pnpm run fmt && pnpm run lint`, then `pnpm run test`, then `pnpm run build`. `pnpm run build` builds the workspace
-(`packages/web/admin` → `packages/web/admin/build/client`), the backend (`apps/kobato` → `build/server/index.js`), and
-sayaka, in that order; `pnpm run dev:public` runs the sayaka dev server, and `pnpm run split:smoke` boots the built
-kobato + sayaka pair and verifies the split deployment perimeter (install gate, CSP/ETag/304, forwarded RPCs, rate-limit
-keying).
+`pnpm run fmt && pnpm run lint`, then `pnpm run test`, then `pnpm run build`. `pnpm run build` runs
+`pnpm -C apps/kobato build` — the workspace (`react-router build` → `apps/kobato/build/workspace/client`, plus the
+prerender-only `build/workspace/server`) and then the backend bundle (`vite build --config vite.backend.config.ts` →
+`apps/kobato/build/server/index.js`) — and then sayaka; `pnpm run dev:public` runs the sayaka dev server, and
+`pnpm run split:smoke` boots the built kobato + sayaka pair and verifies the split deployment perimeter (install gate,
+CSP/ETag/304, forwarded RPCs, rate-limit keying).
 
 Dev workflow: three commands, three processes. `pnpm run dev` is the backend — a Vite SSR host
-(`apps/kobato/vite.config.ts`) on 4320 whose `honoDevHost` plugin (`@kobato/pack/vite/hono-dev-host`) loads
+(`apps/kobato/vite.backend.config.ts`) on 4320 whose `honoDevHost` plugin (`@kobato/pack/vite/hono-dev-host`) loads
 `apps/kobato/src/server.ts` through `@hono/vite-dev-server`, publishes the Vite dev server on the `globalThis` slot so
 `startKobato` adopts its `httpServer` instead of binding a port, and serves `/rpc/*`, `/health`, and `/ready` through
 the Hono app — a server-side edit re-evaluates the changed module chain on the next request behind the dev-host run-once
 guards (`@kobato/server/infra/dev-host-state`; the dev host has no `import.meta.hot`). `pnpm run dev:admin` is the
-workspace on 4321 (`react-router dev packages/web/admin`): React Router's dev middleware serves the `/admin/*` +
-`/editor/*` documents (and `.data` requests) while `/rpc`, `/health`, and `/ready` proxy to the backend
-(`KOBATO_DEV_BACKEND_URL`, default `http://127.0.0.1:4320`). `pnpm run dev:public` adds the public origin on 4322;
-sayaka forwards `/rpc/*` and `/admin/*`+`/editor/*` to a single target — in dev the workspace origin, which serves both
-through its proxy (`SAYAKA_KOBATO_RPC_URL`, default `http://127.0.0.1:4321/rpc`).
+workspace on 4321 (`pnpm -C apps/kobato dev:admin` → `react-router dev apps/kobato`): React Router's dev middleware
+serves the `/admin/*` + `/editor/*` documents (and `.data` requests) while `/rpc`, `/health`, and `/ready` proxy to the
+backend (`KOBATO_DEV_BACKEND_URL`, default `http://127.0.0.1:4320`). `pnpm run dev:public` adds the public origin on
+4322; sayaka forwards `/rpc/*` and `/admin/*`+`/editor/*` to a single target — in dev the workspace origin, which serves
+both through its proxy (`SAYAKA_KOBATO_RPC_URL`, default `http://127.0.0.1:4321/rpc`).
 
 `pnpm run bench:font-split` is local-only (`packages/font-split/scripts/bench/`): it regenerates
 `packages/font-split/BENCHMARK.md`, its charts and `benchmark/results.json` from the production fonts. Rerun it when a
 font-split change is meant to move those numbers and commit the regenerated files with it.
 
-`pnpm run lint` is the one static gate: it runs `react-router typegen` for the workspace and sayaka (each package script
-`cd`s to the repository root and names its project directory, so the generated types land under that package from any
-working directory; route modules import generated `./+types/*`), then `oxlint -c oxlint.config.ts` once over the whole
+`pnpm run lint` is the one static gate: it runs `react-router typegen` for the kobato app and sayaka
+(`pnpm -C apps/kobato typegen`, `pnpm -C apps/sayaka typegen` — each script `cd`s to the repository root and names its
+project directory, so the generated types land under that app from any working directory; route modules import generated
+`./+types/*`; the pre-commit hook runs the same typegen), then `oxlint -c oxlint.config.ts` once over the whole
 workspace — lint rules and TypeScript compiler diagnostics in a single pass. There is no separate type-check command and
 `tsc` is never run (`oxlint.config.ts` sets `typeAware`/`typeCheck`). Each file type-checks through its nearest
 `tsconfig.json`, so a new package or config file needs no root-level registration. The root `tsconfig.json` covers only
 the root `*.config.ts` files. oxlint skips `.gitignore`d and `ignorePatterns` paths: a gitignored tsconfig input (the
-generated `packages/web/admin/.react-router/types/` and `apps/sayaka/.react-router/types/`) is never type-checked.
+generated `apps/kobato/.react-router/types/` and `apps/sayaka/.react-router/types/`) is never type-checked.
 
 ## Tests
 
@@ -205,8 +211,9 @@ Tests live next to the covered package — no root-level test tree.
   "no browser globals" tests declare `@vitest-environment node`, realm-safe DOM comparisons use identity (`!==`).
 - Tests import production code through the same package-root specifiers; test-local helpers may stay relative. `any`,
   `as`, `ts-expect-error` are acceptable escapes for intentionally partial mocks.
-- Coverage measures the backend/app runtime surface — `apps/kobato/src`, `apps/sayaka/src`, `api`, `db`, `server`, and
-  `shared/*`. The product UI trees — everything under `packages/web` (`admin`, `kit`, `ui`), `apps/sayaka/src/ui`, and
+- Coverage measures the backend/app runtime surface — `apps/kobato/src` (minus the workspace UI tree: `ui/**`,
+  `routes.ts`, `root.tsx`), `apps/sayaka/src` (minus its UI tree), `api`, `db`, `server`, and `shared/*`. The product UI
+  trees — everything under `packages/web` (`kit`, `ui`), `apps/kobato/src/ui`, `apps/sayaka/src/ui`, and
   `@kobato/inkling` — sit outside the workspace coverage thresholds by design.
 
 ## Git

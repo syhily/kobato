@@ -1,0 +1,241 @@
+import type { AdminImageDto } from '@kobato/api/contracts/admin/images'
+
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { Input } from '@kobato/ui/components/input'
+import { Label } from '@kobato/ui/components/label'
+import { cn } from '@kobato/ui/lib/cn'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { ImageOffIcon, ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
+import { type ReactNode, type DragEvent, useState } from 'react'
+
+import { ImageLibraryPicker } from '@/ui/editor/pickers/ImageLibraryPicker'
+import { UploadImageDialog } from '@/ui/shared/image-edit/UploadImageDialog'
+import { useErroredSrc } from '@/ui/shared/image-edit/use-errored-src'
+export interface ImageFieldProps {
+  id: string
+  label: string
+  value: string
+  onChange: (next: string) => void
+  disabled?: boolean
+  aspect: string
+  urlPlaceholder: string
+  emptyContent?: ReactNode
+  emptyHint?: string
+}
+
+export function ImageField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  aspect,
+  urlPlaceholder,
+  emptyContent,
+  emptyHint,
+}: ImageFieldProps) {
+  const { t } = useI18n()
+  const [showUrl, setShowUrl] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const [droppedFile, setDroppedFile] = useState<File | null>(null)
+  const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
+  const hasValue = value !== ''
+  const [previewBroken, markPreviewErrored] = useErroredSrc(hasValue ? value : null)
+
+  const handleDragOver = (e: DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  const handleDragEnter = (e: DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!disabled) {
+      setDragActive(true)
+    }
+  }
+  const handleDragLeave = (e: DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+  const handleDrop = (e: DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (disabled) {
+      return
+    }
+    const file = e.dataTransfer.files?.[0]
+    if (file?.type.startsWith('image/')) {
+      setDroppedFile(file)
+      setUploadOpen(true)
+    }
+  }
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label>
+          {label} <span className="text-xs font-normal text-muted-foreground">{t('admin.editor.image.optional')}</span>
+        </Label>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            title={showUrl ? t('admin.editor.image.collapseUrl') : t('admin.editor.image.pasteUrl')}
+            aria-label={
+              showUrl
+                ? t('admin.editor.image.collapseUrlAria', { label })
+                : t('admin.editor.image.pasteUrlAria', { label })
+            }
+            aria-pressed={showUrl}
+            onClick={() => setShowUrl((prev) => !prev)}
+            disabled={disabled}
+          >
+            <LinkIcon />
+          </Button>
+          {hasValue ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              title={t('admin.shared.cover.clear')}
+              aria-label={t('admin.shared.cover.clearLabel', { label })}
+              onClick={() => onChange('')}
+              disabled={disabled}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <ImageLibraryPicker
+        trigger={
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={
+              hasValue ? t('admin.editor.image.replaceAria', { label }) : t('admin.editor.image.chooseAria', { label })
+            }
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'group relative block w-full overflow-hidden rounded-xl border bg-muted/30',
+              aspect,
+              'transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+              disabled
+                ? 'cursor-not-allowed opacity-60'
+                : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
+              dragActive && 'border-primary ring-2 ring-primary/30',
+            )}
+          >
+            {hasValue && !previewBroken ? (
+              <img
+                src={value}
+                alt={t('admin.editor.image.previewAlt', { label })}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+                onError={markPreviewErrored}
+              />
+            ) : previewBroken ? (
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImageOffIcon className="size-6" />
+                <span className="text-xs">{t('admin.editor.image.loadFailed')}</span>
+              </span>
+            ) : emptyContent !== undefined ? (
+              emptyContent
+            ) : (
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlusIcon className="size-6" />
+                <span className="text-xs">{t('admin.editor.image.chooseOrUpload')}</span>
+              </span>
+            )}
+            <span
+              className={cn(
+                'pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-medium text-white opacity-0 transition',
+                'group-hover:opacity-100 group-focus-visible:opacity-100',
+              )}
+            >
+              {hasValue ? t('admin.editor.image.clickReplace') : t('admin.editor.image.clickChoose')}
+            </span>
+          </button>
+        }
+        onPick={handlePick}
+      />
+      {!hasValue && emptyHint !== undefined ? <p className="text-xs text-muted-foreground">{emptyHint}</p> : null}
+      {showUrl ? (
+        <Input
+          id={`${id}-url`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={urlPlaceholder}
+          maxLength={500}
+          disabled={disabled}
+        />
+      ) : hasValue ? (
+        <p className="truncate font-mono text-xs text-muted-foreground" title={value}>
+          {value}
+        </p>
+      ) : null}
+      <UploadImageDialog
+        open={uploadOpen}
+        kind={{ kind: 'generic' }}
+        initialFile={droppedFile ?? undefined}
+        onClose={() => {
+          setDroppedFile(null)
+          setUploadOpen(false)
+        }}
+        onUploaded={(image) => {
+          setDroppedFile(null)
+          onChange(image.publicUrl)
+          setUploadOpen(false)
+        }}
+      />
+    </div>
+  )
+}
+
+export interface GeneratedOgPreviewProps {
+  slug: string
+  cover: string
+  title: string
+  summary: string
+}
+
+export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgPreviewProps) {
+  const { t } = useI18n()
+  const buster = djb2Short(`${title}${summary}${cover}`)
+  const src = `/images/og/${encodeURIComponent(slug)}.png?_=${buster}`
+  const [previewBroken, markPreviewErrored] = useErroredSrc(src)
+  return (
+    <>
+      {!previewBroken ? (
+        <img
+          src={src}
+          alt={t('admin.editor.coverOg.ogPreviewAlt')}
+          loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
+          onError={markPreviewErrored}
+        />
+      ) : null}
+      <Badge variant="secondary" className="pointer-events-none absolute top-1.5 left-1.5 gap-1">
+        <SparklesIcon className="size-3" /> {t('admin.editor.coverOg.ogGeneratedBadge')}
+      </Badge>
+    </>
+  )
+}
+
+function djb2Short(input: string): string {
+  let hash = 5381
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 33) ^ input.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0').slice(0, 8)
+}

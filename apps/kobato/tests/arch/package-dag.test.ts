@@ -68,20 +68,6 @@ const ALLOWED_DECLARED_INTERNAL_DEPS: Record<string, readonly string[]> = {
   '@kobato/ui': ['@kobato/base', '@kobato/settings', '@kobato/i18n', '@kobato/test'],
 
   '@kobato/web-kit': ['@kobato/ui', '@kobato/api', '@kobato/base', '@kobato/i18n', '@kobato/settings', '@kobato/test'],
-  '@kobato/web-admin': [
-    '@kobato/api',
-    '@kobato/base',
-    '@kobato/catalog',
-    '@kobato/db',
-    '@kobato/i18n',
-    '@kobato/inkling',
-    '@kobato/pack',
-    '@kobato/server',
-    '@kobato/settings',
-    '@kobato/test',
-    '@kobato/ui',
-    '@kobato/web-kit',
-  ],
   '@kobato/test': [],
   '@kobato/instance': ['@kobato/settings', '@kobato/base', '@kobato/test'],
 
@@ -125,17 +111,6 @@ const SRC_TARGETS: Record<string, readonly string[]> = {
     '@kobato/base',
     '@kobato/i18n',
     '@kobato/settings',
-  ],
-  '@kobato/web-admin': [
-    '@kobato/web-admin',
-    '@kobato/ui',
-    '@kobato/web-kit',
-    '@kobato/api',
-    '@kobato/base',
-    '@kobato/i18n',
-    '@kobato/settings',
-    '@kobato/catalog',
-    '@kobato/inkling',
   ],
   '@kobato/test': ['@kobato/test'],
   '@kobato/instance': ['@kobato/instance', '@kobato/settings', '@kobato/base', '@kobato/test'],
@@ -911,7 +886,6 @@ describe('package DAG', () => {
       '@kobato/server',
       '@kobato/ui',
       '@kobato/web-kit',
-      '@kobato/web-admin',
       '@kobato/inkling',
       '@kobato/test',
       '@kobato/pack',
@@ -935,7 +909,7 @@ describe('package DAG', () => {
   })
 
   it('the private inkling alias stays inside the editor package except its white-box host pin', () => {
-    const whiteBoxHostPin = 'packages/web/admin/tests/unit/ui/editor/cards/host-cards.test.tsx'
+    const whiteBoxHostPin = 'apps/kobato/tests/unit/ui/editor/cards/host-cards.test.tsx'
     const offenders: string[] = []
     for (const file of sourceFiles('apps', 'packages', 'tools')) {
       if (file.startsWith('packages/inkling/') || file === whiteBoxHostPin) {

@@ -36,12 +36,9 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-const WEB_SRC_ROOTS = [
-  'packages/web/ui/src',
-  'packages/web/kit/src',
-  'packages/web/admin/src/ui',
-  'packages/api/src/browser',
-]
+const UI_ROOT = 'apps/kobato/src/ui'
+
+const WEB_SRC_ROOTS = ['packages/web/ui/src', 'packages/web/kit/src', 'apps/kobato/src/ui', 'packages/api/src/browser']
 
 function packageDirs(): string[] {
   const out: string[] = []
@@ -113,6 +110,7 @@ describe('structure conventions', () => {
 
   it('contains no doubled directory segment under any src tree', () => {
     const roots = [
+      'apps/kobato/src',
       'packages/server/src',
       'packages/web/kit/src',
       'packages/web/ui/src',
@@ -316,5 +314,55 @@ describe('structure conventions', () => {
         return !referenced.has(id)
       })
     expect(orphans, 'every contracts module has at least one importer — no dead wire vocabulary').toEqual([])
+  })
+})
+
+describe('workspace structure conventions', () => {
+  it('lets a settings section directory own its view or form file', () => {
+    const root = `${UI_ROOT}/settings`
+    expect(statSync(`${REPO_ROOT}/${root}/cache/CacheView.tsx`).isFile()).toBe(true)
+    expect(statSync(`${REPO_ROOT}/${root}/rate-limit/ThresholdForm.tsx`).isFile()).toBe(true)
+    expect(statSync(`${REPO_ROOT}/${root}/backup/BackupView.tsx`).isFile()).toBe(true)
+    expect(statSync(`${REPO_ROOT}/${root}/mail/MailForm.tsx`).isFile()).toBe(true)
+  })
+
+  it('keeps the canonical admin UI domain directories', () => {
+    const actual = readdirSync(`${REPO_ROOT}/${UI_ROOT}`, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort()
+
+    const expected = [
+      'account',
+      'analytics',
+      'audit',
+      'auth',
+      'branding',
+      'categories',
+      'comments',
+      'dashboard',
+      'editor',
+      'editor-meta',
+      'editor-shell',
+      'fonts',
+      'friends',
+      'images',
+      'jobs',
+      'music',
+      'pages',
+      'posts',
+      'sessions',
+      'settings',
+      'shared',
+      'shell',
+      'styles',
+      'tags',
+      'users',
+      'webmentions',
+    ]
+    expect(
+      actual,
+      'a new admin domain directory joins this table with its API/server counterpart (styles/ holds the ui style adapters)',
+    ).toEqual(expected)
   })
 })

@@ -52,7 +52,7 @@ const MAGIC_LINK_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-const { clientAction, clientLoader } = await import('@kobato/web-admin/routes/auth/signin')
+const { clientAction, clientLoader } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>

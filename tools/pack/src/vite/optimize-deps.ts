@@ -1,5 +1,3 @@
-import type { UserConfig } from 'vite'
-
 import { repoRoot } from '@kobato/pack/sea/paths'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -11,8 +9,8 @@ const workspacePackageSchema = z.object({
   devDependencies: z.record(z.string(), z.string()).optional(),
 })
 
-const WORKSPACE_PACKAGE_DIRS = [
-  'packages/web/admin',
+const DEPENDENCY_OWNER_DIRS = [
+  'apps/kobato',
   'packages/api',
   'packages/db',
   'packages/web/kit',
@@ -147,38 +145,38 @@ function packageNameOf(entry: string): string {
 }
 
 function depOwnerMap(appDeclared: ReadonlySet<string>): Map<string, string> {
-  const manifests = WORKSPACE_PACKAGE_DIRS.map((dir) =>
+  const manifests = DEPENDENCY_OWNER_DIRS.map((dir) =>
     workspacePackageSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, dir, 'package.json'), 'utf-8'))),
   )
   const depOwner = new Map<string, string>()
-  for (const appDeclaredOnly of [true, false]) {
-    for (const manifest of manifests) {
-      if (appDeclared.has(manifest.name) !== appDeclaredOnly) {
-        continue
-      }
-      for (const dep of [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]) {
-        if (!depOwner.has(dep)) {
-          depOwner.set(dep, manifest.name)
-        }
+  for (const manifest of manifests) {
+    if (!appDeclared.has(manifest.name)) {
+      continue
+    }
+    for (const dep of [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})]) {
+      if (!depOwner.has(dep)) {
+        depOwner.set(dep, manifest.name)
       }
     }
   }
   return depOwner
 }
 
-export function appOptimizeDeps(appDir: string): NonNullable<UserConfig['optimizeDeps']> {
+export function appOptimizeDeps(appDir: string): { include: string[]; exclude: string[] } {
   const pkg = workspacePackageSchema.parse(JSON.parse(readFileSync(resolve(repoRoot, appDir, 'package.json'), 'utf-8')))
   const appDeclared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])
   const depOwner = depOwnerMap(appDeclared)
-  return {
-    include: OPTIMIZE_INCLUDE_ENTRIES.map((entry) => {
-      const name = packageNameOf(entry)
-      if (appDeclared.has(name)) {
-        return entry
-      }
-      const owner = depOwner.get(name)
-      return owner ? `${owner} > ${entry}` : entry
-    }),
-    exclude: [...OPTIMIZE_EXCLUDE],
+  const include: string[] = []
+  for (const entry of OPTIMIZE_INCLUDE_ENTRIES) {
+    const name = packageNameOf(entry)
+    if (appDeclared.has(name)) {
+      include.push(entry)
+      continue
+    }
+    const owner = depOwner.get(name)
+    if (owner !== undefined) {
+      include.push(`${owner} > ${entry}`)
+    }
   }
+  return { include, exclude: [...OPTIMIZE_EXCLUDE] }
 }

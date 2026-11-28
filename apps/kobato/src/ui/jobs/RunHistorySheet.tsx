@@ -1,0 +1,117 @@
+import type { JobHistoryInput, JobRunDto, JobRunTrigger } from '@kobato/api/contracts/admin/jobs'
+import type { UiMessageId } from '@kobato/i18n/messages/ui/en-US'
+
+import { orpcQuery } from '@kobato/api/browser/orpc-query'
+import { formatDuration } from '@kobato/base/utils/format'
+import { Badge } from '@kobato/ui/components/badge'
+import { Button } from '@kobato/ui/components/button'
+import { Empty, EmptyHeader, EmptyTitle } from '@kobato/ui/components/empty'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@kobato/ui/components/sheet'
+import { useI18n } from '@kobato/ui/lib/I18nProvider'
+import { Fragment, useState } from 'react'
+
+import { RUN_STATUS_META, jobRunErrorLabelId, useFormatAdminDate } from '@/ui/jobs/meta'
+import { AdminInfiniteListFooter } from '@/ui/shared/list/AdminInfiniteListFooter'
+import { useAdminInfiniteList } from '@/ui/shared/list/use-admin-infinite-list'
+
+const PAGE_SIZE = 20
+
+const TRIGGER_LABEL_IDS: Record<JobRunTrigger, UiMessageId> = {
+  scheduled: 'admin.tasks.history.trigger.scheduled',
+  manual: 'admin.tasks.history.trigger.manual',
+}
+
+export function RunHistoryRow({ run }: { run: JobRunDto }) {
+  const date = useFormatAdminDate()
+  const { locale, t } = useI18n()
+  const meta = RUN_STATUS_META[run.status]
+  const errorLabelId = jobRunErrorLabelId(run.error)
+  return (
+    <div className="flex flex-col gap-1 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={meta.variant}>{t(meta.labelId)}</Badge>
+        <span className="text-xs text-muted-foreground">
+          {t('admin.tasks.history.triggered', { trigger: t(TRIGGER_LABEL_IDS[run.trigger]) })}
+        </span>
+        <span className="text-xs text-muted-foreground">{date(run.startedAt)}</span>
+      </div>
+      {(run.durationMs !== null || run.status === 'running' || run.error !== null) && (
+        <p className="text-xs text-muted-foreground">
+          {run.durationMs !== null &&
+            t('admin.tasks.history.duration', { duration: formatDuration(run.durationMs, { locale }) })}
+          {run.status === 'running' && t('admin.tasks.history.running')}
+          {run.error !== null && (
+            <span className="text-status-error-fg">{errorLabelId === null ? run.error : t(errorLabelId)}</span>
+          )}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function RunHistorySheet({ taskKey, taskLabel }: { taskKey: JobHistoryInput['taskKey']; taskLabel: string }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.jobs.history,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({ taskKey, offset, limit: PAGE_SIZE }),
+    selectRows: (page) => page.items,
+    noun: 'admin.list.noun.runHistory',
+    enabled: open,
+    refetchInterval: 10_000,
+  })
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        render={
+          <Button variant="outline" size="sm" type="button">
+            {t('admin.tasks.history.title')}
+          </Button>
+        }
+      />
+      <SheetContent side="right" className="w-full sm:max-w-140">
+        <SheetHeader>
+          <SheetTitle>{t('admin.tasks.history.sheetTitle', { task: taskLabel })}</SheetTitle>
+          <SheetDescription>{t('admin.tasks.history.description')}</SheetDescription>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4">
+          {!isLoading && rows.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>{t('admin.tasks.history.empty')}</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="divide-y">
+              {rows.map((run, index) =>
+                index === rows.length - 1 ? (
+                  <Fragment key={run.id} ref={sentinelRef}>
+                    <RunHistoryRow run={run} />
+                  </Fragment>
+                ) : (
+                  <RunHistoryRow key={run.id} run={run} />
+                ),
+              )}
+            </div>
+          )}
+          <AdminInfiniteListFooter
+            noun={t('admin.list.noun.runHistory')}
+            rowCount={total}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}

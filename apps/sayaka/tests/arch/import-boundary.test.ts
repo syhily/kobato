@@ -26,16 +26,10 @@ function importSpecifiers(source: string): string[] {
   return specifiers
 }
 
-const BANNED_SPECIFIERS = [
-  '@kobato/server',
-  '@kobato/db',
-  '@kobato/web-admin',
-  '@kobato/web-public',
-  '@kobato/pack',
-] as const
+const BANNED_SPECIFIERS = ['@kobato/server', '@kobato/db', '@kobato/web-public', '@kobato/pack'] as const
 
 describe('sayaka import boundary', () => {
-  it('never imports the kobato app, its aliases, the server, the db, the admin or public web packages, or pack', () => {
+  it('never imports the kobato app, its aliases, the server, the db, the public web package, or pack', () => {
     const offenders: string[] = []
     for (const file of sourceFiles(SRC_ROOT)) {
       const source = readFileSync(full(file), 'utf8')

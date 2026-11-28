@@ -11,10 +11,10 @@ import { join } from 'node:path'
 const BOOT_TIMEOUT_MS = 120_000
 const POLL_INTERVAL_MS = 400
 const HEALTH_FETCH_TIMEOUT_MS = 1_500
-const BACKEND_PACKAGE = 'kobato'
-const ADMIN_PACKAGE = '@kobato/web-admin'
+const KOBATO_PACKAGE = 'kobato'
 const SAYAKA_PACKAGE = 'sayaka'
-const ADMIN_BACKEND_URL_ENV = 'KOBATO_DEV_BACKEND_URL'
+const WORKSPACE_DEV_SCRIPT = 'dev:admin'
+const WORKSPACE_BACKEND_URL_ENV = 'KOBATO_DEV_BACKEND_URL'
 
 export interface DevServer {
   child: ChildProcess
@@ -30,7 +30,7 @@ export interface BootBackendDevServerOptions {
   logPath: string
 }
 
-export interface BootAdminDevServerOptions {
+export interface BootWorkspaceDevServerOptions {
   repoRoot: string
   port: number
   backendUrl: string
@@ -61,6 +61,7 @@ export async function writeDevConfig(path: string, port: number, dataDir: string
 function spawnDevServer(
   repoRoot: string,
   packageName: string,
+  script: string,
   port: number,
   env: Record<string, string>,
   logPath: string,
@@ -71,7 +72,7 @@ function spawnDevServer(
       '--filter',
       packageName,
       'run',
-      'dev',
+      script,
       '--host',
       '127.0.0.1',
       '--port',
@@ -119,7 +120,8 @@ async function waitForDevServer(server: DevServer, probePath: string): Promise<D
 export async function bootBackendDevServer(options: BootBackendDevServerOptions): Promise<DevServer> {
   const server = spawnDevServer(
     options.repoRoot,
-    BACKEND_PACKAGE,
+    KOBATO_PACKAGE,
+    'dev',
     options.port,
     { KOBATO_CONFIG_FILE: options.configPath },
     options.logPath,
@@ -127,12 +129,13 @@ export async function bootBackendDevServer(options: BootBackendDevServerOptions)
   return waitForDevServer(server, '/health')
 }
 
-export async function bootAdminDevServer(options: BootAdminDevServerOptions): Promise<DevServer> {
+export async function bootWorkspaceDevServer(options: BootWorkspaceDevServerOptions): Promise<DevServer> {
   const server = spawnDevServer(
     options.repoRoot,
-    ADMIN_PACKAGE,
+    KOBATO_PACKAGE,
+    WORKSPACE_DEV_SCRIPT,
     options.port,
-    { [ADMIN_BACKEND_URL_ENV]: options.backendUrl },
+    { [WORKSPACE_BACKEND_URL_ENV]: options.backendUrl },
     options.logPath,
   )
   return waitForDevServer(server, '/admin/signin')
@@ -142,6 +145,7 @@ export async function bootSayakaDevServer(options: BootSayakaDevServerOptions): 
   const server = spawnDevServer(
     options.repoRoot,
     SAYAKA_PACKAGE,
+    'dev',
     options.port,
     {
       SAYAKA_HOST: '127.0.0.1',

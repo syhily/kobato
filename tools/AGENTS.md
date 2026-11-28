@@ -31,8 +31,8 @@ package under `packages/font-split`.
   package, which is what lets every shared leaf dev-depend on it for its tests.
 - Product **tests** import tools freely (`@kobato/test` for the in-process helpers, `@kobato/instance/client` for the
   live-instance clients), declared in each package's devDependencies.
-- Build-time configs reach `pack` through its package specifier (declared by the root, `apps/kobato`, `apps/sayaka`, and
-  `packages/web/admin`).
+- Build-time configs reach `pack` through its package specifier (declared by the root, `apps/kobato`, and
+  `apps/sayaka`).
 - Tools packages declare every import in their own package.json, self-import through `@kobato/<name>/...`, and expose
   source wildcard exports with `.ts`/`.tsx` fallback targets so packages run directly by `node` resolve without a
   bundler.
